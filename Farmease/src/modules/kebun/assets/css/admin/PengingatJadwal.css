@@ -1,0 +1,10 @@
+.fe-pengingat-jadwal {
+  padding-top: 0.25rem;
+  width: 100%;
+}
+
+.fe-pengingat-jadwal__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.25rem;
+}

@@ -1,0 +1,15 @@
+.custom-list-item {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  border-color: var(--ui-border-light) !important;
+  transition: all 0.2s;
+}
+.custom-list-item:hover {
+  border-color: #EBEBEB !important;
+}
+.list-icon-wrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: transparent;
+  color: var(--ui-text-dark);
+}
+.text-xs { font-size: 0.7rem; }

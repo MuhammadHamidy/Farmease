@@ -1,0 +1,44 @@
+.fe-data-table-wrap {
+  overflow-x: auto;
+}
+
+.fe-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.fe-data-table thead th {
+  background: #b8bda6;
+  color: #283618;
+  font-weight: 800;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.fe-data-table thead th:first-child {
+  border-top-left-radius: 0.5rem;
+}
+
+.fe-data-table thead th:last-child {
+  border-top-right-radius: 0.5rem;
+}
+
+.fe-data-table tbody td {
+  padding: 0.9rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+  vertical-align: middle;
+  color: #283618;
+}
+
+.fe-data-table tbody td:last-child {
+  border-right: none;
+}
+
+.fe-data-table .text-center {
+  text-align: center;
+}

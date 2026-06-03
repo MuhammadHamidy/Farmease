@@ -1,0 +1,76 @@
+/* ── ReminderScheduleSheet ─────────────────────────── */
+
+/* Reuses selection-bottom-sheet-overlay & card from SelectionBottomSheet.css */
+/* Override/extend only what's different for the reminder sheet */
+
+.reminder-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.reminder-sheet-body::-webkit-scrollbar { display: none; }
+
+/* ── Calendar wrapper inside sheet ────────────────── */
+.reminder-sheet-calendar {
+  background: #FAFAF8;
+  border: 1.5px solid #ECEAE4;
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+/* ── Dropdown select ───────────────────────────────── */
+.reminder-sheet-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.reminder-sheet-select-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.reminder-select-wrapper {
+  position: relative;
+  flex: 1;
+}
+.reminder-select-wrapper.full { flex: 1 1 100%; }
+
+.reminder-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #FFFFFF;
+  border: 1.5px solid #DDD5C5;
+  border-radius: 14px;
+  padding: 0.85rem 2.5rem 0.85rem 1.1rem;
+  font-size: 0.93rem;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  color: #4B4537;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.reminder-select:focus {
+  outline: none;
+  border-color: #E1D4C2;
+  box-shadow: 0 0 0 3px rgba(96, 108, 56, 0.1);
+}
+.reminder-select option { color: #1A1A1A; }
+
+/* Chevron icon inside select */
+.reminder-select-chevron {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #A09688;
+}
+
+/* ── Submit section ────────────────────────────────── */
+.reminder-sheet-footer {
+  padding-top: 1rem;
+  margin-top: auto;
+}

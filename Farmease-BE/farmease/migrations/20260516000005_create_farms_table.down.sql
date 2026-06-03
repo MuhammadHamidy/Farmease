@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS master.idx_farms_code; DROP TABLE IF EXISTS master.farms CASCADE; DROP SCHEMA IF EXISTS master CASCADE;

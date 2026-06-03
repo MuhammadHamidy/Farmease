@@ -1,0 +1,37 @@
+.custom-toggle {
+  position: relative;
+  display: inline-block;
+  width: 3.25rem;
+  height: 1.75rem;
+  cursor: pointer;
+}
+.custom-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--color-fawn);
+  border-radius: 2rem;
+  transition: .3s;
+}
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 1.25rem;
+  width: 1.25rem;
+  left: 0.25rem;
+  bottom: 0.25rem;
+  background-color: white;
+  border-radius: 50%;
+  transition: .3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.custom-toggle input:checked + .toggle-slider {
+  background-color: #283618;
+}
+.custom-toggle input:checked + .toggle-slider:before {
+  transform: translateX(1.5rem);
+}

@@ -1,0 +1,19 @@
+.fe-hero-banner {
+  width: 100%;
+  line-height: 0;
+}
+
+.fe-hero-banner__image {
+  width: 100%;
+  height: auto;
+  min-height: 280px;
+  max-height: 480px;
+  object-fit: cover;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .fe-hero-banner__image {
+    min-height: 360px;
+  }
+}

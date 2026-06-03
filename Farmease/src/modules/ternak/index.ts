@@ -1,0 +1,1 @@
+export { ternakRoutes } from './router';

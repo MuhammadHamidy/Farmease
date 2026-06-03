@@ -1,0 +1,647 @@
+/* ── PeternakanPage layout ─────────────────────────────────── */
+.peternakan-page {
+  min-height: calc(100vh - 64px);
+  background: #FDFDFD;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Nunito', sans-serif;
+}
+
+/* ── Shared Header & Navigation ──────────────────────────── */
+.peternakan-header-v2 {
+  background: #FFFFFF;
+  padding: 0.65rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 64px;
+}
+
+.header-left-group, .header-right-group {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.header-divider {
+  width: 1.5px;
+  height: 24px;
+  background-color: #E5E7EB;
+}
+
+.peternakan-header-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-right: 0.5rem;
+}
+
+.user-avatar-circle {
+  width: 38px;
+  height: 38px;
+  background: #E1D4C2; /* Primary theme green */
+  color: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 6px rgba(96, 108, 56, 0.2);
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.user-display-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.user-display-role {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6B7280;
+}
+
+.header-logout-btn {
+  background: #F9FAFB;
+  border: 1.5px solid #F3F4F6;
+  color: #4B5563;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.header-logout-btn:hover {
+  background: #FEE2E2;
+  border-color: #FECACA;
+  color: #EF4444;
+  transform: translateY(-1px);
+}
+
+/* ── Pill Navigation ─────────────────────────────────────── */
+.peternakan-nav-container {
+  background: #FFFFFF;
+  padding: 0.75rem 1.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid #F3F4F6;
+}
+.peternakan-nav-container::-webkit-scrollbar { display: none; }
+
+.peternakan-tab-pills {
+  display: flex;
+  gap: 0.5rem;
+  min-width: max-content;
+}
+.peternakan-tab-pill {
+  padding: 0.45rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6B7280;
+  background: #FFFFFF;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+.peternakan-tab-pill.active {
+  background: #8B5E3C;
+  color: #FFFFFF;
+  box-shadow: 0 4px 10px rgba(139, 94, 60, 0.18);
+}
+
+/* ── Content Area ────────────────────────── */
+.peternakan-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px; /* Expanded for desktop */
+  margin: 0 auto;
+  padding: 1.5rem;
+  max-width: 1400px; /* Enhanced desktop layout */
+}
+
+.peternakan-card-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #EF4444;
+  color: white;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  z-index: 10;
+}
+
+/* ── Section Title Card ──────────────────────────── */
+.peternakan-title-card {
+  background: linear-gradient(135deg, #3D2F24 0%, #8B5E3C 55%, #A78D78 100%);
+  border-radius: 20px;
+  padding: 2.25rem 2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  box-shadow: 0 14px 30px rgba(61, 47, 36, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+.peternakan-title-card::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 130px;
+  height: 130px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 50%;
+}
+.peternakan-title-card::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 90px;
+  height: 90px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+
+/* ── List Grid (Responsive) ─────────────────── */
+.peternakan-list-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .peternakan-list-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1100px) {
+  .peternakan-list-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+/* ── Adjustment for Cards in Grid ───────────── */
+.peternakan-item-card {
+  height: 100%; /* Ensure cards in the same row have same height */
+  margin-bottom: 0; /* Margin handled by grid gap */
+  background: #FFFFFF;
+  border: 1.5px solid #E6DED3;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  position: relative;
+}
+.peternakan-title-card h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* ── Search & Filter ─────────────────────────────────────── */
+.peternakan-search-bar {
+  position: relative;
+  margin-bottom: 1rem;
+}
+.peternakan-search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border-radius: 12px;
+  border: 1.5px solid #E5E7EB;
+  background: #FFFFFF;
+  font-size: 0.9rem;
+  font-family: 'Nunito', sans-serif;
+  transition: all 0.2s;
+}
+.peternakan-search-input:focus {
+  outline: none;
+  border-color: #E1D4C2;
+}
+.peternakan-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+}
+
+/* ── Main Action Button ──────────────────────────────────── */
+.peternakan-primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #3D2F24 0%, #8B5E3C 100%);
+  color: #FFFFFF;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.15s;
+  width: fit-content;
+  margin-left: auto;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 18px rgba(61, 47, 36, 0.2);
+}
+.peternakan-primary-btn:active { transform: scale(0.96); }
+
+/* ── List Item Cards ─────────────────────────────────────── */
+.peternakan-item-card {
+  background: #E3D9C6; /* Beige from image */
+  border: 2px solid #C5B9A5;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.peternakan-item-icon-box {
+  width: 52px;
+  height: 52px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 1px solid #C5B9A5;
+}
+.peternakan-item-main { flex: 1; }
+.peternakan-item-headline {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1A1A1A;
+  display: block;
+  line-height: 1.2;
+}
+.peternakan-item-subline {
+  font-size: 0.85rem;
+  color: #6B7280;
+  font-weight: 700;
+}
+.peternakan-action-btn {
+  background: #D4C9B5;
+  border: 1.5px solid #C5B9A5;
+  color: #4B4537;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.peternakan-action-btn:hover { background: #C5B9A5; }
+
+
+/* ── Date & Time Sub-header ────────────────────────── */
+.peternakan-date-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F3EDE4;
+  border-radius: 12px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  color: #4B4537;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1px solid #E3D9C6;
+}
+
+@media (max-width: 480px) {
+  .peternakan-date-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
+
+/* ── Toggle Switch ────────────────────────────────────────── */
+.peternakan-toggle {
+  width: 50px;
+  height: 26px;
+  background: #E5E7EB;
+  border-radius: 13px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.peternakan-toggle.active { background: #E1D4C2; }
+.peternakan-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.peternakan-toggle.active::after { transform: translateX(24px); }
+
+
+/* ── Modal Design ────────────────────────────────────────── */
+.peternakan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+}
+.peternakan-modal-card {
+  width: 100%;
+  max-width: 540px;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  padding: 1.5rem;
+  box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+}
+.peternakan-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.peternakan-modal-close {
+  position: absolute;
+  left: 0;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.peternakan-modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1A1A1A;
+}
+
+/* ── Selection Option ────────────────────────────────────── */
+.peternakan-option-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #E3D9C6;
+  border: 1.5px solid #C5B9A5;
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+}
+.peternakan-radio-circle {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #C5B9A5;
+  border-radius: 50%;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.peternakan-option-item.selected .peternakan-radio-circle {
+  background: #A78D78;
+  border-color: #A78D78;
+}
+.peternakan-radio-inner {
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  display: none;
+}
+.peternakan-option-item.selected .peternakan-radio-inner {
+  display: block;
+}
+
+/* ── Animation Utility ────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.3s ease forwards; }
+
+/* ── Schedule View (Jadwal Rutin) ───────────────────── */
+.peternakan-schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 992px) {
+  .peternakan-schedule-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.routine-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #E5E7EB;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  margin-bottom: 1rem;
+}
+
+.routine-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: #F9FAFB;
+  border: 1px solid #F3F4F6;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s;
+}
+.routine-item:hover {
+  border-color: #E1D4C2;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(96, 108, 56, 0.1);
+}
+
+.routine-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.routine-info {
+  flex: 1;
+}
+
+.routine-status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* ── Detail View ───────────────────────────────────────── */
+.detail-header-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #E5E7EB;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .detail-header-card {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.detail-avatar-box {
+  width: 120px;
+  height: 120px;
+  background: #E3D9C6;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #C5B9A5;
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  width: 100%;
+}
+@media (min-width: 576px) {
+  .detail-info-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.stat-box {
+  padding: 1rem;
+  background: #F9FAFB;
+  border-radius: 16px;
+  border: 1px solid #F3F4F6;
+}
+
+/* ── Notification Components ───────────────────────────── */
+.notification-bell-container {
+  position: relative;
+  cursor: pointer;
+}
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #EF4444;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.notification-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #E5E7EB;
+  margin-top: 10px;
+  z-index: 1000;
+  overflow: hidden;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-header {
+  padding: 1rem;
+  background: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-list {
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 1rem;
+  border-bottom: 1px solid #F3F4F6;
+  display: flex;
+  gap: 1rem;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.notification-item:hover {
+  background: #F9FAFB;
+}
+.notification-item.unread {
+  background: #eff6ff;
+}
+
+.notification-item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #E3D9C6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

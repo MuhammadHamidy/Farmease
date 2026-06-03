@@ -1,0 +1,10 @@
+.fe-category-badge {
+  display: inline-block;
+  background: #38431f;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  margin-bottom: 0.65rem;
+}

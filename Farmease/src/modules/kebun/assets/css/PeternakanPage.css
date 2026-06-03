@@ -1,0 +1,112 @@
+/* ── PeternakanPage layout ─────────────────────────────────── */
+.peternakan-page {
+  min-height: calc(100vh - 64px);
+  background: #F7F8F5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top header band ──────────────────────────────────────── */
+.peternakan-header {
+  background: linear-gradient(135deg, #283618 0%, #606C38 100%);
+  padding: 1.25rem 1.5rem 0;
+}
+.peternakan-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.peternakan-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #FEFAE0;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.875rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.peternakan-back-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ── Tab nav ──────────────────────────────────────────────── */
+.peternakan-tab-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.peternakan-tab-nav::-webkit-scrollbar { display: none; }
+
+.peternakan-tab-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,0.65);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.peternakan-tab-btn.active {
+  color: #FEFAE0;
+  border-bottom-color: #DDA15E;
+}
+.peternakan-tab-btn:hover { color: #FFFFFF; }
+
+/* ── Content area ─────────────────────────────────────────── */
+.peternakan-content {
+  flex: 1;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0.5rem 0 2rem;
+}
+
+/* ── Pencatatan sub-tab button ────────────────────────────── */
+.pencatatan-subtab-btn {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pencatatan-subtab-btn:hover { opacity: 0.9; }
+
+/* ── Form label ───────────────────────────────────────────── */
+.pencatatan-label {
+  display: block;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #606C38;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Form wrapper ──────────────────────────────────────────*/
+.pencatatan-form {
+  animation: fadeSlide 0.25s ease;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Mobile adjustments ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .peternakan-header { padding: 1rem 1rem 0; }
+  .peternakan-content { padding: 0.25rem 0 1.5rem; }
+}

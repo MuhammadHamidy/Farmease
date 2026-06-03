@@ -1,0 +1,83 @@
+.header-container {
+  background: #ffffff;
+  z-index: 100;
+  border-bottom: 2px solid rgba(0,0,0,0.08);
+  padding-top: 0.35rem; padding-bottom: 0.35rem;
+}
+.logo-group {
+  cursor: pointer;
+}
+.logo-group:hover .logo-icon {
+  transform: scale(1.05);
+}
+.logo-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  background-color: #283618;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(40, 54, 24, 0.2);
+}
+.logo-text {
+  font-family: Outfit, sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.05em;
+  color: #283618;
+  line-height: 1;
+}
+.text-primary-light {
+  color: #606C38;
+}
+.nav-btn {
+  padding: 0.35rem 0.9rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  background: #f4f5ef;
+  color: #283618;
+  border: 1px solid rgba(40,54,24,0.06);
+}
+.btn-active {
+  background-color: #38431f;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(56,67,31,0.22);
+}
+.btn-active:hover { background-color: #283618 }
+.btn-ghost {
+  color: #606C38;
+}
+.btn-ghost:hover {
+  color: #283618;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.header-login-btn {
+  background-color: #38431f;
+  color: white;
+  padding: 0.45rem 1rem;
+  border-radius: 0.35rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  border: none;
+}
+.header-login-btn:hover {
+  background-color: #283618;
+  color: white;
+}
+.mobile-menu-btn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: #374151;
+  background: transparent;
+  border: none;
+}
+.mobile-menu-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+@media (min-width: 768px) {
+  .logo-text { font-size: 1.5rem; }
+}

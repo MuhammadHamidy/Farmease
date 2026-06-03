@@ -1,0 +1,29 @@
+.fe-tab-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding: 0.75rem var(--fe-section-padding-x);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
+}
+
+.fe-tab-navigation__tab {
+  background: transparent;
+  border: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.45rem;
+  color: #55623d;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.fe-tab-navigation__tab:hover {
+  background: rgba(40, 54, 24, 0.05);
+}
+
+.fe-tab-navigation__tab.is-active {
+  background: #dfe5cf;
+  color: #283618;
+}

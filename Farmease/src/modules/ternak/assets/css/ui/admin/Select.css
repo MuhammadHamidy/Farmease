@@ -1,0 +1,25 @@
+.custom-select {
+  appearance: none;
+  border: 1px solid #EBEBEB;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--ui-text-muted);
+  font-weight: 500;
+  background-color: white;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.custom-select:focus {
+  border-color: #A78D78;
+  box-shadow: 0 0 0 0.2rem rgba(167, 141, 120, 0.25);
+  outline: none;
+}
+.select-icon-wrapper {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  color: var(--ui-text-dark);
+  pointer-events: none;
+  z-index: 5;
+}

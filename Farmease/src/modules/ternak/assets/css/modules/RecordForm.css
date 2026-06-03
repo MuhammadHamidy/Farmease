@@ -1,0 +1,331 @@
+/* ── Pencatatan Form Design System (@theme tokens) ── */
+
+.pencatatan-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-on-surface-variant);
+}
+
+.pencatatan-input,
+.pencatatan-select,
+.pencatatan-textarea {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid var(--color-outline-variant);
+  background-color: var(--color-surface-container-low);
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pencatatan-input:focus,
+.pencatatan-select:focus,
+.pencatatan-textarea:focus {
+  border-color: var(--color-secondary);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 25%, transparent);
+}
+
+.pencatatan-input::placeholder,
+.pencatatan-textarea::placeholder {
+  color: color-mix(in srgb, var(--color-on-surface-variant) 60%, transparent);
+}
+
+.pencatatan-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.pencatatan-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.pencatatan-input-wrap.has-icon .pencatatan-input {
+  padding-left: 3rem;
+}
+
+.pencatatan-input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  opacity: 0.4;
+  pointer-events: none;
+  object-fit: contain;
+}
+
+.pencatatan-mode-toggle {
+  display: flex;
+  width: 210px;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-outline-variant);
+  background-color: color-mix(in srgb, var(--color-secondary-container) 40%, transparent);
+}
+
+.pencatatan-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-on-surface-variant);
+  background: transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pencatatan-mode-btn.is-active {
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+}
+
+.pencatatan-mode-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.pencatatan-form-overlay,
+.pencatatan-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: var(--color-surface-container-low);
+}
+
+.pencatatan-form-card {
+  border-radius: 1.25rem;
+  border: 0;
+  background: var(--color-surface-container-lowest);
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .pencatatan-form-card {
+    padding: 1.25rem;
+  }
+}
+
+.pencatatan-form-card-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 1rem;
+  background-color: var(--color-surface-container);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.pencatatan-info-box {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 50%, transparent);
+  background-color: var(--color-surface-container-lowest);
+  padding: 0.75rem;
+}
+
+.pencatatan-submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: 1rem;
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-secondary) 30%, transparent);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pencatatan-submit-btn:hover {
+  background-color: var(--color-primary);
+}
+
+.pencatatan-submit-btn:active {
+  transform: scale(0.98);
+}
+
+/* ── Scope selection cards ─────────────────────────────────── */
+.peternakan-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.peternakan-form-group {
+  margin-bottom: 1rem;
+}
+
+.peternakan-row-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: var(--color-surface-container-lowest);
+  border: 1.5px solid var(--color-outline-variant);
+  border-radius: 18px;
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.peternakan-row-card:hover {
+  border-color: var(--color-secondary);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-secondary) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+.peternakan-row-card:active {
+  transform: translateY(0);
+}
+
+.peternakan-row-card.filled {
+  background: color-mix(in srgb, var(--color-secondary) 12%, var(--color-surface-container-lowest));
+  border-color: var(--color-secondary);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-secondary) 22%, transparent);
+}
+
+.peternakan-row-card.filled .peternakan-row-title {
+  color: var(--color-primary);
+}
+
+.peternakan-row-card.filled .peternakan-row-desc {
+  color: var(--color-on-surface);
+}
+
+.peternakan-row-card.disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+.peternakan-row-card.disabled:hover {
+  border-color: var(--color-outline-variant);
+  box-shadow: none;
+  transform: none;
+}
+
+.peternakan-row-card.disabled .peternakan-row-icon-box {
+  background: transparent;
+  border-color: var(--color-outline-variant);
+  color: var(--color-outline);
+}
+
+.peternakan-row-icon-box {
+  width: 46px;
+  height: 46px;
+  background: transparent;
+  border: 1.5px dashed var(--color-outline);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-outline);
+  transition: all 0.2s;
+}
+
+.peternakan-row-card.filled .peternakan-row-icon-box {
+  background: var(--color-secondary);
+  border: none;
+  color: var(--color-on-secondary);
+}
+
+.peternakan-row-card:hover .peternakan-row-icon-box {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+}
+
+.peternakan-row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.peternakan-row-title {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-on-surface-variant);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.peternakan-row-desc {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--color-on-surface);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.peternakan-row-desc.peternakan-empty {
+  color: var(--color-outline);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.peternakan-row-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--color-outline);
+  flex-shrink: 0;
+  align-self: center;
+  transition: color 0.2s;
+}
+
+.peternakan-row-card:hover .peternakan-row-chevron {
+  color: var(--color-secondary-container);
+}
+
+.pencatatan-form {
+  background: var(--color-surface-container-lowest);
+  border-radius: 20px;
+  padding: 1rem 0;
+}
+
+/* ── Record summary (brand-aligned) ────────────────────────── */
+.record-summary .summary-icon-box {
+  background: color-mix(in srgb, var(--color-secondary) 15%, transparent) !important;
+}
+
+.record-summary .text-success {
+  color: var(--color-primary) !important;
+}
+
+.record-summary .btn-outline-success,
+.record-summary .btn-success {
+  border-color: var(--color-secondary) !important;
+  background-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+}
+
+.record-summary .btn-outline-success {
+  background-color: transparent !important;
+  color: var(--color-primary) !important;
+}

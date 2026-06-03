@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS logistics.feedings CASCADE;
+DROP TABLE IF EXISTS logistics.feeds CASCADE;

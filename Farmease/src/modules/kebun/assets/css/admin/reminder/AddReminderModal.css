@@ -1,0 +1,91 @@
+.fe-reminder-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.fe-reminder-modal {
+  width: 100%;
+  max-width: 380px;
+  background: #38431f;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  max-height: 95vh;
+  overflow-y: auto;
+}
+
+.fe-reminder-modal__header {
+  padding: 1rem 1.25rem 0.85rem;
+  text-align: center;
+  color: #fff;
+}
+
+.fe-reminder-modal__header-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.fe-reminder-modal__header-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  opacity: 0.95;
+}
+
+.fe-reminder-modal__body {
+  background: #fff;
+  margin: 0 0.65rem 0.65rem;
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem 1.25rem;
+}
+
+.fe-reminder-modal__form-title {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #283618;
+  text-align: center;
+}
+
+.fe-reminder-modal__field {
+  margin-bottom: 0.85rem;
+}
+
+.fe-reminder-modal__label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #283618;
+  margin-bottom: 0.4rem;
+}
+
+.fe-reminder-modal__submit {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: #38431f;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.fe-reminder-modal__submit:hover {
+  background: #283618;
+}
+
+.fe-reminder-modal__body .custom-select,
+.fe-reminder-modal__body .custom-input {
+  font-size: 0.85rem;
+}

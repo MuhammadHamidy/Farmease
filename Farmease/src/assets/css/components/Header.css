@@ -1,0 +1,58 @@
+.header-container {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px);
+  z-index: 100;
+  border-bottom: 1px solid var(--color-outline-variant) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02) !important;
+}
+
+.logo-side {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.logo-side:hover {
+  opacity: 0.9;
+}
+
+.nav-btn {
+  padding: 0.5rem 1.25rem;
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 700;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-active {
+  background-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+  box-shadow: 0 4px 12px rgba(21, 66, 18, 0.15) !important;
+}
+
+.btn-ghost {
+  color: var(--color-on-surface-variant) !important;
+}
+
+.btn-ghost:hover {
+  color: var(--color-primary) !important;
+  background-color: var(--color-surface-container-low) !important;
+}
+
+.mobile-menu-btn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--color-on-surface);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  background-color: var(--color-surface-container);
+}

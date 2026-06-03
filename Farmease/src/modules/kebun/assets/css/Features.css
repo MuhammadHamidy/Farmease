@@ -1,0 +1,14 @@
+.features-section { background-color: transparent; }
+.feature-card {
+  border-radius: 1rem;
+  padding: 1.2rem;
+  color: #2d3a1f;
+  background: linear-gradient(180deg, #c8b99a 0%, #b8a682 100%);
+  box-shadow: 0 8px 16px rgba(40,54,24,0.08);
+  border: 1px solid rgba(40,54,24,0.08);
+}
+.feature-card:hover { transform: translateY(-3px); }
+.feature-icon-wrapper { width: 3.2rem; height: 3.2rem; border-radius: 0.7rem; background: rgba(40,54,24,0.08); display:flex; align-items:center; justify-content:center; }
+.feature-icon { color: #283618; width: 1.3rem; height: 1.3rem; }
+.feature-title { font-size: 1.05rem; font-weight: 800; color: #2d3a1f; margin-bottom: 0.6rem }
+.feature-desc { color: #1f2815; margin-top: 0.5rem; font-weight: 500; line-height: 1.5 }

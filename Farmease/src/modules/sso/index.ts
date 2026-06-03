@@ -1,0 +1,1 @@
+export { ssoRoutes } from './router';

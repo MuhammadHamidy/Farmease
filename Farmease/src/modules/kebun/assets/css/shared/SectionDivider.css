@@ -1,0 +1,19 @@
+.fe-section-divider {
+  border: none;
+  border-top: 1px solid rgba(40, 54, 24, 0.35);
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fe-section-divider--inset {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.fe-section-divider--footer {
+  border-top-color: rgba(40, 54, 24, 0.4);
+  margin: 0.75rem auto 1rem;
+  max-width:  min(100%, 600px);
+}

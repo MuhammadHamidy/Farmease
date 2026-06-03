@@ -1,0 +1,57 @@
+.fe-keunggulan {
+  padding: 1.25rem var(--fe-section-padding-x) 1.25rem;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fe-keunggulan__title {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #283618;
+  margin: 0 0 1.5rem;
+  width: 100%;
+}
+
+.fe-keunggulan__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.fe-keunggulan__card {
+  background: linear-gradient(180deg, #9aab7e 0%, #c5cdb0 45%, #f0ebe0 100%);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  border: 1px solid rgba(40, 54, 24, 0.08);
+  min-height: 140px;
+}
+
+.fe-keunggulan__card h4 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #283618;
+}
+
+.fe-keunggulan__card p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #1f2815;
+  font-weight: 500;
+}
+
+@media (max-width: 992px) {
+  .fe-keunggulan__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .fe-keunggulan__grid {
+    grid-template-columns: 1fr;
+  }
+}

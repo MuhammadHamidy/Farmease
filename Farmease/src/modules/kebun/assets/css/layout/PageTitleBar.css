@@ -1,0 +1,14 @@
+.fe-page-title-bar {
+  width: 100%;
+  background: #30360E;
+  padding: 0.85rem 1.5rem;
+  text-align: center;
+}
+
+.fe-page-title-bar__text {
+  margin: 0;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}

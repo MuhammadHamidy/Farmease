@@ -1,0 +1,36 @@
+.fe-kebun-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.fe-kebun-card__image {
+  width: 72px;
+  height: 72px;
+  background: #e8ece3;
+  border-radius: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9aa396;
+  flex-shrink: 0;
+}
+
+.fe-kebun-card__info h4 {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #283618;
+}
+
+.fe-kebun-card__info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b6f5a;
+}

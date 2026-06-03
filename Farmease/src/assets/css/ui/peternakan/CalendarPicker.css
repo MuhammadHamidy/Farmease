@@ -1,0 +1,89 @@
+/* ── CalendarPicker Component ──────────────────────── */
+.cal-picker {
+  width: 100%;
+  font-family: var(--font-manrope);
+  user-select: none;
+}
+
+/* Navigation row */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.cal-nav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-outline-variant);
+  background: var(--color-surface-container-lowest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-on-surface-variant);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.cal-nav-btn:hover { 
+  background: var(--color-surface-container-low); 
+  border-color: var(--color-outline); 
+}
+
+.cal-month-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  border: 1.5px solid var(--color-outline-variant);
+  padding: 0.3rem 1.25rem;
+  border-radius: 20px;
+  background: var(--color-surface-container-low);
+}
+
+/* Day header grid */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.cal-day-header {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-on-surface-variant);
+  padding: 4px 0;
+}
+.cal-day-header.red { color: var(--color-error); }
+
+/* Day cells */
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--color-on-surface);
+}
+.cal-day.sunday { color: var(--color-error); }
+.cal-day.other-month { 
+  color: var(--color-outline-variant); 
+  font-weight: 500; 
+  cursor: default; 
+}
+.cal-day.today {
+  border: 1.5px solid var(--color-primary-fixed-dim);
+  color: var(--color-primary);
+}
+.cal-day.selected {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 4px 8px rgba(21, 66, 18, 0.08);
+}
+.cal-day:not(.other-month):not(.selected):hover {
+  background: var(--color-surface-container);
+}

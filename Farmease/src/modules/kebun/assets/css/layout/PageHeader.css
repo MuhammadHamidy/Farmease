@@ -1,0 +1,19 @@
+.fe-page-header {
+  padding: 1rem var(--fe-section-padding-x) 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fe-page-header__title {
+  text-align: center;
+  color: #283618;
+  font-weight: 800;
+  font-size: 1.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.fe-page-header__divider {
+  border: none;
+  border-top: 1px solid rgba(40, 54, 24, 0.25);
+  margin: 0;
+}

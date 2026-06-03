@@ -1,0 +1,5 @@
+.fe-admin-view {
+  padding: 0 var(--fe-section-padding-x) 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}

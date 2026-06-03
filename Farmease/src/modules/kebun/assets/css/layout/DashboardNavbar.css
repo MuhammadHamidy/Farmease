@@ -1,0 +1,39 @@
+.fe-dashboard-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem var(--fe-section-padding-x);
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.fe-dashboard-navbar__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  color: #283618;
+  font-size: 1.1rem;
+}
+
+.fe-dashboard-navbar__logo img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.fe-dashboard-navbar__logout {
+  background: transparent;
+  border: 1px solid rgba(40, 54, 24, 0.2);
+  border-radius: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  color: #283618;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fe-dashboard-navbar__logout:hover {
+  background: rgba(40, 54, 24, 0.06);
+}

@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+/* Tema default (Ternak) — palet coklat; SSO landing pakai class module-sso */
+@import "../modules/ternak/assets/theme.css";
+
+body.module-sso {
+  --color-primary: #3d2f24;
+  --color-primary-container: #5d4e41;
+  --color-secondary: #8a7563;
+  --color-background: #ffffff;
+  --color-action: #3d2f24;
+  --color-action-hover: #5d4e41;
+  --bs-primary: #3d2f24;
+  --bs-link-color: #5d4e41;
+  background-color: #ffffff !important;
+}
+
+@layer base {
+  :root {
+    --bs-primary: #3d2f24;
+    --bs-primary-rgb: 61, 47, 36;
+    --bs-link-color: #5d4e41;
+    --bs-link-hover-color: #3d2f24;
+  }
+  body {
+    @apply text-[#1a1a1a] bg-background antialiased scroll-smooth;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-tr from-primary to-primary-light;
+  }
+
+  .animate-bounce-slow {
+    animation: bounce 3s infinite;
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #ffffff !important;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}

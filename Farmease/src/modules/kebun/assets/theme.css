@@ -1,0 +1,26 @@
+/* Kebun — selaras dengan paletteKebun di @/shared/ColorPalette.tsx */
+body.module-kebun {
+  --color-primary: #283618;
+  --color-primary-light: #606c38;
+  --color-secondary: #bc6c25;
+  --color-accent: #dda15e;
+  --color-background: #fefae0;
+  --color-on-surface: #283618;
+  --color-on-surface-variant: #606c38;
+  --color-outline: #606c38;
+  --color-outline-variant: #d4e0c8;
+  --color-surface-container-low: #fefae0;
+  --color-surface-container: #f5f0dc;
+  --bs-primary: #283618;
+  --bs-primary-rgb: 40, 54, 24;
+  --bs-link-color: #283618;
+  --bs-link-hover-color: #606c38;
+  background-color: #fefae0;
+  color: #283618;
+}
+
+body.module-kebun .selection\:bg-primary::selection,
+body.module-kebun ::selection {
+  background-color: #606c38;
+  color: #fff;
+}

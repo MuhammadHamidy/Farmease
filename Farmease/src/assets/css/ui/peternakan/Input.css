@@ -1,0 +1,29 @@
+.custom-input {
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--ui-text-dark);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+.custom-input::placeholder {
+  color: var(--ui-text-muted);
+  font-weight: 500;
+}
+.custom-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem rgba(21, 66, 18, 0.08);
+  outline: none;
+}
+.custom-input.with-icon {
+  padding-left: 2.75rem;
+}
+.input-icon-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  color: var(--ui-text-dark);
+  pointer-events: none;
+  z-index: 5;
+}

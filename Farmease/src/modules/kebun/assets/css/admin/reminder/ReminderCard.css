@@ -1,0 +1,71 @@
+.fe-reminder-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.65rem;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  min-width: 0;
+}
+
+.fe-reminder-card:hover {
+  border-color: rgba(40, 54, 24, 0.25);
+  box-shadow: 0 4px 12px rgba(40, 54, 24, 0.08);
+}
+
+.fe-reminder-card__body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fe-reminder-card__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #606c38;
+}
+
+.fe-reminder-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fe-reminder-card__title {
+  margin: 0 0 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #283618;
+}
+
+.fe-reminder-card__date {
+  margin: 0 0 0.2rem;
+  font-size: 0.82rem;
+  color: #4a5240;
+}
+
+.fe-reminder-card__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6b6f5a;
+}
+
+.fe-reminder-card__meta .is-done {
+  color: #38431f;
+  font-weight: 700;
+}
+
+.fe-reminder-card__meta .is-pending {
+  color: #8b5a2b;
+  font-weight: 700;
+}
+
+.fe-reminder-card__chevron {
+  flex-shrink: 0;
+  color: #9aa396;
+  display: flex;
+  align-items: center;
+}

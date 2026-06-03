@@ -1,0 +1,24 @@
+.fe-add-reminder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #38431f;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.fe-add-reminder-btn:hover {
+  background: #283618;
+}
+
+.fe-add-reminder-btn__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 700;
+}
