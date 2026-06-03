@@ -1,0 +1,123 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: farmease_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: ${DB_NAME:-farmease_be}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+    ports:
+      - "${DB_PORT:-5435}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d ${DB_NAME:-farmease_be}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: farmease_redis
+    ports:
+      - "${REDIS_PORT:-6381}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  migrate:
+    image: migrate/migrate
+    container_name: farmease_migrate
+    volumes:
+      - ./Farmease-BE/farmease/migrations:/migrations:ro
+    command: >
+      -path=/migrations
+      -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/${DB_NAME:-farmease_be}?sslmode=disable
+      up
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - farmease_network
+
+  backend:
+    build:
+      context: Farmease-BE
+      dockerfile: farmease/Dockerfile
+    container_name: farmease_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8080"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/${DB_NAME:-farmease_be}?sslmode=disable
+      APP_REDIS_ADDRESS: redis:6379
+      APP_REDIS_PASSWORD: ""
+      APP_REDIS_DB: "0"
+      APP_JWTSECRET: ${JWT_SECRET:-farmease-secret-key-123}
+      APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
+      APP_CORS_ALLOWED_ORIGINS: "*"
+      APP_LOG_LEVEL: debug
+      APP_LOG_FORMAT: console
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - ./Farmease-BE/farmease/config:/app/config:ro
+      - backend_logs:/app/logs
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://localhost:8080/health/livez"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: Farmease
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: farmease_frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  farmease_network:
+    driver: bridge

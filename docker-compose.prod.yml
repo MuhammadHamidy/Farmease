@@ -1,0 +1,227 @@
+version: '3.9'
+
+# Production Docker Compose Configuration
+# Includes reverse proxy, health checks, resource limits, and auto-restart
+
+services:
+  # PostgreSQL Database with Replication Setup
+  postgres:
+    image: postgres:15-alpine
+    container_name: farmease_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-farmease}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_backup:/backup
+    ports:
+      - "127.0.0.1:5432:5432"  # Only accessible locally
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - farmease_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend API
+  backend:
+    build:
+      context: Farmease-BE
+      dockerfile: farmease/Dockerfile
+    container_name: farmease_backend_prod
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-farmease}
+      DB_SSLMODE: disable
+      APP_ENV: production
+      APP_PORT: 8080
+      APP_DEBUG: 'false'
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://farmease.example.com}
+      CORS_ALLOWED_METHODS: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+      CORS_ALLOWED_HEADERS: "Content-Type,Authorization,Accept"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRY: ${JWT_EXPIRY:-24h}
+    ports:
+      - "127.0.0.1:8080:8080"  # Only accessible locally
+    volumes:
+      - ./Farmease-BE/farmease/config:/app/config:ro
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - farmease_network
+    deploy:
+      replicas: 2  # Run 2 instances for HA
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Frontend SPA
+  frontend:
+    build:
+      context: Farmease
+      dockerfile: Dockerfile
+    container_name: farmease_frontend_prod
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.farmease.example.com}
+    ports:
+      - "127.0.0.1:3000:3000"  # Only accessible locally
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - farmease_network
+    deploy:
+      replicas: 2  # Run 2 instances for HA
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Reverse Proxy (Nginx)
+  nginx:
+    image: nginx:alpine
+    container_name: farmease_nginx_prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - farmease_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis Cache (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: farmease_redis_prod
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - farmease_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_backup:
+    driver: local
+  backend_logs:
+    driver: local
+  redis_data:
+    driver: local
+  nginx_cache:
+    driver: local
+
+networks:
+  farmease_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-farmease
