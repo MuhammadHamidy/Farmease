@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import type { PropType } from 'vue';
 import PencatatanField from './PencatatanField';
 import PencatatanInput from './PencatatanInput';
@@ -37,6 +37,28 @@ export default defineComponent({
   },
   setup(props) {
     const f = () => props.form;
+
+    const inbreedingResult = computed(() => {
+      const id1 = props.form.targetId.trim().toUpperCase();
+      const id2 = props.form.idPejantan.trim().toUpperCase();
+      if (!id1 || !id2) return null;
+
+      // Mock pedigree
+      const pedigreeMap: Record<string, string[]> = {
+        'D-001': ['D-X01', 'D-Y01'],
+        'D-002': ['D-X02', 'D-Y02'],
+        'D-003': ['D-X01', 'D-Y03'],
+      };
+
+      const p1 = pedigreeMap[id1] || [];
+      const p2 = pedigreeMap[id2] || [];
+      const overlap = p1.filter(x => p2.includes(x));
+
+      if (overlap.length > 0) {
+        return `⚠️ PERINGATAN INBREEDING: Kedua ternak ini memiliki leluhur yang sama (${overlap.join(', ')}). Risiko perkawinan sedarah tinggi!`;
+      }
+      return `✅ Aman: Tidak terdeteksi hubungan kekerabatan dekat (pedigree aman).`;
+    });
 
     return () => (
       <>
@@ -172,6 +194,26 @@ export default defineComponent({
                   onUpdateModelValue={(v: string) => { f().tanggal = v; }}
                 />
               </PencatatanField>
+
+              {/* Automatic Pedigree Check Result */}
+              {inbreedingResult.value && (
+                <div class="col-12 mt-2">
+                  <div 
+                    class={['alert py-3 rounded-4 border-0 small m-0', inbreedingResult.value.includes('PERINGATAN') ? 'alert-danger' : 'alert-success']} 
+                    style={{
+                      backgroundColor: inbreedingResult.value.includes('PERINGATAN') ? '#FDECEC' : '#EDF7ED',
+                      color: inbreedingResult.value.includes('PERINGATAN') ? '#8B1E1E' : '#1E4620'
+                    }}
+                  >
+                    <div class="d-flex align-items-center gap-2">
+                      <span style={{ fontSize: '1.2rem' }}>
+                        {inbreedingResult.value.includes('PERINGATAN') ? '⚠️' : '✅'}
+                      </span>
+                      <span class="fw-bold">{inbreedingResult.value}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -200,6 +242,33 @@ export default defineComponent({
                 />
               </PencatatanField>
               <PencatatanField label="Tanggal Kelahiran" colClass="col-md-12">
+                <PencatatanInput
+                  type="date"
+                  modelValue={f().tanggal}
+                  onUpdateModelValue={(v: string) => { f().tanggal = v; }}
+                />
+              </PencatatanField>
+            </>
+          )}
+
+          {props.jenisId === 'berat_badan' && (
+            <>
+              <PencatatanField label="Berat Badan" colClass="col-md-4">
+                <PencatatanInput
+                  type="number"
+                  modelValue={f().qty}
+                  placeholder="0.0"
+                  onUpdateModelValue={(v: string) => { f().qty = v; }}
+                />
+              </PencatatanField>
+              <PencatatanField label="Satuan" colClass="col-md-2">
+                <PencatatanSelect
+                  modelValue={f().unit}
+                  options={['kg']}
+                  onUpdateModelValue={(v: string) => { f().unit = v; }}
+                />
+              </PencatatanField>
+              <PencatatanField label="Tanggal Penimbangan" colClass="col-md-6">
                 <PencatatanInput
                   type="date"
                   modelValue={f().tanggal}

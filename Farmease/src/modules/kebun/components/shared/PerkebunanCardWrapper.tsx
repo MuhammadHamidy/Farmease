@@ -19,10 +19,14 @@ export default defineComponent({
       type: String,
       default: '',
     },
+    isDark: {
+      type: Boolean,
+      default: false,
+    },
   },
   setup(props, { slots }) {
     return () => (
-      <div class="perkebunan-card-wrapper">
+      <div class={['perkebunan-card-wrapper', props.isDark ? 'is-dark' : '']}>
         <div class="perkebunan-card-header">
           <div class="header-left">
             {props.subtitle && <span class="card-subtitle">{props.subtitle}</span>}

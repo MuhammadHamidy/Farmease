@@ -13,10 +13,18 @@ export interface CageSession {
   type: string;
 }
 
+export interface LandSession {
+  code: string;
+  name: string;
+  area?: string;
+  status?: string;
+}
+
 export const isLoginOpen = ref(false)
 
 export const userSession = ref<UserSession | null>(null)
 export const cageSession = ref<CageSession | null>(null)
+export const landSession = ref<LandSession | null>(null)
 
 export const selectedTernakId = ref<string | null>(null)
 export const selectedPencatatanPayload = ref<any | null>(null)
@@ -37,6 +45,7 @@ export interface LandInfo {
   name: string;
   area: string;
   status: string;
+  capacity?: number;
 }
 
 export interface CropInfo {
@@ -78,13 +87,19 @@ export async function fetchLandsList() {
   try {
     landsLoading.value = true
     const list = await lahanApi.getList()
-    landsList.value = list.map((l) => ({
-      id: l.id,
-      code: l.kode_lahan,
-      name: l.nama_lahan,
-      area: String(l.luas) + ' Hektar',
-      status: l.status,
-    }))
+    landsList.value = list.map((l) => {
+      const match = (l.nama_lahan || '').match(/\[Kapasitas:\s*(\d+)\]/);
+      const capacity = match ? Number(match[1]) : 50;
+      const name = (l.nama_lahan || '').replace(/\s*\[Kapasitas:\s*\d+\]/g, '').trim();
+      return {
+        id: l.id,
+        code: l.kode_lahan,
+        name: name,
+        area: String(l.luas) + ' Hektar',
+        status: l.status,
+        capacity: capacity
+      }
+    })
   } catch (err) {
     console.error('Failed to fetch lands list:', err)
   } finally {

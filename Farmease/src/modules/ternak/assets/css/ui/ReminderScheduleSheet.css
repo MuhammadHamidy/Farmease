@@ -45,7 +45,7 @@
   border: 1.5px solid var(--color-outline-variant);
   border-radius: 14px;
   padding: 0.85rem 2.5rem 0.85rem 1.1rem;
-  font-size: 0.93rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   font-family: var(--font-manrope);
   color: var(--color-on-surface-variant);
@@ -55,7 +55,7 @@
 .reminder-select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(21, 66, 18, 0.08);
+  box-shadow: 0 0 0 3px #3d2f2414;
 }
 .reminder-select option { color: var(--color-on-surface); }
 

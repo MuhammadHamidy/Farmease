@@ -25,6 +25,11 @@ export const kebunRoutes: RouteRecordRaw[] = [
         name: 'kebun-riwayat',
         component: () => import('./views/RiwayatPencatatanPage'),
       },
+      {
+        path: 'form-pencatatan',
+        name: 'kebun-form-pencatatan',
+        component: () => import('./views/PencatatanFormPage'),
+      },
     ],
   },
   {

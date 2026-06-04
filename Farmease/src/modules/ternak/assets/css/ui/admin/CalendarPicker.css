@@ -29,7 +29,7 @@
 .cal-nav-btn:hover { background: #F3EDE4; border-color: #C5B9A5; }
 
 .cal-month-label {
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   color: #1A1A1A;
   border: 1.5px solid #DDD5C5;
@@ -46,7 +46,7 @@
   text-align: center;
 }
 .cal-day-header {
-  font-size: 0.78rem;
+  font-size: var(--font-size-xxs);
   font-weight: 800;
   color: #4B4537;
   padding: 4px 0;
@@ -60,7 +60,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s;
@@ -75,7 +75,7 @@
 .cal-day.selected {
   background: #A78D78;
   color: #FFFFFF;
-  box-shadow: 0 4px 8px rgba(167, 141, 120, 0.25);
+  box-shadow: 0 4px 8px #d4c4b040;
 }
 .cal-day:not(.other-month):not(.selected):hover {
   background: #EDE8DF;

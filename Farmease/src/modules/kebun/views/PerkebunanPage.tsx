@@ -6,21 +6,26 @@ import PerkebunanQuickLinks from '../components/PerkebunanQuickLinks'
 import PerkebunanRecordingCard from '../components/PerkebunanRecordingCard'
 import PerkebunanScheduleList from '../components/PerkebunanScheduleList'
 import PerkebunanSelectionModal from '../components/PerkebunanSelectionModal'
+import PerkebunanScheduleDetailModal from '../components/PerkebunanScheduleDetailModal'
 
 const jenisPencatatan = [
-  'Pencatatan Panen',
-  'Pencatatan Penanaman',
-  'Pencatatan Pemangkasan',
-  'Pencatatan Perawatan',
-  'Pencatatan Pemupukan',
+  'Panen',
+  'Pemangkasan',
+  'Pembersihan',
+  'Pembuahan',
+  'Penanaman',
+  'Pengendalian Hama & Penyakit',
+  'Pemupukan',
 ]
 
 const rincianPencatatanByJenis: Record<string, string[]> = {
-  'Pencatatan Panen': ['Panen Buah', 'Sortasi Hasil', 'Pengemasan Hasil'],
-  'Pencatatan Penanaman': ['Penanaman Bibit Baru', 'Pindah Tanam', 'Penyiraman Awal'],
-  'Pencatatan Pemangkasan': ['Gulma', 'Daun', 'Batang', 'Pemangkasan Bentuk'],
-  'Pencatatan Perawatan': ['Hama', 'Penyiraman Rutin', 'Pemberian Nutrisi'],
-  'Pencatatan Pemupukan': ['Pupuk Cair', 'Pupuk Organik', 'Pupuk Kompos'],
+  'Panen':                        ['Panen Buah', 'Hasil Panen'],
+  'Pemangkasan':                  ['Ranting dan Daun', 'Rumput Liar (Gulma)'],
+  'Pembersihan':                  ['Limbah'],
+  'Pembuahan':                    ['Perangsang'],
+  'Penanaman':                    ['Bibit Baru'],
+  'Pengendalian Hama & Penyakit': ['Pestisida', 'Fungisida'],
+  'Pemupukan':                    ['Pupuk Cair', 'Pupuk Organik', 'Pupuk Padat'],
 }
 
 export default defineComponent({
@@ -33,6 +38,9 @@ export default defineComponent({
     const draftJenis = ref('Jenis Pencatatan')
     const draftRincian = ref('Rincian Pencatatan')
     
+    const showDetailModal = ref(false)
+    const selectedScheduleItem = ref<any>(null)
+    
     const currentDateText = new Intl.DateTimeFormat('id-ID', {
       weekday: 'long',
       day: '2-digit',
@@ -41,10 +49,21 @@ export default defineComponent({
     }).format(new Date())
 
     const scheduleItems = [
-      { name: 'Alpukat', tag: 'Perawatan', date: '09 April 2026', detail: 'A001 • Mingguan • L1001', progress: 'Belum' },
-      { name: 'Kelengkeng', tag: 'Pemangkasan', date: '09 April 2026', detail: 'K003 • 3 x sebulan • L2002', progress: 'Belum' },
-      { name: 'Alpukat', tag: 'Perawatan', date: '09 April 2026', detail: 'A002 • 2 x bulanan • L1001', progress: 'Belum' },
+      { name: 'Alpukat', tag: 'Panen', date: '09 April 2026', detail: 'A001 • 3 x sehari', progress: 'Kerjakan', description: 'Lakukan pemanenan buah yang sudah matang', rincian: 'Panen Buah' },
+      { name: 'Alpukat', tag: 'Pemangkasan', date: '09 April 2026', detail: 'A002 • 3 x sehari', progress: 'Belum di setujui', description: 'Pangkas ranting yang kering dan rapuh', rincian: 'Ranting dan Daun' },
+      { name: 'Alpukat', tag: 'Pemangkasan', date: '09 April 2026', detail: 'A003 • 3 x sehari', progress: 'Selesai', description: 'Bersihkan rumput liar disekitar pohon', rincian: 'Rumput Liar (Gulma)' },
     ]
+
+    const handleOpenDetail = (item: any) => {
+      selectedScheduleItem.value = item
+      showDetailModal.value = true
+    }
+
+    const handleModalNext = (item: any) => {
+      showDetailModal.value = false
+      selectedJenis.value = item.tag
+      selectedRincian.value = 'Rincian Pencatatan'
+    }
 
     const closeModal = () => {
       activeField.value = null
@@ -71,7 +90,18 @@ export default defineComponent({
     }
 
     const openRincian = () => {
-      openRecordingFlow(selectedJenis.value === 'Jenis Pencatatan' ? 'jenis' : 'rincian')
+      if (selectedJenis.value === 'Jenis Pencatatan') return
+      openRecordingFlow('rincian')
+    }
+
+    const handleNext = () => {
+      router.push({
+        name: 'kebun-form-pencatatan',
+        query: {
+          jenis: selectedJenis.value,
+          rincian: selectedRincian.value,
+        },
+      })
     }
 
     const quickLinks = [
@@ -105,17 +135,13 @@ export default defineComponent({
               selectedRincian={selectedRincian.value}
               onOpenJenis={openJenis}
               onOpenRincian={openRincian}
-              onSave={() => {
-                selectedJenis.value = 'Jenis Pencatatan'
-                selectedRincian.value = 'Rincian Pencatatan'
-              }}
-              onNext={() => {}}
+              onNext={handleNext}
             />
 
             {/* 2. Pengingat Jadwal Terkini Grid Section */}
             <PerkebunanScheduleList
               items={scheduleItems}
-              onWork={() => {}}
+              onOpen-detail={handleOpenDetail}
             />
 
             {/* 3. Informasi Lain Row Section */}
@@ -143,6 +169,14 @@ export default defineComponent({
             closeModal()
           }}
           onAdd={() => {}}
+        />
+
+        {/* Detail Jadwal Pengingat Modal */}
+        <PerkebunanScheduleDetailModal
+          open={showDetailModal.value}
+          item={selectedScheduleItem.value}
+          onClose={() => { showDetailModal.value = false }}
+          onNext={handleModalNext}
         />
       </div>
     )

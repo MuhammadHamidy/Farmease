@@ -1,5 +1,6 @@
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { cagesList, fetchCagesList, type CageInfo } from '@/store/navigation';
+import { sheep, fetchSheep } from '@/store/livestock';
 import { cagesApi, authApi } from '@/shared/api';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
@@ -11,6 +12,8 @@ export default defineComponent({
   name: 'CageManagementView',
   setup() {
     const isModalOpen = ref(false);
+    const isEditing = ref(false);
+    const editingCageId = ref<number | null>(null);
     const newCage = ref<CageInfo>({
       code: '',
       name: '',
@@ -28,7 +31,10 @@ export default defineComponent({
     const loadCages = async () => {
       isLoading.value = true;
       try {
-        await fetchCagesList();
+        await Promise.all([
+          fetchCagesList(),
+          fetchSheep()
+        ]);
       } catch (err: any) {
         alertError.value = 'Gagal mengambil data kandang dari server.';
       } finally {
@@ -38,7 +44,33 @@ export default defineComponent({
 
     onMounted(loadCages);
 
-    const handleCreateCage = async () => {
+    const openAdd = () => {
+      isEditing.value = false;
+      editingCageId.value = null;
+      newCage.value = {
+        code: '',
+        name: '',
+        type: 'Domba Garut & Merino',
+        capacity: 50
+      };
+      error.value = '';
+      isModalOpen.value = true;
+    };
+
+    const openEdit = (cage: CageInfo) => {
+      isEditing.value = true;
+      editingCageId.value = cage.id || null;
+      newCage.value = {
+        code: cage.code,
+        name: cage.name,
+        type: cage.type,
+        capacity: cage.capacity
+      };
+      error.value = '';
+      isModalOpen.value = true;
+    };
+
+    const handleSaveCage = async () => {
       const code = newCage.value.code.trim().toUpperCase();
       const name = newCage.value.name.trim();
       const type = newCage.value.type.trim();
@@ -49,11 +81,13 @@ export default defineComponent({
         return;
       }
 
-      // Check uniqueness locally first
-      const exists = cagesList.value.some(c => c.code.toUpperCase() === code);
-      if (exists) {
-        error.value = `Kode kandang "${code}" sudah terdaftar.`;
-        return;
+      // Check uniqueness locally first if creating
+      if (!isEditing.value) {
+        const exists = cagesList.value.some(c => c.code.toUpperCase() === code);
+        if (exists) {
+          error.value = `Kode kandang "${code}" sudah terdaftar.`;
+          return;
+        }
       }
 
       error.value = '';
@@ -65,18 +99,27 @@ export default defineComponent({
         const currentUser = authApi.getCurrentUser();
         const farmId = currentUser?.farm_id || '550e8400-e29b-41d4-a716-446655440001';
 
-        await cagesApi.create({
+        const payload = {
           cage_code: code,
           cage_name: name,
           capacity: capacity,
           cage_type: type,
           id_farm: farmId as any
-        });
+        };
 
-        successMessage.value = `Kandang ${code} berhasil ditambahkan!`;
-        
+        if (isEditing.value && editingCageId.value !== null) {
+          await cagesApi.update(editingCageId.value, payload);
+          successMessage.value = `Kandang ${code} berhasil diperbarui!`;
+        } else {
+          await cagesApi.create(payload);
+          successMessage.value = `Kandang ${code} berhasil ditambahkan!`;
+        }
+
         // Refresh list
-        await fetchCagesList();
+        await Promise.all([
+          fetchCagesList(),
+          fetchSheep()
+        ]);
         
         isModalOpen.value = false;
         
@@ -88,7 +131,7 @@ export default defineComponent({
           capacity: 50
         };
       } catch (err: any) {
-        console.error('Failed to create cage:', err);
+        console.error('Failed to save cage:', err);
         error.value = err.response?.data?.error?.message || 'Gagal menyimpan kandang ke server.';
       } finally {
         isLoading.value = false;
@@ -108,7 +151,10 @@ export default defineComponent({
         try {
           await cagesApi.delete(id);
           successMessage.value = `Kandang ${code} berhasil dihapus!`;
-          await fetchCagesList();
+          await Promise.all([
+            fetchCagesList(),
+            fetchSheep()
+          ]);
         } catch (err: any) {
           console.error('Failed to delete cage:', err);
           alertError.value = err.response?.data?.error?.message || `Gagal menghapus kandang ${code}. Pastikan kandang kosong sebelum dihapus.`;
@@ -129,13 +175,18 @@ export default defineComponent({
           <button 
             type="button" 
             class="peternakan-primary-btn m-0" 
-            onClick={() => isModalOpen.value = true}
+            onClick={openAdd}
             disabled={isLoading.value}
+            style={{ 
+              backgroundColor: '#30360E', 
+              color: '#ffffff', 
+              borderColor: '#30360E', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px' 
+            }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="me-1">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', lineHeight: '1' }}>+</span>
             Tambah Kandang
           </button>
         </div>
@@ -154,6 +205,7 @@ export default defineComponent({
           </div>
         )}
 
+        {/* Global Alerts Error */}
         {alertError.value && (
           <div class="alert alert-danger alert-dismissible fade show rounded-4 py-3 mb-4 border-0 d-flex align-items-center justify-content-between" style={{ backgroundColor: '#FDECEC', color: '#8B1E1E' }}>
             <div class="d-flex align-items-center">
@@ -168,39 +220,39 @@ export default defineComponent({
           </div>
         )}
 
-        {/* Stats Summary Row */}
+        {/* Dynamic Cage Cards (Requirement a) */}
         <div class="row g-3 mb-4">
-          <div class="col-12 col-md-6 col-lg-4">
-            <StatCard 
-              label="Total Unit Kandang" 
-              value={String(totalCages.value)} 
-              color="primary"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              )}
-            />
-          </div>
-          <div class="col-12 col-md-6 col-lg-4">
-            <StatCard 
-              label="Kapasitas Kumulatif" 
-              value={`${totalCapacity.value} Ekor`} 
-              color="light"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              )}
-            />
-          </div>
+          {cagesList.value.map(c => {
+            const count = sheep.value.filter(s => s.cage_code === c.code).length;
+            const availability = c.capacity - count;
+            const pct = c.capacity > 0 ? Math.round((count / c.capacity) * 100) : 0;
+            return (
+              <div class="col-12 col-md-6 col-lg-4" key={c.code}>
+                <StatCard 
+                  label={`KANDANG ${c.code} - ${c.name}`} 
+                  value={`${count} / ${c.capacity} Ekor`} 
+                  sub={`Ketersediaan: ${availability} Ekor (${pct}% Terisi)`}
+                  color={pct >= 90 ? 'accent' : 'primary'}
+                  icon={() => (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                  )}
+                />
+              </div>
+            );
+          })}
+          {cagesList.value.length === 0 && (
+            <div class="col-12">
+              <div class="text-center py-4 text-muted bg-white border rounded-5 shadow-sm">
+                Belum ada data kandang untuk ditampilkan.
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Table View (Desktop) */}
+        {/* Table View (Desktop - Requirement b & c) */}
         <div class="view-card d-none d-md-block">
           <table class="admin-table">
             <thead>
@@ -208,34 +260,44 @@ export default defineComponent({
                 <th>Kode Kandang</th>
                 <th>Nama Area / Kandang</th>
                 <th>Fokus Jenis Ternak</th>
+                <th>Ketersediaan</th>
                 <th>Kapasitas</th>
-                <th style={{ width: '100px' }}>Aksi</th>
+                <th style={{ width: '120px' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {cagesList.value.map(c => (
-                <tr key={c.code}>
-                  <td><code>{c.code}</code></td>
-                  <td class="fw-bold">{c.name}</td>
-                  <td>{c.type}</td>
-                  <td>
-                    <Badge variant="success">{c.capacity} Ekor</Badge>
-                  </td>
-                  <td>
-                    <button 
-                      type="button" 
-                      class="btn btn-sm btn-outline-danger rounded-3" 
-                      onClick={() => handleDeleteCage(c.id, c.code)}
-                      disabled={isLoading.value}
-                    >
-                      Hapus
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {cagesList.value.map(c => {
+                const count = sheep.value.filter(s => s.cage_code === c.code).length;
+                const availability = c.capacity - count;
+                return (
+                  <tr key={c.code}>
+                    <td><code>{c.code}</code></td>
+                    <td class="fw-bold">{c.name}</td>
+                    <td>{c.type}</td>
+                    <td>
+                      <Badge variant={availability <= 5 ? 'danger' : 'success'}>
+                        {availability} Ekor
+                      </Badge>
+                    </td>
+                    <td>
+                      <Badge variant="secondary">{c.capacity} Ekor</Badge>
+                    </td>
+                    <td>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-outline-primary rounded-3" 
+                        onClick={() => openEdit(c)}
+                        disabled={isLoading.value}
+                      >
+                        Ubah
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {cagesList.value.length === 0 && (
                 <tr>
-                  <td colspan="5" class="text-center py-4 text-muted">
+                  <td colspan="6" class="text-center py-4 text-muted">
                     Tidak ada data kandang ditemukan.
                   </td>
                 </tr>
@@ -244,31 +306,38 @@ export default defineComponent({
           </table>
         </div>
 
-        {/* List View (Mobile) */}
+        {/* List View (Mobile - Requirement b & c) */}
         <div class="mobile-only d-md-none">
           <div class="mobile-card-list">
-            {cagesList.value.map(c => (
-              <div key={c.code} class="admin-mobile-card">
-                <div class="card-top">
-                  <div class="card-info">
-                    <span class="card-name">{c.name}</span>
-                    <span class="card-sub">{c.type}</span>
+            {cagesList.value.map(c => {
+              const count = sheep.value.filter(s => s.cage_code === c.code).length;
+              const availability = c.capacity - count;
+              return (
+                <div key={c.code} class="admin-mobile-card">
+                  <div class="card-top">
+                    <div class="card-info">
+                      <span class="card-name">{c.name}</span>
+                      <span class="card-sub">{c.type}</span>
+                    </div>
+                    <span class="card-code">{c.code}</span>
                   </div>
-                  <span class="card-code">{c.code}</span>
+                  <div class="card-footer align-items-start">
+                    <div class="d-flex flex-column text-start gap-1">
+                      <span class="small text-muted">Ketersediaan: <strong class={availability <= 5 ? 'text-danger' : 'text-success'}>{availability} Ekor</strong></span>
+                      <span class="small text-muted">Kapasitas: <strong>{c.capacity} Ekor</strong></span>
+                    </div>
+                    <button 
+                      type="button" 
+                      class="btn btn-sm btn-primary px-3 py-1 rounded-3 text-white border-0 fw-bold" 
+                      onClick={() => openEdit(c)}
+                      disabled={isLoading.value}
+                    >
+                      Ubah
+                    </button>
+                  </div>
                 </div>
-                <div class="card-footer">
-                  <span class="fw-bold text-secondary">{c.capacity} Ekor</span>
-                  <button 
-                    type="button" 
-                    class="btn btn-sm btn-danger px-3 py-1 rounded-3 text-white border-0 fw-bold" 
-                    onClick={() => handleDeleteCage(c.id, c.code)}
-                    disabled={isLoading.value}
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {cagesList.value.length === 0 && (
               <div class="text-center py-4 text-muted">
                 Tidak ada data kandang ditemukan.
@@ -277,7 +346,7 @@ export default defineComponent({
           </div>
         </div>
 
-        {/* Create Cage Modal */}
+        {/* Create / Edit Cage Modal */}
         {isModalOpen.value && (
           <div class="peternakan-modal-overlay" onClick={() => isModalOpen.value = false}>
             <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
@@ -288,7 +357,9 @@ export default defineComponent({
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
-                <div class="peternakan-modal-title">Tambah Kandang Baru</div>
+                <div class="peternakan-modal-title">
+                  {isEditing.value ? 'Ubah Kandang' : 'Tambah Kandang Baru'}
+                </div>
               </div>
 
               <div class="peternakan-modal-body mt-4">
@@ -335,9 +406,22 @@ export default defineComponent({
                 )}
 
                 <div class="mt-4 pt-3 border-top d-flex gap-3">
+                  {isEditing.value && (
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-danger py-2.5 rounded-pill px-4 fw-bold"
+                      onClick={async () => {
+                        await handleDeleteCage(editingCageId.value ?? undefined, newCage.value.code);
+                        isModalOpen.value = false;
+                      }}
+                      disabled={isLoading.value}
+                    >
+                      Hapus
+                    </button>
+                  )}
                   <button class="btn btn-light grow fw-bold py-2.5 rounded-pill" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>Batal</button>
-                  <button class="peternakan-primary-btn grow m-0 justify-content-center" onClick={handleCreateCage} disabled={isLoading.value}>
-                    {isLoading.value ? 'Menyimpan...' : 'Simpan Kandang'}
+                  <button class="peternakan-primary-btn grow m-0 justify-content-center" onClick={handleSaveCage} disabled={isLoading.value}>
+                    {isLoading.value ? 'Menyimpan...' : isEditing.value ? 'Simpan Perubahan' : 'Simpan Kandang'}
                   </button>
                 </div>
               </div>

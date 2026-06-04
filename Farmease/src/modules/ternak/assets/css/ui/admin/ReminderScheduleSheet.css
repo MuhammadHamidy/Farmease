@@ -45,7 +45,7 @@
   border: 1.5px solid #DDD5C5;
   border-radius: 14px;
   padding: 0.85rem 2.5rem 0.85rem 1.1rem;
-  font-size: 0.93rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   font-family: 'Nunito', sans-serif;
   color: #4B4537;
@@ -55,7 +55,7 @@
 .reminder-select:focus {
   outline: none;
   border-color: #E1D4C2;
-  box-shadow: 0 0 0 3px rgba(96, 108, 56, 0.1);
+  box-shadow: 0 0 0 3px #3d2f241a;
 }
 .reminder-select option { color: #1A1A1A; }
 

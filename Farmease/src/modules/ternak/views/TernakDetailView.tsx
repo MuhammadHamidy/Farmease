@@ -151,7 +151,7 @@ export default defineComponent({
           </div>
 
           {/* Detail Header */}
-          <div class="detail-header-card" style={{ background: 'linear-gradient(135deg, #FBF6F1 0%, #F8F0EA 100%)', border: '1.5px solid #D4C4B0', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(212, 165, 116, 0.08)' }}>
+          <div class="detail-header-card" style={{ background: 'linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-container-high) 100%)', border: '1.5px solid var(--color-outline-variant)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 4px 12px #d4c4b014' }}>
             <div class="detail-avatar-box">
               <img src="/icon/domba.png" style={{ width: '64px', height: '64px', objectFit: 'contain' }} alt="Domba" />
             </div>
@@ -175,9 +175,9 @@ export default defineComponent({
                   { label: 'Kandang', value: ternak.kandang },
                   { label: 'Tgl Lahir', value: ternak.tgl_lahir },
                 ].map(item => (
-                  <div key={item.label} class="stat-box" style={{ background: 'linear-gradient(135deg, #FFFCF9 0%, #FFF8F4 100%)', border: '1.5px solid #DCC9B8', borderRadius: '12px', padding: '0.75rem', textAlign: 'center' }}>
+                  <div key={item.label} class="stat-box" style={{ background: 'linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-container-high) 100%)', border: '1.5px solid var(--color-outline-variant)', borderRadius: '12px', padding: '0.75rem', textAlign: 'center' }}>
                     <Typography variant="span" size="text-xs" weight="bold" color="coffee-brown" className="d-block text-uppercase">{item.label}</Typography>
-                    <Typography variant="p" weight="extrabold" size="text-lg" color="coffee-brown" className="m-0" style={{ color: '#3D2E24' }}>{item.value}</Typography>
+                    <Typography variant="p" weight="extrabold" size="text-lg" color="coffee-brown" className="m-0" style={{ color: 'var(--color-primary)' }}>{item.value}</Typography>
                   </div>
                 ))}
               </div>
@@ -254,7 +254,7 @@ export default defineComponent({
                   {props.onGoToPencatatan && (
                     <button
                       class="btn btn-sm btn-link font-extrabold p-0 text-decoration-none"
-                      style={{ color: '#5C3D2E', fontSize: '0.75rem' }}
+                      style={{ color: 'var(--color-primary)', fontSize: '0.75rem' }}
                       onClick={() => {
                         selectedTernakId.value = null;
                         props.onGoToPencatatan?.();
@@ -287,7 +287,7 @@ export default defineComponent({
                 <div class="row g-3">
                   {/* Ayah (Sire) */}
                   <div class="col-12 col-md-6">
-                    <div class="p-3 rounded-4 mb-3 border" style={{ background: 'linear-gradient(135deg, #FFFCF9 0%, #FFF8F4 100%)', borderColor: '#DCC9B8' }}>
+                    <div class="p-3 rounded-4 mb-3 border" style={{ background: 'linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-container-high) 100%)', borderColor: 'var(--color-outline-variant)' }}>
                       <Typography variant="span" size="text-xs" weight="bold" color="coffee-brown" className="text-uppercase mb-2 d-block">Ayah (Sire)</Typography>
                       {silsilah.value?.sire ? (
                         <>
@@ -317,7 +317,7 @@ export default defineComponent({
 
                   {/* Ibu (Dam) */}
                   <div class="col-12 col-md-6">
-                    <div class="p-3 rounded-4 mb-3 border" style={{ background: 'linear-gradient(135deg, #FFFCF9 0%, #FFF8F4 100%)', borderColor: '#DCC9B8' }}>
+                    <div class="p-3 rounded-4 mb-3 border" style={{ background: 'linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-container-high) 100%)', borderColor: 'var(--color-outline-variant)' }}>
                       <Typography variant="span" size="text-xs" weight="bold" color="coffee-brown" className="text-uppercase mb-2 d-block">Ibu (Dam)</Typography>
                       {silsilah.value?.dam ? (
                         <>

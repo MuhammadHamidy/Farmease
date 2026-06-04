@@ -19,8 +19,9 @@ export default defineComponent({
       <div class="perkebunan-header-shell">
         {/* Global Desktop/Tablet Top Header */}
         <div class="tablet-header-wrapper">
-          <div class="tablet-logo-area">
-            <img src="/icon/logo_farmease.png" alt="FarmEase Logo" class="tablet-logo" />
+          <div class="tablet-logo-area" style="display: flex; align-items: center; gap: 0.4rem;">
+            <img src="/icon/logo_farmease.png" alt="FarmEase Logo" class="tablet-logo" style="height: 1.8rem; width: 1.8rem;" />
+            <span style="font-size: 1.15rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; font-family: 'Nunito', sans-serif;"><span style="color: #38431f;">FARM</span>ease</span>
           </div>
           <div class="tablet-header-actions">
             <button class="action-bell-btn">

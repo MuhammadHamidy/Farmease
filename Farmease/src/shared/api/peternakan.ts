@@ -333,6 +333,12 @@ export const tasksApi = {
   create: async (payload: Partial<Task>): Promise<Task> => {
     return await apiClient.post('/api/tasks', payload)
   },
+  update: async (id: number, payload: Partial<Task>): Promise<Task> => {
+    return await apiClient.put(`/api/tasks/${id}`, payload)
+  },
+  delete: async (id: number): Promise<void> => {
+    return await apiClient.delete(`/api/tasks/${id}`)
+  },
   markComplete: async (id: number): Promise<Task> => {
     return await apiClient.patch(`/api/tasks/${id}/complete`, {})
   },

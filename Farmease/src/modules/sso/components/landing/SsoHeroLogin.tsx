@@ -30,12 +30,17 @@ export default defineComponent({
         const response = await authApi.login({ username: user, password: pass } as any);
         if (response && response.token) {
           authApi.setAuth(response.token, response.user);
+          const roleId = response.user.role_id;
+          let role = 'Operator Peternakan';
+          let routeName = 'ternak';
+          if (roleId === 1) { role = 'Admin'; routeName = 'admin'; }
+          else if (roleId === 3) { role = 'Operator Kebun'; routeName = 'kebun'; }
           userSession.value = {
             code: String(response.user.id),
             name: response.user.username,
-            role: response.user.role_id === 1 ? 'Admin' : 'Operator Peternakan'
+            role,
           };
-          router.push({ name: response.user.role_id === 1 ? 'admin' : 'masuk-kandang' });
+          router.push({ name: routeName });
           loading.value = false;
           return;
         }

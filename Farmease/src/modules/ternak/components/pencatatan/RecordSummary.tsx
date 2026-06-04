@@ -157,7 +157,7 @@ export default defineComponent({
                 </div>
               )}
               
-              <div class="mt-4 p-3 rounded-3" style={{ background: 'rgba(52, 168, 83, 0.05)', border: '1px dashed rgba(52, 168, 83, 0.3)' }}>
+              <div class="mt-4 p-3 rounded-3" style={{ background: '#34a8530d', border: '1px dashed #34a8534d' }}>
                 <Typography variant="p" className="small text-muted m-0">
                   <i class="bi bi-info-circle me-1"></i>
                   Stok otomatis berkurang sesuai dengan jumlah yang dicatatkan di form sebelumnya.

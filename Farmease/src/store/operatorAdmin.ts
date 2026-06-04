@@ -45,17 +45,48 @@ export const openOperatorTasks = computed(() =>
   operatorTasks.value.filter((t) => t.status === 'belum' || t.status === 'proses' || t.status === 'terlambat'),
 );
 
-function mapApiTaskToLocal(t: ApiTask): OperatorTask {
+export function mapApiTaskToLocal(t: ApiTask): OperatorTask {
+  const userIdStr = String(t.user_id);
+  let assigneeCode = userIdStr;
+  let assigneeName = 'Operator Kandang';
+  
+  if (userIdStr === '2' || userIdStr === 'OPT001' || userIdStr === 'OP001') {
+    assigneeCode = 'OPT001';
+    assigneeName = 'Budi Ternak';
+  } else if (userIdStr === '3' || userIdStr === 'OPT002') {
+    assigneeCode = 'OPT002';
+    assigneeName = 'Siti Aminah';
+  } else if (userIdStr === '1' || userIdStr === 'ADM001') {
+    assigneeCode = 'ADM001';
+    assigneeName = 'Admin Utama';
+  }
+
+  // Parse title to guess category (e.g. 'Pakan pagi' -> pakan)
+  let category: PencatatanCategory = 'umum';
+  const titleLower = (t.title || '').toLowerCase();
+  if (titleLower.includes('pakan') || titleLower.includes('makan')) category = 'pakan';
+  else if (titleLower.includes('sehat') || titleLower.includes('sakit') || titleLower.includes('obat') || titleLower.includes('vitamin') || titleLower.includes('kesehatan')) category = 'kesehatan';
+  else if (titleLower.includes('kotoran') || titleLower.includes('kohe') || titleLower.includes('pupuk')) category = 'kotoran';
+  else if (titleLower.includes('kawin') || titleLower.includes('breeding')) category = 'perkawinan';
+  else if (titleLower.includes('lahir') || titleLower.includes('anak')) category = 'kelahiran';
+
+  // Guess cage from description or title (e.g. 'Kandang A' -> A)
+  let cageCode = 'A';
+  const descLower = ((t.description || '') + ' ' + titleLower).toLowerCase();
+  if (descLower.includes('kandang a') || descLower.includes('kandang opt001') || descLower.includes('kandang opt002')) cageCode = 'A';
+  else if (descLower.includes('kandang b')) cageCode = 'B';
+  else if (descLower.includes('kandang c')) cageCode = 'C';
+
   return {
     id: String(t.id),
     title: t.title,
     description: t.description,
-    assigneeCode: String(t.user_id),
-    assigneeName: '',
-    cageCode: '',
-    category: 'umum',
+    assigneeCode,
+    assigneeName,
+    cageCode,
+    category,
     dueDate: t.due_date ? t.due_date.split('T')[0] ?? '' : '',
-    dueTime: '',
+    dueTime: '08:00',
     priority: (t.priority as TaskPriority) || 'sedang',
     status: (t.status as TaskStatus) || 'belum',
     createdAt: new Date(t.created_at).getTime(),
@@ -169,6 +200,17 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
             notes: `Kondisi Induk: ${item.kondisiInduk || 'Sehat'}, Kondisi Anak: ${item.kondisiAnak || 'Sehat'}. ${item.note || ''}`,
           }),
         );
+      } else if (input.type === 'berat_badan') {
+        // Catat berat badan
+        if (sheepId) {
+          promises.push(
+            weightApi.record(sheepId, {
+              weight: Number(item.qty) || 0,
+              date_recorded: item.tanggal || new Date().toISOString().split('T')[0],
+              notes: item.note || '',
+            })
+          );
+        }
       }
     }
 

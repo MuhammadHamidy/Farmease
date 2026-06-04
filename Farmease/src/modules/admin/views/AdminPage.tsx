@@ -5,8 +5,8 @@ import { userSession, cageSession } from '@/store/navigation';
 import { pendingApprovalCount } from '@/modules/ternak/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
 import UserManagementView from './UserManagementView.tsx';
-import ActivityLogView from './ActivityLogView.tsx';
-import OperatorTaskManagementView from './OperatorTaskManagementView.tsx';
+import DasborPeternakanView from './DasborPeternakanView.tsx';
+import DasborPerkebunanView from './DasborPerkebunanView.tsx';
 import RoutineScheduleView from './RoutineScheduleView.tsx';
 import PencatatanApprovalView from './PencatatanApprovalView.tsx';
 import CageManagementView from './CageManagementView.tsx';
@@ -17,7 +17,7 @@ export default defineComponent({
   name: 'AdminPage',
   setup() {
     const router = useRouter();
-    const activeTab = ref<string>('kandang');
+    const activeTab = ref<string>('dasbor_ternak');
     const isSidebarOpen = ref(false);
 
     const handleLogout = () => {
@@ -58,6 +58,27 @@ export default defineComponent({
             {/* Navigation Menu */}
             <div class="sidebar-menu-wrapper">
               
+              {/* Utama Category */}
+              <div class="menu-category">
+                <span class="category-label">Utama</span>
+                <button 
+                  type="button" 
+                  class={['menu-item', activeTab.value === 'dasbor_ternak' ? 'active' : '']}
+                  onClick={() => { activeTab.value = 'dasbor_ternak'; isSidebarOpen.value = false; }}
+                >
+                  <img src="/icon/dashboard.png" alt="Dasbor Peternakan" class="menu-icon" style={{ filter: 'brightness(0) invert(1)' }} />
+                  <span>Dasbor Peternakan</span>
+                </button>
+                <button 
+                  type="button" 
+                  class={['menu-item', activeTab.value === 'dasbor_kebun' ? 'active' : '']}
+                  onClick={() => { activeTab.value = 'dasbor_kebun'; isSidebarOpen.value = false; }}
+                >
+                  <img src="/icon/statistic.png" alt="Dasbor Perkebunan" class="menu-icon" />
+                  <span>Dasbor Perkebunan</span>
+                </button>
+              </div>
+
               {/* Peternakan Category */}
               <div class="menu-category">
                 <span class="category-label">Peternakan</span>
@@ -68,22 +89,6 @@ export default defineComponent({
                 >
                   <img src="/icon/kandang.png" alt="Kandang" class="menu-icon" />
                   <span>Manajemen Kandang</span>
-                </button>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'tugas' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'tugas'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/notification-active.png" alt="Tugas" class="menu-icon" style={{ filter: 'brightness(0) invert(1) sepia(1)' }} />
-                  <span>Tugas Operator</span>
-                </button>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'jadwal' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'jadwal'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/catat_pakan.png" alt="Jadwal" class="menu-icon" style={{ filter: 'brightness(0) invert(1)' }} />
-                  <span>Jadwal Rutin</span>
                 </button>
               </div>
 
@@ -106,6 +111,14 @@ export default defineComponent({
                   <img src="/icon/domba.png" alt="Tanaman" class="menu-icon" style={{ filter: 'hue-rotate(90deg) brightness(1.5)' }} />
                   <span>Manajemen Tanaman</span>
                 </button>
+                <button 
+                  type="button" 
+                  class={['menu-item', activeTab.value === 'jadwal' ? 'active' : '']}
+                  onClick={() => { activeTab.value = 'jadwal'; isSidebarOpen.value = false; }}
+                >
+                  <img src="/icon/catat_pakan.png" alt="Jadwal" class="menu-icon" style={{ filter: 'brightness(0) invert(1)' }} />
+                  <span>Jadwal Rutin Perkebunan</span>
+                </button>
               </div>
 
               {/* Sistem Category */}
@@ -125,21 +138,12 @@ export default defineComponent({
                   onClick={() => { activeTab.value = 'persetujuan'; isSidebarOpen.value = false; }}
                 >
                   <img src="/icon/security.png" alt="Approval" class="menu-icon" />
-                  <span>Persetujuan Catatan</span>
+                  <span>Persetujuan Pencatatan</span>
                   {pendingApprovalCount.value > 0 && (
                     <span class="admin-tab-badge ms-auto" style={{ marginLeft: 'auto' }}>{pendingApprovalCount.value}</span>
                   )}
                 </button>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'laporan' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'laporan'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/statistic.png" alt="Log" class="menu-icon" />
-                  <span>Laporan Aktivitas</span>
-                </button>
               </div>
-
             </div>
 
             {/* Sidebar Footer Logout */}
@@ -180,14 +184,15 @@ export default defineComponent({
           {/* ── Main Panel Content ── */}
           <div class="admin-main-content">
             <div class="admin-content-inner">
+              {activeTab.value === 'dasbor_ternak' && <DasborPeternakanView />}
+              {activeTab.value === 'dasbor_kebun' && <DasborPerkebunanView />}
               {activeTab.value === 'kandang' && <CageManagementView />}
-              {activeTab.value === 'tugas' && <OperatorTaskManagementView />}
+
               {activeTab.value === 'jadwal' && <RoutineScheduleView />}
               {activeTab.value === 'lahan' && <LandManagementView />}
               {activeTab.value === 'tanaman' && <CropManagementView />}
               {activeTab.value === 'pengguna' && <UserManagementView />}
               {activeTab.value === 'persetujuan' && <PencatatanApprovalView />}
-              {activeTab.value === 'laporan' && <ActivityLogView />}
             </div>
           </div>
 

@@ -40,16 +40,16 @@ export default defineComponent({
       };
 
       const fontSizeMap: Record<string, string> = {
-        'text-xs': '0.75rem',
-        'text-sm': '0.875rem',
-        'text-md': '1rem',
-        'text-lg': '1.125rem',
-        'text-xl': '1.25rem',
-        'text-2xl': '1.5rem',
-        'text-3xl': '1.875rem',
-        'text-4xl': '2.25rem',
-        'text-5xl': '3rem',
-        'text-6xl': '3.75rem',
+        'text-xs': 'var(--font-size-xs)',
+        'text-sm': 'var(--font-size-sm)',
+        'text-md': 'var(--font-size-md)',
+        'text-lg': 'var(--font-size-lg)',
+        'text-xl': 'var(--font-size-xl)',
+        'text-2xl': 'var(--font-size-2xl)',
+        'text-3xl': 'var(--font-size-3xl)',
+        'text-4xl': 'var(--font-size-4xl)',
+        'text-5xl': 'var(--font-size-5xl)',
+        'text-6xl': 'var(--font-size-6xl)',
       };
 
       const palette = colors as Record<string, ColorSwatch>;

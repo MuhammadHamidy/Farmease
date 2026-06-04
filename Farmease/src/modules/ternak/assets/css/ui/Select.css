@@ -11,7 +11,7 @@
 }
 .custom-select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 0.2rem rgba(21, 66, 18, 0.08);
+  box-shadow: 0 0 0 0.2rem #3d2f2414;
   outline: none;
 }
 .select-icon-wrapper {

@@ -1194,3 +1194,62 @@ code {
     padding: 1.25rem 1rem;
   }
 }
+
+/* ── Dark Summary Card Styles ── */
+.dark-summary-card {
+  background-color: #212529; /* Dark grey/black */
+  border-radius: 16px;
+  padding: 1.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
+}
+
+.dark-summary-card:hover {
+  transform: translateY(-2px);
+}
+
+.dark-summary-card .card-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #9cb2c0;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.dark-summary-card .card-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+  line-height: 1;
+}
+
+.dark-summary-card .card-sub {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+/* ── Task Session Card Styles ── */
+.task-session-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid var(--admin-border) !important;
+}
+
+.task-session-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--admin-primary) !important;
+  box-shadow: 0 12px 24px rgba(96, 108, 56, 0.12) !important;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.4rem;
+}

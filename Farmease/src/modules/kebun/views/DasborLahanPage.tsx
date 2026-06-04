@@ -34,7 +34,7 @@ export default defineComponent({
                 <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Kode Lahan</span>
                 <div class="perkebunan-record-form-card" style="display: flex; align-items: center; gap: 0.85rem; border: 1.5px solid #cfd7bb; border-radius: 0.55rem; padding: 0.75rem; background: #ffffff;">
                   <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <img src="/icon/rumput.png" alt="Lahan" style="width: 1.3rem; height: 1.3rem;" />
+                    <img src="/icon/lahan.png" alt="Lahan" style="width: 1.3rem; height: 1.3rem;" />
                   </div>
                   <div>
                     <span style="font-size: 0.72rem; color: #6b7280; display: block;">Kode Lahan</span>

@@ -1,6 +1,6 @@
 .calendar-mockup {
   border-color: #EBEBEB !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+  box-shadow: 0 4px 12px #0000000d !important;
 }
 .calendar-input {
   border-color: #EBEBEB !important;
@@ -16,5 +16,5 @@
   background-color: #FDFBF7;
   border-radius: 4px;
 }
-.text-xs { font-size: 0.7rem; }
-.text-sm { font-size: 0.85rem; }
+.text-xs { font-size: var(--font-size-xxs); }
+.text-sm { font-size: var(--font-size-sm); }

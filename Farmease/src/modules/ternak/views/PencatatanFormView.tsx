@@ -15,6 +15,7 @@ const JENIS_ICONS: Record<string, string> = {
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
   kotoran: '/icon/catat_kotoran.png',
+  berat_badan: '/icon/statistic.png',
 };
 
 

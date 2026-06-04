@@ -180,7 +180,7 @@ export default defineComponent({
 
             <div class="text-md-end text-white" style={{ fontSize: '0.85rem' }}>
               <span class="d-block text-white" style={{ fontWeight: 800 }}>{userSession.value?.name || 'Operator Lapangan'}</span>
-              <span class="opacity-75" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              <span class="opacity-75" style={{ color: '#ffffffbf' }}>
                 {userSession.value?.role || 'Pencatat'} • Kandang {activeCageCode.value || '—'}
               </span>
             </div>
@@ -271,7 +271,7 @@ export default defineComponent({
                       key={task.id}
                       type="button"
                       class={['d-flex align-items-center gap-3 p-3 w-100 text-start routine-task-btn', task.status === 'selesai' ? 'completed' : '']}
-                      style={{ borderLeftWidth: '4px', borderLeftStyle: 'solid', borderLeftColor: task.status === 'selesai' ? '#606c38' : '#8B5E3C' }}
+                      style={{ borderLeftWidth: '4px', borderLeftStyle: 'solid', borderLeftColor: task.status === 'selesai' ? '#606c38' : 'var(--color-primary)' }}
                       onClick={() => openTaskDetail(task.id)}
                     >
                       <div class="rounded-4 d-flex align-items-center justify-content-center" style={{ width: '42px', height: '42px', backgroundColor: 'var(--color-primary-fixed)' }}>
@@ -356,37 +356,37 @@ export default defineComponent({
                   <p class="m-0">Belum ada data berat badan tercatat</p>
                 </div>
               ) : (
-                <div class="position-relative" style={{ width: '100%', height: '220px', backgroundColor: '#faf9f6', borderRadius: '12px', padding: '10px 10px 0' }}>
+                <div class="position-relative" style={{ width: '100%', height: '220px', backgroundColor: 'var(--color-surface)', borderRadius: '12px', padding: '10px 10px 0' }}>
                   <svg viewBox="0 0 500 220" width="100%" height="220" style={{ overflow: 'visible' }}>
                     <defs>
                       <linearGradient id="chart-area-grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#606c38" stop-opacity="0.25" />
-                        <stop offset="100%" stop-color="#606c38" stop-opacity="0.0" />
+                        <stop offset="0%" stop-color="var(--color-secondary)" stop-opacity="0.25" />
+                        <stop offset="100%" stop-color="var(--color-secondary)" stop-opacity="0.0" />
                       </linearGradient>
                     </defs>
 
                     {[30, 60, 90, 120, 150, 180].map((yVal) => (
                       <line key={yVal} x1="45" y1={String(yVal)} x2="480" y2={String(yVal)}
-                        stroke="#ebe7e2" stroke-width="1" stroke-dasharray={yVal === 180 ? '0' : '4,4'} />
+                        stroke="var(--color-outline-variant)" stroke-width="1" stroke-dasharray={yVal === 180 ? '0' : '4,4'} />
                     ))}
 
-                    <text x="35" y="184" text-anchor="end" font-size="10" fill="#8c7a6b" font-weight="600">0 kg</text>
-                    <text x="35" y="154" text-anchor="end" font-size="10" fill="#8c7a6b" font-weight="600">10 kg</text>
-                    <text x="35" y="124" text-anchor="end" font-size="10" fill="#8c7a6b" font-weight="600">20 kg</text>
-                    <text x="35" y="94" text-anchor="end" font-size="10" fill="#8c7a6b" font-weight="600">30 kg</text>
-                    <text x="35" y="64" text-anchor="end" font-size="10" fill="#8c7a6b" font-weight="600">40 kg</text>
-                    <text x="35" y="34" text-anchor="end" font-size="10" fill="#8c7a6b" font-weight="600">50 kg</text>
+                    <text x="35" y="184" text-anchor="end" font-size="10" fill="var(--color-primary)" font-weight="600">0 kg</text>
+                    <text x="35" y="154" text-anchor="end" font-size="10" fill="var(--color-primary)" font-weight="600">10 kg</text>
+                    <text x="35" y="124" text-anchor="end" font-size="10" fill="var(--color-primary)" font-weight="600">20 kg</text>
+                    <text x="35" y="94" text-anchor="end" font-size="10" fill="var(--color-primary)" font-weight="600">30 kg</text>
+                    <text x="35" y="64" text-anchor="end" font-size="10" fill="var(--color-primary)" font-weight="600">40 kg</text>
+                    <text x="35" y="34" text-anchor="end" font-size="10" fill="var(--color-primary)" font-weight="600">50 kg</text>
 
                     <path d={areaPath.value} fill="url(#chart-area-grad)" />
-                    <path d={linePath.value} fill="none" stroke="#606c38" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d={linePath.value} fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
                     {points.value.map((p, idx) => (
                       <g key={idx}>
-                        <circle cx={p.x} cy={p.y} r="5" fill="#ffffff" stroke="#606c38" stroke-width="3" />
-                        <text x={p.x} y={p.y - 12} text-anchor="middle" font-size="10" font-weight="800" fill="#283618">
+                        <circle cx={p.x} cy={p.y} r="5" fill="#ffffff" stroke="var(--color-primary)" stroke-width="3" />
+                        <text x={p.x} y={p.y - 12} text-anchor="middle" font-size="10" font-weight="800" fill="var(--color-primary)">
                           {p.value.toFixed(1)} kg
                         </text>
-                        <text x={p.x} y="202" text-anchor="middle" font-size="11" fill="#8c7a6b" font-weight="bold">
+                        <text x={p.x} y="202" text-anchor="middle" font-size="11" fill="var(--color-primary)" font-weight="bold">
                           {p.label}
                         </text>
                       </g>
@@ -504,7 +504,7 @@ export default defineComponent({
                 </div>
 
                 {selectedTask.value.description && (
-                  <div class="rounded-4 border p-4 mb-4" style={{ backgroundColor: '#FCFBF8' }}>
+                  <div class="rounded-4 border p-4 mb-4" style={{ backgroundColor: 'var(--color-surface)' }}>
                     <Typography variant="span" size="text-xs" className="text-secondary text-uppercase fw-bold d-block mb-2">Deskripsi Tugas</Typography>
                     <Typography variant="p" className="m-0" size="text-sm">{selectedTask.value.description}</Typography>
                   </div>

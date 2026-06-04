@@ -12,7 +12,7 @@
 }
 .custom-input:focus {
   border-color: #A78D78;
-  box-shadow: 0 0 0 0.2rem rgba(167, 141, 120, 0.25);
+  box-shadow: 0 0 0 0.2rem #d4c4b040;
   outline: none;
 }
 .custom-input.with-icon {

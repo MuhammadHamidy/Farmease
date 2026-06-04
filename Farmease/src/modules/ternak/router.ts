@@ -11,11 +11,6 @@ export const ternakRoutes: RouteRecordRaw[] = [
         name: 'ternak',
         component: () => import('./views/PeternakanPage'),
       },
-      {
-        path: 'masuk-kandang',
-        name: 'masuk-kandang',
-        component: () => import('./components/session/MasukKandang'),
-      },
     ],
   },
   {
@@ -24,6 +19,6 @@ export const ternakRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/masuk-kandang',
-    redirect: { name: 'masuk-kandang' },
+    redirect: { name: 'ternak' },
   },
 ];

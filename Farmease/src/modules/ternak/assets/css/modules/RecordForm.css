@@ -3,7 +3,7 @@
 .pencatatan-label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -80,7 +80,7 @@
   border: none;
   border-radius: 9999px;
   padding: 0.375rem 0.5rem;
-  font-size: 0.72rem;
+  font-size: var(--font-size-xxs);
   font-weight: 700;
   color: var(--color-on-surface-variant);
   background: transparent;
@@ -115,7 +115,7 @@
   border: 0;
   background: var(--color-surface-container-lowest);
   padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px #0000000a;
   transition: all 0.2s ease;
 }
 
@@ -133,7 +133,7 @@
   height: 56px;
   border-radius: 1rem;
   background-color: var(--color-surface-container);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px #0000000a;
 }
 
 .pencatatan-info-box {
@@ -150,7 +150,7 @@
   background-color: var(--color-secondary);
   color: var(--color-on-secondary);
   padding: 1rem;
-  font-size: 1rem;
+  font-size: var(--font-size-md);
   font-weight: 800;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--color-secondary) 30%, transparent);
   transition: all 0.2s ease;
@@ -190,7 +190,7 @@
   padding: 1.1rem 1.25rem;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px #0000000a;
   position: relative;
 }
 
@@ -268,7 +268,7 @@
 
 .peternakan-row-title {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-on-surface-variant);
   margin-bottom: 4px;
@@ -278,7 +278,7 @@
 
 .peternakan-row-desc {
   display: block;
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   color: var(--color-on-surface);
   font-weight: 700;
   line-height: 1.5;
@@ -287,7 +287,7 @@
 .peternakan-row-desc.peternakan-empty {
   color: var(--color-outline);
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 .peternakan-row-chevron {
