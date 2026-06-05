@@ -4,6 +4,7 @@ import { userSession } from '@/store/navigation'
 import PerkebunanCardWrapper from '../components/shared/PerkebunanCardWrapper'
 import KebunPanenForm from '../components/pencatatan/KebunPanenForm'
 import KebunGenericFormFields from '../components/pencatatan/KebunGenericFormFields'
+import { feedsApi, pemangkasanApi } from '@/shared/api'
 
 const getLahanIcon = (name: string) => {
   const n = name.toLowerCase()
@@ -81,8 +82,61 @@ export default defineComponent({
       deskripsiPembersihan: '',
     })
 
-    const saveRecording = () => {
+    const saveRecording = async () => {
       alert(`Catatan Perkebunan (${selectedJenis.value} - ${activeMode.value === 'pohon' ? 'Per Pohon' : 'Per Lahan'}) Berhasil Disimpan!`)
+
+      if (kindTitle.value === 'Pemangkasan') {
+        const weight = parseFloat(formState.value.jumlahPemangkasan)
+        if (!isNaN(weight) && weight > 0) {
+          try {
+            // 1. Save pruning record to backend
+            await pemangkasanApi.create({
+              Aktivitas_id_aktivitas: 1,
+              tanggal_aktivitas: new Date().toISOString().split('T')[0],
+              nama_jenis_aktivitas: 'Pemangkasan',
+              nama_rincian_aktivitas: selectedRincian.value,
+              jumlah: String(weight),
+              satuan: 'kg',
+              keterangan: formState.value.deskripsiPemangkasan || 'Pemangkasan rutin',
+              Lahan_id_lahan: 1,
+            } as any);
+            console.log(`Saved pruning record to backend: ${selectedRincian.value} (${weight} kg)`);
+
+            // 2. Sync feed stock to backend (decoupled, using separate feeds API endpoints)
+            let feedName = 'Daun Alpukat (Mentah)'
+            const rincian = selectedRincian.value.toLowerCase()
+            if (rincian.includes('gulma') || rincian.includes('rumput')) {
+              feedName = 'Gulma / Rumput Liar (Mentah)'
+            } else if (rincian.includes('ranting') || rincian.includes('daun')) {
+              if (selectedRincian.value.toLowerCase().includes('kelengkeng') || route.query.rincian?.toString().toLowerCase().includes('kelengkeng')) {
+                feedName = 'Daun Kelengkeng (Mentah)'
+              }
+            }
+
+            const feeds = await feedsApi.getList()
+            const existingFeed = feeds.find(f => f.feed_name.toLowerCase() === feedName.toLowerCase())
+
+            if (existingFeed) {
+              try {
+                await feedsApi.updateStock(existingFeed.id, weight, 'tambah')
+              } catch {
+                await feedsApi.updateStok(existingFeed.id, weight, 'tambah')
+              }
+            } else {
+              await feedsApi.create({
+                feed_name: feedName,
+                feed_type: 'Hijauan',
+                unit: 'kg',
+                stock: weight
+              } as any)
+            }
+            console.log(`Successfully synced pruning yield: ${feedName} (+${weight} kg) to livestock feed stock via separate endpoint`)
+          } catch (err) {
+            console.error('Failed to save pruning or sync stock:', err);
+          }
+        }
+      }
+
       router.push({ name: 'kebun' })
     }
 
