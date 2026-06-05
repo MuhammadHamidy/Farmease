@@ -19,7 +19,7 @@ func NewNotifikasiRepository(db *pgxpool.Pool) domain.NotifikasiRepository {
 }
 
 func (r *notifikasiRepository) FindAll(ctx context.Context) ([]domain.Notifikasi, error) {
-	rows, err := r.db.Query(ctx, "SELECT id_notifikasi, akun_id_akun, pengingat_jadwal_id_pengingat_jadwal, tipe_notifikasi, pesan, status_notifikasi, tanggal FROM gardening.notifikasi ORDER BY id_notifikasi ASC")
+	rows, err := r.db.Query(ctx, "SELECT id_notifikasi, akun_id_akun, jadwal_rutin_id_jadwal_rutin, tipe_notifikasi, pesan, status_notifikasi, tanggal FROM gardening.notifikasi ORDER BY id_notifikasi ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (r *notifikasiRepository) FindAll(ctx context.Context) ([]domain.Notifikasi
 	for rows.Next() {
 		var n domain.Notifikasi
 		var tTgl time.Time
-		if err := rows.Scan(&n.IDNotifikasi, &n.AkunIDAkun, &n.PengingatJadwalIDPengingatJadwal, &n.TipeNotifikasi, &n.Pesan, &n.StatusNotifikasi, &tTgl); err != nil {
+		if err := rows.Scan(&n.IDNotifikasi, &n.AkunIDAkun, &n.JadwalRutinIDJadwalRutin, &n.TipeNotifikasi, &n.Pesan, &n.StatusNotifikasi, &tTgl); err != nil {
 			return nil, err
 		}
 		n.Tanggal = tTgl.Format("2006-01-02 15:04:05")
@@ -41,8 +41,8 @@ func (r *notifikasiRepository) FindAll(ctx context.Context) ([]domain.Notifikasi
 func (r *notifikasiRepository) FindByID(ctx context.Context, id int) (*domain.Notifikasi, error) {
 	var n domain.Notifikasi
 	var tTgl time.Time
-	err := r.db.QueryRow(ctx, "SELECT id_notifikasi, akun_id_akun, pengingat_jadwal_id_pengingat_jadwal, tipe_notifikasi, pesan, status_notifikasi, tanggal FROM gardening.notifikasi WHERE id_notifikasi = $1", id).
-		Scan(&n.IDNotifikasi, &n.AkunIDAkun, &n.PengingatJadwalIDPengingatJadwal, &n.TipeNotifikasi, &n.Pesan, &n.StatusNotifikasi, &tTgl)
+	err := r.db.QueryRow(ctx, "SELECT id_notifikasi, akun_id_akun, jadwal_rutin_id_jadwal_rutin, tipe_notifikasi, pesan, status_notifikasi, tanggal FROM gardening.notifikasi WHERE id_notifikasi = $1", id).
+		Scan(&n.IDNotifikasi, &n.AkunIDAkun, &n.JadwalRutinIDJadwalRutin, &n.TipeNotifikasi, &n.Pesan, &n.StatusNotifikasi, &tTgl)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -58,8 +58,8 @@ func (r *notifikasiRepository) Store(ctx context.Context, n *domain.Notifikasi) 
 	if err != nil {
 		tTgl = time.Now()
 	}
-	err = r.db.QueryRow(ctx, "INSERT INTO gardening.notifikasi (akun_id_akun, pengingat_jadwal_id_pengingat_jadwal, tipe_notifikasi, pesan, status_notifikasi, tanggal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_notifikasi",
-		n.AkunIDAkun, n.PengingatJadwalIDPengingatJadwal, n.TipeNotifikasi, n.Pesan, n.StatusNotifikasi, tTgl).Scan(&n.IDNotifikasi)
+	err = r.db.QueryRow(ctx, "INSERT INTO gardening.notifikasi (akun_id_akun, jadwal_rutin_id_jadwal_rutin, tipe_notifikasi, pesan, status_notifikasi, tanggal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_notifikasi",
+		n.AkunIDAkun, n.JadwalRutinIDJadwalRutin, n.TipeNotifikasi, n.Pesan, n.StatusNotifikasi, tTgl).Scan(&n.IDNotifikasi)
 	return err
 }
 
@@ -68,8 +68,8 @@ func (r *notifikasiRepository) Update(ctx context.Context, n *domain.Notifikasi)
 	if err != nil {
 		tTgl = time.Now()
 	}
-	_, err = r.db.Exec(ctx, "UPDATE gardening.notifikasi SET akun_id_akun = $1, pengingat_jadwal_id_pengingat_jadwal = $2, tipe_notifikasi = $3, pesan = $4, status_notifikasi = $5, tanggal = $6 WHERE id_notifikasi = $7",
-		n.AkunIDAkun, n.PengingatJadwalIDPengingatJadwal, n.TipeNotifikasi, n.Pesan, n.StatusNotifikasi, tTgl, n.IDNotifikasi)
+	_, err = r.db.Exec(ctx, "UPDATE gardening.notifikasi SET akun_id_akun = $1, jadwal_rutin_id_jadwal_rutin = $2, tipe_notifikasi = $3, pesan = $4, status_notifikasi = $5, tanggal = $6 WHERE id_notifikasi = $7",
+		n.AkunIDAkun, n.JadwalRutinIDJadwalRutin, n.TipeNotifikasi, n.Pesan, n.StatusNotifikasi, tTgl, n.IDNotifikasi)
 	return err
 }
 

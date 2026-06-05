@@ -27,16 +27,15 @@ export default defineComponent({
     const getStatusStyle = (status: string) => {
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done') {
-        return 'background: #8a9a5b; color: #fff; font-weight: bold; padding: 0.55rem 1.35rem; font-size: 0.85rem; border-radius: 0.5rem; display: inline-block;'
+        return 'background: #6e7a55; color: #fff; font-weight: bold; padding: 0.55rem 1.35rem; font-size: 0.85rem; border-radius: 0.5rem; display: inline-block;'
       }
-      // Default: Kerjakan or Belum di setujui
       return 'background: #2d3a1a; color: #fff; font-weight: bold; padding: 0.55rem 1.35rem; font-size: 0.85rem; border-radius: 0.5rem; display: inline-block;'
     }
 
     const getStatusLabel = (status: string) => {
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done') return 'Selesai'
-      if (normalized.includes('belum') || normalized.includes('pending')) return 'Belum di setujui'
+      if (normalized.includes('belum') || normalized.includes('pending')) return 'Belum Disetujui'
       return 'Kerjakan'
     }
 
@@ -45,6 +44,14 @@ export default defineComponent({
       if (normalized === 'selesai' || normalized === 'done') return 'Selesai'
       if (normalized.includes('belum') || normalized.includes('pending')) return 'Selesai'
       return 'Selanjutnya'
+    }
+
+    const getModalButtonStyle = (status: string) => {
+      const normalized = status.toLowerCase()
+      if (normalized === 'selesai' || normalized === 'done' || normalized.includes('belum') || normalized.includes('pending')) {
+        return 'width: 100%; background: #6e7a55; color: #ffffff; border: none; border-radius: 0.5rem; padding: 0.75rem; font-weight: 700; font-size: 1.1rem; cursor: not-allowed; margin-top: 0.35rem; text-align: center;'
+      }
+      return 'width: 100%; background: #2d3a1a; color: #ffffff; border: none; border-radius: 0.5rem; padding: 0.75rem; font-weight: 700; font-size: 1.1rem; cursor: pointer; margin-top: 0.35rem; text-align: center;'
     }
 
     const handleButtonClick = () => {
@@ -67,15 +74,8 @@ export default defineComponent({
       // Extract ID from detail (e.g., "A001 • 3 x sehari" -> "L0001" or parse ID)
       let landId = 'L0001'
       if (currentItem.detail) {
-        // Let's try to extract a 4-character code or similar
         const firstSegment = (currentItem.detail.split('•')[0] || '').trim()
         if (firstSegment) {
-          // If first segment starts with letter and has digits, map it to a standard Land ID format e.g. L0001
-          // E.g. A001 -> L0001 or keep it as A001 but prefix with L if needed, let's keep A001 but make it look like L0001
-          // Actually, the mockup literally says "ID Lahan: L0001".
-          // If we show "ID Lahan: L0001" or the segment, let's format it. E.g. replace 'A' with 'L' or show the exact segment.
-          // Let's show: if the segment is A001 -> we can convert to L0001, or if we want it completely dynamic:
-          // Let's replace the first letter with 'L' if it matches a code pattern (like A001 -> L0001)
           if (/^[A-Za-z]\d+$/u.test(firstSegment)) {
             landId = 'L' + firstSegment.slice(1)
           } else {
@@ -223,7 +223,7 @@ export default defineComponent({
                       flex-shrink: 0;
                     "
                   >
-                    <img src="/icon/catat_jenis.png" alt="Jenis" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
+                    <img src="/icon/calender.png" alt="Jenis" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 0.1rem;">
                     <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">
@@ -238,7 +238,7 @@ export default defineComponent({
                 {/* Deskripsi Tugas Box */}
                 <div
                   style="
-                    border: 1.5px solid #111827;
+                    border: 1.5px solid #dce1d0;
                     border-radius: 0.6rem;
                     padding: 0.55rem 0.75rem;
                     display: flex;
@@ -258,8 +258,8 @@ export default defineComponent({
               {/* Selanjutnya / Selesai Button */}
               <button
                 onClick={handleButtonClick}
-                class="detail-modal-next-btn"
-                style="margin-top: 0.35rem; padding: 0.65rem;"
+                style={getModalButtonStyle(currentItem.progress)}
+                disabled={currentItem.progress.toLowerCase().includes('belum') || currentItem.progress.toLowerCase() === 'selesai' || currentItem.progress.toLowerCase() === 'done'}
               >
                 {getModalButtonLabel(currentItem.progress)}
               </button>
@@ -268,5 +268,5 @@ export default defineComponent({
         </div>
       )
     }
-  },
+  }
 })

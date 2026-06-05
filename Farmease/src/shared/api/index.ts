@@ -33,7 +33,7 @@ export {
   pemangkasanApi,
   panenApi,
   akunLahanApi,
-  pengingatJadwalApi,
+  jadwalRutinApi,
   notifikasiApi,
   statusAktivitasApi,
 } from './perkebunan'

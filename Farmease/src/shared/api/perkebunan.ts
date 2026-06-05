@@ -294,8 +294,8 @@ export const akunLahanApi = {
   },
 }
 
-// ============ Pengingat Jadwal (Schedule Reminders) ============
-export interface PengingatJadwal {
+// ============ Jadwal Rutin (Routine Schedules) ============
+export interface JadwalRutin {
   id: number
   judul: string
   deskripsi: string
@@ -307,21 +307,21 @@ export interface PengingatJadwal {
   updated_at: string
 }
 
-export const pengingatJadwalApi = {
-  getList: async (): Promise<PengingatJadwal[]> => {
-    return await apiClient.get('/api/v1/pengingat-jadwal')
+export const jadwalRutinApi = {
+  getList: async (): Promise<JadwalRutin[]> => {
+    return await apiClient.get('/api/v1/jadwal-rutin')
   },
-  getById: async (id: number): Promise<PengingatJadwal> => {
-    return await apiClient.get(`/api/v1/pengingat-jadwal/${id}`)
+  getById: async (id: number): Promise<JadwalRutin> => {
+    return await apiClient.get(`/api/v1/jadwal-rutin/${id}`)
   },
-  create: async (payload: Partial<PengingatJadwal>): Promise<PengingatJadwal> => {
-    return await apiClient.post('/api/v1/pengingat-jadwal', payload)
+  create: async (payload: Partial<JadwalRutin>): Promise<JadwalRutin> => {
+    return await apiClient.post('/api/v1/jadwal-rutin', payload)
   },
-  update: async (id: number, payload: Partial<PengingatJadwal>): Promise<PengingatJadwal> => {
-    return await apiClient.put(`/api/v1/pengingat-jadwal/${id}`, payload)
+  update: async (id: number, payload: Partial<JadwalRutin>): Promise<JadwalRutin> => {
+    return await apiClient.put(`/api/v1/jadwal-rutin/${id}`, payload)
   },
   delete: async (id: number): Promise<void> => {
-    return await apiClient.delete(`/api/v1/pengingat-jadwal/${id}`)
+    return await apiClient.delete(`/api/v1/jadwal-rutin/${id}`)
   },
 }
 
@@ -390,7 +390,7 @@ export default {
   pemangkasan: pemangkasanApi,
   panen: panenApi,
   akunLahan: akunLahanApi,
-  pengingatJadwal: pengingatJadwalApi,
+  jadwalRutin: jadwalRutinApi,
   notifikasi: notifikasiApi,
   statusAktivitas: statusAktivitasApi,
 }

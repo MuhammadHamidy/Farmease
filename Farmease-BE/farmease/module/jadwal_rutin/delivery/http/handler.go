@@ -3,21 +3,21 @@ package http
 import (
 	"strconv"
 
-	"github.com/farmease/farmease-be/farmease/module/pengingat_jadwal/domain"
+	"github.com/farmease/farmease-be/farmease/module/jadwal_rutin/domain"
 	"github.com/farmease/farmease-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
 )
 
-type PengingatJadwalHandler struct {
-	usecase domain.PengingatJadwalUsecase
+type JadwalRutinHandler struct {
+	usecase domain.JadwalRutinUsecase
 }
 
-func NewPengingatJadwalHandler(usecase domain.PengingatJadwalUsecase) *PengingatJadwalHandler {
-	return &PengingatJadwalHandler{usecase: usecase}
+func NewJadwalRutinHandler(usecase domain.JadwalRutinUsecase) *JadwalRutinHandler {
+	return &JadwalRutinHandler{usecase: usecase}
 }
 
-func (h *PengingatJadwalHandler) RegisterRoutes(app *fiber.App) {
-	api := app.Group("/api/v1/pengingat-jadwal")
+func (h *JadwalRutinHandler) RegisterRoutes(app *fiber.App) {
+	api := app.Group("/api/v1/jadwal-rutin")
 	api.Get("/", h.FindAll)
 	api.Get("/:id", h.FindByID)
 	api.Post("/", h.Create)
@@ -25,15 +25,15 @@ func (h *PengingatJadwalHandler) RegisterRoutes(app *fiber.App) {
 	api.Delete("/:id", h.Delete)
 }
 
-func (h *PengingatJadwalHandler) FindAll(c *fiber.Ctx) error {
+func (h *JadwalRutinHandler) FindAll(c *fiber.Ctx) error {
 	list, err := h.usecase.FindAll(c.Context())
 	if err != nil {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
-	return apiresponses.Success(c, fiber.StatusOK, "Success get all schedule reminders", list)
+	return apiresponses.Success(c, fiber.StatusOK, "Success get all routine schedules", list)
 }
 
-func (h *PengingatJadwalHandler) FindByID(c *fiber.Ctx) error {
+func (h *JadwalRutinHandler) FindByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
@@ -43,39 +43,39 @@ func (h *PengingatJadwalHandler) FindByID(c *fiber.Ctx) error {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	if pj == nil {
-		return apiresponses.Fail(c, fiber.StatusNotFound, "Schedule reminder not found")
+		return apiresponses.Fail(c, fiber.StatusNotFound, "Routine schedule not found")
 	}
-	return apiresponses.Success(c, fiber.StatusOK, "Success get schedule reminder", pj)
+	return apiresponses.Success(c, fiber.StatusOK, "Success get routine schedule", pj)
 }
 
-func (h *PengingatJadwalHandler) Create(c *fiber.Ctx) error {
-	var pj domain.PengingatJadwal
+func (h *JadwalRutinHandler) Create(c *fiber.Ctx) error {
+	var pj domain.JadwalRutin
 	if err := c.BodyParser(&pj); err != nil {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
 	}
 	if err := h.usecase.Create(c.Context(), &pj); err != nil {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
-	return apiresponses.Success(c, fiber.StatusCreated, "Success create schedule reminder", pj)
+	return apiresponses.Success(c, fiber.StatusCreated, "Success create routine schedule", pj)
 }
 
-func (h *PengingatJadwalHandler) Update(c *fiber.Ctx) error {
+func (h *JadwalRutinHandler) Update(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
-	var pj domain.PengingatJadwal
+	var pj domain.JadwalRutin
 	if err := c.BodyParser(&pj); err != nil {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
 	}
-	pj.IDPengingatJadwal = id
+	pj.IDJadwalRutin = id
 	if err := h.usecase.Update(c.Context(), &pj); err != nil {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
-	return apiresponses.Success(c, fiber.StatusOK, "Success update schedule reminder", pj)
+	return apiresponses.Success(c, fiber.StatusOK, "Success update routine schedule", pj)
 }
 
-func (h *PengingatJadwalHandler) Delete(c *fiber.Ctx) error {
+func (h *JadwalRutinHandler) Delete(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
@@ -83,6 +83,6 @@ func (h *PengingatJadwalHandler) Delete(c *fiber.Ctx) error {
 	if err := h.usecase.Delete(c.Context(), id); err != nil {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
-	return apiresponses.Success(c, fiber.StatusOK, "Success delete schedule reminder", nil)
+	return apiresponses.Success(c, fiber.StatusOK, "Success delete routine schedule", nil)
 }
 

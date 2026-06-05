@@ -1,5 +1,5 @@
-CREATE TABLE IF NOT EXISTS gardening.pengingat_jadwal (
-    id_pengingat_jadwal SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS gardening.jadwal_rutin (
+    id_jadwal_rutin SERIAL PRIMARY KEY,
     tanggal TIMESTAMP NOT NULL,
     kategori_jadwal VARCHAR(100) NOT NULL,
     deskripsi TEXT NOT NULL,
