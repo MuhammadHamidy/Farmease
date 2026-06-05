@@ -21,6 +21,7 @@ import (
 	// Farmease - Livestock (Peternakan)
 	"github.com/farmease/farmease-be/farmease/module/breedings"
 	"github.com/farmease/farmease-be/farmease/module/cages"
+	"github.com/farmease/farmease-be/farmease/module/farms"
 	"github.com/farmease/farmease-be/farmease/module/feeds"
 	"github.com/farmease/farmease-be/farmease/module/healths"
 	"github.com/farmease/farmease-be/farmease/module/manures"
@@ -121,6 +122,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		auth.Module,
 
 		// Livestock (Peternakan)
+		farms.Module,
 		cages.Module,
 		sheep.Module,
 		breedings.Module,
