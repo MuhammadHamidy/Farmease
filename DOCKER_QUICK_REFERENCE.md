@@ -34,7 +34,7 @@ docker-compose exec postgres pg_dump -U postgres farmease > backup.sql
 docker-compose exec backend ./farmease migrate
 
 # Run seeders
-docker-compose exec backend sh -c 'psql -U postgres -d farmease -h postgres < /app/seeders/10_comprehensive_seed.sql'
+docker-compose exec backend sh -c 'for file in auth.sql farms.sql cages.sql sheep.sql breedings.sql feeds.sql healths.sql manures.sql notifications.sql tasks.sql weights.sql; do psql "$APP_POSTGRES_URL" -f "/app/seeders/$file" || exit 1; done'
 ```
 
 ### Troubleshooting
@@ -301,12 +301,10 @@ docker-compose ps
 docker-compose exec backend ./farmease migrate
 
 # 4. Seed database
-./docker-manage.sh seed  # OR
-docker-compose exec backend sh << 'EOF'
-psql -U postgres -d farmease -h postgres < /app/seeders/10_comprehensive_seed.sql
-psql -U postgres -d farmease -h postgres < /app/seeders/11_livestock_tracking_seed.sql
-psql -U postgres -d farmease -h postgres < /app/seeders/12_gardening_comprehensive_seed.sql
-EOF
+# Windows: docker-manage.bat seed
+# Linux/macOS: ./docker-manage.sh seed
+# ATAU manual:
+docker-compose exec backend sh -c 'for file in auth.sql farms.sql cages.sql sheep.sql breedings.sql feeds.sql healths.sql manures.sql notifications.sql tasks.sql weights.sql; do psql "$APP_POSTGRES_URL" -f "/app/seeders/$file" || exit 1; done'
 
 # 5. Access http://localhost:3000
 ```

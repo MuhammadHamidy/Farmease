@@ -1,5 +1,5 @@
 import { defineComponent, computed, ref, onUnmounted } from 'vue'
-import { userSession } from '@/store/navigation'
+import { userSession, landSession } from '@/store/navigation'
 import PerkebunanCardWrapper from './shared/PerkebunanCardWrapper'
 import PerkebunanSelectorCard from './shared/PerkebunanSelectorCard'
 import { getJenisIcon } from './shared/pencatatanIcons'
@@ -69,14 +69,14 @@ export default defineComponent({
             {/* Lahan info */}
             <div style="border: 1.5px solid #dce1d0; border-radius: 0.65rem; background: #fff; padding: 0.75rem 0.85rem; display: flex; align-items: center; gap: 0.65rem;">
               <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <img src="/icon/lahan.png" alt="Lahan" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
+                <img src={getLahanIcon(landSession.value?.name ?? 'Alpukat')} alt="Lahan" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
               </div>
               <div style="display: flex; flex-direction: column; gap: 0.1rem; min-width: 0;">
                 <strong style="font-size: 0.92rem; font-weight: 800; color: #111827; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  Lahan Alpukat
+                  {landSession.value?.name ?? 'Lahan Alpukat'}
                 </strong>
                 <span style="font-size: 0.72rem; color: #6b7280;">
-                  ID Lahan: L0001
+                  ID Lahan: {landSession.value?.code ?? 'L0001'}
                 </span>
               </div>
             </div>

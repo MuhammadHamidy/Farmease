@@ -176,12 +176,7 @@ exit /b 0
 
 :run_seeders
 echo Running database seeders...
-echo Seeding comprehensive data...
-docker-compose exec backend sh -c "psql -U postgres -d farmease -h postgres < /app/seeders/10_comprehensive_seed.sql"
-echo Seeding livestock data...
-docker-compose exec backend sh -c "psql -U postgres -d farmease -h postgres < /app/seeders/11_livestock_tracking_seed.sql"
-echo Seeding gardening data...
-docker-compose exec backend sh -c "psql -U postgres -d farmease -h postgres < /app/seeders/12_gardening_comprehensive_seed.sql"
+docker-compose exec backend sh -c "for file in auth.sql farms.sql cages.sql sheep.sql breedings.sql feeds.sql healths.sql manures.sql notifications.sql tasks.sql weights.sql; do echo Running seeder: $file...; psql \"$APP_POSTGRES_URL\" -f \"/app/seeders/$file\" || exit 1; done"
 echo Seeders completed!
 exit /b 0
 

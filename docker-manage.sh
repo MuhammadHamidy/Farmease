@@ -159,15 +159,12 @@ run_migrations() {
 # Run seeders
 run_seeders() {
     echo -e "${YELLOW}Running database seeders...${NC}"
-    docker-compose exec backend sh << 'EOF'
-echo "Seeding comprehensive data..."
-psql -U postgres -d farmease -h postgres < /app/seeders/10_comprehensive_seed.sql
-echo "Seeding livestock data..."
-psql -U postgres -d farmease -h postgres < /app/seeders/11_livestock_tracking_seed.sql
-echo "Seeding gardening data..."
-psql -U postgres -d farmease -h postgres < /app/seeders/12_gardening_comprehensive_seed.sql
-echo "Done!"
-EOF
+    docker-compose exec backend sh -c '
+        for file in auth.sql farms.sql cages.sql sheep.sql breedings.sql feeds.sql healths.sql manures.sql notifications.sql tasks.sql weights.sql; do
+            echo "Running seeder: $file..."
+            psql "$APP_POSTGRES_URL" -f "/app/seeders/$file" || exit 1
+        done
+    '
     echo -e "${GREEN}✓ Seeders completed${NC}"
 }
 

@@ -33,7 +33,7 @@ farmease/module/
 ├── pemangkasan/       # Pruning Records
 ├── panen/             # Harvest Records
 ├── akun_lahan/        # Account-Land Assignment
-├── pengingat_jadwal/  # Schedule Reminders
+├── jadwal_rutin/      # Routine Schedules
 ├── notifikasi/        # Gardening Notifications
 └── status_aktivitas/  # Activity Status
 ```
@@ -73,20 +73,33 @@ go run main.go migrate
 ### 2. Seed Database
 
 **Execute Seeders in Order**
+Jika menggunakan Docker (direkomendasikan):
 ```bash
-# Comprehensive core data
-psql -U postgres -d farmease < seeders/10_comprehensive_seed.sql
+# Menggunakan helper script di root directory:
+# Windows:
+docker-manage.bat seed
+# Linux/macOS:
+./docker-manage.sh seed
 
-# Livestock tracking data
-psql -U postgres -d farmease < seeders/11_livestock_tracking_seed.sql
+# ATAU secara manual di dalam container backend:
+docker-compose exec backend sh -c 'for file in auth.sql farms.sql cages.sql sheep.sql breedings.sql feeds.sql healths.sql manures.sql notifications.sql tasks.sql weights.sql; do psql "$APP_POSTGRES_URL" -f "/app/seeders/$file" || exit 1; done'
+```
 
-# Gardening data
-psql -U postgres -d farmease < seeders/12_gardening_comprehensive_seed.sql
-
-# Output should show:
-# INSERT 0 X
-# SELECT 1
-# (indicating successful inserts and sequence updates)
+Jika menjalankan PostgreSQL secara lokal:
+```bash
+# Hubungkan ke PostgreSQL lokal Anda (sesuaikan port, user, dan db_name jika berbeda)
+# Jalankan file SQL secara berurutan sesuai dependency:
+psql -U user -d farmease_be -p 5435 -f seeders/auth.sql
+psql -U user -d farmease_be -p 5435 -f seeders/farms.sql
+psql -U user -d farmease_be -p 5435 -f seeders/cages.sql
+psql -U user -d farmease_be -p 5435 -f seeders/sheep.sql
+psql -U user -d farmease_be -p 5435 -f seeders/breedings.sql
+psql -U user -d farmease_be -p 5435 -f seeders/feeds.sql
+psql -U user -d farmease_be -p 5435 -f seeders/healths.sql
+psql -U user -d farmease_be -p 5435 -f seeders/manures.sql
+psql -U user -d farmease_be -p 5435 -f seeders/notifications.sql
+psql -U user -d farmease_be -p 5435 -f seeders/tasks.sql
+psql -U user -d farmease_be -p 5435 -f seeders/weights.sql
 ```
 
 ### 3. Start Backend Server
@@ -106,43 +119,49 @@ go run main.go serve
 
 ## 📊 Seeder Files Explained
 
-### 10_comprehensive_seed.sql
-**Contains:**
-- Authentication (5 users with different roles)
-- Farms (3 farm records)
-- Sheep Types (3 types: Garut, Texel, Merino)
-- Cages (6 enclosures)
-- Sheep Generation 1-3 (12 sheep with genealogy)
+1. **auth.sql**
+   - **Contains:** Roles and 8 user accounts (admin, operator, etc.) with encrypted passwords.
+   - **Purpose:** Base authentication and role-based permissions setup.
 
-**Purpose:** Core entity setup for livestock management
+2. **farms.sql**
+   - **Contains:** Core farm details (e.g. Farmease Central in Garut).
+   - **Purpose:** Primary organizational entity.
 
-### 11_livestock_tracking_seed.sql
-**Contains:**
-- Health Records (7 records)
-- Weight History (12 records)
-- Feeds (7 feed types with stock levels)
-- Feeding History (15 feeding records)
-- Manure Records (8 records)
-- Mating Records (4 records)
-- Pregnancies (3 records)
-- Births (1 record)
+3. **cages.sql**
+   - **Contains:** Enclosure/cages with their capacity, type (male/female/mix), and linked farm.
+   - **Purpose:** Enclosure master data.
 
-**Purpose:** Complete livestock tracking data
+4. **sheep.sql**
+   - **Contains:** Sheep breeds (Garut, Texel) and 3 generations of sheep records (grandparents, parents, offspring).
+   - **Purpose:** Core sheep inventory and genealogy data.
 
-### 12_gardening_comprehensive_seed.sql
-**Contains:**
-- Lands (5 plots)
-- Trees (10 trees: kopi, cokelat, teh)
-- Activities (5 agricultural tasks)
-- Care Records (7 maintenance logs)
-- Pruning Records (4 records)
-- Harvest Records (7 harvest entries)
-- Account-Land Assignments (7 access records)
-- Schedule Reminders (5 recurring tasks)
-- Notifications (5 system alerts)
-- Activity Status Types (5 status categories)
+5. **breedings.sql**
+   - **Contains:** Mating records, pregnancies, and births (with breeding data and COI/inbreeding coefficient).
+   - **Purpose:** Reproduction tracking data.
 
-**Purpose:** Complete gardening/plantation data
+6. **feeds.sql**
+   - **Contains:** Feed categories/types and daily feeding records for sheep.
+   - **Purpose:** Feed logistics and sheep feeding logs.
+
+7. **healths.sql**
+   - **Contains:** Diagnosis logs, treatments, medicines given, and inspector names.
+   - **Purpose:** Sheep health history.
+
+8. **manures.sql**
+   - **Contains:** Cage manure collection logs.
+   - **Purpose:** Farm logistics and cleanup history.
+
+9. **notifications.sql**
+   - **Contains:** User-specific notifications and system alerts.
+   - **Purpose:** Notification system data.
+
+10. **tasks.sql**
+    - **Contains:** Tasks assigned to users (weighing, admin reports, cage cleaning).
+    - **Purpose:** Operational tasks and logs.
+
+11. **weights.sql**
+    - **Contains:** Historical sheep weight logs.
+    - **Purpose:** Livestock growth tracking.
 
 ---
 
@@ -347,13 +366,13 @@ PUT    /api/v1/akun-lahan/:id       # Update assignment
 DELETE /api/v1/akun-lahan/:id       # Delete assignment
 ```
 
-### Gardening - Reminders (5 endpoints)
+### Gardening - Routine Schedules (5 endpoints)
 ```
-GET    /api/v1/pengingat-jadwal     # List reminders
-POST   /api/v1/pengingat-jadwal     # Create reminder
-GET    /api/v1/pengingat-jadwal/:id # Get reminder
-PUT    /api/v1/pengingat-jadwal/:id # Update reminder
-DELETE /api/v1/pengingat-jadwal/:id # Delete reminder
+GET    /api/v1/jadwal-rutin     # List schedules
+POST   /api/v1/jadwal-rutin     # Create schedule
+GET    /api/v1/jadwal-rutin/:id # Get schedule
+PUT    /api/v1/jadwal-rutin/:id # Update schedule
+DELETE /api/v1/jadwal-rutin/:id # Delete schedule
 ```
 
 ### Gardening - Notifications (5 endpoints)
@@ -462,7 +481,7 @@ curl -X GET http://localhost:8080/api/sheep \
 - **pemangkasan** - Pruning records
 - **panen** - Harvest records
 - **akun_lahan** - User-land assignments
-- **pengingat_jadwal** - Schedule reminders
+- **jadwal_rutin** - Routine schedules
 - **notifikasi** - Gardening notifications
 - **status_aktivitas** - Activity status types
 
@@ -552,10 +571,11 @@ curl -X POST http://localhost:8080/api/sheep/1/health \
 
 2. **Reset Database**
    ```bash
-   dropdb -U postgres farmease
-   createdb -U postgres farmease
-   go run main.go migrate
-   psql -U postgres -d farmease < seeders/10_comprehensive_seed.sql
+   # Reset menggunakan docker-compose (jika menggunakan Docker)
+   docker-compose down -v
+   docker-compose up -d
+   docker-compose exec backend ./farmease migrate
+   docker-manage.bat seed # atau ./docker-manage.sh seed
    ```
 
 3. **CORS Configuration**

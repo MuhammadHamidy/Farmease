@@ -113,130 +113,150 @@ export default defineComponent({
         <div
           class="perkebunan-modal-backdrop"
           onClick={() => emit('close')}
-          style="align-items: flex-start; padding-top: 0; overflow-y: auto;"
+          style="align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;"
         >
           <div
             class="perkebunan-record-modal"
             onClick={(e) => e.stopPropagation()}
             style="
               position: relative;
-              width: min(100%, 400px);
-              border-radius: 1rem;
-              padding: 0;
-              overflow: hidden;
+              width: min(100%, 380px);
+              border-radius: 1.25rem;
+              padding: 0 0 1.25rem;
+              overflow-y: auto;
               background: #ffffff;
-              max-height: 100vh;
+              max-height: 90vh;
               display: flex;
               flex-direction: column;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+              box-sizing: border-box;
             "
           >
             {/* ── Close Button ── */}
-            <button
-              onClick={() => emit('close')}
-              style="
-                position: absolute;
-                top: 0.85rem;
-                left: 0.85rem;
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 0.25rem;
-                z-index: 20;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0.85;
-              "
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
+            <div style="padding: 1rem 1.25rem 0.5rem; display: flex; justify-content: flex-start; flex-shrink: 0; width: 100%; box-sizing: border-box;">
+              <button
+                onClick={() => emit('close')}
+                style="
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  padding: 0.25rem;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <img src="/icon/close-cancel/black-24.svg" alt="Tutup" style="width: 24px; height: 24px; object-fit: contain;" />
+              </button>
+            </div>
 
-            {/* ── Dark Green Header ── */}
-            <div style="background: linear-gradient(160deg, #38431f 0%, #2d3a1a 100%); padding: 1.5rem 1.25rem 1.25rem; flex-shrink: 0;">
-              {/* Title */}
-              <h2 style="text-align: center; font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0 0 1rem; letter-spacing: -0.01em;">
-                {currentTitle.value}
-              </h2>
+            {/* ── Dark Green Header Card ── */}
+            <div style="padding: 0 1.25rem; flex-shrink: 0; width: 100%; box-sizing: border-box;">
+              <div
+                style="
+                  background: #38431f;
+                  border-radius: 1.25rem;
+                  padding: 1.25rem 1rem;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 0.85rem;
+                  box-sizing: border-box;
+                "
+              >
+                {/* Title */}
+                <h2 style="text-align: center; font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.01em;">
+                  {currentTitle.value}
+                </h2>
 
-              {/* Search pill */}
-              <div style="position: relative; margin-bottom: 1rem;">
-                <svg
-                  style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); opacity: 0.55; pointer-events: none;"
-                  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input
-                  type="text"
-                  placeholder={currentPlaceholder.value}
-                  value={searchQuery.value}
-                  onInput={(e) => { searchQuery.value = (e.target as HTMLInputElement).value }}
-                  style="
-                    width: 100%;
-                    padding: 0.6rem 0.9rem 0.6rem 2.35rem;
-                    border: none;
-                    border-radius: 0.5rem;
-                    font-size: 0.9rem;
-                    background: #ffffff;
-                    color: #1f2937;
-                    outline: none;
-                    box-sizing: border-box;
-                  "
-                />
-              </div>
-
-              {/* Selected Jenis Preview Card (in rincian step) */}
-              {step.value === 'rincian' && draftJenis.value !== 'Jenis Pencatatan' && (
-                <div style="background: #ffffff; border-radius: 0.65rem; padding: 0.65rem 0.85rem;">
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #38431f; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                    Rincian Pencatatan
-                  </div>
-                  <div
-                    onClick={() => { step.value = 'jenis' }}
-                    style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid #dce1d0; border-radius: 0.5rem; padding: 0.6rem 0.75rem; background: #fff; cursor: pointer;"
+                {/* Search Input Box */}
+                <div style="position: relative; width: 100%;">
+                  <svg
+                    style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); opacity: 0.75; pointer-events: none;"
+                    width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                   >
-                    <div style="width: 2rem; height: 2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                      <img src={getJenisIcon(draftJenis.value)} alt="" style="width: 1.25rem; height: 1.25rem; object-fit: contain;" />
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                      <span style="font-size: 0.7rem; color: #6b7280;">Jenis Pencatatan</span>
-                      <strong style="font-size: 0.95rem; color: #111827; font-weight: 800;">
-                        {draftJenis.value.replace(/^Pencatatan\s+/u, '')}
-                      </strong>
-                    </div>
-                  </div>
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder={currentPlaceholder.value}
+                    value={searchQuery.value}
+                    onInput={(e) => { searchQuery.value = (e.target as HTMLInputElement).value }}
+                    style="
+                      width: 100%;
+                      padding: 0.6rem 0.9rem 0.6rem 2.35rem;
+                      border: none;
+                      border-radius: 0.5rem;
+                      font-size: 0.9rem;
+                      background: #ffffff;
+                      color: #1f2937;
+                      outline: none;
+                      box-sizing: border-box;
+                    "
+                  />
                 </div>
-              )}
 
-              {/* Selected Jenis Preview (jenis step) */}
-              {step.value === 'jenis' && draftJenis.value !== 'Jenis Pencatatan' && (
-                <div style="background: #ffffff; border-radius: 0.65rem; padding: 0.65rem 0.85rem;">
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #38431f; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                    Jenis Pencatatan
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid #dce1d0; border-radius: 0.5rem; padding: 0.6rem 0.75rem; background: #fff;">
-                    <div style="width: 2rem; height: 2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                      <img src={getJenisIcon(draftJenis.value)} alt="" style="width: 1.25rem; height: 1.25rem; object-fit: contain;" />
+                {/* Selected Jenis Preview Card (for rincian step) */}
+                {step.value === 'rincian' && draftJenis.value !== 'Jenis Pencatatan' && (
+                  <div
+                    style="
+                      background: #ffffff;
+                      border-radius: 0.85rem;
+                      padding: 0.85rem 1rem;
+                      border: 1.5px solid #111827;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 0.45rem;
+                      width: 100%;
+                      box-sizing: border-box;
+                    "
+                  >
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #111827; text-align: left;">Rincian Pencatatan</span>
+                    <div
+                      onClick={() => { step.value = 'jenis' }}
+                      style="
+                        border: 1.5px solid #111827;
+                        border-radius: 0.6rem;
+                        padding: 0.65rem 0.85rem;
+                        background: #fff;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        width: 100%;
+                        box-sizing: border-box;
+                      "
+                    >
+                      <div
+                        style="
+                          width: 2.2rem;
+                          height: 2.2rem;
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                          flex-shrink: 0;
+                        "
+                      >
+                        <img src="/icon/calender.png" alt="Jenis" style="width: 1.5rem; height: 1.5rem; object-fit: contain;" />
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 0.1rem; text-align: left;">
+                        <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">Jenis Pencatatan</span>
+                        <strong style="font-size: 1.1rem; color: #111827; font-weight: 800;">
+                          {draftJenis.value.replace(/^Pencatatan\s+/u, '')}
+                        </strong>
+                      </div>
                     </div>
-                    <div>
-                      <strong style="font-size: 0.95rem; color: #111827; font-weight: 800;">
-                        {draftJenis.value.replace(/^Pencatatan\s+/u, '')}
-                      </strong>
-                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* ── Scrollable Body ── */}
-            <div style="padding: 1rem 1.25rem; overflow-y: auto; flex: 1;">
-
+            <div style="padding: 1rem 1.25rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem; width: 100%; box-sizing: border-box;">
+              
               {/* Tambah Button */}
-              <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: flex-end;">
                 <button
+                  type="button"
                   onClick={() => emit('add')}
                   style="
                     display: inline-flex;
@@ -245,15 +265,15 @@ export default defineComponent({
                     background: #38431f;
                     color: #fff;
                     border: none;
-                    border-radius: 9999px;
-                    padding: 0.48rem 1.1rem;
-                    font-size: 0.82rem;
+                    border-radius: 0.5rem;
+                    padding: 0.55rem 1rem;
+                    font-size: 0.9rem;
                     font-weight: 700;
                     cursor: pointer;
                     transition: all 0.18s ease;
                   "
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                   {currentButtonLabel.value}
@@ -261,35 +281,47 @@ export default defineComponent({
               </div>
 
               {/* Section Heading */}
-              <div style="margin-bottom: 0.55rem;">
-                <span style="font-weight: 800; color: #111827; font-size: 1rem; display: block;">
+              <div style="text-align: left;">
+                <span style="font-weight: 800; color: #111827; font-size: 1.1rem; display: block;">
                   {currentSectionLabel.value}
                 </span>
                 {step.value === 'rincian' && (
-                  <span style="font-size: 0.75rem; color: #6b7280; display: block; margin-top: 0.15rem;">
+                  <span style="font-size: 0.78rem; color: #6b7280; display: block; margin-top: 0.15rem; font-weight: 600;">
                     Maksimal pilih 1
                   </span>
                 )}
               </div>
 
               {/* Radio Item List */}
-              <div style="display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 1rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 {filteredItems.value.map((item) => {
                   const isSelected =
                     step.value === 'jenis'
                       ? draftJenis.value === item.label
                       : draftRincian.value === item.label
 
+                  let displayLabel = item.label.replace(/^Pencatatan\s+/u, '')
+                  if (displayLabel === 'Perangsang') {
+                    displayLabel = 'Perangsing'
+                  }
+
                   return (
                     <button
+                      type="button"
                       key={item.label}
                       onClick={() => handleSelect(item)}
                       class={['perkebunan-modal-item', isSelected ? 'selected' : '']}
                       style={{
-                        justifyContent: step.value === 'jenis' ? 'flex-start' : 'space-between'
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        display: 'flex',
+                        padding: '1rem 1.15rem',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                        borderRadius: '0.75rem',
                       }}
                     >
-                      <div style="display: flex; align-items: center; gap: 0.75rem;">
+                      <div style="display: flex; align-items: center; gap: 0.75rem; text-align: left;">
                         {step.value === 'jenis' && (
                           <div style="
                             width: 2.2rem;
@@ -310,11 +342,11 @@ export default defineComponent({
                             </svg>
                           </div>
                         )}
-                        <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                          <strong style="font-size: 0.95rem; color: #111827; font-weight: 800; line-height: 1.25;">
-                            {item.label.replace(/^Pencatatan\s+/u, '')}
+                        <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                          <strong style="font-size: 1.15rem; color: #111827; font-weight: 800; line-height: 1.2;">
+                            {displayLabel}
                           </strong>
-                          <span style="font-size: 0.75rem; color: #6b7280;">
+                          <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;">
                             {item.sublabel ?? (step.value === 'jenis' ? 'Jenis Pencatatan' : 'Rincian Pencatatan')}
                           </span>
                         </div>
@@ -327,15 +359,16 @@ export default defineComponent({
                           height: 1.35rem;
                           border-radius: 50%;
                           border: 2px solid ${isSelected ? '#38431f' : '#c8cfb6'};
-                          background: #fff;
+                          background: ${isSelected ? '#38431f' : '#fff'};
                           display: flex;
                           align-items: center;
                           justify-content: center;
                           flex-shrink: 0;
                           margin-left: 0.75rem;
+                          transition: all 0.15s ease;
                         `}>
                           {isSelected && (
-                            <div style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #38431f;" />
+                            <div style="width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #ffffff;" />
                           )}
                         </div>
                       )}
@@ -344,7 +377,7 @@ export default defineComponent({
                 })}
 
                 {filteredItems.value.length === 0 && (
-                  <div style="text-align: center; color: #9ca3af; padding: 1.5rem 0; font-size: 0.88rem;">
+                  <div style="text-align: center; color: #9ca3af; padding: 2rem 0; font-size: 0.9rem;">
                     Tidak ada data ditemukan.
                   </div>
                 )}
@@ -352,22 +385,23 @@ export default defineComponent({
             </div>
 
             {/* ── Simpan Button ── */}
-            <div style="padding: 0.85rem 1.25rem 1.25rem; flex-shrink: 0; border-top: 1px solid #f0f0eb;">
+            <div style="padding: 0.85rem 1.25rem 0.5rem; flex-shrink: 0; display: flex; justify-content: center; align-items: center; width: 100%; box-sizing: border-box;">
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={!canSave.value}
                 style={`
-                  width: 100%;
-                  padding: 0.78rem;
+                  width: 75%;
+                  padding: 0.8rem;
                   border: none;
                   border-radius: 0.6rem;
-                  background: ${canSave.value ? '#38431f' : '#9ca3af'};
+                  background: ${canSave.value ? '#2d3a1a' : '#6e7a55'};
                   color: #fff;
-                  font-size: 0.95rem;
+                  font-size: 1.05rem;
                   font-weight: 700;
                   cursor: ${canSave.value ? 'pointer' : 'not-allowed'};
                   transition: all 0.2s ease;
-                  letter-spacing: 0.01em;
+                  text-align: center;
                 `}
               >
                 Simpan

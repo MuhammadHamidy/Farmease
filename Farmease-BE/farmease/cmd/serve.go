@@ -37,7 +37,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/notifikasi"
 	"github.com/farmease/farmease-be/farmease/module/panen"
 	"github.com/farmease/farmease-be/farmease/module/pemangkasan"
-	"github.com/farmease/farmease-be/farmease/module/pengingat_jadwal"
+	"github.com/farmease/farmease-be/farmease/module/jadwal_rutin"
 	"github.com/farmease/farmease-be/farmease/module/perawatan"
 	"github.com/farmease/farmease-be/farmease/module/pohon"
 	"github.com/farmease/farmease-be/farmease/module/status_aktivitas"
@@ -140,7 +140,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		panen.Module,
 		akun_lahan.Module,
 		aktivitas.Module,
-		pengingat_jadwal.Module,
+		jadwal_rutin.Module,
 		notifikasi.Module,
 		status_aktivitas.Module,
 

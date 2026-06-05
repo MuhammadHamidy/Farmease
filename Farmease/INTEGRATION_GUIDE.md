@@ -57,10 +57,14 @@
 
 2. **Seed Database**
    ```bash
-   # Using psql - run all seeder files in order
-   psql -U postgres -d farmease < ../seeders/10_comprehensive_seed.sql
-   psql -U postgres -d farmease < ../seeders/11_livestock_tracking_seed.sql
-   psql -U postgres -d farmease < ../seeders/12_gardening_comprehensive_seed.sql
+    # Menggunakan helper script di root directory:
+    # Windows:
+    docker-manage.bat seed
+    # Linux/macOS:
+    ./docker-manage.sh seed
+
+    # ATAU secara manual di dalam container backend:
+    docker-compose exec backend sh -c 'for file in auth.sql farms.sql cages.sql sheep.sql breedings.sql feeds.sql healths.sql manures.sql notifications.sql tasks.sql weights.sql; do psql "$APP_POSTGRES_URL" -f "/app/seeders/$file" || exit 1; done'
    ```
 
 3. **Start Backend Server**
@@ -169,7 +173,7 @@ GET/POST   /api/v1/perawatan         // Tree care
 GET/POST   /api/v1/pemangkasan       // Pruning records
 GET/POST   /api/v1/panen             // Harvest records
 GET/POST   /api/v1/akun-lahan        // Account-land assignments
-GET/POST   /api/v1/pengingat-jadwal  // Schedule reminders
+GET/POST   /api/v1/jadwal-rutin      // Routine schedules
 GET/POST   /api/v1/notifikasi        // Notifications
 GET/POST   /api/v1/status-aktivitas  // Activity status
 ```
@@ -285,7 +289,7 @@ export default {
 - pemangkasan
 - panen
 - akun_lahan
-- pengingat_jadwal
+- jadwal_rutin
 - notifikasi
 - status_aktivitas
 
@@ -312,7 +316,7 @@ export default {
 - **4 Pruning Records** - Pruning history
 - **7 Harvest Records** - Production records
 - **7 Account-Land Assignments** - User permissions
-- **5 Schedule Reminders** - Recurring tasks
+- **5 Routine Schedules** - Recurring tasks
 - **5 Notifications** - System alerts
 
 ---
@@ -427,10 +431,18 @@ Farmease/
 
 ### Backend Files Created
 ```
-farmease-be/farmease/seeders/
-├── 10_comprehensive_seed.sql       # Core data
-├── 11_livestock_tracking_seed.sql  # Livestock data
-└── 12_gardening_comprehensive_seed.sql  # Gardening data
+Farmease-BE/farmease/seeders/
+├── auth.sql
+├── breedings.sql
+├── cages.sql
+├── farms.sql
+├── feeds.sql
+├── healths.sql
+├── manures.sql
+├── notifications.sql
+├── sheep.sql
+├── tasks.sql
+└── weights.sql
 ```
 
 ### Documentation Updated

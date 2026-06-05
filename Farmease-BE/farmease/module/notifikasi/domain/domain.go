@@ -7,7 +7,7 @@ import (
 type Notifikasi struct {
 	IDNotifikasi                     int    `json:"id_notifikasi" db:"id_notifikasi"`
 	AkunIDAkun                       int    `json:"akun_id_akun" db:"akun_id_akun"`
-	PengingatJadwalIDPengingatJadwal *int   `json:"pengingat_jadwal_id_pengingat_jadwal" db:"pengingat_jadwal_id_pengingat_jadwal"`
+	JadwalRutinIDJadwalRutin *int   `json:"jadwal_rutin_id_jadwal_rutin" db:"jadwal_rutin_id_jadwal_rutin"`
 	TipeNotifikasi                   string `json:"tipe_notifikasi" db:"tipe_notifikasi"`
 	Pesan                            string `json:"pesan" db:"pesan"`
 	StatusNotifikasi                 string `json:"status_notifikasi" db:"status_notifikasi"`

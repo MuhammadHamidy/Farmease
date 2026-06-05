@@ -1,8 +1,11 @@
 -- Seed Sheep Types
-INSERT INTO master.sheep_types (type_name, type_description) VALUES 
-('Garut', 'Native Garut sheep breed'),
-('Texel', 'Texel meat sheep breed')
-ON CONFLICT (type_name) DO NOTHING;
+INSERT INTO master.sheep_types (id_type, type_name, type_description) VALUES 
+(1, 'Garut', 'Native Garut sheep breed'),
+(2, 'Texel', 'Texel meat sheep breed')
+ON CONFLICT (id_type) DO NOTHING;
+
+-- Adjust sequence so next serial insert doesn't clash
+SELECT setval('master.sheep_types_id_type_seq', COALESCE((SELECT MAX(id_type)+1 FROM master.sheep_types), 1), false);
 
 -- Seed Sheep (Generation 1 - Grandparents)
 INSERT INTO livestock.sheep (id_sheep, sheep_code, sheep_name, gender, date_of_birth, status, origin, id_cage, id_type, created_by) VALUES 
