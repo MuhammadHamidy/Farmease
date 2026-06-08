@@ -1,8 +1,10 @@
 import { defineComponent, computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin'
 import { userSession, landSession } from '@/store/navigation'
 import KebunGenericFormFieldsRaw from '../components/pencatatan/KebunGenericFormFields'
 import PerkebunanBackButton from '../components/shared/PerkebunanBackButton'
+import { feedsApi, pemangkasanApi } from '@/shared/api'
 import '@/modules/kebun/assets/css/PerkebunanDetailPages.css'
 
 const KebunGenericFormFields = KebunGenericFormFieldsRaw as any
@@ -162,62 +164,44 @@ export default defineComponent({
       document.removeEventListener('click', handleDocumentClick)
     })
 
-    const saveRecording = () => {
-      alert(`Catatan Perkebunan (${selectedJenis.value} - ${activeMode.value === 'pohon' ? 'Per Pohon' : 'Per Lahan'}) Berhasil Disimpan!`)
+    const alertModal = ref({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'success' as 'success' | 'error',
+    });
 
-      if (kindTitle.value === 'Pemangkasan') {
-        const weight = parseFloat(formState.value.jumlahPemangkasan)
-        if (!isNaN(weight) && weight > 0) {
-          try {
-            // 1. Save pruning record to backend
-            await pemangkasanApi.create({
-              Aktivitas_id_aktivitas: 1,
-              tanggal_aktivitas: new Date().toISOString().split('T')[0],
-              nama_jenis_aktivitas: 'Pemangkasan',
-              nama_rincian_aktivitas: selectedRincian.value,
-              jumlah: String(weight),
-              satuan: 'kg',
-              keterangan: formState.value.deskripsiPemangkasan || 'Pemangkasan rutin',
-              Lahan_id_lahan: 1,
-            } as any);
-            console.log(`Saved pruning record to backend: ${selectedRincian.value} (${weight} kg)`);
+    const closeAlertModal = () => {
+      alertModal.value.isOpen = false;
+    };
 
-            // 2. Sync feed stock to backend (decoupled, using separate feeds API endpoints)
-            let feedName = 'Daun Alpukat (Mentah)'
-            const rincian = selectedRincian.value.toLowerCase()
-            if (rincian.includes('gulma') || rincian.includes('rumput')) {
-              feedName = 'Gulma / Rumput Liar (Mentah)'
-            } else if (rincian.includes('ranting') || rincian.includes('daun')) {
-              if (selectedRincian.value.toLowerCase().includes('kelengkeng') || route.query.rincian?.toString().toLowerCase().includes('kelengkeng')) {
-                feedName = 'Daun Kelengkeng (Mentah)'
-              }
-            }
+    const saveRecording = async () => {
+      // Add to local submissions array for admin approval view
+      pencatatanSubmissions.value.unshift({
+        id: `SUB-${Date.now().toString().slice(-6)}`,
+        type: kindTitle.value.toLowerCase(),
+        typeLabel: kindTitle.value,
+        operatorCode: userSession.value?.code || 'OPT002',
+        operatorName: userSession.value?.name || 'Operator Kebun',
+        cageCode: landSession.value?.code || 'LHN',
+        scope: activeMode.value === 'pohon' ? 'domba' : 'kandang',
+        summary: `Mencatat ${kindTitle.value} (${selectedJenis.value})`,
+        payload: { data: { items: [{...formState.value, selectedRincian: selectedRincian.value}] } },
+        submittedAt: Date.now(),
+        approvalStatus: 'pending',
+      } as any);
 
-            const feeds = await feedsApi.getList()
-            const existingFeed = feeds.find(f => f.feed_name.toLowerCase() === feedName.toLowerCase())
-
-            if (existingFeed) {
-              try {
-                await feedsApi.updateStock(existingFeed.id, weight, 'tambah')
-              } catch {
-                await feedsApi.updateStok(existingFeed.id, weight, 'tambah')
-              }
-            } else {
-              await feedsApi.create({
-                feed_name: feedName,
-                feed_type: 'Hijauan',
-                unit: 'kg',
-                stock: weight
-              } as any)
-            }
-            console.log(`Successfully synced pruning yield: ${feedName} (+${weight} kg) to livestock feed stock via separate endpoint`)
-          } catch (err) {
-            console.error('Failed to save pruning or sync stock:', err);
-          }
-        }
-      }
-
-      router.push({ name: 'kebun' })
+      alertModal.value = {
+        isOpen: true,
+        title: 'Berhasil Dikirim',
+        message: `Catatan Perkebunan (${selectedJenis.value} - ${activeMode.value === 'pohon' ? 'Per Pohon' : 'Per Lahan'}) berhasil dimasukkan ke antrean persetujuan!`,
+        type: 'success'
+      };
+      
+      setTimeout(() => {
+        alertModal.value.isOpen = false;
+        router.back()
+      }, 2000)
     }
 
     const goBack = () => {
@@ -472,6 +456,44 @@ export default defineComponent({
             </div>
           </div>
 
+          {/* Custom Alert Modal for Kebun */}
+          {alertModal.value.isOpen && (
+            <div class="peternakan-modal-overlay" style={{ zIndex: 1050, alignItems: 'center' }} onClick={alertModal.value.type === 'error' ? closeAlertModal : undefined}>
+              <div class="peternakan-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', backgroundColor: '#fff', borderRadius: '24px', animation: 'scaleUp 0.3s ease' }}>
+                <div class="p-4 text-center">
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    {alertModal.value.type === 'error' ? (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', backgroundColor: 'rgba(220, 53, 69, 0.1)', color: '#dc3545', borderRadius: '50%' }}>
+                        <i class="bi bi-exclamation-triangle-fill" style={{ fontSize: '2rem' }}></i>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', backgroundColor: 'rgba(25, 135, 84, 0.1)', color: '#198754', borderRadius: '50%' }}>
+                        <i class="bi bi-check-circle-fill" style={{ fontSize: '2rem' }}></i>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <h4 style={{ fontWeight: '800', marginBottom: '0.5rem', fontSize: '1.25rem', color: '#111827' }}>
+                    {alertModal.value.title}
+                  </h4>
+                  
+                  <p style={{ color: '#6b7280', marginBottom: '1.5rem', whiteSpace: 'pre-line', fontSize: '0.9rem' }}>
+                    {alertModal.value.message}
+                  </p>
+
+                  {alertModal.value.type === 'error' ? (
+                    <button style={{ width: '100%', padding: '0.75rem', borderRadius: '50rem', backgroundColor: '#787f56', color: '#fff', border: 'none', fontWeight: 'bold' }} onClick={closeAlertModal}>
+                      Mengerti
+                    </button>
+                  ) : (
+                    <div class="spinner-border text-success spinner-border-sm" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )

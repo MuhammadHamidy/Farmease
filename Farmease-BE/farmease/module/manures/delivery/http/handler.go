@@ -26,6 +26,9 @@ func (h *ManureHandler) RegisterRoutes(app *fiber.App) {
 	sheepManures := app.Group("/api/sheep/:id/manures")
 	h.registerSheepGroup(sheepManures)
 
+	sheepManureSingular := app.Group("/api/sheep/:id/manure")
+	h.registerSheepGroup(sheepManureSingular)
+
 	dombaKotoran := app.Group("/api/domba/:id/kotoran")
 	h.registerSheepGroup(dombaKotoran)
 }

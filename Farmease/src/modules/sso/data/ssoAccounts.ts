@@ -31,7 +31,7 @@ export const SSO_DEMO_ACCOUNTS: SsoAccount[] = [
   {
     username: 'operator_kandang',
     password: 'kandang123',
-    session: { code: 'OP001', name: 'Operator Kandang', role: 'Operator Peternakan' },
+    session: { code: 'OP001', name: 'Operator Ternak', role: 'Operator Peternakan' },
     routeName: 'ternak',
   },
   {
@@ -43,7 +43,7 @@ export const SSO_DEMO_ACCOUNTS: SsoAccount[] = [
   {
     username: 'peternak',
     password: 'peternak',
-    session: { code: 'OP001', name: 'Operator Kandang', role: 'Operator Peternakan' },
+    session: { code: 'OP001', name: 'Operator Ternak', role: 'Operator Peternakan' },
     routeName: 'ternak',
   },
 ];

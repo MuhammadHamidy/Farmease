@@ -8,6 +8,7 @@ type ScheduleItem = {
   detail: string
   progress: string
   description?: string
+  time?: string
 }
 
 export default defineComponent({
@@ -30,22 +31,21 @@ export default defineComponent({
     const getStatusStyle = (status: string) => {
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done') {
-        return 'border-radius: 0.5rem; background: #8a9a5b; color: #fff; font-weight: bold; cursor: default; padding: 0.55rem 1.35rem; font-size: 0.85rem; border: none; white-space: nowrap; display: inline-block;'
+        return 'border-radius: 0.5rem; background: #8a9a5b; color: #fff; font-weight: 700; cursor: default; padding: 0.35rem 0.75rem; font-size: 0.75rem; border: none; white-space: nowrap; display: inline-block;'
       }
-      // Default: Kerjakan or Belum di setujui
-      return 'border-radius: 0.5rem; background: #2d3a1a; color: #fff; font-weight: bold; cursor: default; padding: 0.55rem 1.35rem; font-size: 0.85rem; border: none; white-space: nowrap; display: inline-block;'
+      return 'border-radius: 0.5rem; background: #717b85; color: #fff; font-weight: 700; cursor: default; padding: 0.35rem 0.75rem; font-size: 0.75rem; border: none; white-space: nowrap; display: inline-block;'
     }
 
     const getStatusLabel = (status: string) => {
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done') return 'Selesai'
-      if (normalized.includes('belum') || normalized.includes('pending')) return 'Belum di setujui'
-      return 'Kerjakan'
+      if (normalized.includes('belum') || normalized.includes('pending')) return 'Belum Dikerjakan'
+      return 'Belum Dikerjakan'
     }
 
     return () => (
       <section class="pengingat-jadwal-section" style="margin-top: 1.5rem;">
-        <h4 style="font-weight: 700; color: #111827; font-size: 1.15rem; margin-bottom: 0.85rem;">Pengingat Jadwal Terkini</h4>
+        <h4 style="font-weight: 700; color: #111827; font-size: 1.15rem; margin-bottom: 0.85rem;">Jadwal Rutin</h4>
         <div class="reminder-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.75rem;">
           {props.items.map((item, index) => {
             const key = `${item.name}-${index}`
@@ -63,43 +63,38 @@ export default defineComponent({
               <div
                 key={key}
                 class="reminder-card"
-                style="border: 1.5px solid #dce1d0; border-radius: 0.75rem; background: #ffffff; padding: 1rem 1rem 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s ease;"
+                style="border: 1.5px solid #dce1d0; border-radius: 0.75rem; background: #ffffff; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s ease;"
               >
-                <div class="reminder-top" style="display: flex; justify-content: flex-start;">
-                  <span
-                    class="reminder-tag"
-                    style="background: #2d3a1a; color: #ffffff; padding: 0.22rem 0.65rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;"
-                  >
-                    {item.tag}
-                  </span>
+                {/* Top Section */}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; border: 1px solid #dce1d0; border-radius: 0.5rem; padding: 0.35rem 0.75rem;">
+                    <i class="bi bi-clock"></i>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #111827;">{item.time || '08 : 00 WIB'}</span>
+                  </div>
+                  <div style={getStatusStyle(item.progress)}>
+                    {getStatusLabel(item.progress)}
+                  </div>
                 </div>
 
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.25rem;">
+                <hr style="margin: 0; border-color: #dce1d0;" />
+
+                {/* Bottom Section */}
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                   <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                    <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.15rem;">
-                      <img src={getCropIcon(item.name)} alt={item.name} style="width: 1.3rem; height: 1.3rem;" />
-                    </div>
+                    <img src={getCropIcon(item.name)} alt={item.name} style="width: 2.8rem; height: 2.8rem; object-fit: contain;" />
                     <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                      <strong style="font-size: 1.15rem; color: #111827; font-weight: 800; line-height: 1.2;">{item.name}</strong>
+                      <strong style="font-size: 0.95rem; color: #111827; font-weight: 700; line-height: 1.2;">{item.tag}</strong>
                       <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;">{item.date}</span>
                       <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;">{displayDetail}</span>
                     </div>
                   </div>
 
-                  <div style="display: flex; align-items: center; gap: 0.55rem; flex-shrink: 0;">
-                    <span
-                      style={getStatusStyle(item.progress)}
-                    >
-                      {getStatusLabel(item.progress)}
-                    </span>
-                    <img
-                      src="/icon/right-row.png"
-                      alt="Detail"
-                      onClick={() => emit('open-detail', item)}
-                      class="reminder-chevron"
-                      style="width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; transition: transform 0.2s;"
-                    />
-                  </div>
+                  <button
+                    onClick={() => emit('open-detail', item)}
+                    style="background: #2d3a1a; color: #ffffff; padding: 0.55rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 700; border: none; cursor: pointer; white-space: nowrap;"
+                  >
+                    Lihat Tugas
+                  </button>
                 </div>
               </div>
             )

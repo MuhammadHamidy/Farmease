@@ -23,11 +23,11 @@ export const events = ref<StockEvent[]>([]);
 
 function mapFeedToStock(feed: Feed): StockItem {
   return {
-    id: String(feed.id),
+    id: String((feed as any).id_feed || feed.id),
     name: feed.feed_name,
-    qty: feed.stock,
+    qty: feed.stock !== undefined && feed.stock !== null ? feed.stock : ((feed as any).available_stock || 0),
     unit: feed.unit,
-    category: feed.feed_type?.toLowerCase() || 'umum',
+    category: (feed.feed_type || (feed as any).category || 'umum').toLowerCase(),
   };
 }
 

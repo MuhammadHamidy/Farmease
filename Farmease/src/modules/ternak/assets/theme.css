@@ -20,13 +20,13 @@
   --color-primary-container: #3d2f24;
   --color-on-primary-container: #d4c4b0;
   --color-inverse-primary: #d4c4b0;
-  --color-secondary: #d4c4b0;
+  --color-secondary: #8a7563;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #d4c4b0;
+  --color-secondary-container: #e6dcd3;
   --color-on-secondary-container: #3d2f24;
-  --color-tertiary: #d4c4b0;
+  --color-tertiary: #8b7355;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #d4c4b0;
+  --color-tertiary-container: #e6dcd3;
   --color-on-tertiary-container: #3d2f24;
   --color-error: #ba1a1a;
   --color-on-error: #ffffff;
@@ -49,7 +49,7 @@
   --color-surface-variant: #d4c4b0;
   --color-primary-dark: #3d2f24;
   --color-primary-light: #d4c4b0;
-  --color-accent: #d4c4b0;
+  --color-accent: #8a7563;
   --font-sans: 'Manrope', 'Inter', system-ui, -apple-system, sans-serif;
   --font-outfit: 'Outfit', sans-serif;
   --font-manrope: 'Manrope', sans-serif;

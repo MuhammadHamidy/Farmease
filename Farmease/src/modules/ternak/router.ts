@@ -9,7 +9,7 @@ export const ternakRoutes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'ternak',
-        component: () => import('./views/PeternakanPage'),
+        component: () => import('./views/LivestockPage'),
       },
     ],
   },

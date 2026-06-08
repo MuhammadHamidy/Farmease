@@ -28,7 +28,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 2px solid #F3F0E9;
+  border-bottom: 1px solid #F3F0E9;
   position: sticky;
   top: 0;
   z-index: 1001;
@@ -83,7 +83,7 @@
 
 .admin-logout-btn {
   background: #F9FAFB;
-  border: 1.5px solid #F3F4F6;
+  border: 1px solid #F3F4F6;
   color: #4B5563;
   padding: 0.5rem 1rem;
   border-radius: 10px;
@@ -177,7 +177,7 @@
 
 .view-card {
   background: var(--admin-beige);
-  border: 2px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(180, 160, 130, 0.1);
@@ -300,7 +300,7 @@ code {
   align-items: center;
   justify-content: center;
   background: #FFFFFF;
-  border: 1.5px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
   color: var(--admin-text-brown);
   transition: all 0.2s;
 }
@@ -330,7 +330,7 @@ code {
   max-width: 440px;
   text-align: center;
   box-shadow: 0 20px 40px rgba(167, 141, 120, 0.1);
-  border: 2px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
 }
 
 .gate-icon {
@@ -378,15 +378,16 @@ code {
 }
 
 /* Modals (Match SelectionBottomSheet) */
-.admin-modal-overlay {
+.peternakan-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: #00000066;
   backdrop-filter: blur(2px);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 1000;
+  padding: 1.5rem;
 }
 
 @media (min-width: 768px) {
@@ -462,7 +463,7 @@ code {
   align-items: center;
   gap: 1.25rem;
   background: #F3EDE4;
-  border: 1.5px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
   border-radius: 18px;
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
@@ -559,7 +560,7 @@ code {
 
 .admin-mobile-card {
   background: #FFFFFF;
-  border: 1.5px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
   border-radius: 18px;
   padding: 1.1rem;
   display: flex;
@@ -659,7 +660,7 @@ code {
 
 .admin-user-card {
   background: #FFFFFF;
-  border: 2px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
   border-radius: 20px;
   padding: 1.5rem;
   display: flex;
@@ -671,7 +672,7 @@ code {
 
 .admin-user-card:hover {
   transform: translateY(-4px);
-  border-color: var(--admin-primary);
+  border-color: var(--admin-border);
   box-shadow: 0 12px 24px rgba(96, 108, 56, 0.12);
 }
 
@@ -684,7 +685,7 @@ code {
   align-items: center;
   justify-content: center;
   color: var(--admin-primary-dark);
-  border: 1.5px solid var(--admin-border);
+  border: 1px solid var(--admin-border);
 }
 
 .admin-user-card:hover .user-avatar-box {
@@ -753,52 +754,23 @@ code {
   background: #F3F0E9;
   padding: 1.25rem;
   border-radius: 16px;
-  border: 1.5px dashed var(--admin-border);
+  border: 1px dashed var(--admin-border);
 }
 
 .admin-verification-box .pencatatan-label {
   color: var(--admin-primary-dark);
 }
 
-.peternakan-modal-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.5) !important; /* Slightly darker for better contrast */
-  backdrop-filter: blur(6px) !important;
-  display: flex !important;
-  align-items: center; /* Center vertically for desktop */
-  justify-content: center !important;
-  z-index: 99999 !important;
-  padding: 1.5rem;
-}
-
-@media (max-width: 768px) {
-  .peternakan-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
-  }
-}
-
 .peternakan-modal-card {
   width: 100%;
-  max-width: 500px;
-  background: #FFFFFF;
+  max-width: 720px;
+  background: white;
   border-radius: 24px;
-  padding: 2rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-  border: none !important;
-  outline: none !important;
-  position: relative;
-}
-
-@media (max-width: 768px) {
-  .peternakan-modal-card {
-    border-radius: 24px 24px 0 0;
-    padding: 1.75rem 1.5rem 2.5rem;
-  }
+  padding: 1.5rem;
+  box-shadow: 0 -10px 25px #0000001a;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .peternakan-modal-header {
@@ -807,15 +779,25 @@ code {
   justify-content: center;
   position: relative;
   margin-bottom: 2rem;
+  flex-shrink: 0;
+}
+
+.peternakan-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 0.5rem;
 }
 
 .peternakan-modal-close {
   position: absolute;
-  left: 0;
-  background: #F3F0E9;
+  right: 0.5rem;
+  background: none;
   border: none;
-  width: 36px;
-  height: 36px;
+  font-size: var(--font-size-2xl);
+  cursor: pointer;
+}
+
+.peternakan-modal-close {
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -834,6 +816,8 @@ code {
   font-size: 1.25rem;
   font-weight: 800;
   color: #1A1A1A;
+  padding: 0 2.5rem;
+  text-align: center;
 }
 
 /* Grup aksi di tabel — horizontal, ukuran seragam */
@@ -1113,7 +1097,16 @@ code {
   width: 20px;
   height: 20px;
   object-fit: contain;
-  filter: brightness(0) invert(1);
+  transition: opacity 0.2s ease;
+}
+
+.menu-item:not(.active) .menu-icon {
+  opacity: 0.7;
+}
+
+.menu-item:hover .menu-icon,
+.menu-item.active .menu-icon {
+  opacity: 1;
 }
 
 .sidebar-footer {
@@ -1197,25 +1190,28 @@ code {
 
 /* ── Dark Summary Card Styles ── */
 .dark-summary-card {
-  background-color: #212529; /* Dark grey/black */
+  background-color: var(--admin-beige);
+  border: 1.5px solid var(--admin-primary);
   border-radius: 16px;
   padding: 1.5rem;
   height: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
+  box-shadow: 0 4px 6px rgba(180, 160, 130, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark-summary-card:hover {
   transform: translateY(-2px);
+  border-color: var(--admin-border);
+  box-shadow: 0 8px 16px rgba(96, 108, 56, 0.08);
 }
 
 .dark-summary-card .card-label {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  color: #9cb2c0;
+  color: var(--admin-text-brown);
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
 }
@@ -1223,25 +1219,26 @@ code {
 .dark-summary-card .card-value {
   font-size: 2.25rem;
   font-weight: 800;
+  color: var(--admin-text-dark);
   margin-bottom: 0.25rem;
   line-height: 1;
 }
 
 .dark-summary-card .card-sub {
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--admin-text-grey);
   font-weight: 600;
 }
 
 /* ── Task Session Card Styles ── */
 .task-session-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid var(--admin-border) !important;
+  border: 1.5px solid var(--admin-primary) !important;
 }
 
 .task-session-card:hover {
   transform: translateY(-4px);
-  border-color: var(--admin-primary) !important;
+  border-color: var(--admin-border) !important;
   box-shadow: 0 12px 24px rgba(96, 108, 56, 0.12) !important;
 }
 
@@ -1253,3 +1250,81 @@ code {
   text-overflow: ellipsis;
   min-height: 2.4rem;
 }
+
+/* ── Global Theme Overrides for btn-outline-primary ── */
+.admin-page .btn-outline-primary {
+  border: 2.5px solid var(--admin-primary) !important;
+  color: var(--admin-primary) !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-page .btn-outline-primary:hover,
+.admin-page .btn-outline-primary:active,
+.admin-page .btn-outline-primary:focus {
+  background-color: var(--admin-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--admin-border) !important;
+}
+
+/* ── Task Card Action Button (Green Theme) ── */
+.task-card-btn {
+  border-radius: 0.5rem;
+  background: #2d3a1a;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 0.55rem 1.35rem;
+  font-size: 0.85rem;
+  border: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-card-btn:hover {
+  background: #1b2410;
+  transform: translateY(-1px);
+}
+
+.task-card-btn.selesai {
+  background: #8a9a5b;
+  cursor: default;
+}
+
+.task-card-btn.selesai:hover {
+  background: #8a9a5b;
+  transform: none;
+}
+
+/* ── Custom Large Crop Icon for Land Management Cards ── */
+.land-management-cards .stat-card {
+  position: relative;
+  padding-right: 110px !important;
+}
+
+.land-management-cards .stat-card-header {
+  display: block !important;
+}
+
+.land-management-cards .stat-card-icon-box {
+  position: absolute !important;
+  top: 1.5rem !important;
+  right: 1.5rem !important;
+  width: 76px !important;
+  height: 76px !important;
+  border-radius: 16px !important;
+  background-color: #faf5ec !important; /* Slightly warm background to match styling */
+  border: 1.5px solid var(--admin-border) !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: none !important;
+}
+
+.land-management-cards .stat-card-icon-box img {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+

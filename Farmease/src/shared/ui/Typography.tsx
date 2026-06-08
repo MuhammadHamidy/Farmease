@@ -23,6 +23,10 @@ export default defineComponent({
     className: {
       type: String,
       default: '',
+    },
+    title: {
+      type: String,
+      default: undefined,
     }
   },
   setup(props, { slots }) {
@@ -59,6 +63,7 @@ export default defineComponent({
       return (
         <Tag
           class={props.className}
+          title={props.title}
           style={{
             fontFamily: "'Manrope', sans-serif",
             ...(props.weight ? { fontWeight: fontWeightMap[props.weight] } : {}),

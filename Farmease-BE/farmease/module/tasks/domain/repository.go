@@ -10,6 +10,7 @@ type Task struct {
 	Title       string    `json:"title" db:"title"`
 	Description string    `json:"description" db:"description"`
 	TaskDate    time.Time `json:"task_date" db:"task_date"`
+	EndTime     string    `json:"end_time" db:"end_time"`
 	Status      string    `json:"status" db:"status"` // pending/done
 	IDAccount   int       `json:"id_account" db:"id_account"`
 	Category    string    `json:"category" db:"category"`
@@ -19,12 +20,17 @@ type Task struct {
 
 type TaskRepository interface {
 	FindTasksByAccount(ctx context.Context, idAccount int, date *time.Time) ([]*Task, error)
+	FindByID(ctx context.Context, id int) (*Task, error)
 	StoreTask(ctx context.Context, t *Task) error
+	UpdateTask(ctx context.Context, t *Task) error
 	UpdateTaskStatus(ctx context.Context, id int, status string) error
+	DeleteTask(ctx context.Context, id int) error
 }
 
 type UseCase interface {
 	GetMyTasks(ctx context.Context, idAccount int, date *time.Time) ([]*Task, error)
 	CreateTask(ctx context.Context, t *Task) error
+	UpdateTask(ctx context.Context, id int, t *Task) error
 	CompleteTask(ctx context.Context, id int) error
+	DeleteTask(ctx context.Context, id int) error
 }

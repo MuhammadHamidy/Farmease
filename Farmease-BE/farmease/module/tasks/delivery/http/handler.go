@@ -24,7 +24,9 @@ func (h *TaskHandler) RegisterRoutes(app *fiber.App) {
 	tasks := api.Group("/tasks")
 	tasks.Get("/", h.GetMyTasks)
 	tasks.Post("/", h.CreateTask)
+	tasks.Put("/:id", h.UpdateTask)
 	tasks.Patch("/:id/complete", h.CompleteTask)
+	tasks.Delete("/:id", h.DeleteTask)
 }
 
 // GetMyTasks godoc
@@ -43,8 +45,8 @@ func (h *TaskHandler) GetMyTasks(c *fiber.Ctx) error {
 	dateStr := c.Query("date")
 	var date *time.Time
 	if dateStr != "" {
-		t, _ := time.Parse("2006-01-02", dateStr)
-		date = &t
+		parsedTime, _ := time.Parse("2006-01-02", dateStr)
+		date = &parsedTime
 	}
 
 	res, err := h.useCase.GetMyTasks(c.Context(), idAccount, date)
@@ -67,16 +69,48 @@ func (h *TaskHandler) GetMyTasks(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/tasks [post]
 func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
-	var t domain.Task
-	if err := c.BodyParser(&t); err != nil {
+	var req struct {
+		Title       string    `json:"title"`
+		Description string    `json:"description"`
+		TaskDate    time.Time `json:"task_date"`
+		DueDate     time.Time `json:"due_date"` // fallback for FE
+		Status      string    `json:"status"`
+		IDAccount   int       `json:"id_account"`
+		UserID      int       `json:"user_id"` // fallback for FE
+		Category    string    `json:"category"`
+	}
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
-	t.IDAccount = 1 // Mock
-	err := h.useCase.CreateTask(c.Context(), &t)
+
+	taskItem := domain.Task{
+		Title:       req.Title,
+		Description: req.Description,
+		Status:      req.Status,
+		Category:    req.Category,
+	}
+
+	if req.UserID != 0 {
+		taskItem.IDAccount = req.UserID
+	} else if req.IDAccount != 0 {
+		taskItem.IDAccount = req.IDAccount
+	} else {
+		taskItem.IDAccount = 1 // Mock fallback
+	}
+
+	if !req.TaskDate.IsZero() {
+		taskItem.TaskDate = req.TaskDate
+	} else if !req.DueDate.IsZero() {
+		taskItem.TaskDate = req.DueDate
+	} else {
+		taskItem.TaskDate = time.Now()
+	}
+
+	err := h.useCase.CreateTask(c.Context(), &taskItem)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
-	return c.Status(http.StatusCreated).JSON(t)
+	return c.Status(http.StatusCreated).JSON(taskItem)
 }
 
 // CompleteTask godoc
@@ -93,6 +127,57 @@ func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
 func (h *TaskHandler) CompleteTask(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 	err := h.useCase.CompleteTask(c.Context(), id)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
+	}
+	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
+}
+
+func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	var req struct {
+		Title       string    `json:"title"`
+		Description string    `json:"description"`
+		TaskDate    time.Time `json:"task_date"`
+		DueDate     time.Time `json:"due_date"` // fallback for FE
+		Status      string    `json:"status"`
+		IDAccount   int       `json:"id_account"`
+		UserID      int       `json:"user_id"` // fallback for FE
+		Category    string    `json:"category"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
+	}
+
+	taskItem := domain.Task{
+		Title:       req.Title,
+		Description: req.Description,
+		Status:      req.Status,
+		Category:    req.Category,
+	}
+
+	if req.UserID != 0 {
+		taskItem.IDAccount = req.UserID
+	} else {
+		taskItem.IDAccount = req.IDAccount
+	}
+
+	if !req.TaskDate.IsZero() {
+		taskItem.TaskDate = req.TaskDate
+	} else if !req.DueDate.IsZero() {
+		taskItem.TaskDate = req.DueDate
+	}
+
+	err := h.useCase.UpdateTask(c.Context(), id, &taskItem)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
+	}
+	return c.Status(http.StatusOK).JSON(taskItem)
+}
+
+func (h *TaskHandler) DeleteTask(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	err := h.useCase.DeleteTask(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}

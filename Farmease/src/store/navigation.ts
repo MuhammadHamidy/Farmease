@@ -29,6 +29,8 @@ export const landSession = ref<LandSession | null>(null)
 export const selectedTernakId = ref<string | null>(null)
 export const selectedPencatatanPayload = ref<any | null>(null)
 export const activePencatatanForm = ref<any | null>(null)
+export const prefilledPencatatanType = ref<string | null>(null)
+export const prefilledPencatatanRincian = ref<string | null>(null)
 
 // ── Shared Data Stores (fetched from BE) ──
 export interface CageInfo {

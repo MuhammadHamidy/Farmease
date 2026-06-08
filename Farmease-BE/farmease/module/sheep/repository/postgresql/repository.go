@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,7 +21,10 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
 		       d.id_sire, d.id_dam, t.type_name,
-		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight
+		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight,
+		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight_date,
+		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
+		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight_date
 		FROM livestock.sheep d
 		LEFT JOIN master.sheep_types t ON d.id_type = t.id_type
 		WHERE 1=1`
@@ -59,16 +63,26 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 	var sheepList []*domain.Sheep
 	for rows.Next() {
 		var s domain.Sheep
-		var weight *float64
+		var weight, firstWeight *float64
+		var lastWeightDate, firstWeightDate *time.Time
 		err := rows.Scan(
 			&s.IDSheep, &s.SheepCode, &s.SheepName, &s.Gender, &s.DateOfBirth, &s.Status, &s.Origin, &s.IDCage, &s.IDType,
-			&s.IDSire, &s.IDDam, &s.TypeName, &weight,
+			&s.IDSire, &s.IDDam, &s.TypeName, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
 		if weight != nil {
 			s.LastWeight = *weight
+		}
+		if lastWeightDate != nil {
+			s.LastWeightDate = lastWeightDate
+		}
+		if firstWeight != nil {
+			s.FirstWeight = *firstWeight
+		}
+		if firstWeightDate != nil {
+			s.FirstWeightDate = firstWeightDate
 		}
 		sheepList = append(sheepList, &s)
 	}
@@ -87,6 +101,9 @@ func (r *Repository) FindByID(ctx context.Context, id int) (*domain.Sheep, error
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
 		       d.id_sire, d.id_dam, t.type_name,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight,
+		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight_date,
+		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
+		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight_date,
 		       s.sheep_name as sire_name, m.sheep_name as dam_name
 		FROM livestock.sheep d
 		LEFT JOIN master.sheep_types t ON d.id_type = t.id_type
@@ -95,17 +112,27 @@ func (r *Repository) FindByID(ctx context.Context, id int) (*domain.Sheep, error
 		WHERE d.id_sheep = $1`
 
 	var s domain.Sheep
-	var weight *float64
+	var weight, firstWeight *float64
+	var lastWeightDate, firstWeightDate *time.Time
 	var sireName, damName *string
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&s.IDSheep, &s.SheepCode, &s.SheepName, &s.Gender, &s.DateOfBirth, &s.Status, &s.Origin, &s.IDCage, &s.IDType,
-		&s.IDSire, &s.IDDam, &s.TypeName, &weight, &sireName, &damName,
+		&s.IDSire, &s.IDDam, &s.TypeName, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &sireName, &damName,
 	)
 	if err != nil {
 		return nil, err
 	}
 	if weight != nil {
 		s.LastWeight = *weight
+	}
+	if lastWeightDate != nil {
+		s.LastWeightDate = lastWeightDate
+	}
+	if firstWeight != nil {
+		s.FirstWeight = *firstWeight
+	}
+	if firstWeightDate != nil {
+		s.FirstWeightDate = firstWeightDate
 	}
 	if s.IDSire != nil && sireName != nil {
 		s.Sire = &domain.Parent{IDSheep: *s.IDSire, SheepName: *sireName}

@@ -139,6 +139,16 @@ export default defineComponent({
       }
     };
 
+    const getCustomLandName = (code: string, name: string) => {
+      const codeLower = code.toLowerCase();
+      const nameLower = name.toLowerCase();
+      if (nameLower.includes('alpukat')) return name;
+      if (nameLower.includes('kelengkeng')) return name;
+      if (codeLower === 'lh-001' || nameLower.includes('lh-001')) return 'Lahan Alpukat';
+      if (codeLower === 'lh-002' || nameLower.includes('lh-002')) return 'Lahan Kelengkeng';
+      return name;
+    };
+
     const handleDeleteLand = async (id: number | undefined, code: string) => {
       if (!id) {
         alertError.value = 'ID lahan tidak ditemukan, tidak dapat menghapus.';
@@ -184,10 +194,16 @@ export default defineComponent({
               borderColor: '#30360E', 
               display: 'inline-flex', 
               alignItems: 'center', 
-              gap: '8px' 
+              gap: '8px',
+              padding: '0.85rem 2rem',
+              fontSize: '1rem',
+              fontWeight: '800',
+              borderRadius: '12px',
+              height: '46px',
+              boxShadow: '0 8px 18px rgba(48, 54, 14, 0.2)'
             }}
           >
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', lineHeight: '1' }}>+</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 'bold', lineHeight: '1' }}>+</span>
             Tambah Lahan
           </button>
         </div>
@@ -222,7 +238,7 @@ export default defineComponent({
         )}
 
         {/* Dynamic Land Capacity Cards (Requirement a) */}
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-4 land-management-cards">
           {landsList.value.map(l => {
             const count = cropsList.value.filter(c => c.land === l.code).length;
             const cap = l.capacity || 50;
@@ -231,15 +247,16 @@ export default defineComponent({
             return (
               <div class="col-12 col-md-6 col-lg-4" key={l.code}>
                 <StatCard 
-                  label={`LAHAN ${l.code} - ${l.name}`} 
+                  label={getCustomLandName(l.code, l.name).toUpperCase()} 
                   value={`${count} / ${cap} Pohon`} 
-                  sub={`Ketersediaan: ${availability} Pohon (${pct}% Terisi)`}
+                  sub={`Ketersediaan: ${availability} Pohon`}
                   color={pct >= 90 ? 'accent' : 'primary'}
                   icon={() => (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
+                    <img 
+                      src={getCustomLandName(l.code, l.name).toLowerCase().includes('kelengkeng') ? '/icon/kelengkeng.png' : '/icon/alpukat.png'} 
+                      alt="Crop" 
+                      style="width: 48px; height: 48px; object-fit: contain;" 
+                    />
                   )}
                 />
               </div>
@@ -276,7 +293,7 @@ export default defineComponent({
                 return (
                   <tr key={l.code}>
                     <td><code>{l.code}</code></td>
-                    <td class="fw-bold">{l.name}</td>
+                    <td class="fw-bold">{getCustomLandName(l.code, l.name)}</td>
                     <td>{l.area}</td>
                     <td>
                       <Badge variant={l.status === 'Subur' ? 'success' : 'warning'}>{l.status}</Badge>
@@ -324,7 +341,7 @@ export default defineComponent({
                 <div key={l.code} class="admin-mobile-card">
                   <div class="card-top">
                     <div class="card-info">
-                      <span class="card-name">{l.name}</span>
+                      <span class="card-name">{getCustomLandName(l.code, l.name)}</span>
                       <span class="card-sub">{l.area}</span>
                     </div>
                     <span class="card-code">{l.code}</span>

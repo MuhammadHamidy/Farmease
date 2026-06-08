@@ -387,40 +387,59 @@
 .peternakan-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: #00000066;
   backdrop-filter: blur(2px);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1.5rem;
 }
 .peternakan-modal-card {
   width: 100%;
-  max-width: 540px;
+  max-width: 720px;
   background: white;
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   padding: 1.5rem;
-  box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 -10px 25px #0000001a;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
+
 .peternakan-modal-header {
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  flex-shrink: 0;
+}
+
+.peternakan-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 0.5rem;
 }
 .peternakan-modal-close {
   position: absolute;
-  left: 0;
+  right: 0.5rem;
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: var(--font-size-2xl);
   cursor: pointer;
+  color: #6B7280;
+  transition: color 0.2s;
+}
+.peternakan-modal-close:hover {
+  color: #111827;
 }
 .peternakan-modal-title {
-  font-size: 1.25rem;
+  font-size: var(--font-size-xl);
   font-weight: 800;
   color: #1A1A1A;
+  padding: 0 2.5rem;
+  text-align: center;
 }
 
 /* ── Selection Option ────────────────────────────────────── */

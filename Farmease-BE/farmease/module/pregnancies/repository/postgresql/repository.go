@@ -73,6 +73,14 @@ func (r *Repository) StoreBirth(ctx context.Context, k *domain.Birth) error {
 	return r.db.QueryRow(ctx, query, k.IDPregnancy, k.BirthDate, k.NumberOfOffspring, k.OffspringGender, k.OffspringCondition, k.Notes).Scan(&k.IDBirth, &k.CreatedAt)
 }
 
+func (r *Repository) StoreBirthWeight(ctx context.Context, idSheep int, date time.Time, weight float64) error {
+	query := `
+		INSERT INTO livestock.weights (id_sheep, weighing_date, weight_kg, notes)
+		VALUES ($1, $2, $3, $4)`
+	_, err := r.db.Exec(ctx, query, idSheep, date, weight, "Berat Lahir")
+	return err
+}
+
 func (r *Repository) FindAllBirths(ctx context.Context, from, to *time.Time) ([]*domain.Birth, error) {
 	query := `SELECT id_birth, id_pregnancy, birth_date, number_of_offspring, offspring_gender, offspring_condition, notes, created_at FROM breeding.births WHERE 1=1`
 	rows, err := r.db.Query(ctx, query)

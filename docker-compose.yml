@@ -51,6 +51,21 @@ services:
     networks:
       - farmease_network
 
+  seeder:
+    image: postgres:15-alpine
+    container_name: farmease_seeder
+    volumes:
+      - ./Farmease-BE/farmease/seeders:/seeders:ro
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-pass}
+    command: >
+      sh -c "for f in /seeders/*.sql; do psql -h postgres -U ${DB_USER:-user} -d ${DB_NAME:-farmease_be} -f \"$$f\"; done"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - farmease_network
+
   backend:
     build:
       context: Farmease-BE
@@ -62,6 +77,8 @@ services:
       redis:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      seeder:
         condition: service_completed_successfully
     environment:
       APP_ENV: ${APP_ENV:-development}

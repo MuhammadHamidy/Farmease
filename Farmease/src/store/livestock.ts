@@ -101,7 +101,20 @@ export const sheepStats = computed(() => ({
   healthy: sheep.value.filter((s) => s.status === 'Sehat').length,
   alert: sheep.value.filter((s) => s.status === 'Sakit' || s.status === 'Hamil').length,
   pregnant: sheep.value.filter((s) => s.status === 'Hamil').length,
+  siapJual: sheep.value.filter((s) => s.status === 'Siap Jual').length,
+  mati: sheep.value.filter((s) => s.status === 'Mati').length,
+  keluar: sheep.value.filter((s) => ['Terjual', 'Disembelih', 'Mati'].includes(s.status)).length,
 }))
+
+// Daftar domba yang sudah keluar (mutasi keluar)
+export const mutationHistory = computed(() =>
+  sheep.value.filter((s) => ['Mati', 'Terjual', 'Disembelih'].includes(s.status))
+)
+
+// Status domba yang didukung
+export const SHEEP_STATUS_OPTIONS = [
+  'Sehat', 'Hamil', 'Sakit', 'Siap Jual', 'Mati', 'Terjual', 'Disembelih',
+] as const
 
 export async function fetchSheep(cageCode?: string) {
   if (loading.value) return
@@ -156,20 +169,20 @@ export async function fetchHealthRecords(sheepId?: string) {
     if (sheepId) {
       const list = await healthApi.getList(Number(sheepId))
       healthRecords.value = list.map((h) => ({
-        id: String(h.id),
+        id: String((h as any).id_health || h.id),
         sheep_id: String(h.id_sheep),
-        date: h.date_recorded,
-        status: h.health_status,
-        notes: h.description,
+        date: h.date_recorded || (h as any).checkup_date || '',
+        status: h.health_status || (h as any).action || (h as any).diagnosis || '',
+        notes: h.description || (h as any).notes || '',
       }))
     } else {
       const list = await healthApi.getGlobalList()
       healthRecords.value = list.map((h) => ({
-        id: String(h.id),
+        id: String((h as any).id_health || h.id),
         sheep_id: String(h.id_sheep),
-        date: h.date_recorded,
-        status: h.health_status,
-        notes: h.description,
+        date: h.date_recorded || (h as any).checkup_date || '',
+        status: h.health_status || (h as any).action || (h as any).diagnosis || '',
+        notes: h.description || (h as any).notes || '',
       }))
     }
   } catch (err: unknown) {
@@ -190,10 +203,10 @@ export async function fetchWeightRecords(sheepId?: string) {
       : await weightApi.getList()
 
     weightRecords.value = list.map((w) => ({
-      id: String(w.id),
+      id: String((w as any).id_weight || w.id),
       sheep_id: String(w.id_sheep),
-      date: w.date_recorded,
-      weight: w.weight,
+      date: w.date_recorded || (w as any).weighing_date || '',
+      weight: w.weight || (w as any).weight_kg || 0,
     }))
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Failed to fetch weight records'
@@ -214,10 +227,10 @@ export async function fetchFeedRecords(sheepId?: string) {
     } else {
       const list = await feedsApi.getList()
       feedRecords.value = list.map((f) => ({
-        id: String(f.id),
+        id: String((f as any).id_feed || f.id),
         sheep_id: '',
-        type: f.feed_type,
-        quantity: f.stock,
+        type: f.feed_type || (f as any).category || '',
+        quantity: f.stock !== undefined && f.stock !== null ? f.stock : ((f as any).available_stock || 0),
         date: f.created_at,
       }))
     }
@@ -266,6 +279,24 @@ export async function updateSheep(id: string, data: Record<string, unknown>) {
   }
 }
 
+export async function updateSheepStatus(id: string, status: string) {
+  try {
+    loading.value = true
+    error.value = null
+
+    await sheepApi.updateStatus(Number(id), status)
+    const index = sheep.value.findIndex((s) => s.id === id)
+    if (index !== -1) {
+      sheep.value[index] = { ...sheep.value[index]!, status }
+    }
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Failed to update sheep status'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
 export async function addHealthRecord(sheepId: string, data: Record<string, unknown>) {
   try {
     loading.value = true
@@ -273,11 +304,11 @@ export async function addHealthRecord(sheepId: string, data: Record<string, unkn
 
     const created = await healthApi.create(Number(sheepId), data)
     const record: HealthRecord = {
-      id: String(created.id),
+      id: String((created as any).id_health || created.id),
       sheep_id: String(created.id_sheep),
-      date: created.date_recorded,
-      status: created.health_status,
-      notes: created.description,
+      date: created.date_recorded || (created as any).checkup_date || '',
+      status: created.health_status || (created as any).action || (created as any).diagnosis || '',
+      notes: created.description || (created as any).notes || '',
     }
     healthRecords.value.push(record)
     return record
@@ -296,10 +327,10 @@ export async function addWeightRecord(sheepId: string, data: Record<string, unkn
 
     const created = await weightApi.record(Number(sheepId), data)
     const record: WeightRecord = {
-      id: String(created.id),
+      id: String((created as any).id_weight || created.id),
       sheep_id: String(created.id_sheep),
-      date: created.date_recorded,
-      weight: created.weight,
+      date: created.date_recorded || (created as any).weighing_date || '',
+      weight: created.weight || (created as any).weight_kg || 0,
     }
     weightRecords.value.push(record)
     return record
@@ -349,11 +380,11 @@ export async function fetchHealthForSheep(id: number) {
     detailError.value = null
     const list = await healthApi.getList(id)
     currentHealthRecords.value = list.map((h) => ({
-      id: String(h.id),
+      id: String((h as any).id_health || h.id),
       sheep_id: String(h.id_sheep),
-      date: h.date_recorded,
-      status: h.health_status,
-      notes: h.description,
+      date: h.date_recorded || (h as any).checkup_date || '',
+      status: h.health_status || (h as any).action || (h as any).diagnosis || '',
+      notes: h.description || (h as any).notes || '',
     }))
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat riwayat kesehatan'
@@ -366,10 +397,10 @@ export async function fetchWeightForSheep(id: number) {
     detailError.value = null
     const list = await weightApi.getSheepHistory(id)
     currentWeightRecords.value = list.map((w) => ({
-      id: String(w.id),
+      id: String((w as any).id_weight || w.id),
       sheep_id: String(w.id_sheep),
-      date: w.date_recorded,
-      weight: w.weight,
+      date: w.date_recorded || (w as any).weighing_date || '',
+      weight: w.weight || (w as any).weight_kg || 0,
     }))
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat riwayat berat'

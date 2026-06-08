@@ -34,19 +34,14 @@ export default defineComponent({
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
               <Button variant="ghost" onClick={goBack}>
                 <div class="d-flex align-items-center gap-2">
-                  <img
-                    src="/icon/right-row.png"
-                    style={{ width: '20px', height: '20px', transform: 'rotate(180deg)', opacity: 0.6 }}
-                    alt=""
-                  />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style={{ opacity: 0.7 }}>
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
                   <span class="fw-bold">Kembali ke Pencatatan</span>
                 </div>
               </Button>
 
               <div class="d-flex gap-2">
-                <Button variant="outline" shape="pill" onClick={() => window.print()}>
-                  Cetak Detail
-                </Button>
                 <Button variant="primary" shape="pill" onClick={goBack}>
                   Selesai
                 </Button>

@@ -50,3 +50,11 @@ func (u *useCase) VerifyCage(ctx context.Context, code string) (*domain.Cage, er
 	}
 	return cage, nil
 }
+
+func (u *useCase) GetCageStats(ctx context.Context, id int) (*domain.CageStats, error) {
+	return u.repo.GetCageStats(ctx, id)
+}
+
+func (u *useCase) GetCageWeightStats(ctx context.Context, id int) (*domain.CageWeightStats, error) {
+	return u.repo.GetCageWeightStats(ctx, id)
+}

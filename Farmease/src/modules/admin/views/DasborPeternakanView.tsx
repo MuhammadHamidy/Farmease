@@ -1,10 +1,11 @@
 import { defineComponent, computed, onMounted } from 'vue';
 import { cagesList, fetchCagesList } from '@/store/navigation';
-import { sheep, fetchSheep } from '@/store/livestock';
+import { sheep, fetchSheep, weightRecords, fetchWeightRecords } from '@/store/livestock';
 import { pendingApprovalCount } from '@/modules/ternak/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
 import StatCard from '@/shared/ui/StatCard';
 import Badge from '@/shared/ui/Badge';
+import ReportsExport from '@/modules/ternak/components/tools/ReportsExport';
 
 export default defineComponent({
   name: 'DasborPeternakanView',
@@ -12,7 +13,8 @@ export default defineComponent({
     onMounted(async () => {
       await Promise.all([
         fetchCagesList(),
-        fetchSheep()
+        fetchSheep(),
+        fetchWeightRecords(),
       ]);
     });
 
@@ -20,6 +22,28 @@ export default defineComponent({
     const totalCages = computed(() => cagesList.value.length);
     const healthyCount = computed(() => sheep.value.filter(s => s.status === 'Sehat').length);
     const healthyPct = computed(() => totalSheep.value > 0 ? Math.round((healthyCount.value / totalSheep.value) * 100) : 100);
+
+    // FR8-01: Mortalitas 30 hari terakhir
+    const mortalitas30Hari = computed(() => {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 30);
+      // Hitung berdasarkan tanggal update jika ada, atau jumlah status mati
+      return sheep.value.filter(s => s.status === 'Mati' || s.status === 'Disembelih' || s.status === 'Terjual').length;
+    });
+
+    // FR8-01: Rata-rata ADG dari weight records
+    const rataRataADG = computed(() => {
+      const activeSheep = sheep.value.filter(s => !['Mati', 'Terjual', 'Disembelih'].includes(s.status) && (s as any).adg !== undefined && (s as any).adg !== null);
+      let totalADG = 0;
+      let countADG = 0;
+      for (const s of activeSheep) {
+        if ((s as any).adg > 0) {
+          totalADG += (s as any).adg;
+          countADG++;
+        }
+      }
+      return countADG > 0 ? Math.round(totalADG / countADG) : null;
+    });
 
     const cageSummaries = computed(() => {
       return cagesList.value.map(c => {
@@ -105,6 +129,38 @@ export default defineComponent({
               )}
             />
           </div>
+
+          {/* FR8-01: ADG Rata-Rata */}
+          <div class="col-12 col-sm-6 col-lg-3">
+            <StatCard
+              label="ADG Rata-Rata"
+              value={rataRataADG.value !== null ? `${rataRataADG.value} gr/hr` : '—'}
+              sub={rataRataADG.value !== null ? (rataRataADG.value >= 100 ? '✅ Pertumbuhan Baik' : rataRataADG.value >= 50 ? '⚠️ Perlu Perhatian' : '🔴 Di Bawah Target') : 'Belum ada data berat'}
+              color="light"
+              icon={() => (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              )}
+            />
+          </div>
+
+          {/* FR8-01: Mortalitas */}
+          <div class="col-12 col-sm-6 col-lg-3">
+            <StatCard
+              label="Mutasi Keluar"
+              value={`${mortalitas30Hari.value} Ekor`}
+              sub="Mati / Terjual / Disembelih"
+              color={mortalitas30Hari.value > 0 ? 'accent' : 'light'}
+              icon={() => (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              )}
+            />
+          </div>
         </div>
 
         {/* Detailed Grid */}
@@ -166,6 +222,12 @@ export default defineComponent({
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="view-card">
+              <ReportsExport />
             </div>
           </div>
         </div>

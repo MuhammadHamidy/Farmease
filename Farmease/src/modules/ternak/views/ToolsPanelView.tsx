@@ -1,41 +1,9 @@
 import { defineComponent, ref, computed } from 'vue';
 import Typography from '@/shared/ui/Typography';
-import InbreedingChecker from '../components/tools/InbreedingChecker';
-import WeightHistory from '../components/tools/WeightHistory';
-import FeedStock from '../components/tools/FeedStock';
-import WasteLog from '../components/tools/WasteLog';
 import ReportsExport from '../components/tools/ReportsExport';
 import ActivityLog from '../components/tools/ActivityLog';
 
 const toolsList = [
-  { 
-    id: 'inbreeding', 
-    name: 'Cek Hubungan Kekerabatan', 
-    description: 'Periksa overlap garis keturunan atau risiko perkawinan sedarah (inbreeding) antara jantan dan betina.', 
-    icon: '/icon/catat_kawin.png', 
-    component: InbreedingChecker 
-  },
-  { 
-    id: 'weight', 
-    name: 'Riwayat Penimbangan Mandiri', 
-    description: 'Log khusus penimbangan bobot ternak harian/berkala untuk melacak perkembangan berat badan.', 
-    icon: '/icon/statistic.png', 
-    component: WeightHistory 
-  },
-  { 
-    id: 'feed', 
-    name: 'Stok & Konversi Pakan', 
-    description: 'Pantau ketersediaan stok rumput, konsentrat, serta konversi hasil panen perkebunan menjadi pakan.', 
-    icon: '/icon/catat_pakan.png', 
-    component: FeedStock 
-  },
-  { 
-    id: 'waste', 
-    name: 'Sanitasi & Panen Kotoran', 
-    description: 'Log pencatatan kebersihan kandang harian dan pengumpulan kotoran untuk diolah menjadi pupuk.', 
-    icon: '/icon/catat_kotoran.png', 
-    component: WasteLog 
-  },
   { 
     id: 'export', 
     name: 'Ekspor Laporan Ternak', 
@@ -46,7 +14,7 @@ const toolsList = [
   { 
     id: 'activity', 
     name: 'Log Kegiatan Operator', 
-    description: 'Tinjau histori kegiatan yang telah diselesaikan di lapangan oleh operator kandang.', 
+    description: 'Tinjau histori kegiatan yang telah diselesaikan di lapangan oleh operator ternak.', 
     icon: '/icon/dashboard.png', 
     component: ActivityLog 
   },
@@ -71,10 +39,10 @@ export default defineComponent({
               <button
                 onClick={() => activeToolId.value = null}
                 class="header-logout-btn"
-                style={{ width: '42px', height: '42px', background: 'white' }}
+                style={{ width: '38px', height: '38px', background: 'white' }}
                 title="Kembali ke Menu Alat"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
               </button>

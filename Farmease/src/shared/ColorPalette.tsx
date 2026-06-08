@@ -5,7 +5,7 @@ export type ColorSwatch = { hex: string; name: string };
 /** Palet Ternak (peternakan) — coklat / krem */
 export const paletteTernak = {
   primary: { hex: '#3d2f24', name: 'Dark Brown' },
-  secondary: { hex: '#a78d78', name: 'Light Brown' },
+  secondary: { hex: '#8a7563', name: 'Medium Brown' },
   tertiary: { hex: '#8b7355', name: 'Medium Brown' },
   background: { hex: '#faf8f5', name: 'Cream White' },
   surface: { hex: '#faf8f5', name: 'Surface Cream' },

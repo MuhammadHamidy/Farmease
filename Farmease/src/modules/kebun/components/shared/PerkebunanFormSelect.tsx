@@ -1,5 +1,5 @@
-import { defineComponent } from 'vue'
-import type { PropType } from 'vue'
+import { defineComponent, type PropType } from 'vue'
+import CustomSelect from '@/shared/ui/admin/Select'
 
 export default defineComponent({
   name: 'PerkebunanFormSelect',
@@ -20,25 +20,13 @@ export default defineComponent({
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     return () => (
-      <div class="perkebunan-select-wrapper">
-        <select
-          class="perkebunan-form-select"
-          value={props.modelValue}
-          onChange={(event) => emit('update:modelValue', (event.target as HTMLSelectElement).value)}
-        >
-          {props.placeholder && (
-            <option value="" disabled selected={!props.modelValue}>
-              {props.placeholder}
-            </option>
-          )}
-          {props.options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <span class="select-chevron"></span>
-      </div>
+      <CustomSelect
+        modelValue={props.modelValue}
+        options={props.options}
+        placeholder={props.placeholder}
+        theme="perkebunan"
+        onUpdate:modelValue={(val: string) => emit('update:modelValue', val)}
+      />
     )
   },
 })

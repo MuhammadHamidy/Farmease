@@ -12,6 +12,7 @@ type JadwalRutin struct {
 	Interval             string `json:"interval" db:"interval"`
 	StatusPencatatan     string `json:"status_pencatatan" db:"status_pencatatan"`
 	Keterangan           string `json:"keterangan" db:"keterangan"`
+	JamTenggat           string `json:"jam_tenggat" db:"jam_tenggat"`
 	LahanIDLahan         int    `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
 	AktivitasIDAktivitas int    `json:"Aktivitas_id_aktivitas" db:"Aktivitas_id_aktivitas"`
 }

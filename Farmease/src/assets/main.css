@@ -3,6 +3,7 @@
 @import "tailwindcss";
 
 /* Tema default (Ternak) — palet coklat; SSO landing pakai class module-sso */
+@import "./colorpalette.css";
 @import "../modules/ternak/assets/theme.css";
 
 body.module-sso {

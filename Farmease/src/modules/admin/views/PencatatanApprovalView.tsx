@@ -1,4 +1,4 @@
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, watch, Teleport } from 'vue';
 import Typography from '@/shared/ui/admin/Typography';
 import Button from '@/shared/ui/admin/Button';
 import Select from '@/shared/ui/admin/Select';
@@ -20,6 +20,55 @@ export default defineComponent({
     const selectedId = ref<string | null>(null);
     const reviewNote = ref('');
     const hoveredRowId = ref<string | null>(null);
+    const isSubmitting = ref(false);
+    
+    const rejectModal = ref({
+      isOpen: false,
+      submissionId: '',
+      note: ''
+    });
+
+    const openRejectModal = (id: string) => {
+      rejectModal.value = {
+        isOpen: true,
+        submissionId: id,
+        note: ''
+      };
+    };
+
+    const closeRejectModal = () => {
+      rejectModal.value.isOpen = false;
+    };
+
+    const confirmReject = () => {
+      if (rejectModal.value.submissionId) {
+        handleRejectAction(rejectModal.value.submissionId, rejectModal.value.note || 'Ditolak via panel aksi');
+      }
+      closeRejectModal();
+    };
+
+    const alertModal = ref({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'success' as 'success' | 'error',
+    });
+
+    const closeAlertModal = () => {
+      alertModal.value.isOpen = false;
+    };
+
+    // FR6-01: Kunci data yang sudah diverifikasi
+    const lockedIds = ref<Set<string>>(new Set());
+    const toggleLock = (id: string) => {
+      const next = new Set(lockedIds.value);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      lockedIds.value = next;
+    };
+    const isLocked = (id: string) => lockedIds.value.has(id);
+
+    const currentPage = ref(1);
+    const itemsPerPage = 5;
 
     const filterOptions = ['Menunggu Persetujuan', 'Disetujui', 'Ditolak', 'Semua'];
     const jenisOptions = ['Semua Jenis Pencatatan', 'Pencatatan Peternakan', 'Pencatatan Perkebunan'];
@@ -48,6 +97,19 @@ export default defineComponent({
       return list;
     });
 
+    const totalPages = computed(() => Math.ceil(filtered.value.length / itemsPerPage) || 1);
+
+    watch(filtered, () => {
+      if (currentPage.value > totalPages.value) {
+        currentPage.value = 1;
+      }
+    });
+
+    const paginatedItems = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage;
+      return filtered.value.slice(start, start + itemsPerPage);
+    });
+
     const selected = computed(() =>
       pencatatanSubmissions.value.find((s) => s.id === selectedId.value) || null,
     );
@@ -59,16 +121,49 @@ export default defineComponent({
 
     const reviewerName = () => userSession.value?.name || 'Admin Utama';
 
-    const handleApprove = () => {
+    const handleApproveAction = async (id: string, note: string) => {
+      if (isSubmitting.value) return;
+      isSubmitting.value = true;
+      try {
+        const res = await approveSubmission(id, reviewerName(), note);
+        if (res) {
+          alertModal.value = {
+            isOpen: true,
+            title: res.success ? 'Berhasil Disetujui' : 'Gagal Mengeksekusi',
+            message: res.message,
+            type: res.success ? 'success' : 'error'
+          };
+        }
+      } finally {
+        isSubmitting.value = false;
+      }
+    };
+
+    const handleRejectAction = (id: string, note: string) => {
+      const res = rejectSubmission(id, reviewerName(), note);
+      if (res) {
+        alertModal.value = {
+          isOpen: true,
+          title: 'Berhasil Ditolak',
+          message: res.message,
+          type: 'success'
+        };
+      }
+    };
+
+    const handleApprove = async () => {
       if (!selected.value) return;
-      approveSubmission(selected.value.id, reviewerName(), reviewNote.value);
+      await handleApproveAction(selected.value.id, reviewNote.value);
       selectedId.value = null;
     };
 
     const handleReject = () => {
       if (!selected.value) return;
-      if (!reviewNote.value.trim()) return alert('Mohon isi catatan penolakan');
-      rejectSubmission(selected.value.id, reviewerName(), reviewNote.value);
+      if (!reviewNote.value.trim()) {
+        alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: 'Mohon isi catatan penolakan', type: 'error' };
+        return;
+      }
+      handleRejectAction(selected.value.id, reviewNote.value);
       selectedId.value = null;
     };
 
@@ -86,6 +181,15 @@ export default defineComponent({
         hour: '2-digit',
         minute: '2-digit',
       }).format(new Date(ts));
+
+    const formatOperatorCode = (code: string, name: string) => {
+      if (code === '1' || name.toLowerCase().includes('admin')) return 'ADM-001';
+      if (code === '2' || name.toLowerCase().includes('ternak') || name.toLowerCase().includes('kandang')) return 'OP-Ternak';
+      if (code === '3' || name.toLowerCase().includes('kebun')) return 'OP-Kebun';
+      if (code === '4' || name.toLowerCase().includes('pemilik')) return 'PEM-001';
+      if (/^\d+$/.test(code)) return `OP-00${code}`;
+      return code;
+    };
 
     return () => (
       <div class="pencatatan-approval animate-fade-in-up">
@@ -136,114 +240,219 @@ export default defineComponent({
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.value.length === 0 ? (
-                      <tr>
-                        <td colspan={5} class="text-center py-4 text-muted">
-                          Tidak ada data pencatatan.
-                        </td>
-                      </tr>
-                    ) : (
-                      filtered.value.map((sub) => {
-                        const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
-                        const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
+                    {(() => {
+                      const rows = [];
+                      const emptyRowsCount = itemsPerPage - paginatedItems.value.length;
 
-                        return (
-                          <tr
-                            key={sub.id}
-                            class={selectedId.value === sub.id ? 'table-active' : ''}
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => openDetail(sub)}
-                          >
-                            <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}><code>{sub.operatorCode}</code></td>
-                            <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}>
-                              <div class="fw-bold">{sub.operatorName}</div>
-                            </td>
-                            <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}>
-                              <span class={['role-badge', isPerkebunan ? 'operator-perkebunan' : 'operator-peternakan']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
-                                {jenisText}
-                              </span>
-                            </td>
-                            <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}>
-                              <span class={['status-badge', sub.approvalStatus === 'approved' ? 'approved' : sub.approvalStatus === 'rejected' ? 'rejected' : 'pending']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
-                                {sub.approvalStatus === 'approved' ? 'Disetujui' : sub.approvalStatus === 'rejected' ? 'Ditolak' : 'Belum Disetujui'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                              <div class="d-flex justify-content-center gap-2">
-                                {sub.approvalStatus === 'pending' && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
-                                      onClick={() => {
-                                        approveSubmission(sub.id, reviewerName(), 'Disetujui via panel aksi');
-                                      }}
-                                    >
-                                      Setujui
-                                    </button>
-                                    <button
-                                      type="button"
-                                      class="btn btn-sm btn-danger px-3 rounded-pill fw-bold text-white"
-                                      onClick={() => {
-                                        const note = prompt('Masukkan alasan penolakan (opsional):');
-                                        if (note !== null) {
-                                          rejectSubmission(sub.id, reviewerName(), note || 'Ditolak via panel aksi');
-                                        }
-                                      }}
-                                    >
-                                      Tolak
-                                    </button>
-                                  </>
-                                )}
-                                {sub.approvalStatus === 'approved' && (
-                                  <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
-                                    onClick={() => {
-                                      rejectSubmission(sub.id, reviewerName(), 'Batal disetujui');
-                                    }}
-                                  >
-                                    Batal Setuju
-                                  </button>
-                                )}
-                                {sub.approvalStatus === 'rejected' && (
-                                  <button
-                                    type="button"
-                                    class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
-                                    onClick={() => {
-                                      approveSubmission(sub.id, reviewerName(), 'Disetujui kembali');
-                                    }}
-                                  >
-                                    Setujui
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-bold"
-                                  onClick={() => openDetail(sub)}
-                                >
-                                  Detail
-                                </button>
-                              </div>
+                      if (filtered.value.length === 0) {
+                        rows.push(
+                          <tr key="no-data" style={{ height: '58px' }}>
+                            <td colspan={5} class="text-center py-3 text-muted" style={{ verticalAlign: 'middle', height: '58px' }}>
+                              Tidak ada data pencatatan.
                             </td>
                           </tr>
                         );
-                      })
-                    )}
+                        for (let i = 1; i < itemsPerPage; i++) {
+                          rows.push(
+                            <tr key={`empty-${i}`} style={{ height: '58px' }}>
+                              <td colspan={5} style={{ height: '58px', padding: '0.75rem 0.5rem' }}>&nbsp;</td>
+                            </tr>
+                          );
+                        }
+                      } else {
+                        paginatedItems.value.forEach((sub) => {
+                          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
+                          const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
+
+                          rows.push(
+                            <tr
+                              key={sub.id}
+                              class={selectedId.value === sub.id ? 'table-active' : ''}
+                              style={{ cursor: 'pointer', height: '58px' }}
+                              onClick={() => openDetail(sub)}
+                            >
+                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}><code>{formatOperatorCode(sub.operatorCode, sub.operatorName)}</code></td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}>
+                                <div class="fw-bold">{sub.operatorName}</div>
+                              </td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}>
+                                <span class={['role-badge', isPerkebunan ? 'operator-perkebunan' : 'operator-peternakan']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
+                                  {jenisText}
+                                </span>
+                              </td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}>
+                                <div class="d-flex align-items-center gap-1">
+                                  <span class={['status-badge', sub.approvalStatus === 'approved' ? 'approved' : sub.approvalStatus === 'rejected' ? 'rejected' : 'pending']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
+                                    {sub.approvalStatus === 'approved' ? 'Disetujui' : sub.approvalStatus === 'rejected' ? 'Ditolak' : 'Belum Disetujui'}
+                                  </span>
+                                  {isLocked(sub.id) && <span title="Data Terkunci" style={{ fontSize: '0.85rem' }}>🔒</span>}
+                                </div>
+                              </td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', textAlign: 'center', verticalAlign: 'middle', height: '58px' }}>
+                                <div class="d-flex justify-content-center gap-2">
+                                  {sub.approvalStatus === 'pending' && !isLocked(sub.id) && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
+                                        disabled={isSubmitting.value}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleApproveAction(sub.id, 'Disetujui via panel aksi');
+                                        }}
+                                      >
+                                        {isSubmitting.value ? 'Loading...' : 'Setujui'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        class="btn btn-sm btn-danger px-3 rounded-pill fw-bold text-white"
+                                        disabled={isSubmitting.value}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openRejectModal(sub.id);
+                                        }}
+                                      >
+                                        Tolak
+                                      </button>
+                                    </>
+                                  )}
+                                  {sub.approvalStatus === 'approved' && (
+                                    <>
+                                      {!isLocked(sub.id) && (
+                                        <button
+                                          type="button"
+                                          class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRejectAction(sub.id, 'Batal disetujui');
+                                          }}
+                                        >
+                                          Batal Setuju
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        class={['btn btn-sm px-3 rounded-pill fw-bold', isLocked(sub.id) ? 'btn-warning' : 'btn-outline-secondary']}
+                                        onClick={(e) => { e.stopPropagation(); toggleLock(sub.id); }}
+                                        title={isLocked(sub.id) ? 'Buka Kunci Data' : 'Kunci Data Terverifikasi'}
+                                      >
+                                        {isLocked(sub.id) ? '🔓 Terkunci' : '🔒 Kunci'}
+                                      </button>
+                                    </>
+                                  )}
+                                  {sub.approvalStatus === 'rejected' && !isLocked(sub.id) && (
+                                      <button
+                                        type="button"
+                                        class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
+                                        onClick={() => handleApproveAction(sub.id, 'Disetujui kembali')}
+                                      >
+                                        Setujui
+                                      </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-bold"
+                                    onClick={() => openDetail(sub)}
+                                  >
+                                    Detail
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        });
+
+                        for (let i = 0; i < emptyRowsCount; i++) {
+                          rows.push(
+                            <tr key={`empty-${i}`} style={{ height: '58px' }}>
+                              <td style={{ height: '58px', padding: '0.75rem 0.5rem' }}>&nbsp;</td>
+                              <td style={{ height: '58px', padding: '0.75rem 0.5rem' }}>&nbsp;</td>
+                              <td style={{ height: '58px', padding: '0.75rem 0.5rem' }}>&nbsp;</td>
+                              <td style={{ height: '58px', padding: '0.75rem 0.5rem' }}>&nbsp;</td>
+                              <td style={{ height: '58px', padding: '0.75rem 0.5rem' }}>&nbsp;</td>
+                            </tr>
+                          );
+                        }
+                      }
+                      return rows;
+                    })()}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Pagination controls */}
+              <div class="d-flex align-items-center justify-content-between px-4 py-3 bg-white border-top flex-wrap gap-3">
+                <div class="text-muted small">
+                  Menampilkan <span class="fw-bold text-dark">{filtered.value.length > 0 ? (currentPage.value - 1) * itemsPerPage + 1 : 0}</span> - <span class="fw-bold text-dark">{Math.min(currentPage.value * itemsPerPage, filtered.value.length)}</span> dari <span class="fw-bold text-dark">{filtered.value.length}</span> data pencatatan
+                </div>
+                {totalPages.value > 1 && (
+                  <div class="d-flex align-items-center gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-sm px-3 rounded-pill fw-bold"
+                      disabled={currentPage.value === 1}
+                      onClick={() => currentPage.value--}
+                      style={{
+                        cursor: currentPage.value === 1 ? 'not-allowed' : 'pointer',
+                        backgroundColor: '#ffffff',
+                        color: currentPage.value === 1 ? '#b0a898' : '#3d2f24',
+                        borderColor: '#ccc0b4',
+                        opacity: currentPage.value === 1 ? 0.6 : 1,
+                        fontSize: '0.8rem',
+                        padding: '0.4rem 0.85rem'
+                      }}
+                    >
+                      Sebelumnya
+                    </button>
+                    {Array.from({ length: totalPages.value }, (_, i) => i + 1).map((page) => (
+                      <button
+                        type="button"
+                        class="btn btn-sm rounded-pill fw-bold"
+                        onClick={() => currentPage.value = page}
+                        style={{
+                          backgroundColor: currentPage.value === page ? '#3d2f24' : '#ffffff',
+                          color: currentPage.value === page ? '#ffffff' : '#3d2f24',
+                          borderColor: currentPage.value === page ? '#3d2f24' : '#ccc0b4',
+                          minWidth: '32px',
+                          fontSize: '0.8rem',
+                          padding: '0.4rem'
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      class="btn btn-sm px-3 rounded-pill fw-bold"
+                      disabled={currentPage.value === totalPages.value}
+                      onClick={() => currentPage.value++}
+                      style={{
+                        cursor: currentPage.value === totalPages.value ? 'not-allowed' : 'pointer',
+                        backgroundColor: '#ffffff',
+                        color: currentPage.value === totalPages.value ? '#b0a898' : '#3d2f24',
+                        borderColor: '#ccc0b4',
+                        opacity: currentPage.value === totalPages.value ? 0.6 : 1,
+                        fontSize: '0.8rem',
+                        padding: '0.4rem 0.85rem'
+                      }}
+                    >
+                      Berikutnya
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/* Detail Modal */}
-        {selected.value && (
-          <div class="admin-modal-overlay animate-fade-in" onClick={() => selectedId.value = null}>
-            <div class="admin-modal-content text-start" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', backgroundColor: '#FAFAF8' }}>
-              <div class="modal-header">
-                <button type="button" class="close-btn" onClick={() => selectedId.value = null}>✕</button>
-                <h3>Detail Pencatatan</h3>
+        <Teleport to="body">
+          {selected.value && (
+            <div class="peternakan-modal-overlay animate-fade-in" onClick={() => selectedId.value = null} style={{ zIndex: 1050 }}>
+              <div class="peternakan-modal-card text-start" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', backgroundColor: '#FAFAF8', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+                <div class="modal-header">
+                  <button type="button" class="close-btn" onClick={() => selectedId.value = null} style={{ position: 'absolute', right: '1rem', top: '1rem' }}>✕</button>
+                  <h3>Detail Pencatatan</h3>
               </div>
 
               <div class="modal-body py-3" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
@@ -255,7 +464,7 @@ export default defineComponent({
 
                 <div class="approval-detail-list mb-4">
                   <DetailRow label="ID" value={selected.value.id} />
-                  <DetailRow label="Operator" value={`${selected.value.operatorName} (${selected.value.operatorCode})`} />
+                  <DetailRow label="Operator" value={`${selected.value.operatorName} (${formatOperatorCode(selected.value.operatorCode, selected.value.operatorName)})`} />
                   <DetailRow label="Jenis" value={selected.value.typeLabel} />
                   <DetailRow label="Kandang/Lahan" value={selected.value.cageCode} />
                   <DetailRow label="Mode" value={selected.value.scope === 'kandang' ? 'Per Kandang/Lahan' : 'Per Domba/Pohon'} />
@@ -292,6 +501,7 @@ export default defineComponent({
                       <button
                         type="button"
                         class="btn btn-outline-danger grow py-2.5 rounded-pill fw-bold"
+                        disabled={isSubmitting.value}
                         onClick={handleReject}
                         style={{ flex: 1 }}
                       >
@@ -300,10 +510,11 @@ export default defineComponent({
                       <button
                         type="button"
                         class="btn btn-success grow py-2.5 rounded-pill fw-bold text-white"
+                        disabled={isSubmitting.value}
                         onClick={handleApprove}
                         style={{ flex: 1 }}
                       >
-                        Setujui
+                        {isSubmitting.value ? 'Loading...' : 'Setujui'}
                       </button>
                     </div>
                   </>
@@ -319,12 +530,70 @@ export default defineComponent({
                 )}
               </div>
 
-              <div class="modal-footer pt-3 border-top d-flex justify-content-end">
-                <button type="button" class="btn btn-light rounded-pill px-4" onClick={() => selectedId.value = null}>Tutup</button>
+                <div class="modal-footer pt-3 border-top d-flex justify-content-end">
+                  <button type="button" class="btn btn-light rounded-pill px-4" onClick={() => selectedId.value = null}>Tutup</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Teleport>
+        {/* Custom Alert Modal */}
+        <Teleport to="body">
+          {alertModal.value.isOpen && (
+            <div class="peternakan-modal-overlay" style={{ zIndex: 1100, alignItems: 'center' }} onClick={alertModal.value.type === 'error' ? closeAlertModal : closeAlertModal}>
+              <div class="peternakan-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', backgroundColor: '#fff', borderRadius: '24px', animation: 'scaleUp 0.3s ease' }}>
+                <div class="p-4 text-center">
+                  <div style={{ marginBottom: '1.5rem' }}>
+                  {alertModal.value.type === 'error' ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', backgroundColor: 'rgba(220, 53, 69, 0.1)', color: '#dc3545', borderRadius: '50%' }}>
+                      <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>!</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', backgroundColor: 'rgba(25, 135, 84, 0.1)', color: '#198754', borderRadius: '50%' }}>
+                      <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>✓</span>
+                    </div>
+                  )}
+                </div>
+                
+                <h4 style={{ fontWeight: '800', marginBottom: '0.5rem', fontSize: '1.25rem', color: '#111827' }}>
+                  {alertModal.value.title}
+                </h4>
+                
+                <p style={{ color: '#6b7280', marginBottom: '1.5rem', whiteSpace: 'pre-line', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  {alertModal.value.message}
+                </p>
+
+                <button style={{ width: '100%', padding: '0.75rem', borderRadius: '50rem', backgroundColor: '#3D2F24', color: '#fff', border: 'none', fontWeight: 'bold' }} onClick={closeAlertModal}>
+                  Tutup
+                </button>
               </div>
             </div>
           </div>
-        )}
+          )}
+        </Teleport>
+        
+        {/* Reject Modal */}
+        <Teleport to="body">
+          {rejectModal.value.isOpen && (
+            <div class="peternakan-modal-overlay animate-fade-in" onClick={closeRejectModal} style={{ zIndex: 1100, alignItems: 'center' }}>
+              <div class="peternakan-modal-card p-4" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', backgroundColor: '#fff', borderRadius: '16px' }}>
+                <h4 class="fw-bold mb-3">Konfirmasi Penolakan</h4>
+                <p class="text-muted small mb-3">Silakan masukkan alasan penolakan (opsional):</p>
+                <textarea
+                  class="form-control mb-4 rounded-3"
+                  rows={3}
+                  placeholder="Contoh: Data tidak sesuai standar..."
+                  value={rejectModal.value.note}
+                  onInput={(e) => rejectModal.value.note = (e.target as HTMLTextAreaElement).value}
+                ></textarea>
+                <div class="d-flex gap-2 justify-content-end">
+                  <button class="btn btn-light rounded-pill px-4" onClick={closeRejectModal}>Batal</button>
+                  <button class="btn btn-danger rounded-pill px-4 text-white fw-bold" onClick={confirmReject}>Tolak Pencatatan</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Teleport>
       </div>
     );
   },

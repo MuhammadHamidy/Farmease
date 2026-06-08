@@ -22,7 +22,20 @@ func (u *useCase) RecordPregnancy(ctx context.Context, k *domain.Pregnancy) erro
 }
 
 func (u *useCase) GetPregnancyList(ctx context.Context, status string) ([]*domain.Pregnancy, error) {
-	return u.repo.FindAllPregnancies(ctx, status)
+	list, err := u.repo.FindAllPregnancies(ctx, status)
+	if err != nil {
+		return nil, err
+	}
+	
+	now := time.Now()
+	for _, p := range list {
+		if p.ExpectedBirthDate != nil {
+			hours := p.ExpectedBirthDate.Sub(now).Hours()
+			p.DaysRemaining = int((hours / 24.0) + 0.99)
+		}
+	}
+	
+	return list, nil
 }
 
 func (u *useCase) UpdatePregnancyStatus(ctx context.Context, id int, status string, notes string) error {
@@ -55,7 +68,10 @@ func (u *useCase) RecordBirth(ctx context.Context, k *domain.Birth) error {
 			IDSire:      &pregnancy.IDSire,
 			IDDam:       &pregnancy.IDDam,
 		}
-		u.sheepRepo.Store(ctx, newSheep)
+		err = u.sheepRepo.Store(ctx, newSheep)
+		if err == nil && child.BirthWeight > 0 {
+			u.repo.StoreBirthWeight(ctx, newSheep.IDSheep, k.BirthDate, child.BirthWeight)
+		}
 	}
 
 	// 4. Update Pregnancy status to 'lahir'

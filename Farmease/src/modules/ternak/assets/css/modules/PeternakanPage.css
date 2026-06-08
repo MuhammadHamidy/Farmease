@@ -240,7 +240,7 @@
   width: 100%;
   padding: 0.8rem 1.2rem 0.8rem 3rem;
   border-radius: 30px;
-  border: 1.5px solid #d4c4b066;
+  border: 1px solid #d4c4b066;
   background: #FFFFFF;
   font-size: var(--font-size-sm);
   font-family: 'Manrope', sans-serif;
@@ -318,7 +318,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--font-size-2xl);
-  border: 1.5px solid #DCCAA0;
+  border: 1px solid #DCCAA0;
   box-shadow: 0 2px 6px #d4c4b014;
   transition: transform 0.3s ease;
 }
@@ -425,37 +425,56 @@
   background: #00000066;
   backdrop-filter: blur(2px);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1.5rem;
 }
 .peternakan-modal-card {
   width: 100%;
-  max-width: 540px;
+  max-width: 720px;
   background: white;
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   padding: 1.5rem;
   box-shadow: 0 -10px 25px #0000001a;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
+
 .peternakan-modal-header {
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  flex-shrink: 0;
+}
+
+.peternakan-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 0.5rem;
 }
 .peternakan-modal-close {
   position: absolute;
-  left: 0;
+  right: 0.5rem;
   background: none;
   border: none;
   font-size: var(--font-size-2xl);
   cursor: pointer;
+  color: #6B7280;
+  transition: color 0.2s;
+}
+.peternakan-modal-close:hover {
+  color: #111827;
 }
 .peternakan-modal-title {
   font-size: var(--font-size-xl);
   font-weight: 800;
   color: #1A1A1A;
+  padding: 0 2.5rem;
+  text-align: center;
 }
 
 /* ── Selection Option ────────────────────────────────────── */
@@ -464,7 +483,7 @@
   align-items: center;
   gap: 1rem;
   background: #E3D9C6;
-  border: 1.5px solid #C5B9A5;
+  border: 1px solid #C5B9A5;
   border-radius: 16px;
   padding: 1rem;
   margin-bottom: 0.75rem;

@@ -1,15 +1,15 @@
 .custom-select {
   appearance: none;
   border: 1px solid #EBEBEB;
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  color: var(--ui-text-muted);
+  border-radius: 1rem;
+  padding: 0.75rem 1.2rem;
+  color: #1f2937;
   font-weight: 500;
   background-color: white;
   transition: all 0.2s;
   cursor: pointer;
 }
-.custom-select:focus {
+.custom-select:focus, .custom-select.is-open {
   border-color: #A78D78;
   box-shadow: 0 0 0 0.2rem rgba(167, 141, 120, 0.25);
   outline: none;
@@ -22,4 +22,58 @@
   color: var(--ui-text-dark);
   pointer-events: none;
   z-index: 5;
+}
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #EBEBEB;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  max-height: 250px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+}
+.custom-select-option {
+  padding: 0.65rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+/* Peternakan Theme (Brown) */
+.theme-peternakan .custom-select-option:hover {
+  background-color: #8C6A53;
+  color: #ffffff;
+}
+.theme-peternakan .custom-select-option.selected {
+  background-color: #Fdfbf7;
+  color: #5a4131;
+  font-weight: 800;
+}
+.theme-peternakan .custom-select-option.selected:hover {
+  background-color: #8C6A53;
+  color: #ffffff;
+}
+
+/* Perkebunan Theme (Green) */
+.theme-perkebunan .custom-select-option:hover {
+  background-color: #667438;
+  color: #ffffff;
+}
+.theme-perkebunan .custom-select-option.selected {
+  background-color: #f7faee;
+  color: #38431f;
+  font-weight: 800;
+}
+.theme-perkebunan .custom-select-option.selected:hover {
+  background-color: #667438;
+  color: #ffffff;
 }

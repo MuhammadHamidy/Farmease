@@ -26,10 +26,10 @@ func (u *useCase) CheckInbreeding(ctx context.Context, req domain.InbreedingChec
 	for id, sireGens := range sireAncestors {
 		if damGens, ok := damAncestors[id]; ok {
 			// Found common ancestor
-			for _, n := range sireGens {
-				for _, m := range damGens {
+			for _, sireGen := range sireGens {
+				for _, damGen := range damGens {
 					// Formula: (1/2)^(n+m+1)
-					coi += math.Pow(0.5, float64(n+m+1))
+					coi += math.Pow(0.5, float64(sireGen+damGen+1))
 				}
 			}
 			commonAncestors = append(commonAncestors, domain.CommonAncestor{
@@ -48,16 +48,30 @@ func (u *useCase) CheckInbreeding(ctx context.Context, req domain.InbreedingChec
 		CommonAncestors:         commonAncestors,
 	}
 
-	if coi < 0.0625 {
-		res.RiskLevel = "safe"
-		res.Recommendation = "Ideal pair — very low inbreeding risk."
-	} else if coi <= 0.125 {
-		res.RiskLevel = "medium"
-		res.Recommendation = "Low risk mating. Monitor offspring health closely."
-	} else {
+	if coi >= 0.25 {
+		res.RiskCategory = "Sangat Tinggi"
 		res.RiskLevel = "high"
-		res.Recommendation = "HIGH risk mating. Strongly recommended to find another pair to avoid inbreeding depression."
+		res.Recommendation = "Sangat dilarang (Induk-anak / Saudara kandung). Risiko cacat genetik sangat besar."
+	} else if coi >= 0.125 {
+		res.RiskCategory = "Tinggi"
+		res.RiskLevel = "high"
+		res.Recommendation = "Dilarang (Saudara tiri). Risiko inbreeding depression besar."
+	} else if coi >= 0.0625 {
+		res.RiskCategory = "Ambang Batas"
+		res.RiskLevel = "medium"
+		res.Recommendation = "Ambang batas (Sepupu pertama). Sebaiknya dihindari jika memungkinkan."
+	} else if coi >= 0.03125 {
+		res.RiskCategory = "Rendah"
+		res.RiskLevel = "low"
+		res.Recommendation = "Risiko rendah (Sepupu sekali lepas). Aman untuk dilanjutkan."
+	} else {
+		res.RiskCategory = "Sangat Rendah"
+		res.RiskLevel = "safe"
+		res.Recommendation = "Sangat aman. Hubungan kekerabatan jauh atau tidak ada."
 	}
+
+	// InbreedingFlag is true if it's Ambang Batas or worse (>= 6.25%)
+	res.InbreedingFlag = coi >= 0.0625
 
 	return res, nil
 }
@@ -66,15 +80,15 @@ func (u *useCase) GetMatingList(ctx context.Context, status string, inbreedingFl
 	return u.repo.FindAll(ctx, status, inbreedingFlag)
 }
 
-func (u *useCase) RecordMating(ctx context.Context, p *domain.Mating) error {
+func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) error {
 	checkReq := domain.InbreedingCheckRequest{
-		IDSheepMale:   p.IDSheepMale,
-		IDSheepFemale: p.IDSheepFemale,
+		IDSheepMale:   matingData.IDSheepMale,
+		IDSheepFemale: matingData.IDSheepFemale,
 	}
 	inbreedingRes, _ := u.CheckInbreeding(ctx, checkReq)
-	p.InbreedingFlag = inbreedingRes.InbreedingFlag
-	p.CoefficientOfInbreeding = inbreedingRes.CoefficientOfInbreeding
-	return u.repo.Store(ctx, p)
+	matingData.InbreedingFlag = inbreedingRes.InbreedingFlag
+	matingData.CoefficientOfInbreeding = inbreedingRes.CoefficientOfInbreeding
+	return u.repo.Store(ctx, matingData)
 }
 
 func (u *useCase) GetMatingDetail(ctx context.Context, id int) (*domain.Mating, error) {

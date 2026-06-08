@@ -1,4 +1,4 @@
-﻿package http
+package http
 
 import (
 "net/http"
@@ -24,13 +24,19 @@ auth:    auth,
 }
 
 func (h *FarmHandler) RegisterRoutes(app *fiber.App) {
-group := app.Group("/farms", middleware.TraceMiddleware)
+	group := app.Group("/farms", middleware.TraceMiddleware)
+	h.registerGroup(group)
 
-group.Get("/", h.auth.Authenticate("farms.livestock.farms.view"), h.GetFarms)
-group.Get("/:id", h.auth.Authenticate("farms.livestock.farms.view"), h.GetFarmByID)
-group.Post("/", h.auth.Authenticate("farms.livestock.farms.create"), validation.ValidateBody(func() interface{} { return &CreateFarmRequest{} }), h.CreateFarm)
-group.Put("/:id", h.auth.Authenticate("farms.livestock.farms.edit"), validation.ValidateBody(func() interface{} { return &UpdateFarmRequest{} }), h.UpdateFarm)
-group.Delete("/:id", h.auth.Authenticate("farms.livestock.farms.delete"), h.DeleteFarm)
+	apiGroup := app.Group("/api/farms", middleware.TraceMiddleware)
+	h.registerGroup(apiGroup)
+}
+
+func (h *FarmHandler) registerGroup(group fiber.Router) {
+	group.Get("/", h.auth.Authenticate("farms.livestock.farms.view"), h.GetFarms)
+	group.Get("/:id", h.auth.Authenticate("farms.livestock.farms.view"), h.GetFarmByID)
+	group.Post("/", h.auth.Authenticate("farms.livestock.farms.create"), validation.ValidateBody(func() interface{} { return &CreateFarmRequest{} }), h.CreateFarm)
+	group.Put("/:id", h.auth.Authenticate("farms.livestock.farms.edit"), validation.ValidateBody(func() interface{} { return &UpdateFarmRequest{} }), h.UpdateFarm)
+	group.Delete("/:id", h.auth.Authenticate("farms.livestock.farms.delete"), h.DeleteFarm)
 }
 
 func (h *FarmHandler) handleError(c *fiber.Ctx, err error) error {

@@ -56,13 +56,13 @@ func (h *RoleHandler) GetRoles(c *fiber.Ctx) error {
 	}
 
 	result := make([]GetRolesResponse, len(roles))
-	for i, r := range roles {
+	for i, roleItem := range roles {
 		result[i] = GetRolesResponse{
-			Id:            r.Id,
-			InstitutionId: r.InstitutionId,
-			Name:          r.Name,
-			Description:   r.Description,
-			IsActive:      r.IsActive,
+			Id:            roleItem.Id,
+			InstitutionId: roleItem.InstitutionId,
+			Name:          roleItem.Name,
+			Description:   roleItem.Description,
+			IsActive:      roleItem.IsActive,
 		}
 	}
 

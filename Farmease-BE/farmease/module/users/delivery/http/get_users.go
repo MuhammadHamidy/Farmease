@@ -57,13 +57,13 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 	}
 
 	result := make([]GetUserResponse, len(users))
-	for i, u := range users {
+	for i, userItem := range users {
 		result[i] = GetUserResponse{
-			Id:              u.Id,
-			InstitutionId:   u.InstitutionId,
-			ExternalSubject: u.ExternalSubject,
-			Status:          u.Status,
-			Metadata:        u.Metadata,
+			Id:              userItem.Id,
+			InstitutionId:   userItem.InstitutionId,
+			ExternalSubject: userItem.ExternalSubject,
+			Status:          userItem.Status,
+			Metadata:        userItem.Metadata,
 		}
 	}
 

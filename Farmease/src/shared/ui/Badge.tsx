@@ -1,7 +1,7 @@
 import { defineComponent, type PropType } from 'vue';
 import { colors } from '@/shared/ColorPalette';
 
-export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary';
+export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary' | 'solid-primary' | 'solid-secondary';
 
 export default defineComponent({
   name: 'Badge',
@@ -23,6 +23,8 @@ export default defineComponent({
       info: { bg: 'rgba(59, 130, 246, 0.08)', color: colors.info.hex },
       primary: { bg: 'rgba(225, 212, 194, 0.13)', color: 'var(--color-primary-fixed)' },
       secondary: { bg: 'var(--color-surface-container)', color: 'var(--color-on-surface-variant)' },
+      'solid-primary': { bg: 'var(--color-primary)', color: 'var(--color-on-primary)' },
+      'solid-secondary': { bg: 'var(--color-secondary)', color: 'var(--color-on-secondary)' },
     };
 
     return () => (

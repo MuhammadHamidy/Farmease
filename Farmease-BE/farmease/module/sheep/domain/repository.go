@@ -13,14 +13,20 @@ type Sheep struct {
 	DateOfBirth  *time.Time `json:"date_of_birth" db:"date_of_birth"`
 	AgeDays      int        `json:"age_days,omitempty"`
 	AgeMonths    float64    `json:"age_months,omitempty"`
+	AgeString    string     `json:"age_string,omitempty"`
 	Status       string     `json:"status" db:"status"`
 	Origin       string     `json:"origin" db:"origin"`
 	IDCage       int        `json:"id_cage" db:"id_cage"`
 	IDType       int        `json:"id_type" db:"id_type"`
 	IDSire       *int       `json:"id_sire" db:"id_sire"`
 	IDDam        *int       `json:"id_dam" db:"id_dam"`
+	FirstWeight  float64    `json:"-" db:"first_weight"`
+	FirstWeightDate *time.Time `json:"-" db:"first_weight_date"`
 	LastWeight   float64    `json:"last_weight" db:"last_weight"`
+	LastWeightDate *time.Time `json:"-" db:"last_weight_date"`
 	TypeName     string     `json:"type_name,omitempty" db:"type_name"`
+	ADG          *int       `json:"adg,omitempty"`
+	ADGLabel     string     `json:"adg_label,omitempty"`
 	Sire         *Parent    `json:"sire,omitempty"`
 	Dam          *Parent    `json:"dam,omitempty"`
 	CreatedBy    *int       `json:"created_by,omitempty" db:"created_by"`

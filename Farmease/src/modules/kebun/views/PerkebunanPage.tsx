@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '@/modules/kebun/assets/css/PerkebunanPage.css'
 import PerkebunanHeader from '../components/PerkebunanHeader'
@@ -8,6 +8,7 @@ import PerkebunanScheduleList from '../components/PerkebunanScheduleList'
 import PerkebunanSelectionModal from '../components/PerkebunanSelectionModal'
 import PerkebunanScheduleDetailModal from '../components/PerkebunanScheduleDetailModal'
 import { landSession, userSession } from '@/store/navigation'
+import { operatorTasks, fetchTasks } from '@/modules/ternak/store/operatorAdmin'
 
 const jenisPencatatan = [
   'Panen',
@@ -49,11 +50,56 @@ export default defineComponent({
       year: 'numeric',
     }).format(new Date())
 
-    const scheduleItems = [
-      { name: 'Alpukat', tag: 'Panen', date: '09 April 2026', detail: 'A001 • 3 x sehari', progress: 'Kerjakan', description: 'Lakukan pemanenan buah yang sudah matang', rincian: 'Panen Buah' },
-      { name: 'Alpukat', tag: 'Pemangkasan', date: '09 April 2026', detail: 'A002 • 3 x sehari', progress: 'Belum di setujui', description: 'Pangkas ranting yang kering dan rapuh', rincian: 'Ranting dan Daun' },
-      { name: 'Alpukat', tag: 'Pemangkasan', date: '09 April 2026', detail: 'A003 • 3 x sehari', progress: 'Selesai', description: 'Bersihkan rumput liar disekitar pohon', rincian: 'Rumput Liar (Gulma)' },
-    ]
+    onMounted(() => {
+      if (operatorTasks.value.length === 0) {
+        fetchTasks()
+      }
+    })
+
+    const scheduleItems = computed(() => {
+      return operatorTasks.value
+        .filter(t => t.assigneeCode === 'OPT002' || t.assigneeCode === 'OP002' || t.assigneeCode === '3' || t.assigneeName.toLowerCase().includes('kebun') || ['panen', 'pemangkasan', 'pembersihan', 'pembuahan', 'penanaman', 'pengendalian hama', 'pemupukan', 'penyiraman'].some(c => t.category.toLowerCase().includes(c)))
+        .map(t => {
+          let name = 'Lahan'
+          const titleLower = t.title.toLowerCase()
+          if (titleLower.includes('alpukat')) name = 'Alpukat'
+          else if (titleLower.includes('kelengkeng')) name = 'Kelengkeng'
+          else if (t.description.toLowerCase().includes('alpukat')) name = 'Alpukat'
+          else if (t.description.toLowerCase().includes('kelengkeng')) name = 'Kelengkeng'
+
+          const formattedDate = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(t.dueDate))
+
+          let tag: string = t.category
+          if (tag === 'umum' && t.title) {
+             tag = t.title.split(' ')[0] || 'umum'
+          }
+
+          let progress = 'Kerjakan'
+          if (t.status === 'selesai') progress = 'Selesai'
+          else if (t.status === 'proses') progress = 'Proses'
+
+          // Mappings for rincian based on tag for accurate form prefilling
+          let rincian: string = (t as any).rincian;
+          if (!rincian) {
+            rincian = tag;
+            if (tag.toLowerCase() === 'pemangkasan') rincian = 'Ranting dan Daun'
+            if (tag.toLowerCase() === 'panen') rincian = 'Panen Buah'
+            if (tag.toLowerCase() === 'pemupukan') rincian = 'Pupuk Organik'
+          }
+          
+          return {
+            id: t.id,
+            name: name,
+            tag: tag.charAt(0).toUpperCase() + tag.slice(1),
+            date: formattedDate,
+            time: t.dueTime ? t.dueTime.replace(':', ' : ') + ' WIB' : '08 : 00 WIB',
+            detail: t.cageCode || 'L0001',
+            progress: progress,
+            description: t.description,
+            rincian: rincian
+          }
+        })
+    })
 
     const handleOpenDetail = (item: any) => {
       selectedScheduleItem.value = item
@@ -64,13 +110,10 @@ export default defineComponent({
       showDetailModal.value = false
       selectedJenis.value = item.tag
       selectedRincian.value = item.rincian || 'Rincian Pencatatan'
-      router.push({
-        name: 'kebun-form-pencatatan',
-        query: {
-          jenis: item.tag,
-          rincian: item.rincian || 'Rincian Pencatatan',
-        },
-      })
+      // Instead of going directly to the form, open the rincian selection modal
+      setTimeout(() => {
+        openRincian()
+      }, 50)
     }
 
     const closeModal = () => {
@@ -303,7 +346,7 @@ export default defineComponent({
 
               {/* 2. Pengingat Jadwal Terkini Grid Section */}
               <PerkebunanScheduleList
-                items={scheduleItems}
+                items={scheduleItems.value}
                 onOpen-detail={handleOpenDetail}
               />
 

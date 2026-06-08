@@ -16,6 +16,7 @@ export default defineComponent({
     const typeLabel = computed(() => {
       switch (type.value) {
         case 'pakan': return 'Pencatatan Pakan';
+        case 'stok_pakan': return 'Stok & Konversi Pakan';
         case 'kesehatan': return 'Pencatatan Kesehatan';
         case 'kotoran': return 'Pencatatan Kotoran';
         case 'reproduksi': return 'Pencatatan Reproduksi';
@@ -27,7 +28,8 @@ export default defineComponent({
 
     const typeIcon = computed(() => {
       switch (type.value) {
-        case 'pakan': return '/icon/catat_pakan.png';
+        case 'pakan':
+        case 'stok_pakan': return '/icon/catat_pakan.png';
         case 'kesehatan': return '/icon/catat_sehat.png';
         case 'kotoran': return '/icon/catat_kotoran.png';
         case 'reproduksi':
@@ -38,14 +40,21 @@ export default defineComponent({
     });
 
     const matchedStocks = computed(() => {
-      const query = (data.value.jenis || data.value.obat || type.value || '').toString().toLowerCase();
+      let query = (data.value.jenis || data.value.obat || type.value || '').toString().toLowerCase();
+      if (!query || query === type.value.toLowerCase()) {
+        const firstItem = data.value.items?.[0];
+        if (firstItem) {
+           query = (firstItem.obat || firstItem.name || '').toString().toLowerCase();
+        }
+      }
+      
+      if (!query) return [];
+
       return stocks.value.filter(s => 
         s.name.toLowerCase().includes(query) || 
         (s.category && s.category.toLowerCase().includes(query)) ||
-        (type.value === 'pakan' && s.category === 'pakan') ||
-        (type.value === 'kesehatan' && s.category === 'medicine') ||
-        (type.value === 'kotoran' && s.category === 'kotoran')
-      );
+        (type.value === 'pakan' && (s.category === 'hijauan' || s.category === 'konsentrat'))
+      ).slice(0, 5); // Limit to 5 results to avoid clutter
     });
 
     return () => (
@@ -55,32 +64,63 @@ export default defineComponent({
             <img src={typeIcon.value} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           </div>
           <div>
-            <Typography variant="h3" weight="bold" className="m-0 text-primary">{typeLabel.value}</Typography>
+            <Typography variant="h3" weight="bold" className="m-0" style={{ color: '#3D2F24' }}>{typeLabel.value}</Typography>
             <Typography variant="span" className="text-muted">Berhasil dicatat pada {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB</Typography>
           </div>
         </div>
 
         <div class="row g-4">
-          <div class="col-md-7">
+          <div class={matchedStocks.value.length > 0 ? "col-md-7" : "col-md-12"}>
             <div class="summary-details-container d-flex flex-column gap-4">
               {data.value.items ? (
                 data.value.items.map((item: any, idx: number) => (
                   <div key={idx} class="summary-details-card bg-light rounded-4 p-4 border-0">
                     <div class="d-flex align-items-center gap-2 mb-3">
-                      <div class="rounded-circle d-flex align-items-center justify-content-center bg-white shadow-sm" style={{ width: '32px', height: '32px' }}>
-                        <img src={item.mode === 'kelompok' ? '/icon/kandang.png' : '/icon/domba.png'} style={{ width: '16px', height: '16px', objectFit: 'contain', opacity: 0.6 }} />
-                      </div>
-                      <Typography variant="h4" weight="extrabold" className="m-0 fs-6">{item.name || typeLabel.value}</Typography>
-                      <Badge variant="success" className="bg-white text-almond-beige border shadow-sm">
-                        {item.mode === 'kelompok' ? 'Kandang' : 'Individu'}
-                      </Badge>
+                      {type.value !== 'stok_pakan' ? (
+                        <>
+                          <div class="rounded-circle d-flex align-items-center justify-content-center bg-white shadow-sm" style={{ width: '32px', height: '32px' }}>
+                            <img src={item.mode === 'kelompok' ? '/icon/kandang.png' : '/icon/domba.png'} style={{ width: '16px', height: '16px', objectFit: 'contain', opacity: 0.6 }} />
+                          </div>
+                          <Typography variant="h4" weight="extrabold" className="m-0 fs-6">{item.name || typeLabel.value}</Typography>
+                          <Badge variant="success" className="bg-white text-almond-beige border shadow-sm">
+                            {item.mode === 'kelompok' ? 'Kandang' : 'Individu'}
+                          </Badge>
+                        </>
+                      ) : (
+                        <>
+                          <Typography variant="h4" weight="extrabold" className="m-0 fs-6">{item.name || typeLabel.value}</Typography>
+                          <Badge variant="success" className="bg-white text-almond-beige border shadow-sm">
+                            Stok & Gudang
+                          </Badge>
+                        </>
+                      )}
                     </div>
 
                     <div class="summary-items-grid row g-3">
-                      <SummaryItem label={item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak'} value={item.targetId} />
+                      {type.value !== 'stok_pakan' && (
+                        <SummaryItem label={item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak'} value={item.targetId} />
+                      )}
                       
                       {type.value === 'pakan' && (
                         <SummaryItem label="Jumlah Pakan" value={`${item.qty} ${item.unit}`} />
+                      )}
+
+                      {type.value === 'stok_pakan' && (
+                        <>
+                          {item.name === 'Konversi Pakan' ? (
+                            <>
+                              <SummaryItem label="Bahan Mentah Asal" value={item.obat} />
+                              <SummaryItem label="Jumlah Diolah" value={`${item.qty} kg`} />
+                              <SummaryItem label="Hasil Cacah Jadi" value={item.idPejantan} />
+                              <SummaryItem label="Jumlah Hasil Jadi" value={`${item.vitaminAmount} kg`} />
+                            </>
+                          ) : (
+                            <>
+                              <SummaryItem label="Nama Pakan / Sumber" value={item.obat} />
+                              <SummaryItem label="Jumlah Masuk" value={`${item.qty} ${item.unit || 'kg'}`} />
+                            </>
+                          )}
+                        </>
                       )}
 
                       {type.value === 'kesehatan' && (
@@ -128,20 +168,16 @@ export default defineComponent({
             </div>
           </div>
 
-          <div class="col-md-5">
-            <div class="summary-stock-card bg-white rounded-4 p-4 border shadow-sm">
-              <div class="d-flex align-items-center gap-2 mb-3">
-                <img src="/icon/package.png" style={{ width: '20px', height: '20px', opacity: 0.7 }} />
-                <Typography variant="h4" weight="semibold" className="m-0">Stok Terkait</Typography>
-              </div>
-
-              {matchedStocks.value.length === 0 ? (
-                <div class="text-center py-4 bg-light rounded-3">
-                  <Typography variant="span" className="text-muted">Tidak ada stok yang sesuai dengan jenis pencatatan ini</Typography>
+          {matchedStocks.value.length > 0 && (
+            <div class="col-md-5">
+              <div class="summary-stock-card bg-white rounded-4 p-4 border shadow-sm h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <img src="/icon/package.png" style={{ width: '20px', height: '20px', opacity: 0.7 }} />
+                  <Typography variant="h4" weight="semibold" className="m-0">Stok Terkait</Typography>
                 </div>
-              ) : (
+
                 <div class="stock-list">
-                  {matchedStocks.value.map(s => (
+                  {matchedStocks.value.map((s: any) => (
                     <div class="stock-item d-flex justify-content-between align-items-center p-3 border rounded-3 mb-2 bg-light-hover transition-all" key={s.id}>
                       <div>
                         <div class="fw-bold text-dark">{s.name}</div>
@@ -155,16 +191,16 @@ export default defineComponent({
                     </div>
                   ))}
                 </div>
-              )}
-              
-              <div class="mt-4 p-3 rounded-3" style={{ background: '#34a8530d', border: '1px dashed #34a8534d' }}>
-                <Typography variant="p" className="small text-muted m-0">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Stok otomatis berkurang sesuai dengan jumlah yang dicatatkan di form sebelumnya.
-                </Typography>
+                
+                <div class="mt-4 p-3 rounded-3" style={{ background: '#34a8530d', border: '1px dashed #34a8534d' }}>
+                  <Typography variant="p" className="small text-muted m-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Stok akan otomatis terupdate setelah pencatatan ini disetujui oleh admin.
+                  </Typography>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );

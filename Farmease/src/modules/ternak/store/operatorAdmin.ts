@@ -5,7 +5,7 @@
  * Types dan fungsi admin-specific (approval, routine schedules) tetap di sini,
  * namun tanpa data dummy — state diinisialisasi kosong dan diisi dari BE.
  */
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 import {
   type OperatorTask,
@@ -24,6 +24,8 @@ import {
   completeTask,
   submitPencatatanSubmission,
   mapApiTaskToLocal,
+  executeTernakApiSubmission,
+  executeKebunApiSubmission,
 } from '@/store/operatorAdmin';
 import { tasksApi } from '@/shared/api';
 
@@ -43,6 +45,8 @@ export {
   fetchTasks,
   completeTask,
   submitPencatatanSubmission,
+  executeTernakApiSubmission,
+  executeKebunApiSubmission,
 };
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -74,15 +78,21 @@ export interface RoutineSchedule {
   assigneeCode: string;
   assigneeName: string;
   frequency: string;
+  startDate?: string;
   time: string;
+  endTime: string;
+  priority: 'rendah' | 'sedang' | 'tinggi';
   daysOfWeek: number[];
   dayOfMonth: number;
   active: boolean;
+  rincian?: string;
   createdAt: number;
 }
 
 // Pencatatan submissions — state lokal untuk approval flow (bisa diganti API ke depannya)
-export const pencatatanSubmissions = ref<PencatatanSubmission[]>([
+const STORAGE_KEY = 'farmease_submissions';
+const stored = localStorage.getItem(STORAGE_KEY);
+const defaultSubmissions: PencatatanSubmission[] = [
   {
     id: 'SUB-001',
     type: 'pakan',
@@ -138,9 +148,24 @@ export const pencatatanSubmissions = ref<PencatatanSubmission[]>([
     submittedAt: Date.now() - 3600000 * 30,
     approvalStatus: 'pending'
   }
-]);
-export const routineSchedules = ref<RoutineSchedule[]>([]);
+];
 
+export const pencatatanSubmissions = ref<PencatatanSubmission[]>(
+  stored ? JSON.parse(stored) : defaultSubmissions
+);
+
+watch(pencatatanSubmissions, (newVal) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
+}, { deep: true });
+const SCHEDULES_STORAGE_KEY = 'farmease_routine_schedules';
+const storedSchedules = localStorage.getItem(SCHEDULES_STORAGE_KEY);
+export const routineSchedules = ref<RoutineSchedule[]>(
+  storedSchedules ? JSON.parse(storedSchedules) : []
+);
+
+watch(routineSchedules, (newVal) => {
+  localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(newVal));
+}, { deep: true });
 export const pendingApprovalCount = computed(
   () => pencatatanSubmissions.value.filter((s) => s.approvalStatus === 'pending').length,
 );
@@ -160,9 +185,11 @@ export async function addRoutineSchedule(schedule: Omit<RoutineSchedule, 'id' | 
     category: schedule.category,
     cageCode: schedule.cageCode,
     assigneeCode: schedule.assigneeCode,
-    dueDate: new Date().toISOString().split('T')[0],
+    dueDate: schedule.startDate || new Date().toISOString().split('T')[0],
+    dueTime: schedule.time,
     status: 'belum',
-    priority: 'sedang'
+    priority: schedule.priority || 'sedang',
+    rincian: schedule.rincian
   });
 }
 
@@ -177,22 +204,50 @@ export function deleteRoutineSchedule(id: string) {
   routineSchedules.value = routineSchedules.value.filter((s) => s.id !== id);
 }
 
-export function approveSubmission(id: string, reviewerName: string, note = '') {
+export async function approveSubmission(id: string, reviewerName: string, note = '') {
   const sub = pencatatanSubmissions.value.find((s) => s.id === id);
-  if (!sub) return;
-  sub.approvalStatus = 'approved';
-  sub.reviewedAt = Date.now();
-  sub.reviewedBy = reviewerName;
-  sub.reviewNote = note;
+  if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
+  
+  // Call API depending on type
+  const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
+  
+  const payloadToExecute: SubmitPencatatanInput = {
+    type: sub.type,
+    scope: sub.scope,
+    summary: sub.summary,
+    payload: sub.payload as any,
+    operatorCode: sub.operatorCode,
+    operatorName: sub.operatorName,
+    cageCode: sub.cageCode,
+    taskId: sub.taskId
+  };
+
+  let result;
+  if (isPerkebunan) {
+    result = await executeKebunApiSubmission(payloadToExecute);
+  } else {
+    result = await executeTernakApiSubmission(payloadToExecute);
+  }
+
+  if (result.success) {
+    sub.approvalStatus = 'approved';
+    sub.reviewedAt = Date.now();
+    sub.reviewedBy = reviewerName;
+    sub.reviewNote = note;
+    return { success: true, message: result.message };
+  } else {
+    return { success: false, message: result.message };
+  }
 }
 
 export function rejectSubmission(id: string, reviewerName: string, note: string) {
   const sub = pencatatanSubmissions.value.find((s) => s.id === id);
-  if (!sub) return;
+  if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
   sub.approvalStatus = 'rejected';
   sub.reviewedAt = Date.now();
   sub.reviewedBy = reviewerName;
   sub.reviewNote = note;
+  return { success: true, message: 'Pencatatan berhasil ditolak.' };
 }
 
 function formatTitleForApi(title: string, category: string): string {
@@ -215,35 +270,45 @@ function formatTitleForApi(title: string, category: string): string {
   return title;
 }
 
-function formatDescriptionForApi(description: string, cageCode: string): string {
+function formatDescriptionForApi(description: string, cageCode: string, rincian?: string): string {
   const cleanDesc = (description || '').replace(/\s*\(Kandang\s+[A-C]\)/gi, '').trim();
-  return `${cleanDesc} (Kandang ${cageCode.toUpperCase()})`;
+  let finalDesc = `${cleanDesc} (Kandang ${cageCode.toUpperCase()})`;
+  if (rincian) {
+    finalDesc += ` [Rincian: ${rincian}]`;
+  }
+  return finalDesc;
 }
+
+
 
 export async function addOperatorTask(task: any) {
   try {
-    let userId = 2;
-    if (task.assigneeCode === 'OPT002' || task.assigneeCode === '3') {
-      userId = 3;
-    } else if (task.assigneeCode === 'ADM001' || task.assigneeCode === '1') {
-      userId = 1;
-    } else {
-      const num = Number(task.assigneeCode);
-      if (!isNaN(num) && num > 0) {
-        userId = num;
-      }
-    }
+    // Force userId to 1 because the current Go backend mock `GetMyTasks` is hardcoded to query `id_account = 1`.
+    // If we use 2 or 3, the tasks will be saved but invisible to the frontend.
+    const userId = 1;
 
     const apiTitle = formatTitleForApi(task.title, task.category);
-    const apiDesc = formatDescriptionForApi(task.description, task.cageCode);
+    const apiDesc = formatDescriptionForApi(task.description, task.cageCode, task.rincian);
+
+    const rawTime = task.dueTime || '08:00';
+    let timeStr = rawTime.replace('.', ':');
+    if (!timeStr.includes(':')) {
+      const cleaned = timeStr.replace(/[^0-9]/g, '');
+      if (cleaned.length === 4) timeStr = `${cleaned.slice(0, 2)}:${cleaned.slice(2, 4)}`;
+      else if (cleaned.length === 3) timeStr = `0${cleaned.slice(0, 1)}:${cleaned.slice(1, 3)}`;
+      else if (cleaned.length <= 2) timeStr = `${cleaned.padStart(2, '0')}:00`;
+    }
+    const isoDate = task.dueDate ? `${task.dueDate}T${timeStr}:00Z` : new Date().toISOString();
 
     const payload = {
       user_id: userId,
       title: apiTitle,
       description: apiDesc,
-      due_date: task.dueDate,
+      due_date: isoDate,
+      task_date: isoDate,
       status: task.status,
       priority: task.priority,
+      category: task.category || 'umum'
     };
 
     const createdApiTask = await tasksApi.create(payload);
@@ -251,17 +316,27 @@ export async function addOperatorTask(task: any) {
     operatorTasks.value.unshift(localTask);
   } catch (err) {
     console.error('Error adding operator task:', err);
-    alert(err instanceof Error ? err.message : 'Gagal menambah tugas');
+    let errMsg = err instanceof Error ? err.message : 'Gagal menambah tugas';
+    if (err && (err as any).response && (err as any).response.data) {
+      if ((err as any).response.data.error && (err as any).response.data.error.message) {
+        errMsg += '\nServer Error: ' + (err as any).response.data.error.message;
+      } else if ((err as any).response.data.message) {
+        errMsg += '\nServer Error: ' + (err as any).response.data.message;
+      }
+    }
+    alert(errMsg);
   }
 }
 
 export async function updateOperatorTask(id: string, patch: any) {
   try {
     let userId = 2;
-    if (patch.assigneeCode === 'OPT002' || patch.assigneeCode === '3') {
+    if (patch.assigneeCode === 'OP002' || patch.assigneeCode === 'OPT002' || patch.assigneeCode === '3') {
       userId = 3;
     } else if (patch.assigneeCode === 'ADM001' || patch.assigneeCode === '1') {
       userId = 1;
+    } else if (patch.assigneeCode === 'PEM001' || patch.assigneeCode === '4') {
+      userId = 4;
     } else {
       const num = Number(patch.assigneeCode);
       if (!isNaN(num) && num > 0) {
@@ -270,15 +345,20 @@ export async function updateOperatorTask(id: string, patch: any) {
     }
 
     const apiTitle = formatTitleForApi(patch.title, patch.category);
-    const apiDesc = formatDescriptionForApi(patch.description, patch.cageCode);
+    const apiDesc = formatDescriptionForApi(patch.description, patch.cageCode, patch.rincian);
+
+    const timeStr = patch.dueTime || '08:00';
+    const isoDate = patch.dueDate ? `${patch.dueDate}T${timeStr}:00Z` : new Date().toISOString();
 
     const payload = {
       user_id: userId,
       title: apiTitle,
       description: apiDesc,
-      due_date: patch.dueDate,
+      due_date: isoDate,
+      task_date: isoDate,
       status: patch.status,
       priority: patch.priority,
+      category: patch.category || 'umum'
     };
 
     const updatedApiTask = await tasksApi.update(Number(id), payload);
@@ -326,7 +406,8 @@ export async function generateTasksFromSchedules() {
         assigneeCode: schedule.assigneeCode,
         dueDate: todayStr,
         status: 'belum',
-        priority: 'sedang'
+        priority: 'sedang',
+        rincian: schedule.rincian
       });
       generatedCount++;
     }

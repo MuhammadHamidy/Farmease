@@ -107,14 +107,20 @@ func (h *PregnancyHandler) GetPregnancyList(c *fiber.Ctx) error {
 func (h *PregnancyHandler) UpdatePregnancyStatus(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 	var req struct {
-		Status string `json:"pregnancy_status"`
-		Notes  string `json:"notes"`
+		PregnancyStatus string `json:"pregnancy_status"`
+		Status          string `json:"status"` // fallback for FE
+		Notes           string `json:"notes"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
 
-	err := h.useCase.UpdatePregnancyStatus(c.Context(), id, req.Status, req.Notes)
+	status := req.PregnancyStatus
+	if status == "" {
+		status = req.Status
+	}
+
+	err := h.useCase.UpdatePregnancyStatus(c.Context(), id, status, req.Notes)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}

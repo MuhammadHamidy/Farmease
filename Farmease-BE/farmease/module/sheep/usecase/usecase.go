@@ -20,9 +20,10 @@ func (u *useCase) GetSheepList(ctx context.Context, filter domain.SheepFilter) (
 		return nil, 0, err
 	}
 
-	// Calculate age for each sheep
+	// Calculate age and ADG for each sheep
 	for _, sheep := range sheepList {
 		sheep.CalculateAge()
+		sheep.CalculateADG()
 	}
 
 	return sheepList, total, nil
@@ -38,8 +39,9 @@ func (u *useCase) GetSheepDetail(ctx context.Context, id int) (*domain.Sheep, er
 		return nil, err
 	}
 
-	// Calculate age
+	// Calculate age and ADG
 	sheep.CalculateAge()
+	sheep.CalculateADG()
 
 	return sheep, nil
 }

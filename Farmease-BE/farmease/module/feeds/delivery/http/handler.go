@@ -90,15 +90,44 @@ func (h *FeedHandler) GetMasterFeedList(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/feeds [post]
 func (h *FeedHandler) AddMasterFeed(c *fiber.Ctx) error {
-	var p domain.Feed
-	if err := c.BodyParser(&p); err != nil {
+	var req struct {
+		FeedName       string  `json:"feed_name"`
+		Unit           string  `json:"unit"`
+		AvailableStock float64 `json:"available_stock"`
+		Stock          float64 `json:"stock"` // fallback for FE
+		Category       string  `json:"category"`
+		FeedType       string  `json:"feed_type"` // fallback for FE
+		PricePerUnit   float64 `json:"price_per_unit"`
+		Notes          string  `json:"notes"`
+	}
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
-	err := h.useCase.AddMasterFeed(c.Context(), &p)
+
+	feedData := domain.Feed{
+		FeedName:     req.FeedName,
+		Unit:         req.Unit,
+		PricePerUnit: req.PricePerUnit,
+		Notes:        req.Notes,
+	}
+
+	if req.AvailableStock != 0 {
+		feedData.AvailableStock = req.AvailableStock
+	} else {
+		feedData.AvailableStock = req.Stock
+	}
+
+	if req.Category != "" {
+		feedData.Category = req.Category
+	} else {
+		feedData.Category = req.FeedType
+	}
+
+	err := h.useCase.AddMasterFeed(c.Context(), &feedData)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
-	return c.Status(http.StatusCreated).JSON(p)
+	return c.Status(http.StatusCreated).JSON(feedData)
 }
 
 // UpdateFeedStock godoc
@@ -185,16 +214,16 @@ func (h *FeedHandler) GetFeedingHistory(c *fiber.Ctx) error {
 // @Router       /api/sheep/{id}/feedings [post]
 func (h *FeedHandler) RecordFeeding(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
-	var f domain.Feeding
-	if err := c.BodyParser(&f); err != nil {
+	var feedingData domain.Feeding
+	if err := c.BodyParser(&feedingData); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
-	f.IDSheep = id
-	err := h.useCase.RecordFeeding(c.Context(), &f)
+	feedingData.IDSheep = id
+	err := h.useCase.RecordFeeding(c.Context(), &feedingData)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(responses.Fail("UNPROCESSABLE_ENTITY", err.Error()))
 	}
-	return c.Status(http.StatusCreated).JSON(f)
+	return c.Status(http.StatusCreated).JSON(feedingData)
 }
 
 // GetFeedingList godoc

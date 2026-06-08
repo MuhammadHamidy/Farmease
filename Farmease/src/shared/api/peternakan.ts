@@ -101,6 +101,12 @@ export const cagesApi = {
   delete: async (id: number): Promise<void> => {
     return await apiClient.delete(`/api/cages/${id}`)
   },
+  getStats: async (id: number): Promise<any> => {
+    return await apiClient.get(`/api/cages/${id}/stats`)
+  },
+  getWeightStats: async (id: number): Promise<any> => {
+    return await apiClient.get(`/api/cages/${id}/weight-stats`)
+  },
   verifyByCode: async (code: string): Promise<Cage> => {
     return await apiClient.get(`/api/cages/verify/${code}`)
   },
@@ -179,11 +185,11 @@ export const feedsApi = {
   create: async (payload: Partial<Feed>): Promise<Feed> => {
     return await apiClient.post('/api/feeds', payload)
   },
-  updateStock: async (id: number, stock: number): Promise<Feed> => {
-    return await apiClient.patch(`/api/feeds/${id}/stock`, { stock })
+  updateStock: async (id: number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
+    return await apiClient.patch(`/api/feeds/${id}/stock`, { amount, type })
   },
-  updateStok: async (id: number, stok: number): Promise<Feed> => {
-    return await apiClient.patch(`/api/feeds/${id}/stok`, { stok })
+  updateStok: async (id: number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
+    return await apiClient.patch(`/api/feeds/${id}/stok`, { amount, type })
   },
   getRecommendation: async (sheepId: number): Promise<any> => {
     return await apiClient.get(`/api/sheep/${sheepId}/feed-recommendation`)
@@ -319,6 +325,7 @@ export interface Task {
   title: string
   description: string
   due_date: string
+  end_time?: string
   status: string
   priority: string
   created_at: string

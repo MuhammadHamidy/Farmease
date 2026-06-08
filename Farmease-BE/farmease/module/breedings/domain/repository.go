@@ -38,6 +38,7 @@ type InbreedingCheckResponse struct {
 	InbreedingPercentage    float64          `json:"inbreeding_percentage"`
 	InbreedingFlag          bool             `json:"inbreeding_flag"`
 	RiskLevel               string           `json:"risk_level"`
+	RiskCategory            string           `json:"risk_category"`
 	CommonAncestors         []CommonAncestor `json:"common_ancestors"`
 	Recommendation          string           `json:"recommendation"`
 }

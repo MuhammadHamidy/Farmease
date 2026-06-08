@@ -834,6 +834,8 @@ code {
   font-size: 1.25rem;
   font-weight: 800;
   color: #1A1A1A;
+  padding: 0 2.5rem;
+  text-align: center;
 }
 
 /* Grup aksi di tabel — horizontal, ukuran seragam */

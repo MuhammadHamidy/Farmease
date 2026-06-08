@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -28,8 +29,10 @@ func (h *CageHandler) RegisterRoutes(app *fiber.App) {
 func (h *CageHandler) registerGroup(group fiber.Router) {
 	group.Get("/", h.GetCageList)
 	group.Post("/", h.CreateCage)
-	group.Get("/:id", h.GetCageDetail)
 	group.Get("/verify/:code", h.VerifyCage)
+	group.Get("/:id/stats", h.GetCageStats)
+	group.Get("/:id/weight-stats", h.GetCageWeightStats)
+	group.Get("/:id", h.GetCageDetail)
 	group.Put("/:id", h.UpdateCage)
 	group.Delete("/:id", h.DeleteCage)
 }
@@ -176,6 +179,47 @@ func (h *CageHandler) DeleteCage(c *fiber.Ctx) error {
 func (h *CageHandler) VerifyCage(c *fiber.Ctx) error {
 	code := c.Params("code")
 	res, err := h.useCase.VerifyCage(c.Context(), code)
+	if err != nil {
+		return c.Status(http.StatusNotFound).JSON(responses.Fail("NOT_FOUND", err.Error()))
+	}
+	return c.Status(http.StatusOK).JSON(res)
+}
+
+// GetCageStats godoc
+// @Summary      Get stats of a cage
+// @Description  Retrieve sheep statistics for a specific cage
+// @Tags         cages
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Cage ID"
+// @Success      200  {object}  domain.CageStats
+// @Failure      404  {object}  responses.Response[any]
+// @Router       /api/cages/{id}/stats [get]
+func (h *CageHandler) GetCageStats(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	res, err := h.useCase.GetCageStats(c.Context(), id)
+	if err != nil {
+		fmt.Printf("ERROR in GetCageStats: %v\n", err)
+		return c.Status(http.StatusNotFound).JSON(responses.Fail("NOT_FOUND", err.Error()))
+	}
+	return c.Status(http.StatusOK).JSON(res)
+}
+
+// GetCageWeightStats godoc
+// @Summary      Get weight stats of a cage
+// @Description  Retrieve monthly aggregated weight statistics for a specific cage
+// @Tags         cages
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "Cage ID"
+// @Success      200  {object}  domain.CageWeightStats
+// @Failure      404  {object}  responses.Response[any]
+// @Router       /api/cages/{id}/weight-stats [get]
+func (h *CageHandler) GetCageWeightStats(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	res, err := h.useCase.GetCageWeightStats(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusNotFound).JSON(responses.Fail("NOT_FOUND", err.Error()))
 	}

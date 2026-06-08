@@ -11,6 +11,7 @@ type Pregnancy struct {
 	PregnancyDate      time.Time  `json:"pregnancy_date" db:"pregnancy_date"`
 	PregnancyStatus    string     `json:"pregnancy_status" db:"pregnancy_status"`
 	ExpectedBirthDate  *time.Time `json:"expected_birth_date" db:"expected_birth_date"`
+	DaysRemaining      int        `json:"days_remaining"`
 	Notes              string     `json:"notes" db:"notes"`
 	IDSire             int        `json:"id_sire"`
 	IDDam              int        `json:"id_dam"`
@@ -37,10 +38,11 @@ type SheepShort struct {
 }
 
 type NewOffspring struct {
-	SheepCode string `json:"sheep_code"`
-	SheepName string `json:"sheep_name"`
-	Gender    string `json:"gender"`
-	IDCage    int    `json:"id_cage"`
+	SheepCode   string  `json:"sheep_code"`
+	SheepName   string  `json:"sheep_name"`
+	Gender      string  `json:"gender"`
+	IDCage      int     `json:"id_cage"`
+	BirthWeight float64 `json:"birth_weight"`
 }
 
 type PregnancyRepository interface {
@@ -48,6 +50,7 @@ type PregnancyRepository interface {
 	StorePregnancy(ctx context.Context, k *Pregnancy) error
 	UpdatePregnancyStatus(ctx context.Context, id int, status string, notes string) error
 	StoreBirth(ctx context.Context, k *Birth) error
+	StoreBirthWeight(ctx context.Context, idSheep int, date time.Time, weight float64) error
 	FindAllBirths(ctx context.Context, from, to *time.Time) ([]*Birth, error)
 	GetPregnancyDetail(ctx context.Context, id int) (*Pregnancy, error)
 }
