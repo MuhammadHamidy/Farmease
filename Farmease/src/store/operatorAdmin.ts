@@ -53,20 +53,20 @@ export function mapApiTaskToLocal(t: ApiTask): OperatorTask {
   let assigneeCode = userIdStr;
   let assigneeName = 'Operator Ternak';
   
-  if (userIdStr === '3' || userIdStr === '6' || userIdStr === '8' || userIdStr === 'OP001' || userIdStr === 'OPT001') {
-    assigneeCode = 'OPT001';
+  if (userIdStr === '3' || userIdStr === '6' || userIdStr === '8' || userIdStr === 'OP001') {
+    assigneeCode = 'OP001';
     assigneeName = 'Operator Ternak';
-  } else if (userIdStr === '5' || userIdStr === '7' || userIdStr === 'OP002' || userIdStr === 'OPT002') {
-    assigneeCode = 'OPT002';
+  } else if (userIdStr === '5' || userIdStr === '7' || userIdStr === 'OP002') {
+    assigneeCode = 'OP002';
     assigneeName = 'Operator Kebun';
   } else if (userIdStr === '1' || userIdStr === '2' || userIdStr === 'ADM001') {
     // If it's ADM001 due to backend mock, guess from content
     const descLower = ((t.description || '') + ' ' + (t.title || '')).toLowerCase();
-    if (descLower.includes('lh-') || descLower.includes('alpukat') || descLower.includes('kelengkeng') || descLower.includes('perkebunan')) {
-      assigneeCode = 'OPT002';
+    if (descLower.includes('lh-') || descLower.includes('l000') || descLower.includes('alpukat') || descLower.includes('kelengkeng') || descLower.includes('perkebunan')) {
+      assigneeCode = 'OP002';
       assigneeName = 'Operator Kebun';
     } else {
-      assigneeCode = 'OPT001';
+      assigneeCode = 'OP001';
       assigneeName = 'Operator Ternak';
     }
   } else if (userIdStr === '4' || userIdStr === 'PEM001') {
@@ -78,7 +78,7 @@ export function mapApiTaskToLocal(t: ApiTask): OperatorTask {
   let category: PencatatanCategory = 'umum';
   const titleLower = (t.title || '').toLowerCase();
   
-  if (assigneeCode === 'OPT001') {
+  if (assigneeCode === 'OP001') {
     // Ternak Tasks
     if (titleLower.includes('pakan') || titleLower.includes('makan')) category = 'pakan';
     else if (titleLower.includes('sehat') || titleLower.includes('sakit') || titleLower.includes('obat') || titleLower.includes('vitamin') || titleLower.includes('kesehatan')) category = 'kesehatan';
@@ -86,7 +86,7 @@ export function mapApiTaskToLocal(t: ApiTask): OperatorTask {
     else if (titleLower.includes('kawin') || titleLower.includes('breeding')) category = 'perkawinan';
     else if (titleLower.includes('lahir') || titleLower.includes('anak')) category = 'kelahiran';
     else if (titleLower.includes('panen')) category = 'panen' as any;
-  } else if (assigneeCode === 'OPT002') {
+  } else if (assigneeCode === 'OP002') {
     // Kebun Tasks
     if (titleLower.includes('siram') || titleLower.includes('air') || titleLower.includes('penyiraman')) category = 'penyiraman' as any;
     else if (titleLower.includes('pupuk') || titleLower.includes('pemupukan')) category = 'pemupukan' as any;
@@ -96,21 +96,21 @@ export function mapApiTaskToLocal(t: ApiTask): OperatorTask {
   }
 
   // Guess cage from description or title (e.g. 'Kandang A' -> A)
-  let cageCode = assigneeCode === 'OPT002' ? 'LH-001' : 'A';
+  let cageCode = assigneeCode === 'OP002' ? 'L001' : 'A';
   const descLower = ((t.description || '') + ' ' + titleLower).toLowerCase();
   
   // Extract Kandang XXX format via Regex
   const kandangMatch = descLower.match(/kandang\s+([a-z0-9-]+)/i);
   if (kandangMatch && kandangMatch[1]) {
     cageCode = kandangMatch[1].toUpperCase();
-  } else if (assigneeCode === 'OPT001') {
-    if (descLower.includes('kandang a') || descLower.includes('kandang opt001')) cageCode = 'A';
+  } else if (assigneeCode === 'OP001') {
+    if (descLower.includes('kandang a') || descLower.includes('kandang op001')) cageCode = 'A';
     else if (descLower.includes('kandang b')) cageCode = 'B';
     else if (descLower.includes('kandang c')) cageCode = 'C';
-  } else if (assigneeCode === 'OPT002') {
-    if (descLower.includes('lh-001') || descLower.includes('alpukat')) cageCode = 'LH-001';
-    else if (descLower.includes('lh-002') || descLower.includes('kelengkeng')) cageCode = 'LH-002';
-    else if (descLower.includes('lh-003')) cageCode = 'LH-003';
+  } else if (assigneeCode === 'OP002') {
+    if (descLower.includes('l001') || descLower.includes('alpukat')) cageCode = 'L001';
+    else if (descLower.includes('l0002') || descLower.includes('kelengkeng')) cageCode = 'L0002';
+    else if (descLower.includes('l0003')) cageCode = 'L0003';
   }
 
   // Extract due_date and due_time based on API response

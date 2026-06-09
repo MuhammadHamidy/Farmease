@@ -76,7 +76,7 @@ export default defineComponent({
                   {landSession.value?.name ?? 'Lahan Alpukat'}
                 </strong>
                 <span style="font-size: 0.72rem; color: #6b7280;">
-                  ID Lahan: {landSession.value?.code ?? 'L0001'}
+                  ID Lahan: {landSession.value?.code ?? 'L001'}
                 </span>
               </div>
             </div>
@@ -88,7 +88,7 @@ export default defineComponent({
               <div style="display: flex; flex-direction: column; gap: 0.1rem; min-width: 0;">
                 <strong style="font-size: 0.92rem; font-weight: 800; color: #111827; line-height: 1.2;">Operator Kebun</strong>
                 <span style="font-size: 0.72rem; color: #6b7280;">
-                  ID Pengguna: {userSession.value?.code ?? 'PK0001'}
+                  ID Pengguna: {userSession.value?.code ?? 'PK001'}
                 </span>
               </div>
             </div>
@@ -101,14 +101,14 @@ export default defineComponent({
             <PerkebunanSelectorCard
               label="Pilih jenis pencatatan"
               value={props.selectedJenis}
-              iconSrc={getJenisIcon(props.selectedJenis)}
+              iconSrc="/icon/jenis_kebun.png"
               onClick={() => emit('openJenis')}
             />
 
             <PerkebunanSelectorCard
               label="Pilih rincian pencatatan"
               value={props.selectedRincian}
-              iconSrc={getJenisIcon(props.selectedJenis)}
+              iconSrc="/icon/rincian_kebun.png"
               onClick={() => emit('openRincian')}
               disabled={props.selectedJenis === 'Jenis Pencatatan'}
             />

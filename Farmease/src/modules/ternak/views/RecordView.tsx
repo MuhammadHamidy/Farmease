@@ -65,10 +65,18 @@ export default defineComponent({
       if (prefilledPencatatanType.value) {
         selectedType.value = prefilledPencatatanType.value;
         prefilledPencatatanType.value = null; // Clear after applying
-      }
-      if (prefilledPencatatanRincian.value) {
-        selectedDetail.value = prefilledPencatatanRincian.value;
-        prefilledPencatatanRincian.value = null;
+        
+        if (prefilledPencatatanRincian.value) {
+          selectedDetail.value = prefilledPencatatanRincian.value;
+          prefilledPencatatanRincian.value = null;
+        } else {
+          selectedDetail.value = detailOptions[selectedType.value]?.[0] || 'Rincian';
+        }
+
+        // Auto open the form
+        setTimeout(() => {
+          openForm();
+        }, 50);
       }
     });
 

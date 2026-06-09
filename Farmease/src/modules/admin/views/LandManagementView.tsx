@@ -390,7 +390,7 @@ export default defineComponent({
               <div class="peternakan-modal-body mt-4">
                 <div class="row g-3">
                   <div class="col-12">
-                    <label class="pencatatan-label">Kode Lahan (Contoh: LH-003)</label>
+                    <label class="pencatatan-label">Kode Lahan (Contoh: L0003)</label>
                     <CustomInput 
                       modelValue={newLand.value.code}
                       placeholder="Masukkan kode lahan"

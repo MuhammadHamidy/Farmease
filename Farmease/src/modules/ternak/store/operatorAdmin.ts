@@ -97,7 +97,7 @@ const defaultSubmissions: PencatatanSubmission[] = [
     id: 'SUB-001',
     type: 'pakan',
     typeLabel: 'Pemberian Pakan',
-    operatorCode: 'OPT001',
+    operatorCode: 'OP001',
     operatorName: 'Budi Ternak',
     cageCode: 'A',
     scope: 'kandang',
@@ -110,9 +110,9 @@ const defaultSubmissions: PencatatanSubmission[] = [
     id: 'SUB-002',
     type: 'pemangkasan',
     typeLabel: 'Pemangkasan Ranting',
-    operatorCode: 'OPT002',
+    operatorCode: 'OP002',
     operatorName: 'Siti Aminah',
-    cageCode: 'LH-002',
+    cageCode: 'L0002',
     scope: 'kandang',
     summary: 'Pangkas ranting kering pohon Alpukat',
     payload: { data: { items: [{ name: 'Alpukat', action: 'Pangkas Ranting' }] } },
@@ -123,7 +123,7 @@ const defaultSubmissions: PencatatanSubmission[] = [
     id: 'SUB-003',
     type: 'kesehatan',
     typeLabel: 'Pemeriksaan Kesehatan',
-    operatorCode: 'OPT001',
+    operatorCode: 'OP001',
     operatorName: 'Budi Ternak',
     cageCode: 'B',
     scope: 'domba',
@@ -139,9 +139,9 @@ const defaultSubmissions: PencatatanSubmission[] = [
     id: 'SUB-004',
     type: 'panen',
     typeLabel: 'Panen Hasil Kebun',
-    operatorCode: 'OPT002',
+    operatorCode: 'OP002',
     operatorName: 'Siti Aminah',
-    cageCode: 'LH-001',
+    cageCode: 'L001',
     scope: 'kandang',
     summary: 'Panen buah jeruk matang 50kg',
     payload: { data: { items: [{ name: 'Jeruk', qty: 50, unit: 'kg' }] } },
@@ -331,7 +331,7 @@ export async function addOperatorTask(task: any) {
 export async function updateOperatorTask(id: string, patch: any) {
   try {
     let userId = 2;
-    if (patch.assigneeCode === 'OP002' || patch.assigneeCode === 'OPT002' || patch.assigneeCode === '3') {
+    if (patch.assigneeCode === 'OP002' || patch.assigneeCode === '3') {
       userId = 3;
     } else if (patch.assigneeCode === 'ADM001' || patch.assigneeCode === '1') {
       userId = 1;

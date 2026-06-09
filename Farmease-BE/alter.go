@@ -30,4 +30,11 @@ func main() {
 	} else {
 		fmt.Println("Successfully added end_time to tasks")
 	}
+
+	_, err = conn.Exec(ctx, "ALTER TABLE operations.tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT 'sedang';")
+	if err != nil {
+		log.Printf("Error adding priority to tasks: %v\n", err)
+	} else {
+		fmt.Println("Successfully added priority to tasks")
+	}
 }

@@ -100,6 +100,9 @@ export default defineComponent({
       volumeAir: '',
       namaGejala: '',
       targetHama: '',
+      teknikPenyiraman: 'Teknik Penyiraman',
+      sesiPenyiraman: 'Sesi Penyiraman',
+      deskripsiPenyiraman: '',
     })
 
     // Trees selection state for "Per Pohon"
@@ -181,7 +184,7 @@ export default defineComponent({
         id: `SUB-${Date.now().toString().slice(-6)}`,
         type: kindTitle.value.toLowerCase(),
         typeLabel: kindTitle.value,
-        operatorCode: userSession.value?.code || 'OPT002',
+        operatorCode: userSession.value?.code || 'OP002',
         operatorName: userSession.value?.name || 'Operator Kebun',
         cageCode: landSession.value?.code || 'LHN',
         scope: activeMode.value === 'pohon' ? 'domba' : 'kandang',
@@ -235,7 +238,7 @@ export default defineComponent({
                 </div>
                 <div class="info-card-text">
                   <strong>{landSession.value?.name ?? 'Lahan Alpukat'}</strong>
-                  <span>ID Lahan: {landSession.value?.code ?? 'L0001'}</span>
+                  <span>ID Lahan: {landSession.value?.code ?? 'L001'}</span>
                 </div>
               </div>
 
@@ -245,7 +248,7 @@ export default defineComponent({
                 </div>
                 <div class="info-card-text">
                   <strong>Operator Kebun</strong>
-                  <span>ID Pengguna: {userSession.value?.code ?? 'PK0001'}</span>
+                  <span>ID Pengguna: {userSession.value?.code ?? 'PK001'}</span>
                 </div>
               </div>
             </div>
@@ -255,7 +258,7 @@ export default defineComponent({
               
               <div class="pencatatan-row">
                 <div class="pencatatan-row-icon">
-                  <img class="pencatatan-row-icon-img" src="/icon/calender.png" alt="Jenis" />
+                  <img class="pencatatan-row-icon-img" src="/icon/jenis_kebun.png" alt="Jenis" />
                 </div>
                 <div class="pencatatan-row-content">
                   <span class="pencatatan-row-label">Pilih jenis pencatatan</span>
@@ -265,7 +268,7 @@ export default defineComponent({
 
               <div class="pencatatan-row">
                 <div class="pencatatan-row-icon">
-                  <img class="pencatatan-row-icon-img" src="/icon/document.png" alt="Rincian" />
+                  <img class="pencatatan-row-icon-img" src="/icon/rincian_kebun.png" alt="Rincian" />
                 </div>
                 <div class="pencatatan-row-content">
                   <span class="pencatatan-row-label">Pilih rincian pencatatan</span>

@@ -7,7 +7,7 @@ export default defineComponent({
   setup(props) {
     const logs = ref([
       { id: 1, time: '2026-04-08 09:23', text: 'Masuk data berat untuk D-001' },
-      { id: 2, time: '2026-04-09 10:12', text: 'Tambah pengguna OPT002' },
+      { id: 2, time: '2026-04-09 10:12', text: 'Tambah pengguna OP002' },
     ]);
 
     const addLog = (text = 'Aktivitas baru (FE-only)') => {

@@ -1,5 +1,6 @@
 import { defineComponent } from 'vue'
 import type { PropType } from 'vue'
+import { userSession, landSession } from '@/store/navigation'
 
 type ScheduleItem = {
   name: string
@@ -71,8 +72,8 @@ export default defineComponent({
       const isKelengkeng = currentItem.name.toLowerCase().includes('kelengkeng')
       const imageSrc = isKelengkeng ? '/icon/kelengkeng.png' : '/icon/alpukat.png'
 
-      // Extract ID from detail (e.g., "A001 • 3 x sehari" -> "L0001" or parse ID)
-      let landId = 'L0001'
+      // Extract ID from detail (e.g., "A001 • 3 x sehari" -> "L001" or parse ID)
+      let landId = 'L001'
       if (currentItem.detail) {
         const firstSegment = (currentItem.detail.split('•')[0] || '').trim()
         if (firstSegment) {
@@ -157,10 +158,10 @@ export default defineComponent({
               </div>
               <div style="display: flex; flex-direction: column; gap: 0.1rem;">
                 <strong style="font-size: 1.15rem; color: #111827; font-weight: 800;">
-                  Lahan {currentItem.name}
+                  {landSession.value?.name || `Lahan ${currentItem.name}`}
                 </strong>
                 <span style="font-size: 0.8rem; color: #374151; font-weight: 600;">
-                  ID Lahan: {landId}
+                  ID Lahan: {landSession.value?.code || landId}
                 </span>
               </div>
             </div>
@@ -185,10 +186,10 @@ export default defineComponent({
               </div>
               <div style="display: flex; flex-direction: column; gap: 0.1rem;">
                 <strong style="font-size: 1.15rem; color: #111827; font-weight: 800;">
-                  Operator Kebun
+                  {userSession.value?.name || 'Operator Kebun'}
                 </strong>
                 <span style="font-size: 0.8rem; color: #374151; font-weight: 600;">
-                  ID Lahan: {landId}
+                  ID Pengguna: {userSession.value?.code || 'OP002'}
                 </span>
               </div>
             </div>
@@ -223,7 +224,7 @@ export default defineComponent({
                       flex-shrink: 0;
                     "
                   >
-                    <img src="/icon/calender.png" alt="Jenis" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
+                    <img src="/icon/jenis_kebun.png" alt="Jenis" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 0.1rem;">
                     <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">
@@ -234,6 +235,32 @@ export default defineComponent({
                     </strong>
                   </div>
                 </div>
+
+                {/* Rincian Pencatatan Box */}
+                {currentItem.rincian && (
+                  <div class="detail-modal-inner-card" style="padding: 0.55rem 0.75rem; gap: 0.65rem;">
+                    <div
+                      style="
+                        width: 2rem;
+                        height: 2rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                      "
+                    >
+                      <img src="/icon/rincian_kebun.png" alt="Rincian" style="width: 1.35rem; height: 1.35rem; object-fit: contain;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                      <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">
+                        Rincian Pencatatan
+                      </span>
+                      <strong style="font-size: 1.05rem; color: #111827; font-weight: 800;">
+                        {currentItem.rincian}
+                      </strong>
+                    </div>
+                  </div>
+                )}
 
                 {/* Deskripsi Tugas Box */}
                 <div

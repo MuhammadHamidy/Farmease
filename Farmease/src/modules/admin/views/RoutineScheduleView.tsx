@@ -1,9 +1,12 @@
-import { defineComponent, ref, reactive, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, reactive, computed, onMounted, watch, Teleport } from 'vue';
 import type { PropType } from 'vue';
 import Typography from '@/shared/ui/admin/Typography';
 import Button from '@/shared/ui/admin/Button';
 import Select from '@/shared/ui/admin/Select';
 import CustomInput from '@/shared/ui/admin/Input';
+import RoutineScheduleCard from '../components/routine/RoutineScheduleCard';
+import RoutineScheduleDetailModal from '../components/routine/RoutineScheduleDetailModal';
+import RoutineScheduleFormModal from '../components/routine/RoutineScheduleFormModal';
 import { landsList, fetchLandsList, cagesList, fetchCagesList } from '@/store/navigation';
 import {
   routineSchedules,
@@ -21,8 +24,8 @@ import {
 } from '@/modules/ternak/store/operatorAdmin';
 
 const operators = [
-  { code: 'OPT001', name: 'Operator Ternak' },
-  { code: 'OPT002', name: 'Operator Kebun' },
+  { code: 'OP001', name: 'Operator Ternak' },
+  { code: 'OP002', name: 'Operator Kebun' },
   { code: 'PEM001', name: 'Pemilik' },
   { code: 'ADM001', name: 'Admin' },
 ];
@@ -98,7 +101,7 @@ export default defineComponent({
         if (cagesList.value.length === 0) return [{ value: 'A', label: 'Kandang A' }, { value: 'B', label: 'Kandang B' }, { value: 'C', label: 'Kandang C' }];
         return cagesList.value.map(c => ({ value: c.code, label: c.name || `Kandang ${c.code}` }));
       } else {
-        if (landsList.value.length === 0) return [{ value: 'LH-001', label: 'LH-001' }, { value: 'LH-002', label: 'LH-002' }, { value: 'LH-003', label: 'LH-003' }];
+        if (landsList.value.length === 0) return [{ value: 'L001', label: 'L001' }, { value: 'L002', label: 'L002' }, { value: 'L003', label: 'L003' }];
         return landsList.value.map(l => ({ value: l.code, label: l.code }));
       }
     });
@@ -121,8 +124,8 @@ export default defineComponent({
       description: '',
       rincian: '',
       category: (props.type === 'peternakan' ? 'pakan' : 'penyiraman') as any,
-      cageCode: props.type === 'peternakan' ? 'A' : 'LH-001',
-      assigneeCode: props.type === 'peternakan' ? 'OPT001' : 'OPT002',
+      cageCode: props.type === 'peternakan' ? 'A' : 'L001',
+      assigneeCode: props.type === 'peternakan' ? 'OP001' : 'OP002',
       frequency: 'harian' as ScheduleFrequency,
       startDate: new Date().toISOString().split('T')[0],
       time: '08:00',
@@ -143,9 +146,9 @@ export default defineComponent({
       if (land) {
         return land.name.replace(/lahan/gi, '').trim();
       }
-      if (cageCode === 'LH-001' || cageCode === 'A') return 'Alpukat';
-      if (cageCode === 'LH-002' || cageCode === 'B') return 'Kelengkeng';
-      if (cageCode === 'LH-003' || cageCode === 'C') return 'Alpukat';
+      if (cageCode === 'L001' || cageCode === 'A') return 'Alpukat';
+      if (cageCode === 'L0002' || cageCode === 'B') return 'Kelengkeng';
+      if (cageCode === 'L0003' || cageCode === 'C') return 'Alpukat';
       return cageCode;
     };
 
@@ -161,8 +164,8 @@ export default defineComponent({
       if (text.includes('bersih') || text.includes('pembersihan') || text.includes('gulma') || text.includes('rumput')) return 'Pembersihan';
 
       if (titleLower.includes('admin report') || task.category === 'umum') {
-        if (task.cageCode === 'A' || task.cageCode === 'LH-001') return 'Panen';
-        if (task.cageCode === 'B' || task.cageCode === 'LH-002') return 'Pemangkasan';
+        if (task.cageCode === 'A' || task.cageCode === 'L001') return 'Panen';
+        if (task.cageCode === 'B' || task.cageCode === 'L0002') return 'Pemangkasan';
         return 'Pemupukan';
       }
 
@@ -195,13 +198,16 @@ export default defineComponent({
 
     const openAdd = () => {
       isEditing.value = false;
+      const initialCategory = (props.type === 'peternakan' ? 'pakan' : 'penyiraman') as any;
+      const initialRincian = currentRincianOptions.value[0] || '';
+      
       form.id = '';
-      form.title = '';
+      form.category = initialCategory;
+      form.rincian = initialRincian;
+      form.title = `${initialCategory.charAt(0).toUpperCase() + initialCategory.slice(1)} - ${initialRincian}`;
       form.description = '';
-      form.category = (props.type === 'peternakan' ? 'pakan' : 'penyiraman') as any;
-      form.rincian = currentRincianOptions.value[0] || '';
-      form.cageCode = props.type === 'peternakan' ? 'A' : 'LH-001';
-      form.assigneeCode = props.type === 'peternakan' ? 'OPT001' : 'OPT002';
+      form.cageCode = props.type === 'peternakan' ? 'A' : 'L001';
+      form.assigneeCode = props.type === 'peternakan' ? 'OP001' : 'OP002';
       form.frequency = 'harian';
       form.startDate = new Date().toISOString().split('T')[0];
       form.time = '08:00';
@@ -234,7 +240,9 @@ export default defineComponent({
     };
 
     const saveSchedule = async () => {
-      if (!form.title.trim()) return displayToast('Judul tugas wajib diisi', 'error');
+      if (!form.title.trim()) {
+        form.title = `${form.category.charAt(0).toUpperCase() + form.category.slice(1)} - ${form.rincian || 'Rutin'}`;
+      }
       const assignee = operators.find((o) => o.code === form.assigneeCode);
       const payload = {
         title: form.title,
@@ -291,12 +299,12 @@ export default defineComponent({
 
     // Filtered lists based on props.type
     const filteredSchedules = computed(() => {
-      const targetAssignee = props.type === 'peternakan' ? 'OPT001' : 'OPT002';
+      const targetAssignee = props.type === 'peternakan' ? 'OP001' : 'OP002';
       return routineSchedules.value.filter((s) => s.assigneeCode === targetAssignee);
     });
 
     const filteredTasks = computed(() => {
-      const targetAssignee = props.type === 'peternakan' ? 'OPT001' : 'OPT002';
+      const targetAssignee = props.type === 'peternakan' ? 'OP001' : 'OP002';
       return operatorTasks.value
         .filter((t) => t.assigneeCode === targetAssignee)
         .filter((t) => t.dueDate === dateFilter.value)
@@ -373,68 +381,70 @@ export default defineComponent({
         {/* Ringkasan Informasi Cards */}
         <div class="row g-3 mb-4">
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="dark-summary-card">
-              <span class="card-label">Total tugas hari ini</span>
-              <span class="card-value">{totalTodayTasks.value}</span>
-              <span class="card-sub">rutin + insidental</span>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Total tugas hari ini</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem' }}>{totalTodayTasks.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>rutin + insidental</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="dark-summary-card">
-              <span class="card-label">Selesai</span>
-              <span class="card-value text-success" style={{ color: '#55a630' }}>{completedTasksCount.value}</span>
-              <span class="card-sub">dari {totalTodayTasks.value} tugas</span>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Selesai</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-dark, #198754)', marginBottom: '0.5rem' }}>{completedTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>dari {totalTodayTasks.value} tugas</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="dark-summary-card">
-              <span class="card-label">Belum dikerjakan</span>
-              <span class="card-value text-warning" style={{ color: '#e89005' }}>{pendingTasksCount.value}</span>
-              <span class="card-sub">perlu perhatian</span>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Belum dikerjakan</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning, #f59e0b)', marginBottom: '0.5rem' }}>{pendingTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>perlu perhatian</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="dark-summary-card">
-              <span class="card-label">Terlambat</span>
-              <span class="card-value text-danger" style={{ color: '#ff4d4d' }}>{lateTasksCount.value}</span>
-              <span class="card-sub">deadline terlewat</span>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Terlambat</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger, #dc3545)', marginBottom: '0.5rem' }}>{lateTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>deadline terlewat</div>
             </div>
           </div>
         </div>
 
         {/* Filter Dropdowns Section */}
-        <div class="admin-filter-bar mb-4">
-          <div class="flex-grow-1">
-            <label class="pencatatan-label d-block mb-1">Tanggal</label>
-            <input
-              type="date"
-              class="form-control pencatatan-input w-100"
-              style={{ height: '38px' }}
-              value={dateFilter.value}
-              onInput={(e: any) => { dateFilter.value = e.target.value; }}
-            />
-          </div>
-          <div class="flex-grow-1">
-            <label class="pencatatan-label d-block mb-1">Semua Sesi</label>
-            <Select
-              options={['Semua Sesi', 'Pagi', 'Siang', 'Sore']}
-              modelValue={sessionFilter.value}
-              onUpdate:modelValue={(val: string) => {
-                sessionFilter.value = val;
-              }}
-              theme={props.type}
-            />
-          </div>
-          <div class="flex-grow-1">
-            <label class="pencatatan-label d-block mb-1">Semua Status</label>
-            <Select
-              options={['Semua Status', 'Belum Dikerjakan', 'Selesai', 'Terlambat']}
-              modelValue={statusFilter.value}
-              onUpdate:modelValue={(val: string) => {
-                statusFilter.value = val;
-              }}
-              theme={props.type}
-            />
+        <div class="admin-filter-bar mb-4 rounded-4 p-4" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+          <div class="row g-3 w-100 m-0">
+            <div class="col-12 col-md-4">
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Tanggal</label>
+              <input
+                type="date"
+                class="form-control bg-white"
+                style={{ height: '42px', border: '1px solid #E6D9CE', borderRadius: '8px' }}
+                value={dateFilter.value}
+                onInput={(e: any) => { dateFilter.value = e.target.value; }}
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Semua Sesi</label>
+              <Select
+                options={['Semua Sesi', 'Pagi', 'Siang', 'Sore']}
+                modelValue={sessionFilter.value}
+                onUpdate:modelValue={(val: string) => {
+                  sessionFilter.value = val;
+                }}
+                theme={props.type}
+              />
+            </div>
+            <div class="col-12 col-md-4">
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Semua Status</label>
+              <Select
+                options={['Semua Status', 'Belum Dikerjakan', 'Selesai', 'Terlambat']}
+                modelValue={statusFilter.value}
+                onUpdate:modelValue={(val: string) => {
+                  statusFilter.value = val;
+                }}
+                theme={props.type}
+              />
+            </div>
           </div>
         </div>
 
@@ -447,141 +457,31 @@ export default defineComponent({
 
             return (
               <div class="session-section mb-4" key={sessionName}>
-                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2 mb-3 mt-4">
                   <span style={{ fontSize: '1.2rem' }}>
                     {sessionName === 'Pagi' ? '☀️' : sessionName === 'Siang' ? '🌤️' : '🌙'}
                   </span>
-                  <Typography variant="h3" size="text-lg" weight="extrabold" className="m-0 text-dark">
+                  <Typography variant="h3" size="text-md" weight="extrabold" className="m-0 text-dark text-uppercase">
                     Sesi {sessionName}
                   </Typography>
-                  <span class="badge bg-secondary rounded-pill ms-2" style={{ fontSize: '0.75rem' }}>
+                  <span class="badge rounded-pill ms-1" style={{ backgroundColor: '#6C757D', fontSize: '0.7rem', padding: '0.35rem 0.65rem' }}>
                     {tasksInSession.length} Tugas
                   </span>
                 </div>
+                <hr style={{ borderColor: '#2C3E50', opacity: 0.6, margin: '0 0 1.25rem 0' }} />
                 <div class="row g-3">
-                  {tasksInSession.map(task => {
-                    if (props.type === 'perkebunan') {
-                      return (
-                        <div class="col-12 col-md-4" key={task.id}>
-                          <div 
-                            class="task-session-card bg-white"
-                            style="border: 1.5px solid var(--admin-primary); border-radius: 0.75rem; padding: 1rem 1rem 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.3s ease; position: relative;"
-                          >
-                            {/* Top Badge: Status Tugas */}
-                            <div style="display: flex; justify-content: flex-start;">
-                              <span
-                                class={['status-badge text-capitalize', statusClass(task.status)]}
-                                style="padding: 0.22rem 0.65rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;"
-                              >
-                                {statusLabel(task.status)}
-                              </span>
-                            </div>
-
-                            {/* Middle & Action Layout */}
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.25rem;">
-                              {/* Left Info: Icon & Text */}
-                              <div style="display: flex; align-items: flex-start; gap: 0.75rem; min-w-0; flex-grow: 1;">
-                                <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.15rem; border: 1.5px solid var(--admin-border);">
-                                  <img 
-                                    src={getLandName(task.cageCode).toLowerCase().includes('kelengkeng') ? '/icon/kelengkeng.png' : '/icon/alpukat.png'} 
-                                    alt="Icon" 
-                                    style="width: 1.3rem; height: 1.3rem; object-fit: contain;" 
-                                  />
-                                </div>
-                                <div style="display: flex; flex-direction: column; gap: 0.15rem; min-w-0;">
-                                  {/* Title: Jenis Tugas */}
-                                  <strong style="font-size: 1.15rem; color: #111827; font-weight: 800; line-height: 1.2; text-transform: capitalize;" class="text-truncate">
-                                    {getJenisPencatatan(task)}
-                                  </strong>
-                                  {/* Subtitle: Nama Operator (Kandang replaced by Kebun) */}
-                                  <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;" class="text-truncate">
-                                    {task.assigneeName.replace(/operator kandang/gi, 'Operator Ternak')}
-                                  </span>
-                                  {/* Land Name */}
-                                  <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;" class="text-truncate">
-                                    {getLandName(task.cageCode)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Right: Button */}
-                              <div style="display: flex; align-items: center; gap: 0.55rem; flex-shrink: 0;">
-                                <button
-                                  type="button"
-                                  onClick={() => openDetail(task)}
-                                  class={['task-card-btn', task.status === 'selesai' ? 'selesai' : '']}
-                                >
-                                  {task.status === 'selesai' ? 'Selesai' : 'Lihat Tugas'}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div class="col-12 col-md-6 col-lg-4" key={task.id}>
-                        <div class="task-session-card bg-white border rounded-5 p-4 shadow-sm h-100 d-flex flex-column justify-content-between">
-                          <div>
-                            {/* Header: Waktu & Status */}
-                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                              <span class="badge bg-light text-dark border fw-bold">
-                                ⏱️ {task.dueTime || '08:00'} WIB
-                              </span>
-                              <span class={['status-badge text-capitalize', statusClass(task.status)]}>
-                                {statusLabel(task.status)}
-                              </span>
-                            </div>
-
-                            {/* Task details */}
-                            <Typography variant="h4" size="text-sm" weight="bold" className="text-dark m-0 mb-3 text-capitalize">
-                              {task.category}
-                            </Typography>
-
-                            {/* Operator metadata */}
-                            <div class="pt-3 border-top task-details-list small mb-3">
-                              <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Tanggal:</span>
-                                <span class="fw-bold text-dark">{task.dueDate || '-'}</span>
-                              </div>
-                              <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Frekuensi:</span>
-                                <span class="fw-bold text-dark">{getTaskFrequency(task)}</span>
-                              </div>
-                              <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">{props.type === 'peternakan' ? 'Kandang' : 'Lahan'}:</span>
-                                <span class="fw-bold text-dark">{task.cageCode}</span>
-                              </div>
-                              <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Nama Operator:</span>
-                                <span class="fw-bold text-dark">{task.assigneeName}</span>
-                              </div>
-                            </div>
-
-                            {/* Deskripsi di paling bawah */}
-                            <div class="mt-auto pt-2 border-top">
-                              <span class="text-muted small d-block mb-1">Deskripsi:</span>
-                              <Typography variant="p" size="text-xs" color="secondary" className="d-block m-0 text-truncate-2">
-                                {task.description || '-'}
-                              </Typography>
-                            </div>
-                          </div>
-
-                          {/* Detail Button */}
-                          <div class="pt-3 mt-3 border-top">
-                            <button 
-                              type="button" 
-                              class="btn btn-sm btn-outline-primary w-100 rounded-pill fw-bold py-2"
-                              onClick={() => openDetail(task)}
-                            >
-                              Detail Tugas
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {tasksInSession.map(task => (
+                    <RoutineScheduleCard
+                      key={task.id}
+                      task={task}
+                      type={props.type}
+                      landName={getLandName(task.cageCode)}
+                      jenisPencatatan={getJenisPencatatan(task)}
+                      frequency={getTaskFrequency(task)}
+                      statusLabel={statusLabel}
+                      onOpen-detail={openDetail}
+                    />
+                  ))}
                 </div>
               </div>
             );
@@ -595,331 +495,64 @@ export default defineComponent({
         </div>
 
         {/* Task Detail Modal */}
-        {isDetailOpen.value && selectedTask.value && (
-          <div class="peternakan-modal-overlay" onClick={() => (isDetailOpen.value = false)}>
-            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
-              <div class="peternakan-modal-header">
-                <button class="peternakan-modal-close" onClick={() => (isDetailOpen.value = false)}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-                <div class="peternakan-modal-title">Detail Tugas Operator</div>
-              </div>
-              <div class="peternakan-modal-body mt-4">
-                <div class="text-center mb-4">
-                  <div class="d-inline-block p-3 rounded-circle bg-light mb-2">
-                    <img 
-                      src={props.type === 'peternakan' ? 
-                        (selectedTask.value.category === 'pakan' ? '/icon/catat_pakan.png' :
-                         selectedTask.value.category === 'kesehatan' ? '/icon/catat_sehat.png' :
-                         selectedTask.value.category === 'kotoran' ? '/icon/catat_kotoran.png' :
-                         selectedTask.value.category === 'perkawinan' ? '/icon/catat_kawin.png' :
-                         selectedTask.value.category === 'kelahiran' ? '/icon/catat_lahir.png' : '/icon/catat_jenis.png') 
-                        : '/icon/pohon.png'} 
-                      alt="" 
-                      style={{ width: '32px', height: '32px', objectFit: 'contain' }} 
-                    />
-                  </div>
-                  <Typography variant="h3" size="text-lg" weight="extrabold" className="text-dark m-0">
-                    {selectedTask.value.title}
-                  </Typography>
-                  <span class={['status-badge mt-2 d-inline-block', statusClass(selectedTask.value.status)]}>
-                    {statusLabel(selectedTask.value.status)}
-                  </span>
-                </div>
-
-                <div class="border rounded-5 p-3 bg-light mb-4">
-                  <div class="mb-3">
-                    <span class="text-muted d-block small">Deskripsi Tugas:</span>
-                    <span class="fw-semibold text-dark">{selectedTask.value.description || 'Tidak ada deskripsi.'}</span>
-                  </div>
-                  <div class="row g-2 pt-2 border-top">
-                    <div class="col-6">
-                      <span class="text-muted d-block small">Sesi (Mulai):</span>
-                      <span class="fw-semibold text-dark">{getSessionFromTime(selectedTask.value.dueTime)} ({selectedTask.value.dueTime} WIB)</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="text-muted d-block small">Jam Tenggat:</span>
-                      <span class="fw-semibold text-dark">{selectedTask.value.endTime ? `${selectedTask.value.endTime} WIB` : '-'}</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="text-muted d-block small">{props.type === 'peternakan' ? 'Kandang' : 'Lahan'}:</span>
-                      <span class="fw-semibold text-dark">{props.type === 'peternakan' ? 'Kandang' : 'Lahan'} {selectedTask.value.cageCode}</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="text-muted d-block small">Jenis Tugas:</span>
-                      <span class="fw-semibold text-dark text-capitalize">{selectedTask.value.category}</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="text-muted d-block small">Prioritas:</span>
-                      <span class="fw-semibold text-dark text-capitalize">{selectedTask.value.priority}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="border rounded-5 p-3 mb-4">
-                  <span class="text-muted d-block small mb-2">Ditugaskan Kepada:</span>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-light" style={{ width: '40px', height: '40px', border: '1px solid var(--admin-border)' }}>
-                      <img src="/icon/ternak_op.png" alt="Operator" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
-                    </div>
-                    <div>
-                      <span class="d-block fw-bold text-dark">{selectedTask.value.assigneeName}</span>
-                      <span class="text-muted small">{selectedTask.value.assigneeCode}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="d-flex gap-3 mt-4 pt-3 border-top">
-                  <button 
-                    type="button"
-                    class="btn btn-outline-danger grow py-2.5 rounded-pill fw-bold"
-                    onClick={async () => {
-                      if (confirm(`Apakah Anda yakin ingin menghapus tugas "${selectedTask.value?.title}"?`)) {
-                        await deleteOperatorTask(selectedTask.value!.id);
-                        isDetailOpen.value = false;
-                      }
-                    }}
-                  >
-                    Hapus Tugas
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-light grow py-2.5 rounded-pill fw-bold" 
-                    onClick={() => {
-                      isDetailOpen.value = false;
-                      const schedule = routineSchedules.value.find((s: any) => s.title === selectedTask.value!.title && s.cageCode === selectedTask.value!.cageCode);
-                      if (schedule) {
-                        openEdit(schedule);
-                      } else {
-                        isEditing.value = true;
-                        Object.assign(form, {
-                          id: selectedTask.value!.id,
-                          title: selectedTask.value!.title,
-                          description: selectedTask.value!.description || '',
-                          category: selectedTask.value!.category as any,
-                          cageCode: selectedTask.value!.cageCode,
-                          assigneeCode: selectedTask.value!.assigneeCode,
-                          frequency: 'sekali',
-                          startDate: new Date().toISOString().split('T')[0],
-                          time: selectedTask.value!.dueTime || '08:00',
-                          daysOfWeek: [],
-                          dayOfMonth: 1,
-                          priority: selectedTask.value!.priority,
-                          active: true,
-                        });
-                        isModalOpen.value = true;
-                      }
-                    }}
-                  >
-                    Edit
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <RoutineScheduleDetailModal
+          isOpen={isDetailOpen.value}
+          task={selectedTask.value}
+          type={props.type}
+          statusLabel={statusLabel}
+          statusClass={statusClass}
+          getSessionFromTime={getSessionFromTime}
+          onClose={() => isDetailOpen.value = false}
+          onEdit={(task) => {
+            isDetailOpen.value = false;
+            const schedule = routineSchedules.value.find((s: any) => s.title === task.title && s.cageCode === task.cageCode);
+            if (schedule) {
+              openEdit(schedule);
+            } else {
+              isEditing.value = true;
+              Object.assign(form, {
+                id: task.id,
+                title: task.title,
+                description: task.description || '',
+                category: task.category as any,
+                cageCode: task.cageCode,
+                assigneeCode: task.assigneeCode,
+                frequency: 'sekali',
+                startDate: new Date().toISOString().split('T')[0],
+                time: task.dueTime || '08:00',
+                daysOfWeek: [],
+                dayOfMonth: 1,
+                priority: task.priority,
+                active: true,
+              });
+              isModalOpen.value = true;
+            }
+          }}
+          onDelete={async (task) => {
+            if (confirm(`Apakah Anda yakin ingin menghapus tugas "${task.title}"?`)) {
+              await deleteOperatorTask(task.id);
+              isDetailOpen.value = false;
+            }
+          }}
+        />
 
         {/* Create/Edit Schedule Modal */}
-        {isModalOpen.value && (
-          <div class="peternakan-modal-overlay" onClick={() => (isModalOpen.value = false)}>
-            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-              <div class="peternakan-modal-header">
-                <button class="peternakan-modal-close" onClick={() => (isModalOpen.value = false)}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-                <div class="peternakan-modal-title">
-                  {isEditing.value ? 'Edit Jadwal Rutin' : 'Tambah Jadwal Rutin'}
-                </div>
-              </div>
-              <div class="peternakan-modal-body mt-4">
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label class="pencatatan-label">Jenis Pencatatan / Kegiatan <span class="text-danger">*</span></label>
-                    <Select
-                      options={categories.value}
-                      modelValue={categories.value[categoryValues.value.indexOf(form.category)] || categories.value[0]}
-                      onUpdate:modelValue={(val: string) => {
-                        const idx = categories.value.indexOf(val);
-                        form.category = categoryValues.value[idx];
-                        form.title = val;
-                        form.rincian = currentRincianOptions.value[0] || '';
-                      }}
-                      theme={props.type}
-                    />
-                  </div>
-                  <div class="col-12">
-                    <label class="pencatatan-label">Rincian Pencatatan <span class="text-danger">*</span></label>
-                    <Select
-                      options={currentRincianOptions.value}
-                      modelValue={form.rincian}
-                      onUpdate:modelValue={(val: string) => {
-                        form.rincian = val;
-                      }}
-                      theme={props.type}
-                    />
-                  </div>
-                  <div class="col-12">
-                    <label class="pencatatan-label">Deskripsi <span class="text-muted fw-normal">(Opsional)</span></label>
-                    <textarea
-                      class="form-control pencatatan-textarea"
-                      value={form.description}
-                      onInput={(e: any) => { form.description = e.target.value; }}
-                      placeholder="Masukkan deskripsi tugas"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div class="col-12">
-                    <label class="pencatatan-label">Kode {props.type === 'peternakan' ? 'Kandang' : 'Lahan'} <span class="text-danger">*</span></label>
-                    <Select
-                      options={locationOptions.value.map((opt: any) => ({ value: opt.value, label: opt.label }))}
-                      modelValue={form.cageCode}
-                      onUpdate:modelValue={(val: string) => {
-                        form.cageCode = val;
-                      }}
-                      theme={props.type}
-                    />
-                  </div>
-
-                  <div class="col-12">
-                    <label class="pencatatan-label">Tanggal <span class="text-danger">*</span></label>
-                    <input
-                      type="date"
-                      class="form-control pencatatan-input"
-                      value={form.startDate}
-                      onInput={(e: any) => { form.startDate = e.target.value; }}
-                    />
-                  </div>
-
-                  <div class="col-12">
-                    <label class="pencatatan-label">Jam Pelaksanaan (WIB) <span class="text-danger">*</span></label>
-                    <input
-                      type="time"
-                      class="form-control pencatatan-input"
-                      value={form.time}
-                      onInput={(e: any) => { form.time = e.target.value; }}
-                      style={{ height: '38px', cursor: 'pointer' }}
-                    />
-                  </div>
-
-                  <div class="col-12">
-                    <label class="pencatatan-label">Jam Tenggat (WIB) <span class="text-danger">*</span></label>
-                    <input
-                      type="time"
-                      class="form-control pencatatan-input"
-                      value={(form as any).endTime || '12:00'}
-                      onInput={(e: any) => { (form as any).endTime = e.target.value; }}
-                      style={{ height: '38px', cursor: 'pointer' }}
-                    />
-                  </div>
-
-                  <div class="col-12">
-                    <label class="pencatatan-label">Frekuensi <span class="text-danger">*</span></label>
-                    <Select
-                      options={['Sekali', 'Harian', 'Mingguan', 'Bulanan']}
-                      modelValue={frequencyLabel(form.frequency)}
-                      onUpdate:modelValue={(val: string) => {
-                        if (val === 'Sekali') form.frequency = 'sekali';
-                        else if (val === 'Harian') form.frequency = 'harian';
-                        else if (val === 'Mingguan') form.frequency = 'mingguan';
-                        else form.frequency = 'bulanan';
-                      }}
-                      theme={props.type}
-                    />
-                  </div>
-
-                  
-                  <div class="col-12">
-                    <label class="pencatatan-label">Prioritas <span class="text-danger">*</span></label>
-                    <Select
-                      options={['Rendah', 'Sedang', 'Tinggi']}
-                      modelValue={form.priority === 'rendah' ? 'Rendah' : form.priority === 'tinggi' ? 'Tinggi' : 'Sedang'}
-                      onUpdate:modelValue={(val: string) => {
-                        if (val === 'Rendah') form.priority = 'rendah';
-                        else if (val === 'Tinggi') form.priority = 'tinggi';
-                        else form.priority = 'sedang';
-                      }}
-                      theme={props.type}
-                    />
-                  </div>
-
-                  {form.frequency === 'mingguan' && (
-                    <div class="col-12">
-                      <label class="pencatatan-label">Hari dalam Seminggu</label>
-                      <div class="d-flex gap-2 flex-wrap">
-                        {dayLabels.map((label, idx) => (
-                          <button
-                            type="button"
-                            key={idx}
-                            class={[
-                              'btn btn-sm rounded-pill px-3 py-1 fw-bold',
-                              form.daysOfWeek.includes(idx) ? 'btn-primary' : 'btn-outline-secondary',
-                            ]}
-                            onClick={() => toggleDay(idx)}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {form.frequency === 'bulanan' && (
-                    <div class="col-md-6">
-                      <label class="pencatatan-label">Tanggal (1-28)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="28"
-                        class="form-control pencatatan-input"
-                        value={form.dayOfMonth}
-                        onInput={(e: any) => {
-                          form.dayOfMonth = Math.min(28, Math.max(1, Number(e.target.value) || 1));
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div class="col-12 mt-2">
-                    <label class="d-flex align-items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={form.active}
-                        onChange={(e) => {
-                          form.active = (e.target as HTMLInputElement).checked;
-                        }}
-                      />
-                      <span class="fw-bold text-dark">Jadwal aktif</span>
-                    </label>
-                  </div>
-
-                </div>
-                <div class="d-flex gap-3 mt-4 pt-3 border-top">
-                  <button 
-                    type="button" 
-                    class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 700, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
-                    onClick={() => (isModalOpen.value = false)}
-                  >
-                    Batal
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 700, backgroundColor: '#606C38', color: 'white', border: 'none' }}
-                    onClick={saveSchedule}
-                  >
-                    Simpan Tugas
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <RoutineScheduleFormModal
+          isOpen={isModalOpen.value}
+          isEditing={isEditing.value}
+          form={form}
+          type={props.type}
+          categories={categories.value}
+          categoryValues={categoryValues.value}
+          currentRincianOptions={currentRincianOptions.value}
+          locationOptions={locationOptions.value}
+          frequencyLabel={frequencyLabel}
+          onClose={() => isModalOpen.value = false}
+          onSave={saveSchedule}
+          onUpdateCategory={() => {
+            form.rincian = currentRincianOptions.value[0] || '';
+          }}
+        />
       </div>
     );
   }

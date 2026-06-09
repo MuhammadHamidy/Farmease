@@ -362,6 +362,40 @@ export default defineComponent({
               </div>
             </>
           )}
+
+          {props.kindTitle === 'Penyiraman' && (
+            <>
+              <div class="form-group">
+                <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Teknik Penyiraman</span>
+                <PerkebunanFormSelect
+                  modelValue={f().teknikPenyiraman}
+                  options={['Manual', 'Irigasi Tetes', 'Sprinkler']}
+                  placeholder="Teknik Penyiraman"
+                  onUpdate:modelValue={(val) => { f().teknikPenyiraman = val }}
+                />
+              </div>
+
+              <div class="form-group">
+                <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Sesi Penyiraman</span>
+                <PerkebunanFormSelect
+                  modelValue={f().sesiPenyiraman}
+                  options={['Pagi', 'Siang', 'Sore']}
+                  placeholder="Sesi Penyiraman"
+                  onUpdate:modelValue={(val) => { f().sesiPenyiraman = val }}
+                />
+              </div>
+
+              <div class="form-group">
+                <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Catatan (Opsional)</span>
+                <PerkebunanFormInput
+                  modelValue={f().deskripsiPenyiraman}
+                  type="textarea"
+                  placeholder="Contoh: kendala, kondisi dan lain lain"
+                  onUpdate:modelValue={(val) => { f().deskripsiPenyiraman = val }}
+                />
+              </div>
+            </>
+          )}
         </div>
       )
     }

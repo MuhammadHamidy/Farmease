@@ -75,6 +75,7 @@ func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
 		TaskDate    time.Time `json:"task_date"`
 		DueDate     time.Time `json:"due_date"` // fallback for FE
 		Status      string    `json:"status"`
+		Priority    string    `json:"priority"`
 		IDAccount   int       `json:"id_account"`
 		UserID      int       `json:"user_id"` // fallback for FE
 		Category    string    `json:"category"`
@@ -87,6 +88,7 @@ func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      req.Status,
+		Priority:    req.Priority,
 		Category:    req.Category,
 	}
 
@@ -141,6 +143,7 @@ func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
 		TaskDate    time.Time `json:"task_date"`
 		DueDate     time.Time `json:"due_date"` // fallback for FE
 		Status      string    `json:"status"`
+		Priority    string    `json:"priority"`
 		IDAccount   int       `json:"id_account"`
 		UserID      int       `json:"user_id"` // fallback for FE
 		Category    string    `json:"category"`
@@ -150,9 +153,11 @@ func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
 	}
 
 	taskItem := domain.Task{
+		IDTask:      id,
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      req.Status,
+		Priority:    req.Priority,
 		Category:    req.Category,
 	}
 

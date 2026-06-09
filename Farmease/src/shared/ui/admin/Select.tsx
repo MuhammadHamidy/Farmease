@@ -48,14 +48,14 @@ export default defineComponent({
     return () => (
       <div class={['position-relative custom-select-wrapper w-100', `theme-${props.theme}`]} ref={dropdownRef}>
         <div 
-          class={['custom-select pe-5', isOpen.value ? 'is-open' : '']}
+          class={['custom-select', isOpen.value ? 'is-open' : '']}
           onClick={toggleOpen}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', minHeight: '38px', justifyContent: 'space-between' }}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', minHeight: '38px', justifyContent: 'space-between', paddingRight: '2.25rem' }}
         >
           <span style={{ color: props.modelValue ? 'inherit' : 'var(--ui-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {selectedLabel()}
           </span>
-          <svg class="select-icon-wrapper" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style={{ transform: isOpen.value ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s', width: '18px', height: '18px', position: 'absolute', right: '1rem', top: '50%', color: 'inherit', opacity: 0.5 }}>
+          <svg class="select-icon-wrapper" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style={{ transform: isOpen.value ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s', width: '18px', height: '18px', position: 'absolute', right: '0.75rem', top: '50%', color: 'inherit', opacity: 0.5 }}>
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>

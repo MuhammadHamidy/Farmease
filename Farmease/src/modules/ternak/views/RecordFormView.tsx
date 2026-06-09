@@ -255,7 +255,7 @@ export default defineComponent({
           id: `SUB-${Date.now().toString().slice(-6)}`,
           type: activePencatatanForm.value?.jenis?.id || 'pencatatan',
           typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
-          operatorCode: userSession.value?.code || 'OPT001',
+          operatorCode: userSession.value?.code || 'OP001',
           operatorName: userSession.value?.name || 'Operator Ternak',
           cageCode: cageSession.value?.code || 'A',
           scope: selectedScope.value,

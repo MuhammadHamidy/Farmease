@@ -7,6 +7,7 @@ import Badge from '@/shared/ui/Badge';
 import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/Select';
 import StatCard from '@/shared/ui/StatCard';
+import Button from '@/shared/ui/admin/Button';
 
 export default defineComponent({
   name: 'CageManagementView',
@@ -167,28 +168,21 @@ export default defineComponent({
     return () => (
       <div class="animate-fade-in-up">
         {/* Header Section */}
-        <div class="view-header mb-4">
+        <div class="view-header align-items-center mb-4">
           <div>
             <Typography variant="h2" size="text-2xl" weight="extrabold" className="m-0 text-dark">Manajemen Kandang</Typography>
             <Typography variant="p" size="text-sm" color="secondary" className="m-0">Tambahkan, ubah, atau hapus kandang peternakan Farmease.</Typography>
           </div>
-          <button 
-            type="button" 
-            class="peternakan-primary-btn m-0" 
-            onClick={openAdd}
-            disabled={isLoading.value}
-            style={{ 
-              backgroundColor: '#30360E', 
-              color: '#ffffff', 
-              borderColor: '#30360E', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '8px' 
-            }}
-          >
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', lineHeight: '1' }}>+</span>
-            Tambah Kandang
-          </button>
+          <div class="d-flex gap-2 flex-wrap">
+            <Button 
+              variant="solid" 
+              onClick={openAdd}
+              disabled={isLoading.value}
+              style={{ backgroundColor: '#30360E', color: '#ffffff', borderColor: '#30360E' }}
+            >
+              + Tambah Kandang
+            </Button>
+          </div>
         </div>
 
         {/* Global Alerts */}
@@ -229,7 +223,7 @@ export default defineComponent({
             return (
               <div class="col-12 col-md-6 col-lg-4" key={c.code}>
                 <StatCard 
-                  label={`KANDANG ${c.code} - ${c.name}`} 
+                  label={c.name ? c.name.toUpperCase() : `KANDANG ${c.code}`} 
                   value={`${count} / ${c.capacity} Ekor`} 
                   sub={`Ketersediaan: ${availability} Ekor (${pct}% Terisi)`}
                   color={pct >= 90 ? 'accent' : 'primary'}

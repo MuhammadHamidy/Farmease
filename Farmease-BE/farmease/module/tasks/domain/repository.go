@@ -12,6 +12,7 @@ type Task struct {
 	TaskDate    time.Time `json:"task_date" db:"task_date"`
 	EndTime     string    `json:"end_time" db:"end_time"`
 	Status      string    `json:"status" db:"status"` // pending/done
+	Priority    string    `json:"priority" db:"priority"`
 	IDAccount   int       `json:"id_account" db:"id_account"`
 	Category    string    `json:"category" db:"category"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`

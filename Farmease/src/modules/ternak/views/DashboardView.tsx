@@ -218,7 +218,7 @@ export default defineComponent({
     const totalAnimals = computed(() => cageStats.value?.total_animals || 0);
     const healthyAnimals = computed(() => cageStats.value?.healthy || 0);
     const attentionAnimals = computed(() => cageStats.value?.attention_needed || 0);
-    const peternakanTasks = computed(() => operatorTasks.value.filter(t => t.assigneeCode === 'OPT001' || t.assigneeCode === 'OP001' || t.assigneeCode === '3' || t.assigneeCode === '6' || t.assigneeCode === '8' || t.assigneeCode === '1'));
+    const peternakanTasks = computed(() => operatorTasks.value.filter(t => t.assigneeCode === 'OP001' || t.assigneeCode === '3' || t.assigneeCode === '6' || t.assigneeCode === '8' || t.assigneeCode === '1'));
     const taskDone = computed(() => peternakanTasks.value.filter(t => t.status === 'selesai').length);
 
     const closeTaskModal = () => {
@@ -397,38 +397,72 @@ export default defineComponent({
               ) : (
                 <div class="d-flex flex-column gap-3">
                   {peternakanTasks.value.map(task => (
-                    <button
+                    <div
                       key={task.id}
-                      type="button"
-                      class={['d-flex align-items-center gap-3 p-3 w-100 text-start routine-task-btn', task.status === 'selesai' ? 'completed' : '']}
-                      style={{ borderLeftWidth: '4px', borderLeftStyle: 'solid', borderLeftColor: task.status === 'selesai' ? 'var(--color-primary-light)' : 'var(--color-primary)' }}
-                      onClick={() => openTaskDetail(task.id)}
+                      class="bg-white rounded-4 w-100 text-start shadow-sm"
+                      style={{ 
+                        border: '1px solid #E6D9CE', 
+                        opacity: task.status === 'selesai' ? 0.7 : 1,
+                      }}
                     >
-                      <div class="rounded-4 d-flex align-items-center justify-content-center" style={{ width: '42px', height: '42px', backgroundColor: 'var(--color-primary-fixed)' }}>
-                        <img src={CATEGORY_ICONS[task.category] || '/icon/catat_jenis.png'} alt="Task" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
-                      </div>
-                      <div class="flex-grow-1 min-w-0">
-                        <Typography variant="p" size="text-sm" weight="extrabold" className="mb-0 d-block text-truncate text-on-surface">
-                          {task.title}
-                        </Typography>
-                        <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
-                          {task.dueTime && (
-                            <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-secondary">
-                              ⏱️ {task.dueTime} WIB
+                      <div class="p-3 pb-2 d-flex align-items-start justify-content-between gap-3">
+                        <div class="d-flex align-items-start gap-3">
+                          <div class="rounded-4 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px', backgroundColor: '#F4EBE4', border: '1px solid #E6D9CE' }}>
+                            <img src={CATEGORY_ICONS[task.category] || '/icon/catat_jenis.png'} alt="Task" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                          </div>
+                          <div class="d-flex flex-column gap-1 mt-1">
+                            <div style={{
+                              backgroundColor: task.priority === 'tinggi' ? '#FADBD8' : task.priority === 'sedang' ? '#FCF3CF' : '#EAECEE',
+                              color: task.priority === 'tinggi' ? '#C0392B' : task.priority === 'sedang' ? '#B7950B' : '#5D6D7E',
+                              padding: '2px 10px',
+                              borderRadius: '12px',
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                              width: 'fit-content'
+                            }}>
+                              Prioritas: <span class="text-capitalize">{task.priority}</span>
+                            </div>
+                            <Typography variant="p" size="text-base" className="mb-0 text-dark" style={{ lineHeight: '1.3', fontWeight: '500' }}>
+                              {task.rincian || task.description || task.title}
                             </Typography>
+                            <span style={{ fontSize: '0.7rem', color: '#5D4037', fontWeight: '700', letterSpacing: '0.5px' }} class="text-uppercase mt-1">
+                              {task.category}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Detail Button */}
+                        <div class="d-flex flex-column align-items-end justify-content-start mt-1">
+                          {task.status === 'selesai' ? (
+                            <Badge variant="success" className="px-3 py-1.5" style={{ fontSize: '0.75rem' }}>
+                              Selesai
+                            </Badge>
+                          ) : (
+                            <button 
+                              type="button"
+                              class="btn btn-sm rounded-pill px-3 fw-bold" 
+                              style={{ fontSize: '0.75rem', color: '#8B5A2B', border: '1px solid #8B5A2B', backgroundColor: 'transparent' }}
+                              onClick={() => openTaskDetail(task.id)}
+                            >
+                              Detail
+                            </button>
                           )}
-                          <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-secondary">
-                            • Prioritas: {task.priority}
-                          </Typography>
                         </div>
                       </div>
-                      <div class="d-flex align-items-center gap-2">
-                        <Badge variant={task.status === 'selesai' ? 'success' : 'secondary'} className="px-3 py-2">
-                          {task.status === 'selesai' ? 'Selesai' : 'Detail'}
-                        </Badge>
-                        <img src="/icon/right-row.png" alt="Detail" style={{ width: '18px', height: '18px', objectFit: 'contain', opacity: 0.75 }} />
+
+                      <hr style={{ margin: '0.5rem 1rem', borderColor: '#E6D9CE', opacity: 0.8 }} />
+
+                      <div class="p-3 pt-2 row g-0">
+                        <div class="col-6">
+                          <span style={{ fontSize: '0.65rem', color: '#9E9E9E', letterSpacing: '0.5px' }}>WAKTU MULAI</span>
+                          <div style={{ fontSize: '1rem', color: '#2C3E50', fontWeight: '400' }}>{task.dueTime ? `${task.dueTime} WIB` : '-'}</div>
+                        </div>
+                        <div class="col-6">
+                          <span style={{ fontSize: '0.65rem', color: '#9E9E9E', letterSpacing: '0.5px' }}>WAKTU TENGGAT</span>
+                          <div style={{ fontSize: '1rem', color: '#C0392B', fontWeight: '400' }}>{task.endTime ? `${task.endTime} WIB` : '-'}</div>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -695,48 +729,41 @@ export default defineComponent({
                 </div>
 
                 <div class="rounded-4 border p-3 mb-4" style={{ backgroundColor: 'var(--color-surface)' }}>
-                  <div class="row g-3">
-                    <div class="col-6">
-                      <span class="text-muted d-block small mb-1">Kandang:</span>
-                      <span class="fw-semibold text-dark">{selectedTask.value.cageCode}</span>
-                    </div>
-                    <div class="col-6">
+                  <div class="d-flex flex-column gap-3">
+                    <div>
                       <span class="text-muted d-block small mb-1">Jenis Tugas:</span>
                       <span class="fw-semibold text-dark text-capitalize">{selectedTask.value.category}</span>
                     </div>
-                    <div class="col-6">
+                    <div>
+                      <span class="text-muted d-block small mb-1">Rincian Tugas <span class="fw-normal">(Opsional)</span>:</span>
+                      <span class="fw-semibold text-dark">{selectedTask.value.rincian || '-'}</span>
+                    </div>
+                    <div>
+                      <span class="text-muted d-block small mb-1">Kandang:</span>
+                      <span class="fw-semibold text-dark">{selectedTask.value.cageCode}</span>
+                    </div>
+                    <div>
                       <span class="text-muted d-block small mb-1">Prioritas:</span>
                       <span class="fw-semibold text-dark text-capitalize">{selectedTask.value.priority}</span>
                     </div>
-                    <div class="col-6">
+                    <div>
                       <span class="text-muted d-block small mb-1">Jam Pelaksanaan:</span>
                       <span class="fw-semibold text-dark">{selectedTask.value.dueTime ? `${selectedTask.value.dueTime} WIB` : '-'}</span>
                     </div>
-                    <div class="col-6">
+                    <div>
                       <span class="text-muted d-block small mb-1">Jam Tenggat:</span>
                       <span class="fw-semibold text-dark">{selectedTask.value.endTime ? `${selectedTask.value.endTime} WIB` : '-'}</span>
+                    </div>
+                    <div>
+                      <span class="text-muted d-block small mb-1">Deskripsi Tugas:</span>
+                      <span class="fw-semibold text-dark">{selectedTask.value.description || 'Tidak ada deskripsi.'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div class="rounded-4 border p-3 mb-4" style={{ backgroundColor: 'var(--color-surface)' }}>
-                  <Typography variant="span" size="text-xs" className="text-secondary text-uppercase fw-bold d-block mb-1">Deskripsi Tugas:</Typography>
-                  <Typography variant="p" className="m-0 fw-bold" size="text-sm">{selectedTask.value.description || 'Tidak ada deskripsi.'}</Typography>
-                </div>
-
                 <div class="d-flex flex-column flex-sm-row gap-3 justify-content-end">
-                  <button class="btn btn-light rounded-pill px-4 py-3 fw-bold" onClick={closeTaskModal}>Tutup</button>
-                  {selectedTask.value.status !== 'selesai' && (
-                    <button
-                      class="btn rounded-pill px-4 py-3 fw-bold text-white border-0"
-                      style={{ backgroundColor: 'var(--color-secondary)' }}
-                      onClick={() => { handleCompleteTask(selectedTask.value!.id); closeTaskModal(); }}
-                    >
-                      Tandai Selesai
-                    </button>
-                  )}
                   <button
-                    class="btn rounded-pill px-4 py-3 fw-bold text-white border-0"
+                    class="btn rounded-pill px-4 py-3 fw-bold text-white border-0 w-100"
                     style={{ backgroundColor: 'var(--color-primary)' }}
                     onClick={goToPencatatan}
                   >

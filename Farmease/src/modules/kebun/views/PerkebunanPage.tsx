@@ -18,6 +18,7 @@ const jenisPencatatan = [
   'Penanaman',
   'Pengendalian Hama & Penyakit',
   'Pemupukan',
+  'Penyiraman',
 ]
 
 const rincianPencatatanByJenis: Record<string, string[]> = {
@@ -28,6 +29,7 @@ const rincianPencatatanByJenis: Record<string, string[]> = {
   'Penanaman':                    ['Bibit Baru'],
   'Pengendalian Hama & Penyakit': ['Pestisida', 'Fungisida'],
   'Pemupukan':                    ['Pupuk Cair', 'Pupuk Organik', 'Pupuk Padat'],
+  'Penyiraman':                   ['Penyiraman Rutin'],
 }
 
 export default defineComponent({
@@ -58,7 +60,7 @@ export default defineComponent({
 
     const scheduleItems = computed(() => {
       return operatorTasks.value
-        .filter(t => t.assigneeCode === 'OPT002' || t.assigneeCode === 'OP002' || t.assigneeCode === '3' || t.assigneeName.toLowerCase().includes('kebun') || ['panen', 'pemangkasan', 'pembersihan', 'pembuahan', 'penanaman', 'pengendalian hama', 'pemupukan', 'penyiraman'].some(c => t.category.toLowerCase().includes(c)))
+        .filter(t => t.assigneeCode === 'OP002' || t.assigneeCode === '3' || t.assigneeName.toLowerCase().includes('kebun') || ['panen', 'pemangkasan', 'pembersihan', 'pembuahan', 'penanaman', 'pengendalian hama', 'pemupukan', 'penyiraman'].some(c => t.category.toLowerCase().includes(c)))
         .map(t => {
           let name = 'Lahan'
           const titleLower = t.title.toLowerCase()
@@ -93,7 +95,7 @@ export default defineComponent({
             tag: tag.charAt(0).toUpperCase() + tag.slice(1),
             date: formattedDate,
             time: t.dueTime ? t.dueTime.replace(':', ' : ') + ' WIB' : '08 : 00 WIB',
-            detail: t.cageCode || 'L0001',
+            detail: t.cageCode || 'L001',
             progress: progress,
             description: t.description,
             rincian: rincian
@@ -250,7 +252,7 @@ export default defineComponent({
               <div
                 onClick={() => {
                   landSession.value = {
-                    code: 'L0001',
+                    code: 'L001',
                     name: 'Lahan Alpukat',
                     area: '10 Hektar',
                     status: 'aktif'
@@ -345,10 +347,12 @@ export default defineComponent({
               />
 
               {/* 2. Pengingat Jadwal Terkini Grid Section */}
-              <PerkebunanScheduleList
-                items={scheduleItems.value}
-                onOpen-detail={handleOpenDetail}
-              />
+              {scheduleItems.value.length > 0 && (
+                <PerkebunanScheduleList
+                  items={scheduleItems.value}
+                  onOpen-detail={handleOpenDetail}
+                />
+              )}
 
               {/* 3. Informasi Lain Row Section */}
               <PerkebunanQuickLinks links={quickLinks} />

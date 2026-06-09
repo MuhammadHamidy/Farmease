@@ -67,12 +67,13 @@ export default defineComponent({
               >
                 {/* Top Section */}
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center; gap: 0.5rem; border: 1px solid #dce1d0; border-radius: 0.5rem; padding: 0.35rem 0.75rem;">
-                    <i class="bi bi-clock"></i>
-                    <span style="font-size: 0.75rem; font-weight: 700; color: #111827;">{item.time || '08 : 00 WIB'}</span>
+                  <div style="display: flex; flex-direction: column; gap: 0.15rem; text-align: left;">
+                    <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">Waktu Mulai</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #111827;">{item.time || '08 : 00 WIB'}</span>
                   </div>
-                  <div style={getStatusStyle(item.progress)}>
-                    {getStatusLabel(item.progress)}
+                  <div style="display: flex; flex-direction: column; gap: 0.15rem; text-align: right;">
+                    <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">Waktu Tenggat</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #dc2626;">22 : 00 WIB</span>
                   </div>
                 </div>
 
@@ -80,12 +81,14 @@ export default defineComponent({
 
                 {/* Bottom Section */}
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                  <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                    <img src={getCropIcon(item.name)} alt={item.name} style="width: 2.8rem; height: 2.8rem; object-fit: contain;" />
-                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                      <strong style="font-size: 0.95rem; color: #111827; font-weight: 700; line-height: 1.2;">{item.tag}</strong>
-                      <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;">{item.date}</span>
-                      <span style="font-size: 0.8rem; color: #6b7280; font-weight: 600;">{displayDetail}</span>
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src={getCropIcon(item.name)} alt={item.name} style="width: 3.2rem; height: 3.2rem; object-fit: contain;" />
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
+                      <div style={getStatusStyle(item.progress)}>
+                        {getStatusLabel(item.progress)}
+                      </div>
+                      <strong style="font-size: 1.05rem; color: #4a4a4a; font-weight: 700; line-height: 1.2;">{item.tag}</strong>
+                      <span style="font-size: 0.9rem; color: #4a4a4a; font-weight: 600;">{item.detail || 'L001'}</span>
                     </div>
                   </div>
 
