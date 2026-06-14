@@ -5,6 +5,8 @@ import {
   healthApi,
   weightApi,
   feedsApi,
+  breedingApi,
+  pregnancyApi,
   type Sheep as ApiSheep,
 } from '@/shared/api'
 
@@ -13,12 +15,12 @@ export interface SheepDetail extends ApiSheep {
 }
 
 export interface Silsilah {
-  id_sheep: number
+  id_sheep: string | number
   sheep_code: string
   sheep_name: string
   gender: string
-  sire?: Partial<Silsilah>
-  dam?: Partial<Silsilah>
+  father?: Partial<Silsilah>
+  mother?: Partial<Silsilah>
 }
 
 export interface Sheep {
@@ -75,7 +77,7 @@ function mapSheep(row: ApiSheep): Sheep {
     id: String(row.id_sheep),
     code: row.sheep_code,
     name: row.sheep_name,
-    type: String(row.id_type),
+    type: row.type_name || String(row.id_type),
     gender: row.gender,
     birth_date: row.date_of_birth,
     age: '',
@@ -346,10 +348,11 @@ export const currentSheepDetail = ref<ApiSheep | null>(null)
 export const currentSilsilah = ref<Silsilah | null>(null)
 export const currentHealthRecords = ref<HealthRecord[]>([])
 export const currentWeightRecords = ref<WeightRecord[]>([])
+export const currentMatingRecords = ref<any[]>([])
 export const detailLoading = ref(false)
 export const detailError = ref<string | null>(null)
 
-export async function fetchSheepById(id: number) {
+export async function fetchSheepById(id: string | number) {
   try {
     detailLoading.value = true
     detailError.value = null
@@ -362,7 +365,7 @@ export async function fetchSheepById(id: number) {
   }
 }
 
-export async function fetchSilsilah(id: number) {
+export async function fetchSilsilah(id: string | number) {
   try {
     detailLoading.value = true
     detailError.value = null
@@ -375,11 +378,11 @@ export async function fetchSilsilah(id: number) {
   }
 }
 
-export async function fetchHealthForSheep(id: number) {
+export async function fetchHealthForSheep(id: string | number) {
   try {
     detailError.value = null
     const list = await healthApi.getList(id)
-    currentHealthRecords.value = list.map((h) => ({
+    currentHealthRecords.value = (list || []).map((h) => ({
       id: String((h as any).id_health || h.id),
       sheep_id: String(h.id_sheep),
       date: h.date_recorded || (h as any).checkup_date || '',
@@ -392,11 +395,11 @@ export async function fetchHealthForSheep(id: number) {
   }
 }
 
-export async function fetchWeightForSheep(id: number) {
+export async function fetchWeightForSheep(id: string | number) {
   try {
     detailError.value = null
     const list = await weightApi.getSheepHistory(id)
-    currentWeightRecords.value = list.map((w) => ({
+    currentWeightRecords.value = (list || []).map((w) => ({
       id: String((w as any).id_weight || w.id),
       sheep_id: String(w.id_sheep),
       date: w.date_recorded || (w as any).weighing_date || '',
@@ -405,6 +408,30 @@ export async function fetchWeightForSheep(id: number) {
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat riwayat berat'
     console.error('Error fetching weight records:', err)
+  }
+}
+
+export async function fetchMatingForSheep(id: string | number) {
+  try {
+    detailError.value = null
+    const list = await breedingApi.getMatingList()
+    currentMatingRecords.value = list.filter((m: any) => 
+      m.id_female_sheep === id || m.id_male_sheep === id || 
+      m.id_sheep_female === id || m.id_sheep_male === id
+    ).map((m: any) => {
+      const isFemale = m.id_female_sheep === id || m.id_sheep_female === id;
+      return {
+        id: m.id || m.id_mating,
+        date: m.mating_date,
+        partner_id: isFemale ? (m.id_male_sheep || m.id_sheep_male) : (m.id_female_sheep || m.id_sheep_female),
+        partner_name: isFemale ? m.male_sheep?.sheep_name : m.female_sheep?.sheep_name,
+        method: m.mating_method || 'alami',
+        status: m.status,
+        notes: m.notes || '',
+      };
+    })
+  } catch (err: unknown) {
+    console.error('Error fetching mating records:', err)
   }
 }
 

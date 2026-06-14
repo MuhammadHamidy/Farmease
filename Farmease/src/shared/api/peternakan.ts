@@ -2,7 +2,7 @@ import apiClient from './client'
 
 // ============ Farms ============
 export interface Farm {
-  id: number
+  id: string | number
   name: string
   location: string
   description?: string
@@ -15,34 +15,35 @@ export const farmsApi = {
   getList: async (): Promise<Farm[]> => {
     return await apiClient.get('/api/farms')
   },
-  getById: async (id: number): Promise<Farm> => {
+  getById: async (id: string | number): Promise<Farm> => {
     return await apiClient.get(`/api/farms/${id}`)
   },
   create: async (payload: Partial<Farm>): Promise<Farm> => {
     return await apiClient.post('/api/farms', payload)
   },
-  update: async (id: number, payload: Partial<Farm>): Promise<Farm> => {
+  update: async (id: string | number, payload: Partial<Farm>): Promise<Farm> => {
     return await apiClient.put(`/api/farms/${id}`, payload)
   },
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string | number): Promise<void> => {
     return await apiClient.delete(`/api/farms/${id}`)
   },
 }
 
 // ============ Sheep ============
 export interface Sheep {
-  id_sheep: number
+  id_sheep: string | number
   sheep_code: string
   sheep_name: string
   gender: 'jantan' | 'betina'
   date_of_birth: string
   status: string
   origin: string
-  id_cage: number
-  id_type: number
-  id_sire?: number
-  id_dam?: number
-  created_by: number
+  id_cage: string | number
+  id_type: string | number
+  type_name?: string
+  id_father?: string | number
+  id_mother?: string | number
+  created_by: string | number
   created_at: string
   updated_at: string
 }
@@ -51,36 +52,36 @@ export const sheepApi = {
   getList: async (): Promise<Sheep[]> => {
     return await apiClient.get('/api/sheep')
   },
-  getById: async (id: number): Promise<Sheep> => {
+  getById: async (id: string | number): Promise<Sheep> => {
     return await apiClient.get(`/api/sheep/${id}`)
   },
   create: async (payload: Partial<Sheep>): Promise<Sheep> => {
     return await apiClient.post('/api/sheep', payload)
   },
-  update: async (id: number, payload: Partial<Sheep>): Promise<Sheep> => {
+  update: async (id: string | number, payload: Partial<Sheep>): Promise<Sheep> => {
     return await apiClient.put(`/api/sheep/${id}`, payload)
   },
-  updateStatus: async (id: number, status: string): Promise<Sheep> => {
+  updateStatus: async (id: string | number, status: string): Promise<Sheep> => {
     return await apiClient.patch(`/api/sheep/${id}/status`, { status })
   },
-  getGenealogy: async (id: number): Promise<any> => {
+  getGenealogy: async (id: string | number): Promise<any> => {
     return await apiClient.get(`/api/sheep/${id}/genealogy`)
   },
-  getSilsilah: async (id: number): Promise<any> => {
+  getSilsilah: async (id: string | number): Promise<any> => {
     return await apiClient.get(`/api/sheep/${id}/silsilah`)
   },
 }
 
 // ============ Cages ============
 export interface Cage {
-  id_cage: number
+  id_cage: string | number
   cage_code: string
   cage_name?: string
   capacity: number
   cage_type?: string
   location?: string
   status?: string
-  id_farm?: number
+  id_farm?: string | number
   created_at?: string
   updated_at?: string
 }
@@ -89,22 +90,22 @@ export const cagesApi = {
   getList: async (): Promise<Cage[]> => {
     return await apiClient.get('/api/cages')
   },
-  getById: async (id: number): Promise<Cage> => {
+  getById: async (id: string | number): Promise<Cage> => {
     return await apiClient.get(`/api/cages/${id}`)
   },
   create: async (payload: Partial<Cage>): Promise<Cage> => {
     return await apiClient.post('/api/cages', payload)
   },
-  update: async (id: number, payload: Partial<Cage>): Promise<Cage> => {
+  update: async (id: string | number, payload: Partial<Cage>): Promise<Cage> => {
     return await apiClient.put(`/api/cages/${id}`, payload)
   },
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string | number): Promise<void> => {
     return await apiClient.delete(`/api/cages/${id}`)
   },
-  getStats: async (id: number): Promise<any> => {
+  getStats: async (id: string | number): Promise<any> => {
     return await apiClient.get(`/api/cages/${id}/stats`)
   },
-  getWeightStats: async (id: number): Promise<any> => {
+  getWeightStats: async (id: string | number): Promise<any> => {
     return await apiClient.get(`/api/cages/${id}/weight-stats`)
   },
   verifyByCode: async (code: string): Promise<Cage> => {
@@ -114,8 +115,8 @@ export const cagesApi = {
 
 // ============ Health ============
 export interface Health {
-  id: number
-  id_sheep: number
+  id: string | number
+  id_sheep: string | number
   health_status: string
   description: string
   date_recorded: string
@@ -124,27 +125,27 @@ export interface Health {
 }
 
 export const healthApi = {
-  getList: async (sheepId: number): Promise<Health[]> => {
+  getList: async (sheepId: string | number): Promise<Health[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/health`)
   },
   getGlobalList: async (): Promise<Health[]> => {
     return await apiClient.get('/api/healths')
   },
-  getKesehatan: async (sheepId: number): Promise<Health[]> => {
+  getKesehatan: async (sheepId: string | number): Promise<Health[]> => {
     return await apiClient.get(`/api/domba/${sheepId}/kesehatan`)
   },
-  create: async (sheepId: number, payload: Partial<Health>): Promise<Health> => {
+  create: async (sheepId: string | number, payload: Partial<Health>): Promise<Health> => {
     return await apiClient.post(`/api/sheep/${sheepId}/health`, payload)
   },
-  update: async (id: number, payload: Partial<Health>): Promise<Health> => {
+  update: async (id: string | number, payload: Partial<Health>): Promise<Health> => {
     return await apiClient.put(`/api/healths/${id}`, payload)
   },
 }
 
 // ============ Weight ============
 export interface Weight {
-  id: number
-  id_sheep: number
+  id: string | number
+  id_sheep: string | number
   weight: number
   date_recorded: string
   notes?: string
@@ -159,17 +160,17 @@ export const weightApi = {
   getBeratBadan: async (): Promise<Weight[]> => {
     return await apiClient.get('/api/berat-badan')
   },
-  getSheepHistory: async (sheepId: number): Promise<Weight[]> => {
+  getSheepHistory: async (sheepId: string | number): Promise<Weight[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/weight`)
   },
-  record: async (sheepId: number, payload: Partial<Weight>): Promise<Weight> => {
+  record: async (sheepId: string | number, payload: Partial<Weight>): Promise<Weight> => {
     return await apiClient.post(`/api/sheep/${sheepId}/weight`, payload)
   },
 }
 
 // ============ Feeds ============
 export interface Feed {
-  id: number
+  id: string | number
   feed_name: string
   feed_type: string
   stock: number
@@ -185,33 +186,33 @@ export const feedsApi = {
   create: async (payload: Partial<Feed>): Promise<Feed> => {
     return await apiClient.post('/api/feeds', payload)
   },
-  updateStock: async (id: number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
+  updateStock: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
     return await apiClient.patch(`/api/feeds/${id}/stock`, { amount, type })
   },
-  updateStok: async (id: number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
+  updateStok: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
     return await apiClient.patch(`/api/feeds/${id}/stok`, { amount, type })
   },
-  getRecommendation: async (sheepId: number): Promise<any> => {
+  getRecommendation: async (sheepId: string | number): Promise<any> => {
     return await apiClient.get(`/api/sheep/${sheepId}/feed-recommendation`)
   },
-  getFeedingHistory: async (sheepId: number): Promise<any[]> => {
+  getFeedingHistory: async (sheepId: string | number): Promise<any[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/feedings`)
   },
-  getPemberianPakan: async (sheepId: number): Promise<any[]> => {
+  getPemberianPakan: async (sheepId: string | number): Promise<any[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/pemberian-pakan`)
   },
-  recordFeeding: async (sheepId: number, payload: any): Promise<any> => {
+  recordFeeding: async (sheepId: string | number, payload: any): Promise<any> => {
     return await apiClient.post(`/api/sheep/${sheepId}/feedings`, payload)
   },
-  recordPemberianPakan: async (sheepId: number, payload: any): Promise<any> => {
+  recordPemberianPakan: async (sheepId: string | number, payload: any): Promise<any> => {
     return await apiClient.post(`/api/sheep/${sheepId}/pemberian-pakan`, payload)
   },
 }
 
 // ============ Manure ============
 export interface Manure {
-  id: number
-  id_sheep: number
+  id: string | number
+  id_sheep: string | number
   quantity: number
   date_recorded: string
   notes?: string
@@ -226,19 +227,19 @@ export const manureApi = {
   getKotoran: async (): Promise<Manure[]> => {
     return await apiClient.get('/api/kotoran')
   },
-  getSheepHistory: async (sheepId: number): Promise<Manure[]> => {
+  getSheepHistory: async (sheepId: string | number): Promise<Manure[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/manure`)
   },
-  record: async (sheepId: number, payload: Partial<Manure>): Promise<Manure> => {
+  record: async (sheepId: string | number, payload: Partial<Manure>): Promise<Manure> => {
     return await apiClient.post(`/api/sheep/${sheepId}/manure`, payload)
   },
 }
 
 // ============ Breeding ============
 export interface Breeding {
-  id: number
-  id_male_sheep: number
-  id_female_sheep: number
+  id: string | number
+  id_male_sheep: string | number
+  id_female_sheep: string | number
   mating_date: string
   status: string
   notes?: string
@@ -247,13 +248,13 @@ export interface Breeding {
 }
 
 export const breedingApi = {
-  checkInbreeding: async (maleId: number, femaleId: number): Promise<any> => {
+  checkInbreeding: async (maleId: string | number, femaleId: string | number): Promise<any> => {
     return await apiClient.post('/api/matings/check-inbreeding', {
       id_male_sheep: maleId,
       id_female_sheep: femaleId,
     })
   },
-  cekInbreeding: async (maleId: number, femaleId: number): Promise<any> => {
+  cekInbreeding: async (maleId: string | number, femaleId: string | number): Promise<any> => {
     return await apiClient.post('/api/perkawinan/cek-inbreeding', {
       id_male_sheep: maleId,
       id_female_sheep: femaleId,
@@ -265,19 +266,19 @@ export const breedingApi = {
   recordMating: async (payload: Partial<Breeding>): Promise<Breeding> => {
     return await apiClient.post('/api/matings', payload)
   },
-  getMatingDetail: async (matingId: number): Promise<Breeding> => {
+  getMatingDetail: async (matingId: string | number): Promise<Breeding> => {
     return await apiClient.get(`/api/matings/${matingId}`)
   },
-  updateMatingStatus: async (matingId: number, status: string): Promise<Breeding> => {
+  updateMatingStatus: async (matingId: string | number, status: string): Promise<Breeding> => {
     return await apiClient.patch(`/api/matings/${matingId}/status`, { status })
   },
 }
 
 // ============ Pregnancy ============
 export interface Pregnancy {
-  id: number
-  id_sheep: number
-  mating_id: number
+  id: string | number
+  id_sheep: string | number
+  mating_id: string | number
   pregnancy_start_date: string
   status: string
   notes?: string
@@ -292,16 +293,16 @@ export const pregnancyApi = {
   getList: async (): Promise<Pregnancy[]> => {
     return await apiClient.get('/api/pregnancies')
   },
-  updateStatus: async (pregnancyId: number, status: string): Promise<Pregnancy> => {
+  updateStatus: async (pregnancyId: string | number, status: string): Promise<Pregnancy> => {
     return await apiClient.patch(`/api/pregnancies/${pregnancyId}/status`, { status })
   },
 }
 
 // ============ Birth ============
 export interface Birth {
-  id: number
-  id_sheep: number
-  pregnancy_id: number
+  id: string | number
+  id_sheep: string | number
+  pregnancy_id: string | number
   birth_date: string
   num_offspring: number
   notes?: string
@@ -320,14 +321,20 @@ export const birthApi = {
 
 // ============ Tasks ============
 export interface Task {
-  id: number
-  user_id: number
+  id: string | number
+  user_id: string | number
   title: string
   description: string
   due_date: string
+  task_date?: string
   end_time?: string
   status: string
   priority: string
+  category?: string
+  id_cage?: string
+  schedule_id?: string
+  start_time?: string
+  rincian?: string
   created_at: string
   updated_at: string
 }
@@ -340,21 +347,21 @@ export const tasksApi = {
   create: async (payload: Partial<Task>): Promise<Task> => {
     return await apiClient.post('/api/tasks', payload)
   },
-  update: async (id: number, payload: Partial<Task>): Promise<Task> => {
+  update: async (id: string | number, payload: Partial<Task>): Promise<Task> => {
     return await apiClient.put(`/api/tasks/${id}`, payload)
   },
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string | number): Promise<void> => {
     return await apiClient.delete(`/api/tasks/${id}`)
   },
-  markComplete: async (id: number): Promise<Task> => {
+  markComplete: async (id: string | number): Promise<Task> => {
     return await apiClient.patch(`/api/tasks/${id}/complete`, {})
   },
 }
 
 // ============ Notifications ============
 export interface Notification {
-  id: number
-  user_id: number
+  id: string | number
+  user_id: string | number
   title: string
   message: string
   is_read: boolean
@@ -366,8 +373,51 @@ export const notificationsApi = {
   getList: async (): Promise<Notification[]> => {
     return await apiClient.get('/api/notifications')
   },
-  markAsRead: async (id: number): Promise<Notification> => {
+  markAsRead: async (id: string | number): Promise<Notification> => {
     return await apiClient.patch(`/api/notifications/${id}/read`, {})
+  },
+}
+
+// ============ Routine Schedules ============
+export interface ApiRoutineSchedule {
+  id: string
+  title: string
+  description: string
+  category: string
+  frequency: string
+  days_of_week: number[]
+  day_of_month?: number
+  start_date: string
+  end_date?: string
+  start_time?: string
+  end_time?: string
+  priority: string
+  id_cage?: string
+  id_account?: string
+  rincian?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export const routineSchedulesApi = {
+  getList: async (): Promise<ApiRoutineSchedule[]> => {
+    return await apiClient.get('/api/routine-schedules')
+  },
+  getById: async (id: string): Promise<ApiRoutineSchedule> => {
+    return await apiClient.get(`/api/routine-schedules/${id}`)
+  },
+  create: async (payload: Partial<ApiRoutineSchedule>): Promise<ApiRoutineSchedule> => {
+    return await apiClient.post('/api/routine-schedules', payload)
+  },
+  update: async (id: string, payload: Partial<ApiRoutineSchedule>): Promise<ApiRoutineSchedule> => {
+    return await apiClient.put(`/api/routine-schedules/${id}`, payload)
+  },
+  delete: async (id: string): Promise<void> => {
+    return await apiClient.delete(`/api/routine-schedules/${id}`)
+  },
+  generate: async (windowDays?: number): Promise<void> => {
+    return await apiClient.post('/api/routine-schedules/generate', { window_days: windowDays })
   },
 }
 
@@ -384,4 +434,5 @@ export default {
   birth: birthApi,
   tasks: tasksApi,
   notifications: notificationsApi,
+  routineSchedules: routineSchedulesApi,
 }

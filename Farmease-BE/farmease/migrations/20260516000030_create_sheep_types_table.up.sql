@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS master.sheep_types (
-    id_type SERIAL PRIMARY KEY,
+    id_type UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type_name VARCHAR(100) NOT NULL,
     type_description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

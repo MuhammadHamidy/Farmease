@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/farmease/farmease-be/farmease/module/healths/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
@@ -64,7 +63,7 @@ func (h *HealthHandler) registerRecordGroup(group fiber.Router) {
 // @Router       /api/healths [get]
 func (h *HealthHandler) GetHealthList(c *fiber.Ctx) error {
 	filter := domain.HealthFilter{
-		IDSheep: c.QueryInt("id_sheep"),
+		IDSheep: c.Query("id_sheep"),
 		Page:    c.QueryInt("page", 1),
 		PerPage: c.QueryInt("per_page", 20),
 	}
@@ -89,7 +88,7 @@ func (h *HealthHandler) GetHealthList(c *fiber.Ctx) error {
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/health [get]
 func (h *HealthHandler) GetHealthHistory(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	res, err := h.useCase.GetHealthHistory(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
@@ -111,7 +110,7 @@ func (h *HealthHandler) GetHealthHistory(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/health [post]
 func (h *HealthHandler) RecordHealth(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var k domain.Health
 	if err := c.BodyParser(&k); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
@@ -138,7 +137,7 @@ func (h *HealthHandler) RecordHealth(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/healths/{id} [put]
 func (h *HealthHandler) UpdateHealth(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var k domain.Health
 	if err := c.BodyParser(&k); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))

@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/farmease/farmease-be/farmease/module/manures/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
@@ -54,7 +53,7 @@ func (h *ManureHandler) registerSheepGroup(group fiber.Router) {
 // @Router       /api/manures [get]
 func (h *ManureHandler) GetManureList(c *fiber.Ctx) error {
 	filter := domain.ManureFilter{
-		IDSheep: c.QueryInt("id_sheep"),
+		IDSheep: c.Query("id_sheep"),
 		Page:    c.QueryInt("page", 1),
 		PerPage: c.QueryInt("per_page", 20),
 	}
@@ -79,7 +78,7 @@ func (h *ManureHandler) GetManureList(c *fiber.Ctx) error {
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/manures [get]
 func (h *ManureHandler) GetManureHistory(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	res, err := h.useCase.GetManureHistory(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
@@ -101,7 +100,7 @@ func (h *ManureHandler) GetManureHistory(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/manures [post]
 func (h *ManureHandler) RecordManure(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var m domain.Manure
 	if err := c.BodyParser(&m); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))

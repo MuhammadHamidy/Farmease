@@ -20,7 +20,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([
 	query := `SELECT id_manure, id_sheep, activity_type, amount, unit, external_destination_id, destination_type, notes, created_at FROM logistics.manures WHERE 1=1`
 	args := []interface{}{}
 
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		args = append(args, filter.IDSheep)
 		query += fmt.Sprintf(" AND id_sheep = $%d", len(args))
 	}
@@ -55,7 +55,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([
 
 	var total int
 	countQuery := "SELECT COUNT(*) FROM logistics.manures WHERE 1=1"
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		countQuery += " AND id_sheep = $1"
 		err = r.db.QueryRow(ctx, countQuery, filter.IDSheep).Scan(&total)
 	} else {
@@ -65,7 +65,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([
 	return list, total, err
 }
 
-func (r *Repository) FindHistoryBySheep(ctx context.Context, idSheep int) ([]*domain.Manure, error) {
+func (r *Repository) FindHistoryBySheep(ctx context.Context, idSheep string) ([]*domain.Manure, error) {
 	query := `SELECT id_manure, id_sheep, activity_type, amount, unit, external_destination_id, destination_type, notes, created_at FROM logistics.manures WHERE id_sheep = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, idSheep)
 	if err != nil {

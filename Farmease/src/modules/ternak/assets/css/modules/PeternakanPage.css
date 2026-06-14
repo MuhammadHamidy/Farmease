@@ -455,6 +455,7 @@
   overflow-y: auto;
   flex: 1;
   padding-right: 0.5rem;
+  padding-bottom: 1rem;
 }
 .peternakan-modal-close {
   position: absolute;

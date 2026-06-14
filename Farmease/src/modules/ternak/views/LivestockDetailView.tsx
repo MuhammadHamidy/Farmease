@@ -1,5 +1,6 @@
-import { defineComponent, computed, ref, watch, onMounted, type PropType } from 'vue';
-import { selectedTernakId } from '@/store/navigation';
+import { defineComponent, computed, ref, watch, type PropType } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { cagesList } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import {
@@ -13,6 +14,8 @@ import {
   fetchSilsilah,
   fetchHealthForSheep,
   fetchWeightForSheep,
+  fetchMatingForSheep,
+  currentMatingRecords,
 } from '@/store/livestock';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -55,18 +58,23 @@ export default defineComponent({
     onGoToPencatatan: { type: Function as PropType<() => void>, default: null },
   },
   setup(props) {
+    const route = useRoute();
+    const router = useRouter();
     const showReminderSheet = ref(false);
 
+    const selectedTernakId = computed(() => route.params.id as string);
+
     const sheepFromList = computed(() =>
-      sheep.value.find(s => s.id === selectedTernakId.value) || null,
+      sheep.value.find(s => String(s.id) === selectedTernakId.value) || null,
     );
 
     const handleBack = () => {
-      selectedTernakId.value = null;
       currentSheepDetail.value = null;
       currentSilsilah.value = null;
       currentHealthRecords.value = [];
       currentWeightRecords.value = [];
+      currentMatingRecords.value = [];
+      router.back();
     };
 
     watch(
@@ -80,6 +88,7 @@ export default defineComponent({
           fetchSilsilah(numId),
           fetchHealthForSheep(numId),
           fetchWeightForSheep(numId),
+          fetchMatingForSheep(numId),
         ]);
       },
       { immediate: true },
@@ -91,32 +100,84 @@ export default defineComponent({
         const birthDate = d.date_of_birth
           ? new Date(d.date_of_birth).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
           : '—';
+
+        let poelStr = '—';
+        if (d.date_of_birth) {
+          const bd = new Date(d.date_of_birth);
+          const now = new Date();
+          const months = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
+          if (months < 12) poelStr = 'Cempe';
+          else if (months < 18) poelStr = '1 Poel';
+          else if (months < 24) poelStr = '2 Poel';
+          else if (months < 36) poelStr = '3 Poel';
+          else poelStr = '4 Poel';
+        }
+
+        const typeMapReverse: Record<string, string> = {
+          '22222222-2222-2222-2222-222222222201': 'Garut',
+          '22222222-2222-2222-2222-222222222202': 'Texel',
+          '22222222-2222-2222-2222-222222222203': 'Dorper',
+          '22222222-2222-2222-2222-222222222204': 'Merino',
+          '22222222-2222-2222-2222-222222222205': 'F2 Dorper',
+          '22222222-2222-2222-2222-222222222206': 'F2 Garut'
+        };
+
+        const cage = cagesList.value.find((c) => String(c.id) === String(d.id_cage));
+        const kandangStr = cage ? cage.code : ((d as any).cage_code || String(d.id_cage));
+
         return {
           id: String(d.id_sheep),
           code: d.sheep_code,
           nama: d.sheep_name,
-          jenis: String(d.id_type),
+          jenis: typeMapReverse[String(d.id_type)] || String(d.id_type),
           umur: d.age_string || '—',
+          poel: poelStr,
           status: d.status,
-          jk: d.gender === 'jantan' ? 'Jantan' : 'Betina',
+          jk: d.gender === 'jantan' ? 'Jantan' : (d.gender === 'betina' ? 'Betina' : d.gender),
           tgl_lahir: birthDate,
-          kandang: String(d.id_cage),
+          kandang: kandangStr,
           asal: (d as any).origin || '—',
         };
       }
       if (sheepFromList.value) {
         const s = sheepFromList.value;
+        const typeMapReverse: Record<string, string> = {
+          '22222222-2222-2222-2222-222222222201': 'Garut',
+          '22222222-2222-2222-2222-222222222202': 'Texel',
+          '22222222-2222-2222-2222-222222222203': 'Dorper',
+          '22222222-2222-2222-2222-222222222204': 'Merino',
+          '22222222-2222-2222-2222-222222222205': 'F2 Dorper',
+          '22222222-2222-2222-2222-222222222206': 'F2 Garut'
+        };
+        
+        let poelStr = '—';
+        if (s.birth_date) {
+          const bd = new Date(s.birth_date);
+          const now = new Date();
+          const months = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
+          if (months < 12) poelStr = 'Cempe';
+          else if (months < 18) poelStr = '1 Poel';
+          else if (months < 24) poelStr = '2 Poel';
+          else if (months < 36) poelStr = '3 Poel';
+          else poelStr = '4 Poel';
+        }
+
+        const kandangStr = s.cage_code || '—';
+
         return {
           id: s.id,
           code: s.code,
           nama: s.name,
-          jenis: s.type,
+          jenis: typeMapReverse[s.type] || s.type,
           umur: s.age || '—',
+          poel: poelStr,
           status: s.status,
-          jk: s.gender === 'jantan' ? 'Jantan' : 'Betina',
-          tgl_lahir: s.birth_date || '—',
-          kandang: s.cage_code,
-          asal: '—',
+          jk: s.gender === 'jantan' ? 'Jantan' : (s.gender === 'betina' ? 'Betina' : s.gender),
+          tgl_lahir: s.birth_date 
+            ? new Date(s.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '—',
+          kandang: kandangStr,
+          asal: (s as any).origin || '—',
         };
       }
       return null;
@@ -125,6 +186,7 @@ export default defineComponent({
     const silsilah = computed(() => currentSilsilah.value);
     const healthRecords = computed(() => currentHealthRecords.value);
     const weightRecords = computed(() => currentWeightRecords.value);
+    const matingRecords = computed(() => currentMatingRecords.value);
 
     const latestWeight = computed(() => {
       if (weightRecords.value.length === 0) return '—';
@@ -169,7 +231,23 @@ export default defineComponent({
           <div class="d-flex align-items-center mb-4">
             <button
               onClick={handleBack}
-              class="btn btn-light border shadow-sm rounded-pill d-flex align-items-center gap-2 px-3 py-2 fw-bold text-secondary"
+              class="btn rounded-pill d-flex align-items-center gap-2 px-4 py-2 fw-bold"
+              style={{
+                background: 'transparent',
+                border: '1.5px solid var(--color-primary)',
+                color: 'var(--color-primary)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseover={(e: MouseEvent) => {
+                const target = e.currentTarget as HTMLButtonElement;
+                target.style.background = 'var(--color-primary)';
+                target.style.color = '#fff';
+              }}
+              onMouseout={(e: MouseEvent) => {
+                const target = e.currentTarget as HTMLButtonElement;
+                target.style.background = 'transparent';
+                target.style.color = 'var(--color-primary)';
+              }}
               title="Kembali ke Daftar"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -177,9 +255,6 @@ export default defineComponent({
               </svg>
               Kembali
             </button>
-            <Typography variant="span" size="text-sm" weight="extrabold" className="ms-3 text-secondary">
-              Detail Ternak
-            </Typography>
           </div>
 
           {/* Detail Header */}
@@ -204,6 +279,7 @@ export default defineComponent({
               <div class="detail-info-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '1rem' }}>
                 {[
                   { label: 'Umur', value: ternak.umur },
+                  { label: 'Poel', value: ternak.poel },
                   { label: 'Berat Terakhir', value: latestWeight.value },
                   { label: 'Kandang', value: ternak.kandang },
                   { label: 'Tgl Lahir', value: ternak.tgl_lahir },
@@ -291,10 +367,37 @@ export default defineComponent({
                   </div>
                 )}
 
-                {weightRecords.value.length === 0 && healthRecords.value.length === 0 && (
-                  <div class="text-center py-4" style={{ color: 'var(--color-gray-500)' }}>
-                    <img src="/icon/statistic.png" style={{ width: '48px', opacity: 0.3, marginBottom: '1rem' }} alt="" />
-                    <p style={{ fontSize: '0.9rem' }}>Belum ada riwayat kesehatan & pertumbuhan</p>
+                {/* Riwayat Perkawinan */}
+                {matingRecords.value.length > 0 && (
+                  <div class="mt-4 pt-4 border-top">
+                    <Typography variant="span" size="text-xs" weight="bold" className="text-secondary text-uppercase d-block mb-2">Riwayat Perkawinan</Typography>
+                    <div class="d-flex flex-column gap-2">
+                      {[...matingRecords.value]
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .slice(0, 5)
+                        .map(m => (
+                          <div key={m.id} class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light">
+                            <div>
+                              <Typography variant="span" size="text-sm" weight="bold" className="text-secondary d-block">
+                                {new Date(m.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </Typography>
+                              <Typography variant="span" size="text-sm" className="text-muted">
+                                Pasangan: {m.partner_name || 'Tidak diketahui'} • {m.notes || 'Tanpa catatan'}
+                              </Typography>
+                            </div>
+                            <Badge variant={m.status === 'berhasil' || m.status === 'sukses' ? 'success' : (m.status === 'proses' ? 'warning' : 'secondary')} className="px-3 py-1">
+                              {m.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {weightRecords.value.length === 0 && healthRecords.value.length === 0 && matingRecords.value.length === 0 && (
+                  <div class="d-flex flex-column align-items-center justify-content-center py-5" style={{ color: 'var(--color-gray-500)' }}>
+                    <img src="/icon/statistic.png" style={{ width: '48px', opacity: 0.3, marginBottom: '1rem', display: 'block' }} alt="" />
+                    <p style={{ fontSize: '0.9rem', margin: 0 }}>Belum ada riwayat pencatatan</p>
                   </div>
                 )}
               </div>
@@ -316,20 +419,20 @@ export default defineComponent({
                 {/* Generasi 2 (Buyut/Great-grandparents) */}
                 <div class="d-flex justify-content-around gap-2 mb-3">
                   <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.sire as any)?.sire?.sire} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.sire as any)?.sire?.dam} label="GG-Nenek ♀" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.father as any)?.father?.father} label="GG-Kakek ♂" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.father as any)?.father?.mother} label="GG-Nenek ♀" depth={2} />
                   </div>
                   <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.sire as any)?.dam?.sire} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.sire as any)?.dam?.dam} label="GG-Nenek ♀" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.father as any)?.mother?.father} label="GG-Kakek ♂" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.father as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} />
                   </div>
                   <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.dam as any)?.sire?.sire} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.dam as any)?.sire?.dam} label="GG-Nenek ♀" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.mother as any)?.father?.father} label="GG-Kakek ♂" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.mother as any)?.father?.mother} label="GG-Nenek ♀" depth={2} />
                   </div>
                   <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.dam as any)?.dam?.sire} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.dam as any)?.dam?.dam} label="GG-Nenek ♀" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.father} label="GG-Kakek ♂" depth={2} />
+                    <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} />
                   </div>
                 </div>
 
@@ -338,18 +441,18 @@ export default defineComponent({
 
                 {/* Generasi 1 (Kakek-Nenek) */}
                 <div class="d-flex justify-content-around gap-2 mb-3 mt-3">
-                  <SilsilahNode node={(silsilah.value?.sire as any)?.sire} label="Kakek (Ayah) ♂" depth={1} />
-                  <SilsilahNode node={(silsilah.value?.sire as any)?.dam} label="Nenek (Ayah) ♀" depth={1} />
-                  <SilsilahNode node={(silsilah.value?.dam as any)?.sire} label="Kakek (Ibu) ♂" depth={1} />
-                  <SilsilahNode node={(silsilah.value?.dam as any)?.dam} label="Nenek (Ibu) ♀" depth={1} />
+                  <SilsilahNode node={(silsilah.value?.father as any)?.father} label="Kakek (Bapak) ♂" depth={1} />
+                  <SilsilahNode node={(silsilah.value?.father as any)?.mother} label="Nenek (Bapak) ♀" depth={1} />
+                  <SilsilahNode node={(silsilah.value?.mother as any)?.father} label="Kakek (Ibu) ♂" depth={1} />
+                  <SilsilahNode node={(silsilah.value?.mother as any)?.mother} label="Nenek (Ibu) ♀" depth={1} />
                 </div>
 
                 <div style={{ borderTop: '2px solid var(--color-outline-variant)', margin: '0.25rem 0' }} />
 
                 {/* Generasi 0 (Ayah/Ibu) */}
                 <div class="d-flex justify-content-center gap-4 mb-3 mt-3">
-                  <SilsilahNode node={silsilah.value?.sire} label="Ayah (Sire) ♂" depth={0} />
-                  <SilsilahNode node={silsilah.value?.dam} label="Ibu (Dam) ♀" depth={0} />
+                  <SilsilahNode node={silsilah.value?.father} label="Bapak ♂" depth={0} />
+                  <SilsilahNode node={silsilah.value?.mother} label="Ibu ♀" depth={0} />
                 </div>
 
                 <div style={{ borderTop: '2px solid var(--color-primary)', margin: '0.25rem 0' }} />
@@ -367,9 +470,9 @@ export default defineComponent({
                 </div>
 
                 {/* Warning jika silsilah tidak lengkap */}
-                {(!silsilah.value?.sire || !silsilah.value?.dam) && (
+                {(!silsilah.value?.father || !silsilah.value?.mother) && (
                   <div class="alert alert-warning mt-3 py-2 px-3 rounded-3" style={{ fontSize: '0.8rem' }}>
-                    ⚠️ Silsilah tidak lengkap — data induk {!silsilah.value?.sire ? 'jantan (sire)' : 'betina (dam)'} tidak tersedia. Validasi inbreeding mungkin tidak akurat.
+                    ⚠️ Silsilah tidak lengkap — data induk {!silsilah.value?.father ? 'jantan (sire)' : 'betina (dam)'} tidak tersedia. Validasi inbreeding mungkin tidak akurat.
                   </div>
                 )}
               </div>

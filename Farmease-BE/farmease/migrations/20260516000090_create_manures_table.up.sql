@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS logistics.manures (
-    id_manure SERIAL PRIMARY KEY,
-    id_sheep INT NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
+    id_manure UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_sheep UUID NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
     activity_type VARCHAR(20) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     unit VARCHAR(20) NOT NULL,

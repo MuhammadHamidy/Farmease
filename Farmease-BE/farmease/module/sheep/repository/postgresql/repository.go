@@ -20,7 +20,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]*domain.Sheep, int, error) {
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
-		       d.id_sire, d.id_dam, t.type_name,
+		       d.id_father, d.id_mother, t.type_name,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight,
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight_date,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
@@ -30,7 +30,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 		WHERE 1=1`
 	
 	args := []interface{}{}
-	if filter.IDCage > 0 {
+	if filter.IDCage != "" {
 		args = append(args, filter.IDCage)
 		query += fmt.Sprintf(" AND d.id_cage = $%d", len(args))
 	}
@@ -65,13 +65,23 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 		var s domain.Sheep
 		var weight, firstWeight *float64
 		var lastWeightDate, firstWeightDate *time.Time
+		var sheepName, origin, typeName *string
+		var idCage, idType *string
+
 		err := rows.Scan(
-			&s.IDSheep, &s.SheepCode, &s.SheepName, &s.Gender, &s.DateOfBirth, &s.Status, &s.Origin, &s.IDCage, &s.IDType,
-			&s.IDSire, &s.IDDam, &s.TypeName, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
+			&s.IDSheep, &s.SheepCode, &sheepName, &s.Gender, &s.DateOfBirth, &s.Status, &origin, &idCage, &idType,
+			&s.IDFather, &s.IDMother, &typeName, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
+
+		if sheepName != nil { s.SheepName = *sheepName }
+		if origin != nil { s.Origin = *origin }
+		if typeName != nil { s.TypeName = *typeName }
+		if idCage != nil { s.IDCage = *idCage }
+		if idType != nil { s.IDType = *idType }
+
 		if weight != nil {
 			s.LastWeight = *weight
 		}
@@ -96,32 +106,41 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 	return sheepList, total, nil
 }
 
-func (r *Repository) FindByID(ctx context.Context, id int) (*domain.Sheep, error) {
+func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, error) {
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
-		       d.id_sire, d.id_dam, t.type_name,
+		       d.id_father, d.id_mother, t.type_name,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight,
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight_date,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight_date,
-		       s.sheep_name as sire_name, m.sheep_name as dam_name
+		       s.sheep_name as father_name, m.sheep_name as mother_name
 		FROM livestock.sheep d
 		LEFT JOIN master.sheep_types t ON d.id_type = t.id_type
-		LEFT JOIN livestock.sheep s ON d.id_sire = s.id_sheep
-		LEFT JOIN livestock.sheep m ON d.id_dam = m.id_sheep
+		LEFT JOIN livestock.sheep s ON d.id_father = s.id_sheep
+		LEFT JOIN livestock.sheep m ON d.id_mother = m.id_sheep
 		WHERE d.id_sheep = $1`
 
 	var s domain.Sheep
 	var weight, firstWeight *float64
 	var lastWeightDate, firstWeightDate *time.Time
-	var sireName, damName *string
+	var fatherName, motherName *string
+	var sheepName, origin, typeName *string
+	var idCage, idType *string
+
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&s.IDSheep, &s.SheepCode, &s.SheepName, &s.Gender, &s.DateOfBirth, &s.Status, &s.Origin, &s.IDCage, &s.IDType,
-		&s.IDSire, &s.IDDam, &s.TypeName, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &sireName, &damName,
+		&s.IDSheep, &s.SheepCode, &sheepName, &s.Gender, &s.DateOfBirth, &s.Status, &origin, &idCage, &idType,
+		&s.IDFather, &s.IDMother, &typeName, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &fatherName, &motherName,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	if sheepName != nil { s.SheepName = *sheepName }
+	if origin != nil { s.Origin = *origin }
+	if typeName != nil { s.TypeName = *typeName }
+	if idCage != nil { s.IDCage = *idCage }
+	if idType != nil { s.IDType = *idType }
 	if weight != nil {
 		s.LastWeight = *weight
 	}
@@ -134,11 +153,11 @@ func (r *Repository) FindByID(ctx context.Context, id int) (*domain.Sheep, error
 	if firstWeightDate != nil {
 		s.FirstWeightDate = firstWeightDate
 	}
-	if s.IDSire != nil && sireName != nil {
-		s.Sire = &domain.Parent{IDSheep: *s.IDSire, SheepName: *sireName}
+	if s.IDFather != nil && fatherName != nil {
+		s.Father = &domain.Parent{IDSheep: *s.IDFather, SheepName: *fatherName}
 	}
-	if s.IDDam != nil && damName != nil {
-		s.Dam = &domain.Parent{IDSheep: *s.IDDam, SheepName: *damName}
+	if s.IDMother != nil && motherName != nil {
+		s.Mother = &domain.Parent{IDSheep: *s.IDMother, SheepName: *motherName}
 	}
 	return &s, nil
 }
@@ -152,10 +171,10 @@ func (r *Repository) FindByCode(ctx context.Context, code string) (*domain.Sheep
 
 func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 	query := `
-		INSERT INTO livestock.sheep (sheep_code, sheep_name, gender, date_of_birth, status, origin, id_cage, id_type, id_sire, id_dam)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO livestock.sheep (sheep_code, sheep_name, gender, date_of_birth, status, origin, id_cage, id_type, id_father, id_mother)
+		VALUES ($1, $2, $3, $4::DATE, $5, $6, $7, $8, $9, $10)
 		RETURNING id_sheep, created_at, updated_at`
-	return r.db.QueryRow(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, s.IDCage, s.IDType, s.IDSire, s.IDDam).Scan(&s.IDSheep, &s.CreatedAt, &s.UpdatedAt)
+	return r.db.QueryRow(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, s.IDCage, s.IDType, s.IDFather, s.IDMother).Scan(&s.IDSheep, &s.CreatedAt, &s.UpdatedAt)
 }
 
 func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
@@ -167,30 +186,30 @@ func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 	return err
 }
 
-func (r *Repository) UpdateStatus(ctx context.Context, id int, status string, notes string) error {
+func (r *Repository) UpdateStatus(ctx context.Context, id string, status string, notes string) error {
 	query := `UPDATE livestock.sheep SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id_sheep = $2`
 	_, err := r.db.Exec(ctx, query, status, id)
 	return err
 }
 
-func (r *Repository) GetGenealogy(ctx context.Context, id int, maxGeneration int) (*domain.Genealogy, error) {
+func (r *Repository) GetGenealogy(ctx context.Context, id string, maxGeneration int) (*domain.Genealogy, error) {
 	if maxGeneration <= 0 {
 		return nil, nil
 	}
 
-	query := `SELECT id_sheep, sheep_name, id_sire, id_dam FROM livestock.sheep WHERE id_sheep = $1`
+	query := `SELECT id_sheep, sheep_name, id_father, id_mother FROM livestock.sheep WHERE id_sheep = $1`
 	var g domain.Genealogy
-	var idSire, idDam *int
-	err := r.db.QueryRow(ctx, query, id).Scan(&g.IDSheep, &g.SheepName, &idSire, &idDam)
+	var idFather, idMother *string
+	err := r.db.QueryRow(ctx, query, id).Scan(&g.IDSheep, &g.SheepName, &idFather, &idMother)
 	if err != nil {
 		return nil, err
 	}
 
-	if idSire != nil {
-		g.Sire, _ = r.GetGenealogy(ctx, *idSire, maxGeneration-1)
+	if idFather != nil {
+		g.Father, _ = r.GetGenealogy(ctx, *idFather, maxGeneration-1)
 	}
-	if idDam != nil {
-		g.Dam, _ = r.GetGenealogy(ctx, *idDam, maxGeneration-1)
+	if idMother != nil {
+		g.Mother, _ = r.GetGenealogy(ctx, *idMother, maxGeneration-1)
 	}
 
 	return &g, nil
@@ -224,7 +243,7 @@ func (r *Repository) StoreType(ctx context.Context, t *domain.SheepType) error {
 	return r.db.QueryRow(ctx, query, t.TypeName, t.TypeDescription).Scan(&t.IDType, &t.CreatedAt, &t.UpdatedAt)
 }
 
-func (r *Repository) UpdateType(ctx context.Context, id int, t *domain.SheepType) error {
+func (r *Repository) UpdateType(ctx context.Context, id string, t *domain.SheepType) error {
 	query := `
 		UPDATE master.sheep_types
 		SET type_name = $1, type_description = $2, updated_at = CURRENT_TIMESTAMP

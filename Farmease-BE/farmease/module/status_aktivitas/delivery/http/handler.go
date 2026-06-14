@@ -1,8 +1,6 @@
 package http
 
 import (
-	"strconv"
-
 	"github.com/farmease/farmease-be/farmease/module/status_aktivitas/domain"
 	"github.com/farmease/farmease-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
@@ -57,8 +55,8 @@ func (h *StatusAktivitasHandler) FindAll(c *fiber.Ctx) error {
 // @Failure      500      {object}  map[string]interface{}
 // @Router       /api/v1/status-aktivitas/{id} [get]
 func (h *StatusAktivitasHandler) FindByID(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	id := c.Params("id")
+	if id == "" {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	sa, err := h.usecase.FindByID(c.Context(), id)
@@ -108,8 +106,8 @@ func (h *StatusAktivitasHandler) Create(c *fiber.Ctx) error {
 // @Failure      500      {object}  map[string]interface{}
 // @Router       /api/v1/status-aktivitas/{id} [put]
 func (h *StatusAktivitasHandler) Update(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	id := c.Params("id")
+	if id == "" {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	var sa domain.StatusAktivitas
@@ -136,8 +134,8 @@ func (h *StatusAktivitasHandler) Update(c *fiber.Ctx) error {
 // @Failure      500      {object}  map[string]interface{}
 // @Router       /api/v1/status-aktivitas/{id} [delete]
 func (h *StatusAktivitasHandler) Delete(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	id := c.Params("id")
+	if id == "" {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	if err := h.usecase.Delete(c.Context(), id); err != nil {

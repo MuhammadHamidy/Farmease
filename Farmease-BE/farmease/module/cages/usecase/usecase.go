@@ -23,16 +23,16 @@ func (u *useCase) CreateCage(ctx context.Context, cage *domain.Cage) error {
 	return u.repo.Store(ctx, cage)
 }
 
-func (u *useCase) GetCageDetail(ctx context.Context, id int) (*domain.Cage, error) {
+func (u *useCase) GetCageDetail(ctx context.Context, id string) (*domain.Cage, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
-func (u *useCase) UpdateCage(ctx context.Context, id int, cage *domain.Cage) error {
+func (u *useCase) UpdateCage(ctx context.Context, id string, cage *domain.Cage) error {
 	cage.IDCage = id
 	return u.repo.Update(ctx, cage)
 }
 
-func (u *useCase) DeleteCage(ctx context.Context, id int) error {
+func (u *useCase) DeleteCage(ctx context.Context, id string) error {
 	count, err := u.repo.GetOccupancy(ctx, id)
 	if err != nil {
 		return err
@@ -51,10 +51,10 @@ func (u *useCase) VerifyCage(ctx context.Context, code string) (*domain.Cage, er
 	return cage, nil
 }
 
-func (u *useCase) GetCageStats(ctx context.Context, id int) (*domain.CageStats, error) {
+func (u *useCase) GetCageStats(ctx context.Context, id string) (*domain.CageStats, error) {
 	return u.repo.GetCageStats(ctx, id)
 }
 
-func (u *useCase) GetCageWeightStats(ctx context.Context, id int) (*domain.CageWeightStats, error) {
+func (u *useCase) GetCageWeightStats(ctx context.Context, id string) (*domain.CageWeightStats, error) {
 	return u.repo.GetCageWeightStats(ctx, id)
 }

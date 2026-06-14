@@ -43,7 +43,7 @@ func (r *perawatanRepository) FindAll(ctx context.Context) ([]domain.Perawatan, 
 	return list, nil
 }
 
-func (r *perawatanRepository) FindByID(ctx context.Context, id int) (*domain.Perawatan, error) {
+func (r *perawatanRepository) FindByID(ctx context.Context, id string) (*domain.Perawatan, error) {
 	var p domain.Perawatan
 	query := `
 		SELECT p.id_perawatan, p.Aktivitas_id_aktivitas, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
@@ -108,7 +108,7 @@ func (r *perawatanRepository) Update(ctx context.Context, p *domain.Perawatan) e
 	return tx.Commit(ctx)
 }
 
-func (r *perawatanRepository) Delete(ctx context.Context, id int) error {
+func (r *perawatanRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.aktivitas WHERE id_aktivitas = (SELECT Aktivitas_id_aktivitas FROM gardening.perawatan WHERE id_perawatan = $1)", id)
 	return err
 }

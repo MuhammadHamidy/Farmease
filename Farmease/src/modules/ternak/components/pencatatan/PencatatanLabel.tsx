@@ -8,9 +8,9 @@ export default defineComponent({
   },
   setup(props, { slots }) {
     return () => (
-      <label class="pencatatan-label" for={props.htmlFor}>
+      <label class="form-label text-secondary small fw-bold mb-2" for={props.htmlFor}>
         {slots.default?.()}
-        {props.required && <span class="text-error ms-1">*</span>}
+        {props.required && <span class="text-danger ms-1">*</span>}
       </label>
     );
   },

@@ -38,7 +38,7 @@ func (u *useCase) GetPregnancyList(ctx context.Context, status string) ([]*domai
 	return list, nil
 }
 
-func (u *useCase) UpdatePregnancyStatus(ctx context.Context, id int, status string, notes string) error {
+func (u *useCase) UpdatePregnancyStatus(ctx context.Context, id string, status string, notes string) error {
 	return u.repo.UpdatePregnancyStatus(ctx, id, status, notes)
 }
 
@@ -65,8 +65,8 @@ func (u *useCase) RecordBirth(ctx context.Context, k *domain.Birth) error {
 			Status:      "aktif",
 			Origin:      "internal",
 			IDCage:      child.IDCage,
-			IDSire:      &pregnancy.IDSire,
-			IDDam:       &pregnancy.IDDam,
+			IDFather:      &pregnancy.IDFather,
+			IDMother:      &pregnancy.IDMother,
 		}
 		err = u.sheepRepo.Store(ctx, newSheep)
 		if err == nil && child.BirthWeight > 0 {

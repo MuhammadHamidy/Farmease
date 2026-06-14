@@ -1,0 +1,1 @@
+-- File removed. Priority is now natively created in tasks table.

@@ -9,6 +9,8 @@ export default defineComponent({
     form: { type: Object as PropType<any>, required: true },
     activeMode: { type: String as PropType<'lahan' | 'pohon'>, required: true },
     selectedRincian: { type: String, required: true },
+    manureStock: { type: Number, default: 0 },
+    selectedTreesCount: { type: Number, default: 1 },
   },
   setup(props) {
     const f = () => props.form
@@ -141,16 +143,6 @@ export default defineComponent({
           {props.kindTitle === 'Pemangkasan' && (
             <>
               <div class="form-group">
-                <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Fase Pohon</span>
-                <PerkebunanFormSelect
-                  modelValue={f().fasePohon}
-                  options={['Generatif', 'Vegetatif']}
-                  placeholder="Fase Pohon"
-                  onUpdate:modelValue={(val) => { f().fasePohon = val }}
-                />
-              </div>
-
-              <div class="form-group">
                 <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Metode Pemangkasan</span>
                 <PerkebunanFormSelect
                   modelValue={f().metodePemangkasan}
@@ -179,6 +171,23 @@ export default defineComponent({
                 />
               </div>
 
+              {Number(f().jumlahPemangkasan) > 0 && f().tujuanPemanfaatan !== 'Dibuang' && (
+                <div style="background-color: #f6f8ee; border: 1px solid #dce1d0; border-radius: 0.5rem; padding: 1rem; margin-top: 0.5rem;">
+                  <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                    <span style="font-size: 1.25rem;">💡</span>
+                    <div>
+                      <h4 style="margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: #2f3b1d;">Prediksi Sirkular Ekosistem</h4>
+                      <p style="margin: 0; font-size: 0.85rem; color: #4f5d2e; line-height: 1.4; font-weight: 600;">
+                        {f().tujuanPemanfaatan === 'Kompos' 
+                          ? `Limbah pangkasan seberat ${f().jumlahPemangkasan} Kg diprediksi akan menghasilkan ${(Number(f().jumlahPemangkasan) * 0.5).toFixed(1)} Kg stok pupuk organik (asumsi rasio kompos 50%).`
+                          : `Limbah pangkasan seberat ${f().jumlahPemangkasan} Kg akan dikirim ke Peternakan dan berpotensi menjadi pakan hijauan bernutrisi bagi domba.`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div class="form-group">
                 <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Catatan (Opsional)</span>
                 <PerkebunanFormInput
@@ -204,16 +213,6 @@ export default defineComponent({
 
             return (
               <>
-                <div class="form-group">
-                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Fase Pohon</span>
-                  <PerkebunanFormSelect
-                    modelValue={f().fasePohon}
-                    options={['Generatif', 'Vegetatif']}
-                    placeholder="Fase Pohon"
-                    onUpdate:modelValue={(val) => { f().fasePohon = val }}
-                  />
-                </div>
-
                 {!isOrganik && (
                   <div class="form-group">
                     <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Jenis {rincian}</span>
@@ -254,6 +253,27 @@ export default defineComponent({
                     onUpdate:modelValue={(val) => { f().deskripsiPemupukan = val }}
                   />
                 </div>
+
+                {isOrganik && Number(f().jumlahBeratPupuk) > 0 && (
+                  <div style={`background-color: ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#fff5f5' : '#f6f8ee'}; border: 1px solid ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#ffe3e3' : '#dce1d0'}; border-radius: 0.5rem; padding: 1rem; margin-top: 0.5rem;`}>
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                      <span style="font-size: 1.25rem;">{Number(f().jumlahBeratPupuk) > props.manureStock ? '⚠️' : '💡'}</span>
+                      <div>
+                        <h4 style={`margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#e03131' : '#2f3b1d'};`}>
+                          {Number(f().jumlahBeratPupuk) > props.manureStock ? 'Peringatan Stok Kurang' : 'Prediksi Dosis Pemupukan'}
+                        </h4>
+                        <p style={`margin: 0; font-size: 0.85rem; font-weight: 600; color: ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#c92a2a' : '#4f5d2e'}; line-height: 1.4;`}>
+                          {Number(f().jumlahBeratPupuk) > props.manureStock 
+                            ? `Jumlah yang Anda masukkan (${f().jumlahBeratPupuk} Kg) melebihi stok kotoran domba dari peternakan yang tersedia saat ini (${props.manureStock.toFixed(1)} Kg).`
+                            : props.activeMode === 'pohon'
+                              ? `Dengan total ${f().jumlahBeratPupuk} Kg untuk ${props.selectedTreesCount} pohon, maka setiap pohon akan mendapatkan dosis ${(Number(f().jumlahBeratPupuk) / props.selectedTreesCount).toFixed(2)} Kg/pohon.`
+                              : `Anda menggunakan ${f().jumlahBeratPupuk} Kg dari stok pupuk organik (${props.manureStock.toFixed(1)} Kg) untuk seluruh lahan.`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )
           })()}

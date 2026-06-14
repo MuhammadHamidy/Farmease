@@ -243,7 +243,7 @@ code {
 
 .role-badge.admin { background: var(--color-primary); color: var(--color-on-primary); }
 .role-badge.operator-peternakan { background: var(--color-secondary); color: var(--color-on-secondary); }
-.role-badge.operator-perkebunan { background: var(--color-tertiary-container); color: var(--color-on-tertiary-container); border: 1px solid var(--color-outline-variant); }
+.role-badge.operator-perkebunan { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
 
 .status-badge.selesai { background: #D1FAE5; color: #065F46; }
 .status-badge.pending { background: #FEF3C7; color: #92400E; }
@@ -704,7 +704,7 @@ code {
 
 .user-role-tag.admin { background: #1e293b; color: #FFFFFF; }
 .user-role-tag.operator-peternakan { background: #64748b; color: #FFFFFF; }
-.user-role-tag.operator-perkebunan { background: #cbd5e1; color: #1e293b; border: 1px solid #94a3b8; }
+.user-role-tag.operator-perkebunan { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
 
 .user-info {
   flex: 1;
@@ -743,7 +743,7 @@ code {
   font-size: 0.75rem;
   font-weight: 800;
   color: #4B4537;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
   margin-left: 0.15rem;

@@ -20,7 +20,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.WeightFilter) ([
 	query := `SELECT id_weight, id_sheep, weighing_date, weight_kg, notes, created_at FROM livestock.weights WHERE 1=1`
 	args := []interface{}{}
 
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		args = append(args, filter.IDSheep)
 		query += fmt.Sprintf(" AND id_sheep = $%d", len(args))
 	}
@@ -55,7 +55,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.WeightFilter) ([
 
 	var total int
 	countQuery := "SELECT COUNT(*) FROM livestock.weights WHERE 1=1"
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		countQuery += " AND id_sheep = $1"
 		err = r.db.QueryRow(ctx, countQuery, filter.IDSheep).Scan(&total)
 	} else {
@@ -65,7 +65,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.WeightFilter) ([
 	return weights, total, err
 }
 
-func (r *Repository) FindHistoryBySheep(ctx context.Context, idSheep int) ([]*domain.Weight, error) {
+func (r *Repository) FindHistoryBySheep(ctx context.Context, idSheep string) ([]*domain.Weight, error) {
 	query := `SELECT id_weight, id_sheep, weighing_date, weight_kg, notes, created_at FROM livestock.weights WHERE id_sheep = $1 ORDER BY weighing_date DESC`
 	rows, err := r.db.Query(ctx, query, idSheep)
 	if err != nil {

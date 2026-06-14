@@ -24,12 +24,12 @@ func (u *perawatanUsecase) FindAll(ctx context.Context) ([]domain.Perawatan, err
 	return u.repo.FindAll(ctx)
 }
 
-func (u *perawatanUsecase) FindByID(ctx context.Context, id int) (*domain.Perawatan, error) {
+func (u *perawatanUsecase) FindByID(ctx context.Context, id string) (*domain.Perawatan, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
 type ManureItem struct {
-	IDManure int    `json:"id_manure"`
+	IDManure string `json:"id_manure"`
 	Tipe     string `json:"tipe"`
 	Jumlah   int    `json:"jumlah"`
 	Satuan   string `json:"satuan"`
@@ -57,7 +57,7 @@ func (u *perawatanUsecase) Update(ctx context.Context, p *domain.Perawatan) erro
 	return u.repo.Update(ctx, p)
 }
 
-func (u *perawatanUsecase) Delete(ctx context.Context, id int) error {
+func (u *perawatanUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
 

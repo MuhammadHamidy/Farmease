@@ -18,7 +18,7 @@ func (u *pohonUsecase) FindAll(ctx context.Context) ([]domain.Pohon, error) {
 	return u.repo.FindAll(ctx)
 }
 
-func (u *pohonUsecase) FindByID(ctx context.Context, id int) (*domain.Pohon, error) {
+func (u *pohonUsecase) FindByID(ctx context.Context, id string) (*domain.Pohon, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
@@ -30,6 +30,6 @@ func (u *pohonUsecase) Update(ctx context.Context, p *domain.Pohon) error {
 	return u.repo.Update(ctx, p)
 }
 
-func (u *pohonUsecase) Delete(ctx context.Context, id int) error {
+func (u *pohonUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }

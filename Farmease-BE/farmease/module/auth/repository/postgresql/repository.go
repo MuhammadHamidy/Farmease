@@ -38,7 +38,7 @@ func (r *Repository) FindByUsername(ctx context.Context, username string) (*doma
 	return &account, nil
 }
 
-func (r *Repository) FindAccountByID(ctx context.Context, id int) (*domain.Account, error) {
+func (r *Repository) FindAccountByID(ctx context.Context, id string) (*domain.Account, error) {
 	query := `
 		SELECT a.id_account, a.username, a.password, a.operator_category, a.id_role, a.created_at, a.updated_at,
 		       r.id_role, r.role_name, r.permissions, a.farm_id
@@ -121,7 +121,7 @@ func (r *Repository) FindAllRole(ctx context.Context) ([]*domain.Role, error) {
 	return roles, nil
 }
 
-func (r *Repository) FindRoleByID(ctx context.Context, id int) (*domain.Role, error) {
+func (r *Repository) FindRoleByID(ctx context.Context, id string) (*domain.Role, error) {
 	query := `SELECT id_role, role_name, permissions, created_at, updated_at FROM auth.roles WHERE id_role = $1`
 
 	var role domain.Role

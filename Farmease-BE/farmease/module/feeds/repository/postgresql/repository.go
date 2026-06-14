@@ -36,7 +36,7 @@ func (r *Repository) FindAllMaster(ctx context.Context) ([]*domain.Feed, error) 
 	return list, nil
 }
 
-func (r *Repository) FindMasterByID(ctx context.Context, id int) (*domain.Feed, error) {
+func (r *Repository) FindMasterByID(ctx context.Context, id string) (*domain.Feed, error) {
 	query := `SELECT id_feed, feed_name, unit, available_stock, price_per_unit, category, notes FROM logistics.feeds WHERE id_feed = $1`
 	var p domain.Feed
 	err := r.db.QueryRow(ctx, query, id).Scan(&p.IDFeed, &p.FeedName, &p.Unit, &p.AvailableStock, &p.PricePerUnit, &p.Category, &p.Notes)
@@ -48,7 +48,7 @@ func (r *Repository) StoreMaster(ctx context.Context, p *domain.Feed) error {
 	return r.db.QueryRow(ctx, query, p.FeedName, p.Unit, p.AvailableStock, p.PricePerUnit, p.Category, p.Notes).Scan(&p.IDFeed)
 }
 
-func (r *Repository) UpdateStock(ctx context.Context, id int, amount float64, actionType string) error {
+func (r *Repository) UpdateStock(ctx context.Context, id string, amount float64, actionType string) error {
 	var query string
 	if actionType == "tambah" {
 		query = `UPDATE logistics.feeds SET available_stock = available_stock + $1 WHERE id_feed = $2`
@@ -64,7 +64,7 @@ func (r *Repository) StoreFeeding(ctx context.Context, f *domain.Feeding) error 
 	return r.db.QueryRow(ctx, query, f.IDSheep, f.IDFeed, f.FeedingDate, f.Amount, f.Unit, f.Notes).Scan(&f.IDFeeding)
 }
 
-func (r *Repository) FindFeedingHistory(ctx context.Context, idSheep int) ([]*domain.Feeding, error) {
+func (r *Repository) FindFeedingHistory(ctx context.Context, idSheep string) ([]*domain.Feeding, error) {
 	query := `
 		SELECT pp.id_feeding, pp.id_sheep, pp.id_feed, pp.feeding_date, pp.amount, pp.unit, pp.notes, p.feed_name
 		FROM logistics.feedings pp
@@ -97,7 +97,7 @@ func (r *Repository) FindAllFeedings(ctx context.Context, filter domain.FeedingF
 		WHERE 1=1`
 	args := []interface{}{}
 
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		args = append(args, filter.IDSheep)
 		query += fmt.Sprintf(" AND pp.id_sheep = $%d", len(args))
 	}
@@ -132,7 +132,7 @@ func (r *Repository) FindAllFeedings(ctx context.Context, filter domain.FeedingF
 
 	var total int
 	countQuery := "SELECT COUNT(*) FROM logistics.feedings WHERE 1=1"
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		countQuery += " AND id_sheep = $1"
 		err = r.db.QueryRow(ctx, countQuery, filter.IDSheep).Scan(&total)
 	} else {

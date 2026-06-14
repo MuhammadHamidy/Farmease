@@ -52,7 +52,13 @@ export default defineComponent({
           onClick={toggleOpen}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', minHeight: '38px', justifyContent: 'space-between', paddingRight: '2.25rem' }}
         >
-          <span style={{ color: props.modelValue ? 'inherit' : 'var(--ui-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ 
+            color: (props.modelValue && normalizedOptions().some(o => String(o.value) === String(props.modelValue))) ? 'inherit' : 'var(--ui-text-muted)', 
+            fontWeight: (props.modelValue && normalizedOptions().some(o => String(o.value) === String(props.modelValue))) ? 'inherit' : '400',
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis', 
+            whiteSpace: 'nowrap' 
+          }}>
             {selectedLabel()}
           </span>
           <svg class="select-icon-wrapper" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style={{ transform: isOpen.value ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s', width: '18px', height: '18px', position: 'absolute', right: '0.75rem', top: '50%', color: 'inherit', opacity: 0.5 }}>

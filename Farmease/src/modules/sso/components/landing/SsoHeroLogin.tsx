@@ -30,17 +30,42 @@ export default defineComponent({
         const response = await authApi.login({ username: user, password: pass } as any);
         if (response && response.token) {
           authApi.setAuth(response.token, response.user);
-          const roleId = response.user.role_id;
+          const roleId = String(response.user.role_id);
+          const category = response.user.operator_category || '';
+          
           let role = 'Operator Peternakan';
           let routeName = 'ternak';
-          if (roleId === 1) { role = 'Admin'; routeName = 'admin'; }
-          else if (roleId === 3) { role = 'Operator Kebun'; routeName = 'kebun'; }
+          let code = response.user.username;
+
+          // Admin role UUID
+          if (roleId === '00000000-0000-0000-0000-000000000001') { 
+            role = 'Admin'; 
+            routeName = 'admin'; 
+            code = 'ADM-01';
+          }
+          // Operator role UUID
+          else if (roleId === '00000000-0000-0000-0000-000000000002') {
+            if (category.toLowerCase().includes('kebun')) {
+              role = 'Operator Kebun';
+              routeName = 'kebun';
+              code = 'PK-01';
+            } else {
+              role = 'Operator Peternakan';
+              routeName = 'ternak';
+              code = 'OPT-01';
+            }
+          }
+
           userSession.value = {
-            code: String(response.user.id),
+            code, // Use mapped short code like PK-01
             name: response.user.username,
             role,
           };
-          router.push({ name: routeName });
+          if (routeName === 'ternak') {
+            router.push('/ternak');
+          } else {
+            router.push({ name: routeName });
+          }
           loading.value = false;
           return;
         }
@@ -59,7 +84,11 @@ export default defineComponent({
       // Save a mock token in development so that BE API calls are authorized
       localStorage.setItem('authToken', 'mock-token-development');
       userSession.value = account.session;
-      router.push({ name: account.routeName });
+      if (account.routeName === 'ternak') {
+        router.push('/ternak');
+      } else {
+        router.push({ name: account.routeName });
+      }
       loading.value = false;
     };
 
@@ -147,20 +176,10 @@ export default defineComponent({
                 Masuk
               </button>
 
-              <p class="sso-login-hint">
-                Demo: pemilik / pemilik123 · admin / admin123 · operator_kebun / kebun123 · operator_kandang / kandang123
-              </p>
+
             </div>
 
           </div>
-        </div>
-        <div class="sso-hero__wave">
-          <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M0,60 C320,130 500,10 900,100 C1100,130 1300,70 1440,90 L1440,120 L0,120 Z"
-              class="shape-fill"
-            />
-          </svg>
         </div>
       </section>
     );

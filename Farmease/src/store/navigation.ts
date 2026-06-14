@@ -31,10 +31,11 @@ export const selectedPencatatanPayload = ref<any | null>(null)
 export const activePencatatanForm = ref<any | null>(null)
 export const prefilledPencatatanType = ref<string | null>(null)
 export const prefilledPencatatanRincian = ref<string | null>(null)
+export const prefilledPencatatanTaskId = ref<string | null>(null)
 
 // ── Shared Data Stores (fetched from BE) ──
 export interface CageInfo {
-  id?: number;
+  id?: string | number;
   code: string;
   name: string;
   type: string;
@@ -42,16 +43,17 @@ export interface CageInfo {
 }
 
 export interface LandInfo {
-  id?: number;
+  id?: string | number;
   code: string;
   name: string;
   area: string;
   status: string;
   capacity?: number;
+  location?: string;
 }
 
 export interface CropInfo {
-  id?: number;
+  id?: string | number;
   code: string;
   name: string;
   type: string;
@@ -90,16 +92,14 @@ export async function fetchLandsList() {
     landsLoading.value = true
     const list = await lahanApi.getList()
     landsList.value = list.map((l) => {
-      const match = (l.nama_lahan || '').match(/\[Kapasitas:\s*(\d+)\]/);
-      const capacity = match ? Number(match[1]) : 50;
-      const name = (l.nama_lahan || '').replace(/\s*\[Kapasitas:\s*\d+\]/g, '').trim();
       return {
         id: l.id,
         code: l.kode_lahan,
-        name: name,
-        area: String(l.luas) + ' Hektar',
-        status: l.status,
-        capacity: capacity
+        name: l.nama_lahan || l.varietas || '',
+        area: String(l.luas_lahan || l.luas) + ' m²',
+        status: l.status || '',
+        capacity: l.kapasitas_maksimal || 50,
+        location: l.jenis_tanaman || l.lokasi || ''
       }
     })
   } catch (err) {

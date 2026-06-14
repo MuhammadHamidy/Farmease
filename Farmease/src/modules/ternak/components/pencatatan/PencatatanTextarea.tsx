@@ -19,11 +19,12 @@ export default defineComponent({
 
     return () => (
       <textarea
-        class="pencatatan-textarea"
+        class="custom-input form-control w-100"
         rows={props.rows}
         placeholder={props.placeholder}
         value={props.modelValue}
         onInput={onInput}
+        style={{ resize: 'vertical' }}
       />
     );
   },

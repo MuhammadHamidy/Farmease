@@ -23,6 +23,7 @@ export {
   birthApi,
   tasksApi,
   notificationsApi,
+  routineSchedulesApi,
 } from './peternakan'
 
 export {

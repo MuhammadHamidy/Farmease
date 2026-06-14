@@ -18,7 +18,7 @@ func (u *useCase) GetManureList(ctx context.Context, filter domain.ManureFilter)
 	return u.repo.FindAll(ctx, filter)
 }
 
-func (u *useCase) GetManureHistory(ctx context.Context, idSheep int) ([]*domain.Manure, error) {
+func (u *useCase) GetManureHistory(ctx context.Context, idSheep string) ([]*domain.Manure, error) {
 	return u.repo.FindHistoryBySheep(ctx, idSheep)
 }
 

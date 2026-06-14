@@ -172,7 +172,7 @@ export default defineComponent({
             <div class="col-md-5">
               <div class="summary-stock-card bg-white rounded-4 p-4 border shadow-sm h-100">
                 <div class="d-flex align-items-center gap-2 mb-3">
-                  <img src="/icon/package.png" style={{ width: '20px', height: '20px', opacity: 0.7 }} />
+                  <img src="/icon/inventory.png" style={{ width: '20px', height: '20px', opacity: 0.7 }} />
                   <Typography variant="h4" weight="semibold" className="m-0">Stok Terkait</Typography>
                 </div>
 

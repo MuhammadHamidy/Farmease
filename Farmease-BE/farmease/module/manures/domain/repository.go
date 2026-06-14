@@ -6,8 +6,8 @@ import (
 )
 
 type Manure struct {
-	IDManure              int       `json:"id_manure" db:"id_manure"`
-	IDSheep               int       `json:"id_sheep" db:"id_sheep"`
+	IDManure              string    `json:"id_manure" db:"id_manure"`
+	IDSheep               string    `json:"id_sheep" db:"id_sheep"`
 	ActivityType          string    `json:"activity_type" db:"activity_type"` // e.g., collection/fermentation
 	Amount                float64   `json:"amount" db:"amount"`
 	Unit                  string    `json:"unit" db:"unit"`
@@ -18,19 +18,19 @@ type Manure struct {
 }
 
 type ManureFilter struct {
-	IDSheep int
+	IDSheep string
 	Page    int
 	PerPage int
 }
 
 type ManureRepository interface {
 	FindAll(ctx context.Context, filter ManureFilter) ([]*Manure, int, error)
-	FindHistoryBySheep(ctx context.Context, idSheep int) ([]*Manure, error)
+	FindHistoryBySheep(ctx context.Context, idSheep string) ([]*Manure, error)
 	Store(ctx context.Context, m *Manure) error
 }
 
 type UseCase interface {
 	GetManureList(ctx context.Context, filter ManureFilter) ([]*Manure, int, error)
-	GetManureHistory(ctx context.Context, idSheep int) ([]*Manure, error)
+	GetManureHistory(ctx context.Context, idSheep string) ([]*Manure, error)
 	RecordManure(ctx context.Context, m *Manure) error
 }

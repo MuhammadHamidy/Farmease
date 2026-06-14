@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS livestock.weights (
-    id_weight SERIAL PRIMARY KEY,
-    id_sheep INT NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
+    id_weight UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_sheep UUID NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
     weighing_date DATE NOT NULL,
     weight_kg DECIMAL(5,2) NOT NULL,
     notes TEXT,
@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS livestock.weights (
 );
 
 CREATE TABLE IF NOT EXISTS livestock.healths (
-    id_health SERIAL PRIMARY KEY,
-    id_sheep INT NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
+    id_health UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_sheep UUID NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
     checkup_date DATE NOT NULL,
     diagnosis TEXT NOT NULL,
     action TEXT,

@@ -1,5 +1,6 @@
 import { defineComponent } from 'vue';
 import type { PropType } from 'vue';
+import CustomInput from '@/shared/ui/Input';
 
 export default defineComponent({
   name: 'PencatatanInput',
@@ -14,26 +15,19 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
-    const onInput = (e: Event) => {
-      const v = (e.target as HTMLInputElement).value;
+    const onUpdate = (v: string) => {
       emit('update:modelValue', v);
       props.onUpdateModelValue?.(v);
     };
 
     return () => (
-      <div class={['pencatatan-input-wrap', props.iconSrc ? 'has-icon' : '']}>
-        {props.iconSrc && (
-          <img src={props.iconSrc} alt="" class="pencatatan-input-icon" />
-        )}
-        <input
-          type={props.type}
-          class={['pencatatan-input', props.inputClass]}
-          placeholder={props.placeholder}
-          value={props.modelValue}
-          disabled={props.disabled}
-          onInput={onInput}
-        />
-      </div>
+      <CustomInput
+        type={props.type}
+        placeholder={props.placeholder}
+        modelValue={props.modelValue}
+        onUpdate:modelValue={onUpdate}
+        icon={props.iconSrc ? () => <img src={props.iconSrc} style={{width: '16px', opacity: 0.6}} alt="" /> : undefined}
+      />
     );
   },
 });

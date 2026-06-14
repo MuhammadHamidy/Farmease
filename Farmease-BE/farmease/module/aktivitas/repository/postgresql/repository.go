@@ -38,7 +38,7 @@ func (r *aktivitasRepository) FindAll(ctx context.Context) ([]domain.Aktivitas, 
 	return list, nil
 }
 
-func (r *aktivitasRepository) FindByID(ctx context.Context, id int) (*domain.Aktivitas, error) {
+func (r *aktivitasRepository) FindByID(ctx context.Context, id string) (*domain.Aktivitas, error) {
 	var a domain.Aktivitas
 	var tTgl time.Time
 	err := r.db.QueryRow(ctx, "SELECT id_aktivitas, tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan FROM gardening.aktivitas WHERE id_aktivitas = $1", id).
@@ -81,7 +81,7 @@ func (r *aktivitasRepository) Update(ctx context.Context, a *domain.Aktivitas) e
 	return nil
 }
 
-func (r *aktivitasRepository) Delete(ctx context.Context, id int) error {
+func (r *aktivitasRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.aktivitas WHERE id_aktivitas = $1", id)
 	return err
 }

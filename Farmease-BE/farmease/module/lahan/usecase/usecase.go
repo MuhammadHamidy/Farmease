@@ -18,7 +18,7 @@ func (u *lahanUsecase) FindAll(ctx context.Context) ([]domain.Lahan, error) {
 	return u.repo.FindAll(ctx)
 }
 
-func (u *lahanUsecase) FindByID(ctx context.Context, id int) (*domain.Lahan, error) {
+func (u *lahanUsecase) FindByID(ctx context.Context, id string) (*domain.Lahan, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
@@ -30,7 +30,7 @@ func (u *lahanUsecase) Update(ctx context.Context, l *domain.Lahan) error {
 	return u.repo.Update(ctx, l)
 }
 
-func (u *lahanUsecase) Delete(ctx context.Context, id int) error {
+func (u *lahanUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
 

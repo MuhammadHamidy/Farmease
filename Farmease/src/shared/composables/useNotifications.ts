@@ -37,7 +37,7 @@ async function fetchNotifications() {
   }
 }
 
-async function markRead(id: number) {
+async function markRead(id: string | number) {
   try {
     await notificationsApi.markAsRead(id);
     const index = notifications.value.findIndex(n => n.id === id);

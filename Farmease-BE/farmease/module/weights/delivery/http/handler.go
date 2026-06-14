@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/weights/domain"
@@ -52,7 +51,7 @@ func (h *WeightHandler) registerSheepGroup(group fiber.Router) {
 // @Router       /api/weights [get]
 func (h *WeightHandler) GetWeightList(c *fiber.Ctx) error {
 	filter := domain.WeightFilter{
-		IDSheep: c.QueryInt("id_sheep"),
+		IDSheep: c.Query("id_sheep"),
 		Page:    c.QueryInt("page", 1),
 		PerPage: c.QueryInt("per_page", 20),
 	}
@@ -77,7 +76,7 @@ func (h *WeightHandler) GetWeightList(c *fiber.Ctx) error {
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/weight [get]
 func (h *WeightHandler) GetWeightHistory(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	res, err := h.useCase.GetWeightHistory(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
@@ -99,7 +98,7 @@ func (h *WeightHandler) GetWeightHistory(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/weight [post]
 func (h *WeightHandler) RecordWeight(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var req struct {
 		WeightKg     float64   `json:"weight_kg"`
 		Weight       float64   `json:"weight"` // fallback for FE

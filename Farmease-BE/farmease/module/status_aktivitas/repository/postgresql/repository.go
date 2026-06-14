@@ -59,7 +59,7 @@ func (r *statusAktivitasRepository) FindAll(ctx context.Context) ([]domain.Statu
 	return list, nil
 }
 
-func (r *statusAktivitasRepository) FindByID(ctx context.Context, id int) (*domain.StatusAktivitas, error) {
+func (r *statusAktivitasRepository) FindByID(ctx context.Context, id string) (*domain.StatusAktivitas, error) {
 	query := `
 		SELECT 
 			sa.id_status_aktivitas, 
@@ -150,7 +150,7 @@ func (r *statusAktivitasRepository) Update(ctx context.Context, sa *domain.Statu
 	return nil
 }
 
-func (r *statusAktivitasRepository) Delete(ctx context.Context, id int) error {
+func (r *statusAktivitasRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.status_aktivitas WHERE id_status_aktivitas = $1", id)
 	return err
 }

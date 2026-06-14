@@ -6,7 +6,7 @@ import (
 )
 
 type Role struct {
-	IDRole      int       `json:"id_role" db:"id_role"`
+	IDRole      string    `json:"id_role" db:"id_role"`
 	RoleName    string    `json:"role_name" db:"role_name"`
 	Permissions string    `json:"permissions" db:"permissions"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
@@ -14,11 +14,11 @@ type Role struct {
 }
 
 type Account struct {
-	IDAccount        int       `json:"id_account" db:"id_account"`
+	IDAccount        string    `json:"id_account" db:"id_account"`
 	Username         string    `json:"username" db:"username"`
 	Password         string    `json:"password" db:"password"`
 	OperatorCategory string    `json:"operator_category" db:"operator_category"`
-	IDRole           int       `json:"id_role" db:"id_role"`
+	IDRole           string    `json:"id_role" db:"id_role"`
 	Role             *Role     `json:"role,omitempty" db:"-"`
 	FarmID           *string   `json:"farm_id,omitempty" db:"farm_id"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
@@ -38,11 +38,11 @@ type LoginResponse struct {
 
 type AuthRepository interface {
 	FindByUsername(ctx context.Context, username string) (*Account, error)
-	FindAccountByID(ctx context.Context, id int) (*Account, error)
+	FindAccountByID(ctx context.Context, id string) (*Account, error)
 	FindAllAccounts(ctx context.Context) ([]*Account, error)
 	StoreAccount(ctx context.Context, account *Account) error
 	FindAllRole(ctx context.Context) ([]*Role, error)
-	FindRoleByID(ctx context.Context, id int) (*Role, error)
+	FindRoleByID(ctx context.Context, id string) (*Role, error)
 }
 
 type UseCase interface {

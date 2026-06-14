@@ -6,8 +6,8 @@ import (
 )
 
 type Health struct {
-	IDHealth      int       `json:"id_health" db:"id_health"`
-	IDSheep       int       `json:"id_sheep" db:"id_sheep"`
+	IDHealth      string    `json:"id_health" db:"id_health"`
+	IDSheep       string    `json:"id_sheep" db:"id_sheep"`
 	CheckupDate   time.Time `json:"checkup_date" db:"checkup_date"`
 	Diagnosis     string    `json:"diagnosis" db:"diagnosis"`
 	Action        string    `json:"action" db:"action"`
@@ -19,21 +19,21 @@ type Health struct {
 }
 
 type HealthFilter struct {
-	IDSheep int
+	IDSheep string
 	Page    int
 	PerPage int
 }
 
 type HealthRepository interface {
 	FindAll(ctx context.Context, filter HealthFilter) ([]*Health, int, error)
-	FindHistoryBySheep(ctx context.Context, idSheep int) ([]*Health, error)
+	FindHistoryBySheep(ctx context.Context, idSheep string) ([]*Health, error)
 	Store(ctx context.Context, k *Health) error
 	Update(ctx context.Context, k *Health) error
 }
 
 type UseCase interface {
 	GetHealthList(ctx context.Context, filter HealthFilter) ([]*Health, int, error)
-	GetHealthHistory(ctx context.Context, idSheep int) ([]*Health, error)
+	GetHealthHistory(ctx context.Context, idSheep string) ([]*Health, error)
 	RecordHealth(ctx context.Context, k *Health) error
-	UpdateHealth(ctx context.Context, id int, k *Health) error
+	UpdateHealth(ctx context.Context, id string, k *Health) error
 }

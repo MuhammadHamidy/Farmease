@@ -4,7 +4,8 @@ import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin'
 import { userSession, landSession } from '@/store/navigation'
 import KebunGenericFormFieldsRaw from '../components/pencatatan/KebunGenericFormFields'
 import PerkebunanBackButton from '../components/shared/PerkebunanBackButton'
-import { feedsApi, pemangkasanApi } from '@/shared/api'
+import PerkebunanFormSelect from '../components/shared/PerkebunanFormSelect'
+import { feedsApi, pemangkasanApi, manureApi } from '@/shared/api'
 import '@/modules/kebun/assets/css/PerkebunanDetailPages.css'
 
 const KebunGenericFormFields = KebunGenericFormFieldsRaw as any
@@ -31,6 +32,19 @@ export default defineComponent({
     const timerId = setInterval(() => {
       currentDate.value = new Date()
     }, 1000)
+
+    const manureStock = ref(0)
+    
+    const fetchManureStock = async () => {
+      try {
+        const list: any[] = await manureApi.getList()
+        // Sum the amounts (assuming backend returns `amount`)
+        const total = list.reduce((acc, curr) => acc + (Number(curr.amount) || Number(curr.quantity) || 0), 0)
+        manureStock.value = total
+      } catch (err) {
+        console.error('Failed to fetch manure stock:', err)
+      }
+    }
 
     onUnmounted(() => {
       clearInterval(timerId)
@@ -112,21 +126,21 @@ export default defineComponent({
     const isVarietasDropdownOpen = ref(false)
 
     const trees = [
-      { code: 'LA001', varietas: 'Alpukat Aligator' },
-      { code: 'LA002', varietas: 'Alpukat Aligator' },
-      { code: 'LA003', varietas: 'Alpukat Aligator' },
-      { code: 'LA004', varietas: 'Alpukat Aligator' },
-      { code: 'LA005', varietas: 'Alpukat Aligator' },
-      { code: 'LA006', varietas: 'Alpukat Miki' },
-      { code: 'LA007', varietas: 'Alpukat Miki' },
-      { code: 'LA008', varietas: 'Alpukat Miki' },
-      { code: 'LA009', varietas: 'Alpukat Miki' },
-      { code: 'LA010', varietas: 'Alpukat Miki' },
-      { code: 'LA011', varietas: 'Alpukat Markus' },
-      { code: 'LA012', varietas: 'Alpukat Markus' },
-      { code: 'LA013', varietas: 'Alpukat Markus' },
-      { code: 'LA014', varietas: 'Alpukat Kelud' },
-      { code: 'LA015', varietas: 'Alpukat Kelud' },
+      { code: 'LA001', varietas: 'Alpukat Aligator', fase: 'Generatif' },
+      { code: 'LA002', varietas: 'Alpukat Aligator', fase: 'Vegetatif' },
+      { code: 'LA003', varietas: 'Alpukat Aligator', fase: 'Generatif' },
+      { code: 'LA004', varietas: 'Alpukat Aligator', fase: 'Vegetatif' },
+      { code: 'LA005', varietas: 'Alpukat Aligator', fase: 'Generatif' },
+      { code: 'LA006', varietas: 'Alpukat Miki', fase: 'Vegetatif' },
+      { code: 'LA007', varietas: 'Alpukat Miki', fase: 'Generatif' },
+      { code: 'LA008', varietas: 'Alpukat Miki', fase: 'Vegetatif' },
+      { code: 'LA009', varietas: 'Alpukat Miki', fase: 'Generatif' },
+      { code: 'LA010', varietas: 'Alpukat Miki', fase: 'Vegetatif' },
+      { code: 'LA011', varietas: 'Alpukat Markus', fase: 'Generatif' },
+      { code: 'LA012', varietas: 'Alpukat Markus', fase: 'Vegetatif' },
+      { code: 'LA013', varietas: 'Alpukat Markus', fase: 'Generatif' },
+      { code: 'LA014', varietas: 'Alpukat Kelud', fase: 'Vegetatif' },
+      { code: 'LA015', varietas: 'Alpukat Kelud', fase: 'Generatif' },
     ]
 
     const varietasOptions = [
@@ -138,8 +152,17 @@ export default defineComponent({
     ]
 
     const filteredTrees = computed(() => {
-      if (selectedVarietas.value === 'Semua Varietas') return trees
-      return trees.filter(tree => tree.varietas === selectedVarietas.value)
+      let result = trees
+      if (selectedVarietas.value !== 'Semua Varietas') {
+        result = result.filter(tree => tree.varietas === selectedVarietas.value)
+      }
+      
+      const requiresPhase = kindTitle.value === 'Pemupukan' || kindTitle.value === 'Pemangkasan'
+      if (requiresPhase && formState.value.fasePohon && formState.value.fasePohon !== 'Fase Pohon') {
+        result = result.filter(tree => tree.fase === formState.value.fasePohon)
+      }
+      
+      return result
     })
 
     const toggleTreeSelection = (code: string) => {
@@ -161,6 +184,7 @@ export default defineComponent({
     onMounted(() => {
       document.addEventListener('click', handleDocumentClick)
       formState.value.kodePohon = selectedTrees.value.join(', ')
+      fetchManureStock()
     })
 
     onUnmounted(() => {
@@ -295,7 +319,7 @@ export default defineComponent({
                 </div>
                 <div style="border: 1.5px solid #dce1d0; border-radius: 0.65rem; background: #fff; padding: 1rem 0.85rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.15rem;">
                   <strong style="font-size: 1.15rem; font-weight: 800; color: #111827; line-height: 1.2;">
-                    10 Kg
+                    {manureStock.value.toFixed(1)} Kg
                   </strong>
                   <span style="font-size: 0.72rem; color: #6b7280; font-weight: 600;">
                     Jumlah Stok
@@ -367,6 +391,19 @@ export default defineComponent({
                       </ul>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Fase Pohon for Pemupukan / Pemangkasan (rendered before tree selection) */}
+              {(kindTitle.value === 'Pemupukan' || kindTitle.value === 'Pemangkasan') && (
+                <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.5rem;">
+                  <label style="font-weight: 800; color: #111827; font-size: 1.05rem;">Pilih Fase Pohon</label>
+                  <PerkebunanFormSelect
+                    modelValue={formState.value.fasePohon}
+                    options={['Generatif', 'Vegetatif']}
+                    placeholder="Fase Pohon"
+                    onUpdate:modelValue={(val) => { formState.value.fasePohon = val }}
+                  />
                 </div>
               )}
 
@@ -448,6 +485,8 @@ export default defineComponent({
                 form={formState.value}
                 activeMode={activeMode.value}
                 selectedRincian={selectedRincian.value}
+                manureStock={manureStock.value}
+                selectedTreesCount={selectedTrees.value.length}
               />
 
               {/* Simpan Button Centered inside card */}

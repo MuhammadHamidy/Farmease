@@ -12,14 +12,15 @@ export default defineComponent({
   setup() {
     const isModalOpen = ref(false);
     const isEditing = ref(false);
-    const editingLandId = ref<number | null>(null);
+    const editingLandId = ref<string | number | null>(null);
     
     const newLand = ref<LandInfo>({
       code: '',
       name: '',
       area: '',
-      status: 'Subur',
-      capacity: 50
+      status: '',
+      capacity: 50,
+      location: ''
     });
     
     const error = ref('');
@@ -52,8 +53,9 @@ export default defineComponent({
         code: '',
         name: '',
         area: '',
-        status: 'Subur',
-        capacity: 50
+        status: '',
+        capacity: 50,
+        location: ''
       };
       error.value = '';
       isModalOpen.value = true;
@@ -65,9 +67,10 @@ export default defineComponent({
       newLand.value = {
         code: land.code,
         name: land.name,
-        area: land.area.replace(/\s*Hektar/gi, '').trim(),
+        area: land.area.replace(/\s*(Hektar|m²)/gi, '').trim(),
         status: land.status,
-        capacity: land.capacity || 50
+        capacity: land.capacity || 50,
+        location: land.location || ''
       };
       error.value = '';
       isModalOpen.value = true;
@@ -79,8 +82,9 @@ export default defineComponent({
       const area = newLand.value.area.trim();
       const status = newLand.value.status;
       const capacity = Number(newLand.value.capacity) || 50;
+      const location = newLand.value.location?.trim() || '';
 
-      if (!code || !name || !area || !status || isNaN(capacity) || capacity <= 0) {
+      if (!code || !name || !area || !status || !location || isNaN(capacity) || capacity <= 0) {
         error.value = 'Semua field harus diisi dengan benar.';
         return;
       }
@@ -102,8 +106,10 @@ export default defineComponent({
       try {
         const payload = {
           kode_lahan: code,
-          nama_lahan: `${name} [Kapasitas: ${capacity}]`,
-          luas: parseFloat(area) || 1.0,
+          nama_lahan: name,
+          jenis_tanaman: location,
+          luas_lahan: parseFloat(area) || 1.0,
+          kapasitas_maksimal: capacity,
           status: status
         };
 
@@ -128,8 +134,9 @@ export default defineComponent({
           code: '',
           name: '',
           area: '',
-          status: 'Subur',
-          capacity: 50
+          status: '',
+          capacity: 50,
+          location: ''
         };
       } catch (err: any) {
         console.error('Failed to save land:', err);
@@ -139,17 +146,9 @@ export default defineComponent({
       }
     };
 
-    const getCustomLandName = (code: string, name: string) => {
-      const codeLower = code.toLowerCase();
-      const nameLower = name.toLowerCase();
-      if (nameLower.includes('alpukat')) return name;
-      if (nameLower.includes('kelengkeng')) return name;
-      if (codeLower === 'lh-001' || nameLower.includes('lh-001')) return 'Lahan Alpukat';
-      if (codeLower === 'lh-002' || nameLower.includes('lh-002')) return 'Lahan Kelengkeng';
-      return name;
-    };
+    // getCustomLandName is removed as we now save real name directly
 
-    const handleDeleteLand = async (id: number | undefined, code: string) => {
+    const handleDeleteLand = async (id: string | number | undefined, code: string) => {
       if (!id) {
         alertError.value = 'ID lahan tidak ditemukan, tidak dapat menghapus.';
         return;
@@ -247,13 +246,13 @@ export default defineComponent({
             return (
               <div class="col-12 col-md-6 col-lg-4" key={l.code}>
                 <StatCard 
-                  label={getCustomLandName(l.code, l.name).toUpperCase()} 
+                  label={(l.name || '').toUpperCase()} 
                   value={`${count} / ${cap} Pohon`} 
                   sub={`Ketersediaan: ${availability} Pohon`}
                   color={pct >= 90 ? 'accent' : 'primary'}
                   icon={() => (
                     <img 
-                      src={getCustomLandName(l.code, l.name).toLowerCase().includes('kelengkeng') ? '/icon/kelengkeng.png' : '/icon/alpukat.png'} 
+                      src={(l.location || '').toLowerCase().includes('kelengkeng') ? '/icon/kelengkeng.png' : '/icon/alpukat.png'} 
                       alt="Crop" 
                       style="width: 48px; height: 48px; object-fit: contain;" 
                     />
@@ -277,11 +276,11 @@ export default defineComponent({
             <thead>
               <tr>
                 <th>Kode Lahan</th>
-                <th>Nama Lahan Perkebunan</th>
-                <th>Luas Area</th>
-                <th>Status Lahan</th>
-                <th>Ketersediaan</th>
-                <th>Kapasitas</th>
+                <th>Nama Lahan</th>
+                <th>Jenis Tanaman</th>
+                <th>Luas Lahan</th>
+                <th>Kapasitas Maksimal</th>
+                <th>Status Pohon</th>
                 <th style={{ width: '120px' }}>Aksi</th>
               </tr>
             </thead>
@@ -293,27 +292,27 @@ export default defineComponent({
                 return (
                   <tr key={l.code}>
                     <td><code>{l.code}</code></td>
-                    <td class="fw-bold">{getCustomLandName(l.code, l.name)}</td>
+                    <td class="fw-bold">{l.name}</td>
+                    <td>{l.location}</td>
                     <td>{l.area}</td>
-                    <td>
-                      <Badge variant={l.status === 'Subur' ? 'success' : 'warning'}>{l.status}</Badge>
-                    </td>
-                    <td>
-                      <Badge variant={availability <= 5 ? 'danger' : 'success'}>
-                        {availability} Pohon
-                      </Badge>
-                    </td>
                     <td>
                       <Badge variant="secondary">{cap} Pohon</Badge>
                     </td>
                     <td>
+                      <Badge variant={l.status === 'Subur' ? 'success' : 'warning'}>{l.status}</Badge>
+                    </td>
+                    <td>
                       <button 
                         type="button" 
-                        class="btn btn-sm btn-outline-primary rounded-3" 
-                        onClick={() => openEdit(l)}
+                        class="btn btn-sm btn-outline-danger rounded-3" 
+                        onClick={() => handleDeleteLand(l.id, l.code)}
                         disabled={isLoading.value}
+                        title="Hapus Lahan"
                       >
-                        Ubah
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M3 6h18"></path>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
                       </button>
                     </td>
                   </tr>
@@ -341,23 +340,41 @@ export default defineComponent({
                 <div key={l.code} class="admin-mobile-card">
                   <div class="card-top">
                     <div class="card-info">
-                      <span class="card-name">{getCustomLandName(l.code, l.name)}</span>
+                      <span class="card-name">{l.name}</span>
                       <span class="card-sub">{l.area}</span>
                     </div>
                     <span class="card-code">{l.code}</span>
                   </div>
                   <div class="card-footer align-items-start">
-                    <div class="d-flex flex-column text-start gap-1">
-                      <span class="small text-muted">Ketersediaan: <strong class={availability <= 5 ? 'text-danger' : 'text-success'}>{availability} Pohon</strong></span>
-                      <span class="small text-muted">Kapasitas: <strong>{cap} Pohon</strong></span>
+                    <div class="d-flex flex-column w-100">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Luas Lahan</span>
+                        <span class="fw-bold">{l.area}</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Jenis Tanaman</span>
+                        <span class="fw-bold">{l.location}</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Kapasitas Maksimal</span>
+                        <Badge variant="secondary">{cap} Pohon</Badge>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">Status Pohon</span>
+                        <Badge variant={l.status === 'Subur' ? 'success' : 'warning'}>{l.status}</Badge>
+                      </div>
                     </div>
                     <button 
                       type="button" 
-                      class="btn btn-sm btn-primary px-3 py-1 rounded-3 text-white border-0 fw-bold" 
-                      onClick={() => openEdit(l)}
+                      class="btn btn-sm btn-danger px-3 py-1 rounded-3 text-white border-0 fw-bold d-flex align-items-center gap-1 mt-2" 
+                      onClick={() => handleDeleteLand(l.id, l.code)}
                       disabled={isLoading.value}
                     >
-                      Ubah
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                      Hapus
                     </button>
                   </div>
                 </div>
@@ -374,9 +391,9 @@ export default defineComponent({
         {/* Create / Edit Land Modal */}
         {isModalOpen.value && (
           <div class="peternakan-modal-overlay" onClick={() => isModalOpen.value = false}>
-            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
               <div class="peternakan-modal-header">
-                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>
+                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value} style={{ position: 'absolute', right: '1.5rem', left: 'auto', background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -390,40 +407,47 @@ export default defineComponent({
               <div class="peternakan-modal-body mt-4">
                 <div class="row g-3">
                   <div class="col-12">
-                    <label class="pencatatan-label">Kode Lahan (Contoh: L0003)</label>
+                    <label class="pencatatan-label" style={{ textTransform: 'none' }}>Kode lahan <span class="text-danger">*</span></label>
                     <CustomInput 
                       modelValue={newLand.value.code}
-                      placeholder="Masukkan kode lahan"
+                      placeholder="Contoh: L0001"
                       onUpdate:modelValue={(val: string) => newLand.value.code = val}
                     />
                   </div>
                   <div class="col-12">
-                    <label class="pencatatan-label">Nama Lahan Perkebunan</label>
+                    <label class="pencatatan-label" style={{ textTransform: 'none' }}>Nama lahan <span class="text-danger">*</span></label>
                     <CustomInput 
                       modelValue={newLand.value.name}
-                      placeholder="Contoh: Lahan Jeruk Timur"
+                      placeholder="Contoh: Lahan Alpukat"
                       onUpdate:modelValue={(val: string) => newLand.value.name = val}
                     />
                   </div>
-                  <div class="col-md-6">
-                    <label class="pencatatan-label">Luas Area Lahan (Luas Hektar, misal: 2.5)</label>
+                  <div class="col-12">
+                    <label class="pencatatan-label" style={{ textTransform: 'none' }}>Jenis tanaman <span class="text-danger">*</span></label>
+                    <CustomInput 
+                      modelValue={newLand.value.location || ''}
+                      placeholder="Contoh: Alpukat, Kelengkeng"
+                      onUpdate:modelValue={(val: string) => newLand.value.location = val}
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label class="pencatatan-label" style={{ textTransform: 'none' }}>Luas lahan (meter persegi)</label>
                     <CustomInput 
                       modelValue={newLand.value.area}
-                      placeholder="Contoh: 2.5"
+                      placeholder="Contoh: 2500"
                       onUpdate:modelValue={(val: string) => newLand.value.area = val}
                     />
                   </div>
-                  <div class="col-md-6">
-                    <label class="pencatatan-label">Kapasitas Maksimal (Pohon)</label>
+                  <div class="col-12">
+                    <label class="pencatatan-label" style={{ textTransform: 'none' }}>Kapasitas maksimal (pohon) <span class="text-danger">*</span></label>
                     <CustomInput 
-                      type="number"
                       modelValue={String(newLand.value.capacity)}
-                      placeholder="Contoh: 100"
+                      placeholder="Contoh: 50"
                       onUpdate:modelValue={(val: string) => newLand.value.capacity = Number(val)}
                     />
                   </div>
                   <div class="col-12">
-                    <label class="pencatatan-label">Status Awal Lahan</label>
+                    <label class="pencatatan-label" style={{ textTransform: 'none' }}>Status awal pohon</label>
                     <CustomSelect 
                       options={['Subur', 'Pemulihan', 'Perlu Pengairan']}
                       modelValue={newLand.value.status}
@@ -452,8 +476,22 @@ export default defineComponent({
                       Hapus
                     </button>
                   )}
-                  <button class="btn btn-light grow fw-bold py-2.5 rounded-pill" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>Batal</button>
-                  <button class="peternakan-primary-btn grow m-0 justify-content-center" onClick={handleSaveLand} disabled={isLoading.value} style={{ backgroundColor: '#30360E' }}>
+                  <button 
+                    type="button" 
+                    class="btn flex-grow-1"
+                    style={{ borderRadius: '1rem', fontWeight: 600, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
+                    onClick={() => isModalOpen.value = false}
+                    disabled={isLoading.value}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn flex-grow-1"
+                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none' }}
+                    onClick={handleSaveLand}
+                    disabled={isLoading.value}
+                  >
                     {isLoading.value ? 'Menyimpan...' : isEditing.value ? 'Simpan Perubahan' : 'Simpan Lahan'}
                   </button>
                 </div>

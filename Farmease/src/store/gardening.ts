@@ -74,7 +74,7 @@ function mapLahan(row: ApiLahan): Lahan {
     code: row.kode_lahan,
     name: row.nama_lahan,
     area: String(row.luas),
-    status: row.status,
+    status: row.status || '',
   }
 }
 

@@ -20,7 +20,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.HealthFilter) ([
 	query := `SELECT id_health, id_sheep, checkup_date, diagnosis, action, medicine_given, inspector_name, notes, created_at, updated_at FROM livestock.healths WHERE 1=1`
 	args := []interface{}{}
 
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		args = append(args, filter.IDSheep)
 		query += fmt.Sprintf(" AND id_sheep = $%d", len(args))
 	}
@@ -55,7 +55,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.HealthFilter) ([
 
 	var total int
 	countQuery := "SELECT COUNT(*) FROM livestock.healths WHERE 1=1"
-	if filter.IDSheep > 0 {
+	if filter.IDSheep != "" {
 		countQuery += " AND id_sheep = $1"
 		err = r.db.QueryRow(ctx, countQuery, filter.IDSheep).Scan(&total)
 	} else {
@@ -65,7 +65,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.HealthFilter) ([
 	return healths, total, err
 }
 
-func (r *Repository) FindHistoryBySheep(ctx context.Context, idSheep int) ([]*domain.Health, error) {
+func (r *Repository) FindHistoryBySheep(ctx context.Context, idSheep string) ([]*domain.Health, error) {
 	query := `SELECT id_health, id_sheep, checkup_date, diagnosis, action, medicine_given, inspector_name, notes, created_at, updated_at FROM livestock.healths WHERE id_sheep = $1 ORDER BY checkup_date DESC`
 	rows, err := r.db.Query(ctx, query, idSheep)
 	if err != nil {

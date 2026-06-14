@@ -1,6 +1,6 @@
 import { defineComponent, ref, computed, watch } from 'vue';
 import '@/modules/ternak/assets/css/modules/RecordForm.css';
-import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession } from '@/store/navigation';
+import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession, cagesList } from '@/store/navigation';
 import { operatorTasks, submitPencatatanSubmission } from '@/store/operatorAdmin';
 import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin';
 import { stocks, fetchStocks } from '@/modules/ternak/store/peternakan';
@@ -12,9 +12,11 @@ import Button from '@/shared/ui/Button';
 import PencatatanTypeFields, { type PencatatanFormItem } from '@/modules/ternak/components/pencatatan/PencatatanTypeFields';
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import { useRouter } from 'vue-router';
+import CustomAlertModal, { type AlertModalState } from '../components/shared/CustomAlertModal';
 
 const JENIS_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
+  stok_pakan: '/icon/inventory.png',
   kesehatan: '/icon/catat_sehat.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
@@ -33,6 +35,8 @@ export default defineComponent({
     const forms = ref<PencatatanFormItem[]>([]);
     const isSubmitting = ref(false);
     const submitResult = ref<{ success: boolean; message: string } | null>(null);
+    const showRecap = ref(false);
+    const recapPayload = ref<any | null>(null);
 
     const initForms = () => {
       forms.value = rincianItems.value.map((item: { id: string; name: string; mode?: string }) => ({
@@ -91,11 +95,11 @@ export default defineComponent({
       form.targetId = mode === 'kelompok' ? cageSession.value?.code || '' : '';
     };
 
-    const alertModal = ref({
+    const alertModal = ref<AlertModalState>({
       isOpen: false,
       title: '',
       message: '',
-      type: 'error' as 'error' | 'success',
+      type: 'error',
     });
 
     const closeAlertModal = () => {
@@ -103,7 +107,56 @@ export default defineComponent({
       if (alertModal.value.type === 'success') {
         activePencatatanForm.value = null;
         selectedPencatatanPayload.value = null;
-        router.push({ name: 'ternak' });
+        router.push({ name: 'ternak-dasbor' });
+      }
+    };
+
+    // ── STEP 2: final submit (after recap), updates task status and submits to queue
+    const handleFinalSubmit = async () => {
+      if (!recapPayload.value) return;
+      isSubmitting.value = true;
+
+      const result = await submitPencatatanSubmission({
+        type: recapPayload.value.type,
+        scope: selectedScope.value,
+        summary: recapPayload.value.data.summary,
+        payload: recapPayload.value,
+        operatorCode: userSession.value?.code,
+        operatorName: userSession.value?.name,
+        cageCode: cageSession.value?.code,
+        taskId: activePencatatanForm.value?.taskId,
+      });
+
+      isSubmitting.value = false;
+
+      if (result.success) {
+        pencatatanSubmissions.value.unshift({
+          id: `SUB-${Date.now().toString().slice(-6)}`,
+          type: activePencatatanForm.value?.jenis?.id || 'pencatatan',
+          typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
+          operatorCode: userSession.value?.code || 'OP001',
+          operatorName: userSession.value?.name || 'Operator Ternak',
+          cageCode: cageSession.value?.code || 'A',
+          scope: selectedScope.value,
+          summary: recapPayload.value.data.summary,
+          payload: recapPayload.value,
+          submittedAt: Date.now(),
+          approvalStatus: 'pending',
+          taskId: activePencatatanForm.value?.taskId,
+        } as any);
+
+        selectedPencatatanPayload.value = recapPayload.value;
+        activePencatatanForm.value = null;
+        recapPayload.value = null;
+        showRecap.value = false;
+        router.push({ name: 'ternak-dasbor' });
+      } else {
+        alertModal.value = {
+          isOpen: true,
+          title: 'Gagal Mengirim',
+          message: result.message,
+          type: 'error',
+        };
       }
     };
 
@@ -163,8 +216,20 @@ export default defineComponent({
 
       const categoryId = activePencatatanForm.value?.jenis?.id;
       for (const formItem of forms.value) {
-        if (formItem.mode === 'individu' && !formItem.targetId.trim()) return showError('ID Ternak wajib diisi pada mode individu.');
-        if (formItem.mode === 'kelompok' && !formItem.targetId.trim()) return showError('ID Kandang wajib diisi.');
+        if (categoryId !== 'stok_pakan') {
+          if (formItem.mode === 'individu') {
+            if (!formItem.targetId.trim()) return showError('ID Ternak wajib diisi pada mode individu.');
+            const foundSheep = sheep.value.find(s => s.code.toUpperCase() === formItem.targetId.trim().toUpperCase() || s.id.toString() === formItem.targetId.trim());
+            if (!foundSheep) return showError(`Domba dengan ID / Kode "${formItem.targetId}" tidak ditemukan.`);
+            
+            const activeCage = cageSession.value?.code;
+            if (activeCage && foundSheep.cage_code !== activeCage) {
+               return showError(`Domba "${formItem.targetId}" tidak berada di Kandang ${activeCage}.`);
+            }
+          } else if (formItem.mode === 'kelompok' && !formItem.targetId.trim()) {
+            return showError('ID Kandang wajib diisi.');
+          }
+        }
         
         if (categoryId === 'pakan' && (!formItem.obat || !formItem.qty)) return showError('Jenis pakan dan jumlah pakan wajib diisi.');
         if (categoryId === 'stok_pakan') {
@@ -188,8 +253,8 @@ export default defineComponent({
           const id2Str = String(formEntry.idPejantan || '').trim().toUpperCase();
           
           if (id1Str && id2Str) {
-            const male = sheep.value.find(sheepItem => sheepItem.code.toUpperCase() === id2Str);
-            const female = sheep.value.find(sheepItem => sheepItem.code.toUpperCase() === id1Str);
+            const male = sheep.value.find(sheepItem => String(sheepItem.id) === id2Str);
+            const female = sheep.value.find(sheepItem => String(sheepItem.id) === id1Str);
             
             if (!male || !female) {
               alertModal.value = {
@@ -225,56 +290,17 @@ export default defineComponent({
         }
       }
 
-      isSubmitting.value = true;
-      submitResult.value = null;
+      isSubmitting.value = false;
 
-      const payload = {
+      // Store payload and show recap screen — actual submission happens on 'Selesai'
+      recapPayload.value = {
         type: activePencatatanForm.value?.jenis?.id || 'pencatatan',
         data: {
-          items: forms.value,
+          items: forms.value.map(f => ({ ...f })), // snapshot
           summary: `Mencatat ${forms.value.length} rincian ${activePencatatanForm.value?.jenis?.name}`,
         },
       };
-
-      const result = await submitPencatatanSubmission({
-        type: payload.type,
-        scope: selectedScope.value,
-        summary: payload.data.summary,
-        payload,
-        operatorCode: userSession.value?.code,
-        operatorName: userSession.value?.name,
-        cageCode: cageSession.value?.code,
-        taskId: activePencatatanForm.value?.taskId,
-      });
-
-      isSubmitting.value = false;
-      submitResult.value = result;
-
-      if (result.success) {
-        pencatatanSubmissions.value.unshift({
-          id: `SUB-${Date.now().toString().slice(-6)}`,
-          type: activePencatatanForm.value?.jenis?.id || 'pencatatan',
-          typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
-          operatorCode: userSession.value?.code || 'OP001',
-          operatorName: userSession.value?.name || 'Operator Ternak',
-          cageCode: cageSession.value?.code || 'A',
-          scope: selectedScope.value,
-          summary: payload.data.summary,
-          payload: payload,
-          submittedAt: Date.now(),
-          approvalStatus: 'pending',
-          taskId: activePencatatanForm.value?.taskId,
-        } as any);
-
-        alertModal.value = {
-          isOpen: true,
-          title: 'Berhasil Dikirim',
-          message: `Pencatatan ${activePencatatanForm.value?.jenis?.name} berhasil dimasukkan ke antrean persetujuan!`,
-          type: 'success'
-        };
-
-        selectedPencatatanPayload.value = payload;
-      }
+      showRecap.value = true;
     };
 
     const goBack = () => {
@@ -285,10 +311,43 @@ export default defineComponent({
       const type = activePencatatanForm.value?.jenis?.id || '';
       return stocks.value.filter(
         (s) =>
-          ((type === 'pakan' || type === 'stok_pakan') && (s.category === 'hijauan' || s.category === 'konsentrat')) ||
+          ((type === 'pakan' || type === 'stok_pakan') && (s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery')) ||
           (type === 'kesehatan' && s.category === 'vitamin') ||
           (type === 'kotoran' && s.category === 'kotoran'),
       );
+    });
+
+    const getCageName = (code: string) => {
+      const cage = cagesList.value.find(c => c.code === code);
+      return cage ? cage.name : `Kandang ${code}`;
+    };
+
+    const siapKawinBetina = computed(() => {
+      return sheep.value.filter((s) => {
+        if (s.cage_code !== cageSession.value?.code) return false;
+        if (s.gender !== 'betina' || s.status !== 'Sehat') return false;
+        if (s.birth_date) {
+          const birthDate = new Date(s.birth_date);
+          const now = new Date();
+          const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
+          return ageInMonths >= 8;
+        }
+        return true;
+      });
+    });
+
+    const siapKawinJantan = computed(() => {
+      return sheep.value.filter((s) => {
+        if (s.cage_code !== cageSession.value?.code) return false;
+        if (s.gender !== 'jantan' || s.status !== 'Sehat') return false;
+        if (s.birth_date) {
+          const birthDate = new Date(s.birth_date);
+          const now = new Date();
+          const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
+          return ageInMonths >= 12;
+        }
+        return true;
+      });
     });
 
     return () => {
@@ -296,6 +355,127 @@ export default defineComponent({
       if (!jenis) return null;
 
       const jenisIcon = JENIS_ICONS[jenis.id] || '/icon/catat_kotoran.png';
+
+      // ── RECAP SCREEN ─────────────────────────────────────────
+      if (showRecap.value && recapPayload.value) {
+        const items: any[] = recapPayload.value.data?.items || [];
+        return (
+          <div class="pencatatan-form-overlay animate-fade-in">
+            <div class="container-fluid mx-auto" style={{ maxWidth: '720px' }}>
+              {/* Header */}
+              <div class="text-center mb-5">
+                <div style={{
+                  width: '72px', height: '72px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #606C38, #30360E)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 1rem'
+                }}>
+                  <img src={jenisIcon} style={{ width: '36px', height: '36px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} alt="" />
+                </div>
+                <Typography variant="h3" weight="extrabold" className="m-0 text-almond-beige">Rekap Pencatatan</Typography>
+                <Typography variant="p" size="text-sm" color="secondary" className="mt-2 mb-0">
+                  Periksa data berikut sebelum mengirim ke admin untuk disetujui.
+                </Typography>
+              </div>
+
+              {/* Summary Card */}
+              <div style={{
+                background: '#fff', borderRadius: '20px', padding: '1.5rem',
+                border: '1px solid #E6D9CE', boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f0ebe4' }}>
+                  <img src={jenisIcon} style={{ width: '28px', height: '28px', objectFit: 'contain' }} alt="" />
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#9E9E9E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Jenis Pencatatan</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#1a1a1a' }} class="text-capitalize">{jenis.name}</div>
+                  </div>
+                  <div class="ms-auto">
+                    <span style={{
+                      background: '#F4F5F0', border: '1px solid #D8DCC8',
+                      borderRadius: '8px', padding: '0.2rem 0.65rem',
+                      fontSize: '0.72rem', fontWeight: '700', color: '#30360E'
+                    }}>
+                      {items.length} Rincian
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#6C757D' }}>Operator</span>
+                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{userSession.value?.name || '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#6C757D' }}>Kandang</span>
+                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{cageSession.value?.name || cageSession.value?.code || '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#6C757D' }}>Waktu</span>
+                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                      {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB — {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#6C757D' }}>Ringkasan</span>
+                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{recapPayload.value.data.summary}</span>
+                  </div>
+                  {activePencatatanForm.value?.taskId && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.65rem 0.85rem', background: '#F0F7FF', borderRadius: '10px', border: '1px solid #BDE0FE' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#1A5276' }}>
+                        🔗 Terhubung ke Tugas Rutin — status tugas akan berubah ke <b>Menunggu Validasi</b> setelah klik Selesai.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Items detail */}
+              {items.map((item: any, idx: number) => (
+                <div key={idx} style={{
+                  background: '#FAFAF8', borderRadius: '14px', padding: '1rem',
+                  border: '1px solid #E6D9CE', marginBottom: '0.75rem'
+                }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#9E9E9E', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    Rincian #{idx + 1} — {item.name}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    {item.targetId && <span style={{ background: '#E8F5E9', color: '#2E7D32', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>ID: {item.targetId}</span>}
+                    {item.qty && <span style={{ background: '#E3F2FD', color: '#1565C0', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>{item.qty} {item.unit || ''}</span>}
+                    {item.tindakan && <span style={{ background: '#FFF3E0', color: '#E65100', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>{item.tindakan}</span>}
+                    {item.obat && <span style={{ background: '#F3E5F5', color: '#6A1B9A', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>{item.obat}</span>}
+                    {item.note && <span style={{ background: '#F5F5F5', color: '#424242', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>📝 {item.note}</span>}
+                  </div>
+                </div>
+              ))}
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <button
+                  type="button"
+                  class="btn rounded-pill fw-bold"
+                  style={{ flex: 1, padding: '0.75rem', border: '1.5px solid #D8DCC8', background: 'transparent', color: '#606C38', fontSize: '0.9rem' }}
+                  onClick={() => { showRecap.value = false; }}
+                  disabled={isSubmitting.value}
+                >
+                  ← Ubah Data
+                </button>
+                <button
+                  type="button"
+                  class="btn rounded-pill fw-bold text-white"
+                  style={{ flex: 2, padding: '0.75rem', background: 'linear-gradient(135deg, #606C38, #30360E)', border: 'none', fontSize: '0.95rem', boxShadow: '0 4px 12px rgba(48,54,14,0.3)' }}
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting.value}
+                >
+                  {isSubmitting.value ? '⏳ Mengirim...' : '✅ Selesai — Kirim ke Admin'}
+                </button>
+              </div>
+
+              <CustomAlertModal alert={alertModal.value} onClose={closeAlertModal} />
+            </div>
+          </div>
+        );
+      }
 
       return (
         <div class="pencatatan-form-overlay animate-fade-in">
@@ -351,7 +531,7 @@ export default defineComponent({
             )}
 
             <div class="row g-4">
-              <div class={jenis.id === 'pakan' || jenis.id === 'stok_pakan' ? 'col-lg-8' : 'col-lg-12'}>
+              <div class={jenis.id === 'pakan' || jenis.id === 'stok_pakan' || jenis.id === 'perkawinan' ? 'col-lg-8' : 'col-lg-12'}>
                 <div class="d-flex flex-column gap-4">
                   {forms.value.map((form, index) => (
                     <div key={index} class="pencatatan-form-card">
@@ -379,93 +559,137 @@ export default defineComponent({
                 </div>
               </div>
 
-              {(jenis.id === 'pakan' || jenis.id === 'stok_pakan') && (
+              {(jenis.id === 'pakan' || jenis.id === 'stok_pakan' || jenis.id === 'perkawinan') && (
                 <div class="col-lg-4">
                   <div class="sticky-top" style={{ top: '2rem' }}>
-                    <div class="pencatatan-form-card">
-                      <div class="d-flex align-items-center gap-2 mb-4">
-                        <img src="/icon/statistic.png" style={{ width: '20px', height: '20px', opacity: 0.6 }} alt="" />
-                        <Typography variant="h5" weight="extrabold" className="m-0">
-                          Informasi Stok Terkait
-                        </Typography>
-                      </div>
+                    
+                    {/* Panel Pakan */}
+                    {(jenis.id === 'pakan' || jenis.id === 'stok_pakan') && (
+                      <div class="pencatatan-form-card">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                          <img src="/icon/inventory.png" style={{ width: '20px', height: '20px', opacity: 0.6 }} alt="" />
+                          <Typography variant="h5" weight="extrabold" className="m-0">
+                            Informasi Stok Terkait
+                          </Typography>
+                        </div>
 
-                      <div class="stock-list-compact">
-                        {matchedStocks.value.length === 0 ? (
-                          <div class="text-center py-4 rounded-2xl bg-surface-container-low text-on-surface-variant small">
-                            Tidak ada stok yang sesuai
-                          </div>
-                        ) : (
-                          matchedStocks.value.map((s) => (
-                            <div
-                              class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
-                              key={s.id}
-                            >
-                              <div class="min-w-0">
-                                <Typography
-                                  variant="p"
-                                  size="text-xs"
-                                  weight="extrabold"
-                                  className="mb-0 text-truncate d-block"
-                                >
-                                  {s.name}
-                                </Typography>
-                                <Typography
-                                  variant="span"
-                                  style={{ fontSize: '0.65rem' }}
-                                  weight="bold"
-                                  className="text-muted d-block mt-1 text-truncate"
-                                >
-                                  {s.category}
-                                </Typography>
-                              </div>
-                              <div class="text-end ps-3">
-                                <Badge variant="solid-primary" className="px-2 py-1">
-                                  {s.qty} {s.unit}
-                                </Badge>
-                              </div>
+                        <div class="stock-list-compact">
+                          {matchedStocks.value.length === 0 ? (
+                            <div class="text-center py-4 rounded-2xl bg-surface-container-low text-on-surface-variant small">
+                              Tidak ada stok yang sesuai
                             </div>
-                          ))
-                        )}
+                          ) : (
+                            matchedStocks.value.map((s) => (
+                              <div
+                                class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
+                                key={s.id}
+                              >
+                                <div class="min-w-0">
+                                  <Typography
+                                    variant="p"
+                                    size="text-xs"
+                                    weight="extrabold"
+                                    className="mb-0 text-truncate d-block"
+                                  >
+                                    {s.name}
+                                  </Typography>
+                                  <Typography
+                                    variant="span"
+                                    style={{ fontSize: '0.65rem' }}
+                                    weight="bold"
+                                    className="text-muted d-block mt-1 text-truncate"
+                                  >
+                                    {s.category}
+                                  </Typography>
+                                </div>
+                                <div class="text-end ps-3">
+                                  <Badge variant="solid-primary" className="px-2 py-1">
+                                    {s.qty} {s.unit}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Panel Perkawinan */}
+                    {jenis.id === 'perkawinan' && (
+                      <div class="pencatatan-form-card">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                          <img src="/icon/catat_kawin.png" style={{ width: '20px', height: '20px', opacity: 0.6 }} alt="" />
+                          <Typography variant="h5" weight="extrabold" className="m-0">
+                            Info Daftar Ternak
+                          </Typography>
+                        </div>
+
+                        <div class="stock-list-compact">
+                          {/* Indukan Betina */}
+                          <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-1 px-2">
+                            Betina (Sudah Waktunya Kawin / Birahi)
+                          </Typography>
+                          {siapKawinBetina.value.length === 0 ? (
+                            <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small mb-3">
+                              Tidak ada betina
+                            </div>
+                          ) : (
+                            siapKawinBetina.value.slice(0, 5).map((s) => (
+                              <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                <div class="min-w-0">
+                                  <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
+                                    {s.name}
+                                  </Typography>
+                                  <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                    {s.code} • {getCageName(s.cage_code)}
+                                  </Typography>
+                                </div>
+                                <div class="text-end ps-3">
+                                  <Badge variant="solid-primary" className="px-2 py-1">
+                                    Betina
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))
+                          )}
+
+                          {/* Pejantan */}
+                          <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
+                            Pejantan Dewasa (Siap Kawin)
+                          </Typography>
+                          {siapKawinJantan.value.length === 0 ? (
+                            <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
+                              Tidak ada pejantan
+                            </div>
+                          ) : (
+                            siapKawinJantan.value.slice(0, 5).map((s) => (
+                              <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                <div class="min-w-0">
+                                  <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
+                                    {s.name}
+                                  </Typography>
+                                  <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                    {s.code} • {getCageName(s.cage_code)}
+                                  </Typography>
+                                </div>
+                                <div class="text-end ps-3">
+                                  <Badge variant="secondary" className="px-2 py-1">
+                                    Pejantan
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
 
             {/* Custom Alert Modal */}
-            {alertModal.value.isOpen && (
-              <div class="peternakan-modal-overlay" style={{ zIndex: 1050, alignItems: 'center' }} onClick={alertModal.value.type === 'error' ? closeAlertModal : undefined}>
-                <div class="peternakan-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', backgroundColor: '#fff', borderRadius: '24px', animation: 'scaleUp 0.3s ease' }}>
-                  <div class="p-4 text-center">
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      {alertModal.value.type === 'error' ? (
-                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', backgroundColor: 'var(--color-danger-transparent)', color: 'var(--color-danger)', borderRadius: '50%' }}>
-                          <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>!</span>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', backgroundColor: 'var(--color-success-transparent)', color: 'var(--color-success-dark)', borderRadius: '50%' }}>
-                          <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>✓</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <h4 style={{ fontWeight: '800', marginBottom: '0.5rem', fontSize: '1.25rem', color: 'var(--color-gray-900)' }}>
-                      {alertModal.value.title}
-                    </h4>
-                    
-                    <p style={{ color: 'var(--color-gray-500)', marginBottom: '1.5rem', whiteSpace: 'pre-line', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                      {alertModal.value.message}
-                    </p>
-
-                    <button style={{ width: '100%', padding: '0.75rem', borderRadius: '50rem', backgroundColor: 'var(--color-button-primary)', color: '#fff', border: 'none', fontWeight: 'bold' }} onClick={closeAlertModal}>
-                      {alertModal.value.type === 'error' ? 'Mengerti' : 'Selesai'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <CustomAlertModal alert={alertModal.value} onClose={closeAlertModal} />
           </div>
         </div>
       );

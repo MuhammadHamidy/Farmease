@@ -8,7 +8,7 @@ import PerkebunanScheduleList from '../components/PerkebunanScheduleList'
 import PerkebunanSelectionModal from '../components/PerkebunanSelectionModal'
 import PerkebunanScheduleDetailModal from '../components/PerkebunanScheduleDetailModal'
 import { landSession, userSession } from '@/store/navigation'
-import { operatorTasks, fetchTasks } from '@/modules/ternak/store/operatorAdmin'
+import { operatorTasks, fetchTasks, fetchAccountsList } from '@/modules/ternak/store/operatorAdmin'
 
 const jenisPencatatan = [
   'Panen',
@@ -52,9 +52,10 @@ export default defineComponent({
       year: 'numeric',
     }).format(new Date())
 
-    onMounted(() => {
+    onMounted(async () => {
+      await fetchAccountsList()
       if (operatorTasks.value.length === 0) {
-        fetchTasks()
+        await fetchTasks()
       }
     })
 

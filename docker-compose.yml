@@ -70,6 +70,7 @@ services:
     build:
       context: Farmease-BE
       dockerfile: farmease/Dockerfile
+      target: dev
     container_name: farmease_backend
     depends_on:
       postgres:
@@ -95,18 +96,20 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
-      - ./Farmease-BE/farmease/config:/app/config:ro
-      - ./Farmease-BE/farmease/seeders:/app/seeders:ro
+      - ./Farmease-BE/framework:/app/framework
+      - ./Farmease-BE/libraries:/app/libraries
+      - ./Farmease-BE/farmease:/app/farmease
+      - ./Farmease-BE/go.work:/app/go.work
       - backend_logs:/app/logs
     networks:
       - farmease_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://localhost:8080/health/livez"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:8080/health/livez"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 20s
+      retries: 5
+      start_period: 120s
 
   frontend:
     build:
@@ -124,7 +127,7 @@ services:
       - farmease_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000"]
       interval: 30s
       timeout: 10s
       retries: 3

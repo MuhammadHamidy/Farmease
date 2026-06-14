@@ -14,13 +14,16 @@ import {
   updateRoutineSchedule,
   deleteRoutineSchedule,
   generateTasksFromSchedules,
+  fetchRoutineSchedules,
   operatorTasks,
   fetchTasks,
+  updateOperatorTask,
   deleteOperatorTask,
   type RoutineSchedule,
   type PencatatanCategory,
   type ScheduleFrequency,
-  type OperatorTask
+  type OperatorTask,
+  fetchAccountsList
 } from '@/modules/ternak/store/operatorAdmin';
 
 const operators = [
@@ -45,6 +48,8 @@ export default defineComponent({
     const isEditing = ref(false);
     const isDetailOpen = ref(false);
     const selectedTask = ref<OperatorTask | null>(null);
+    const isDeleteModalOpen = ref(false);
+    const taskToDelete = ref<OperatorTask | null>(null);
 
     const toastMessage = ref('');
     const toastType = ref<'success'|'error'>('success');
@@ -59,7 +64,16 @@ export default defineComponent({
 
     const sessionFilter = ref('Semua Sesi');
     const statusFilter = ref('Semua Status');
-    const dateFilter = ref(new Date().toISOString().split('T')[0]);
+    // Use local date (WIB), not UTC date from toISOString()
+    const getLocalDateStr = () => {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+    const dateFilter = ref(getLocalDateStr());
+
 
     watch(dateFilter, async (newVal) => {
       await fetchTasks(newVal);
@@ -120,23 +134,25 @@ export default defineComponent({
 
     const form = reactive({
       id: '',
+      scheduleId: undefined as string | undefined,
       title: '',
       description: '',
       rincian: '',
-      category: (props.type === 'peternakan' ? 'pakan' : 'penyiraman') as any,
-      cageCode: props.type === 'peternakan' ? 'A' : 'L001',
+      category: '' as any,
+      cageCode: '',
       assigneeCode: props.type === 'peternakan' ? 'OP001' : 'OP002',
-      frequency: 'harian' as ScheduleFrequency,
+      frequency: '' as any,
       startDate: new Date().toISOString().split('T')[0],
       time: '08:00',
       endTime: '12:00',
       daysOfWeek: [1, 2, 3, 4, 5] as number[],
       dayOfMonth: 1,
-      priority: 'sedang' as 'rendah' | 'sedang' | 'tinggi',
+      priority: '' as any,
       active: true,
     });
 
     const currentRincianOptions = computed(() => {
+      if (!form.category) return [];
       const opts = props.type === 'peternakan' ? ternakRincianOptions : kebunRincianOptions;
       return opts[form.category] || ['Lainnya'];
     });
@@ -176,7 +192,9 @@ export default defineComponent({
     };
 
     onMounted(async () => {
+      await fetchAccountsList();
       await fetchTasks(dateFilter.value);
+      await fetchRoutineSchedules();
       if (props.type === 'perkebunan') {
         await fetchLandsList();
       } else {
@@ -188,7 +206,8 @@ export default defineComponent({
       if (f === 'sekali') return 'Sekali';
       if (f === 'harian') return 'Harian';
       if (f === 'mingguan') return 'Mingguan';
-      return 'Bulanan';
+      if (f === 'bulanan') return 'Bulanan';
+      return '';
     };
 
     const getTaskFrequency = (task: OperatorTask) => {
@@ -198,30 +217,47 @@ export default defineComponent({
 
     const openAdd = () => {
       isEditing.value = false;
-      const initialCategory = (props.type === 'peternakan' ? 'pakan' : 'penyiraman') as any;
-      const initialRincian = currentRincianOptions.value[0] || '';
       
       form.id = '';
-      form.category = initialCategory;
-      form.rincian = initialRincian;
-      form.title = `${initialCategory.charAt(0).toUpperCase() + initialCategory.slice(1)} - ${initialRincian}`;
+      form.scheduleId = undefined;
+      form.category = '';
+      form.rincian = '';
+      form.title = '';
       form.description = '';
-      form.cageCode = props.type === 'peternakan' ? 'A' : 'L001';
+      form.cageCode = '';
       form.assigneeCode = props.type === 'peternakan' ? 'OP001' : 'OP002';
-      form.frequency = 'harian';
+      form.frequency = '' as any;
       form.startDate = new Date().toISOString().split('T')[0];
       form.time = '08:00';
       form.endTime = '12:00';
       form.daysOfWeek = [1, 2, 3, 4, 5];
       form.dayOfMonth = 1;
-      form.priority = 'sedang';
+      form.priority = '' as any;
       form.active = true;
       isModalOpen.value = true;
     };
 
-    const openEdit = (schedule: RoutineSchedule) => {
+    const openEdit = (task: OperatorTask) => {
       isEditing.value = true;
-      Object.assign(form, schedule);
+      const schedule = routineSchedules.value.find((s) => s.title === task.title && s.cageCode === task.cageCode);
+      Object.assign(form, {
+        id: task.id,
+        scheduleId: schedule?.id || undefined,
+        title: task.title,
+        description: task.description || '',
+        rincian: task.rincian || '',
+        category: task.category as any,
+        cageCode: task.cageCode,
+        assigneeCode: task.assigneeCode,
+        frequency: schedule ? schedule.frequency : 'sekali',
+        startDate: task.dueDate || new Date().toISOString().split('T')[0],
+        time: task.dueTime || '08:00',
+        endTime: task.endTime || '12:00',
+        daysOfWeek: schedule ? [...schedule.daysOfWeek] : [],
+        dayOfMonth: schedule ? schedule.dayOfMonth : 1,
+        priority: task.priority,
+        active: schedule ? schedule.active : true,
+      });
       if (!form.rincian) form.rincian = currentRincianOptions.value[0] || '';
       isModalOpen.value = true;
     };
@@ -240,9 +276,28 @@ export default defineComponent({
     };
 
     const saveSchedule = async () => {
-      if (!form.title.trim()) {
-        form.title = `${form.category.charAt(0).toUpperCase() + form.category.slice(1)} - ${form.rincian || 'Rutin'}`;
+      if (!form.category) {
+        displayToast('Harap pilih jenis pencatatan / kegiatan!', 'error');
+        return;
       }
+      if (!form.rincian) {
+        displayToast('Harap pilih rincian pencatatan!', 'error');
+        return;
+      }
+      if (!form.cageCode) {
+        displayToast(props.type === 'peternakan' ? 'Harap pilih kode kandang!' : 'Harap pilih kode lahan!', 'error');
+        return;
+      }
+      if (!form.frequency) {
+        displayToast('Harap pilih frekuensi!', 'error');
+        return;
+      }
+      if (!form.priority) {
+        displayToast('Harap pilih prioritas!', 'error');
+        return;
+      }
+      const catLabel = categories.value[categoryValues.value.indexOf(form.category)] || form.category;
+      form.title = `${catLabel} - ${form.rincian}`;
       const assignee = operators.find((o) => o.code === form.assigneeCode);
       const payload = {
         title: form.title,
@@ -264,7 +319,14 @@ export default defineComponent({
 
       try {
         if (isEditing.value) {
-          updateRoutineSchedule(form.id, payload);
+          await updateOperatorTask(form.id, {
+            ...payload,
+            dueDate: payload.startDate,
+            dueTime: payload.time,
+          });
+          if (form.scheduleId) {
+            updateRoutineSchedule(form.scheduleId, payload);
+          }
           displayToast('Tugas berhasil diperbarui!');
         } else {
           await addRoutineSchedule(payload);
@@ -414,7 +476,7 @@ export default defineComponent({
         <div class="admin-filter-bar mb-4 rounded-4 p-4" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
           <div class="row g-3 w-100 m-0">
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Tanggal</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Tanggal</label>
               <input
                 type="date"
                 class="form-control bg-white"
@@ -424,7 +486,7 @@ export default defineComponent({
               />
             </div>
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Semua Sesi</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Semua Sesi</label>
               <Select
                 options={['Semua Sesi', 'Pagi', 'Siang', 'Sore']}
                 modelValue={sessionFilter.value}
@@ -435,7 +497,7 @@ export default defineComponent({
               />
             </div>
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Semua Status</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Semua Status</label>
               <Select
                 options={['Semua Status', 'Belum Dikerjakan', 'Selesai', 'Terlambat']}
                 modelValue={statusFilter.value}
@@ -505,34 +567,12 @@ export default defineComponent({
           onClose={() => isDetailOpen.value = false}
           onEdit={(task) => {
             isDetailOpen.value = false;
-            const schedule = routineSchedules.value.find((s: any) => s.title === task.title && s.cageCode === task.cageCode);
-            if (schedule) {
-              openEdit(schedule);
-            } else {
-              isEditing.value = true;
-              Object.assign(form, {
-                id: task.id,
-                title: task.title,
-                description: task.description || '',
-                category: task.category as any,
-                cageCode: task.cageCode,
-                assigneeCode: task.assigneeCode,
-                frequency: 'sekali',
-                startDate: new Date().toISOString().split('T')[0],
-                time: task.dueTime || '08:00',
-                daysOfWeek: [],
-                dayOfMonth: 1,
-                priority: task.priority,
-                active: true,
-              });
-              isModalOpen.value = true;
-            }
+            openEdit(task);
           }}
           onDelete={async (task) => {
-            if (confirm(`Apakah Anda yakin ingin menghapus tugas "${task.title}"?`)) {
-              await deleteOperatorTask(task.id);
-              isDetailOpen.value = false;
-            }
+            isDetailOpen.value = false;
+            taskToDelete.value = task;
+            isDeleteModalOpen.value = true;
           }}
         />
 
@@ -553,6 +593,32 @@ export default defineComponent({
             form.rincian = currentRincianOptions.value[0] || '';
           }}
         />
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen.value && taskToDelete.value && (
+          <div class="peternakan-modal-overlay" style={{ zIndex: 1060 }} onClick={() => isDeleteModalOpen.value = false}>
+            <div class="peternakan-modal-card animate-fade-in-up" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+              <div class="peternakan-modal-header border-0 pb-0">
+                <div class="peternakan-modal-title text-danger">Konfirmasi Hapus</div>
+              </div>
+              <div class="peternakan-modal-body text-center pt-3">
+                <p class="mb-4" style={{ color: '#2C3E50', fontSize: '1rem' }}>
+                  Apakah Anda yakin ingin menghapus tugas <br/><strong>"{taskToDelete.value.title}"</strong>?
+                </p>
+                <div class="d-flex gap-2 w-100 mt-2">
+                  <button class="btn btn-light w-50 fw-bold py-2 rounded-pill" onClick={() => isDeleteModalOpen.value = false}>Batal</button>
+                  <button class="btn w-50 fw-bold py-2 rounded-pill text-white" style={{ backgroundColor: 'var(--color-danger, #dc3545)' }} onClick={async () => {
+                    await deleteOperatorTask(taskToDelete.value!.id);
+                    isDeleteModalOpen.value = false;
+                    isDetailOpen.value = false;
+                    displayToast('Tugas berhasil dihapus!');
+                    await fetchTasks(dateFilter.value);
+                  }}>Ya, Hapus</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

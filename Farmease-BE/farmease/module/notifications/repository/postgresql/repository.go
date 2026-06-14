@@ -15,7 +15,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) FindNotificationsByAccount(ctx context.Context, idAccount int) ([]*domain.Notification, error) {
+func (r *Repository) FindNotificationsByAccount(ctx context.Context, idAccount string) ([]*domain.Notification, error) {
 	query := `SELECT id_notification, title, message, is_read, id_account, type, created_at FROM operations.notifications WHERE id_account = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, idAccount)
 	if err != nil {
@@ -40,7 +40,7 @@ func (r *Repository) StoreNotification(ctx context.Context, n *domain.Notificati
 	return r.db.QueryRow(ctx, query, n.Title, n.Message, n.IsRead, n.IDAccount, n.Type).Scan(&n.IDNotification)
 }
 
-func (r *Repository) MarkNotificationRead(ctx context.Context, id int) error {
+func (r *Repository) MarkNotificationRead(ctx context.Context, id string) error {
 	query := `UPDATE operations.notifications SET is_read = true WHERE id_notification = $1`
 	_, err := r.db.Exec(ctx, query, id)
 	return err

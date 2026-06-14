@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
@@ -30,10 +32,26 @@ func (u *useCase) GetSheepList(ctx context.Context, filter domain.SheepFilter) (
 }
 
 func (u *useCase) RegisterSheep(ctx context.Context, sheep *domain.Sheep) error {
+	if sheep.UmurMethod == "poel" {
+		d := time.Now()
+		if strings.HasPrefix(sheep.PoelLevel, "Cempe") {
+			d = d.AddDate(0, -6, 0)
+		} else if strings.HasPrefix(sheep.PoelLevel, "1") {
+			d = d.AddDate(0, -15, 0)
+		} else if strings.HasPrefix(sheep.PoelLevel, "2") {
+			d = d.AddDate(0, -21, 0)
+		} else if strings.HasPrefix(sheep.PoelLevel, "3") {
+			d = d.AddDate(0, -30, 0)
+		} else {
+			d = d.AddDate(0, -40, 0)
+		}
+		sheep.DateOfBirth = &d
+	}
+
 	return u.repo.Store(ctx, sheep)
 }
 
-func (u *useCase) GetSheepDetail(ctx context.Context, id int) (*domain.Sheep, error) {
+func (u *useCase) GetSheepDetail(ctx context.Context, id string) (*domain.Sheep, error) {
 	sheep, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -46,16 +64,16 @@ func (u *useCase) GetSheepDetail(ctx context.Context, id int) (*domain.Sheep, er
 	return sheep, nil
 }
 
-func (u *useCase) UpdateSheep(ctx context.Context, id int, sheep *domain.Sheep) error {
+func (u *useCase) UpdateSheep(ctx context.Context, id string, sheep *domain.Sheep) error {
 	sheep.IDSheep = id
 	return u.repo.Update(ctx, sheep)
 }
 
-func (u *useCase) UpdateSheepStatus(ctx context.Context, id int, status string, notes string) error {
+func (u *useCase) UpdateSheepStatus(ctx context.Context, id string, status string, notes string) error {
 	return u.repo.UpdateStatus(ctx, id, status, notes)
 }
 
-func (u *useCase) GetSheepGenealogy(ctx context.Context, id int, generation int) (*domain.Genealogy, error) {
+func (u *useCase) GetSheepGenealogy(ctx context.Context, id string, generation int) (*domain.Genealogy, error) {
 	if generation <= 0 {
 		generation = 3
 	}
@@ -73,6 +91,6 @@ func (u *useCase) AddSheepType(ctx context.Context, t *domain.SheepType) error {
 	return u.repo.StoreType(ctx, t)
 }
 
-func (u *useCase) UpdateSheepType(ctx context.Context, id int, t *domain.SheepType) error {
+func (u *useCase) UpdateSheepType(ctx context.Context, id string, t *domain.SheepType) error {
 	return u.repo.UpdateType(ctx, id, t)
 }

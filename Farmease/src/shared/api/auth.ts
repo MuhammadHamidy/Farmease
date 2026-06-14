@@ -6,15 +6,16 @@ export interface LoginRequest {
 }
 
 export interface LoginOperatorRequest {
-  farm_id: number
-  role_id: number
+  farm_id: string | number
+  role_id: string | number
 }
 
 export interface User {
-  id: number
+  id: string | number
   email: string
   username: string
-  role_id: number
+  role_id: string | number
+  operator_category?: string
   status: string
   created_at: string
   updated_at: string
@@ -36,6 +37,7 @@ export const authApi = {
         email: res.account?.username + '@farmease.com',
         username: res.account?.username,
         role_id: res.account?.id_role,
+        operator_category: res.account?.operator_category,
         status: 'active',
         created_at: res.account?.created_at,
         updated_at: res.account?.updated_at,
@@ -53,6 +55,7 @@ export const authApi = {
         email: res.account?.username + '@farmease.com',
         username: res.account?.username,
         role_id: res.account?.id_role,
+        operator_category: res.account?.operator_category,
         status: 'active',
         created_at: res.account?.created_at,
         updated_at: res.account?.updated_at,
@@ -82,6 +85,21 @@ export const authApi = {
 
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('authToken')
+  },
+
+  getAccounts: async (): Promise<User[]> => {
+    const res = await apiClient.get<any[]>('/api/accounts')
+    return res.map(acc => ({
+      id: acc.id_account,
+      email: acc.username + '@farmease.com',
+      username: acc.username,
+      role_id: acc.id_role,
+      operator_category: acc.operator_category,
+      status: 'active',
+      created_at: acc.created_at,
+      updated_at: acc.updated_at,
+      farm_id: acc.farm_id,
+    }))
   },
 }
 

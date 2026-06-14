@@ -38,7 +38,7 @@ func (r *jadwalRutinRepository) FindAll(ctx context.Context) ([]domain.JadwalRut
 	return list, nil
 }
 
-func (r *jadwalRutinRepository) FindByID(ctx context.Context, id int) (*domain.JadwalRutin, error) {
+func (r *jadwalRutinRepository) FindByID(ctx context.Context, id string) (*domain.JadwalRutin, error) {
 	var pj domain.JadwalRutin
 	var tTgl time.Time
 	err := r.db.QueryRow(ctx, `SELECT id_jadwal_rutin, tanggal, kategori_jadwal, deskripsi, interval, status_pencatatan, keterangan, jam_tenggat, "Lahan_id_lahan", "Aktivitas_id_aktivitas" FROM gardening.jadwal_rutin WHERE id_jadwal_rutin = $1`, id).
@@ -73,7 +73,7 @@ func (r *jadwalRutinRepository) Update(ctx context.Context, pj *domain.JadwalRut
 	return err
 }
 
-func (r *jadwalRutinRepository) Delete(ctx context.Context, id int) error {
+func (r *jadwalRutinRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.jadwal_rutin WHERE id_jadwal_rutin = $1", id)
 	return err
 }

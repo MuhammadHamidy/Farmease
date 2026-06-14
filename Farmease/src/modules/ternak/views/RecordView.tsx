@@ -5,7 +5,7 @@ import Badge from '@/shared/ui/Badge';
 import Button from '@/shared/ui/Button';
 import PencatatanField from '@/modules/ternak/components/pencatatan/PencatatanField';
 import PencatatanSelect from '@/modules/ternak/components/pencatatan/PencatatanSelect';
-import { activePencatatanForm, cageSession, prefilledPencatatanType, prefilledPencatatanRincian } from '@/store/navigation';
+import { activePencatatanForm, cageSession, prefilledPencatatanType, prefilledPencatatanRincian, prefilledPencatatanTaskId } from '@/store/navigation';
 import PencatatanModeToggle from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 
@@ -72,11 +72,6 @@ export default defineComponent({
         } else {
           selectedDetail.value = detailOptions[selectedType.value]?.[0] || 'Rincian';
         }
-
-        // Auto open the form
-        setTimeout(() => {
-          openForm();
-        }, 50);
       }
     });
 
@@ -97,6 +92,7 @@ export default defineComponent({
 
     const openForm = () => {
       activePencatatanForm.value = {
+        taskId: prefilledPencatatanTaskId.value, // Pass the task ID if available
         scope: selectedScope.value,
         jenis: {
           id: selectedType.value,
@@ -110,6 +106,9 @@ export default defineComponent({
           },
         ],
       };
+      
+      // Clear it so it won't leak to subsequent unconnected recordings
+      prefilledPencatatanTaskId.value = null;
     };
 
     const handleTypeChange = (typeId: string) => {
@@ -131,7 +130,7 @@ export default defineComponent({
                 </Typography>
               </div>
               <div class="d-flex gap-2 flex-wrap">
-                <Badge variant="secondary" className="px-3 py-2">Kandang {cageSession.value?.code || 'A'}</Badge>
+                <Badge variant="secondary" className="px-3 py-2">{cageSession.value?.name || `Kandang ${cageSession.value?.code || 'A'}`}</Badge>
                 <Badge variant="secondary" className="px-3 py-2">{new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(now.value)} WIB</Badge>
               </div>
             </div>
@@ -168,14 +167,14 @@ export default defineComponent({
                   </div>
 
                   <div class="row g-3 mb-4">
-                    <PencatatanField label="Jenis Pencatatan" colClass="col-md-6">
+                    <PencatatanField label="Jenis Pencatatan" colClass="col-12">
                       <PencatatanSelect
                         modelValue={selectedType.value}
                         options={recordTypeOptions.map((o) => ({ value: o.id, label: o.label }))}
                         onUpdateModelValue={(v: string) => handleTypeChange(v)}
                       />
                     </PencatatanField>
-                    <PencatatanField label="Rincian Pencatatan" colClass="col-md-6">
+                    <PencatatanField label="Rincian Pencatatan" colClass="col-12">
                       <PencatatanSelect
                         modelValue={selectedDetail.value}
                         options={currentDetailOptions.value}

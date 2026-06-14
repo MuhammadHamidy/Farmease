@@ -5,14 +5,14 @@ import (
 )
 
 type Panen struct {
-	IDPanen                int    `json:"id_panen" db:"id_panen"`
-	AktivitasIDAktivitas   int    `json:"Aktivitas_id_aktivitas" db:"Aktivitas_id_aktivitas"`
-	TanggalAktivitas       string `json:"tanggal_aktivitas,omitempty" db:"tanggal_aktivitas"`
-	NamaJenisAktivitas     string `json:"nama_jenis_aktivitas,omitempty" db:"nama_jenis_aktivitas"`
-	NamaRincianAktivitas   string `json:"nama_rincian_aktivitas,omitempty" db:"nama_rincian_aktivitas"`
-	Jumlah                 int    `json:"jumlah" db:"jumlah"`
-	Satuan                 string `json:"satuan" db:"satuan"`
-	LahanIDLahan           int    `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
+	IDPanen              string `json:"id_panen" db:"id_panen"`
+	AktivitasIDAktivitas string `json:"Aktivitas_id_aktivitas" db:"Aktivitas_id_aktivitas"`
+	TanggalAktivitas     string `json:"tanggal_aktivitas,omitempty" db:"tanggal_aktivitas"`
+	NamaJenisAktivitas   string `json:"nama_jenis_aktivitas,omitempty" db:"nama_jenis_aktivitas"`
+	NamaRincianAktivitas string `json:"nama_rincian_aktivitas,omitempty" db:"nama_rincian_aktivitas"`
+	Jumlah               int    `json:"jumlah" db:"jumlah"`
+	Satuan               string `json:"satuan" db:"satuan"`
+	LahanIDLahan         string `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
 }
 
 type PanenRekap struct {
@@ -23,18 +23,18 @@ type PanenRekap struct {
 
 type PanenRepository interface {
 	FindAll(ctx context.Context) ([]Panen, error)
-	FindByID(ctx context.Context, id int) (*Panen, error)
+	FindByID(ctx context.Context, id string) (*Panen, error)
 	FindRekap(ctx context.Context) ([]PanenRekap, error)
 	Store(ctx context.Context, panen *Panen) error
 	Update(ctx context.Context, panen *Panen) error
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, id string) error
 }
 
 type PanenUsecase interface {
 	FindAll(ctx context.Context) ([]Panen, error)
-	FindByID(ctx context.Context, id int) (*Panen, error)
+	FindByID(ctx context.Context, id string) (*Panen, error)
 	FindRekap(ctx context.Context) ([]PanenRekap, error)
 	Create(ctx context.Context, panen *Panen) error
 	Update(ctx context.Context, panen *Panen) error
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, id string) error
 }

@@ -18,7 +18,7 @@ func (u *jadwalRutinUsecase) FindAll(ctx context.Context) ([]domain.JadwalRutin,
 	return u.repo.FindAll(ctx)
 }
 
-func (u *jadwalRutinUsecase) FindByID(ctx context.Context, id int) (*domain.JadwalRutin, error) {
+func (u *jadwalRutinUsecase) FindByID(ctx context.Context, id string) (*domain.JadwalRutin, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
@@ -30,6 +30,6 @@ func (u *jadwalRutinUsecase) Update(ctx context.Context, pj *domain.JadwalRutin)
 	return u.repo.Update(ctx, pj)
 }
 
-func (u *jadwalRutinUsecase) Delete(ctx context.Context, id int) error {
+func (u *jadwalRutinUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }

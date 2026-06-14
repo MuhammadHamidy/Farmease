@@ -25,7 +25,7 @@ func (u *useCase) AddMasterFeed(ctx context.Context, p *domain.Feed) error {
 	return u.repo.StoreMaster(ctx, p)
 }
 
-func (u *useCase) UpdateFeedStock(ctx context.Context, id int, amount float64, actionType string) error {
+func (u *useCase) UpdateFeedStock(ctx context.Context, id string, amount float64, actionType string) error {
 	master, err := u.repo.FindMasterByID(ctx, id)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func (u *useCase) UpdateFeedStock(ctx context.Context, id int, amount float64, a
 	return u.repo.UpdateStock(ctx, id, amount, actionType)
 }
 
-func (u *useCase) GetFeedRecommendation(ctx context.Context, idSheep int) (*domain.FeedRecommendation, error) {
+func (u *useCase) GetFeedRecommendation(ctx context.Context, idSheep string) (*domain.FeedRecommendation, error) {
 	sheep, err := u.sheepRepo.FindByID(ctx, idSheep)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (u *useCase) GetFeedRecommendation(ctx context.Context, idSheep int) (*doma
 	return res, nil
 }
 
-func (u *useCase) GetFeedRecommendationByCage(ctx context.Context, idCage int) (*domain.CageFeedRecommendation, error) {
+func (u *useCase) GetFeedRecommendationByCage(ctx context.Context, idCage string) (*domain.CageFeedRecommendation, error) {
 	sheepList, _, err := u.sheepRepo.FindAll(ctx, sheepDomain.SheepFilter{
 		IDCage:  idCage,
 		Page:    1,
@@ -103,7 +103,7 @@ func (u *useCase) RecordFeeding(ctx context.Context, f *domain.Feeding) error {
 	return u.repo.StoreFeeding(ctx, f)
 }
 
-func (u *useCase) GetFeedingHistory(ctx context.Context, idSheep int) ([]*domain.Feeding, error) {
+func (u *useCase) GetFeedingHistory(ctx context.Context, idSheep string) ([]*domain.Feeding, error) {
 	return u.repo.FindFeedingHistory(ctx, idSheep)
 }
 

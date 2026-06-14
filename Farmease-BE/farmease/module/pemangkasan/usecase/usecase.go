@@ -18,7 +18,7 @@ func (u *pemangkasanUsecase) FindAll(ctx context.Context) ([]domain.Pemangkasan,
 	return u.repo.FindAll(ctx)
 }
 
-func (u *pemangkasanUsecase) FindByID(ctx context.Context, id int) (*domain.Pemangkasan, error) {
+func (u *pemangkasanUsecase) FindByID(ctx context.Context, id string) (*domain.Pemangkasan, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
@@ -30,6 +30,6 @@ func (u *pemangkasanUsecase) Update(ctx context.Context, p *domain.Pemangkasan) 
 	return u.repo.Update(ctx, p)
 }
 
-func (u *pemangkasanUsecase) Delete(ctx context.Context, id int) error {
+func (u *pemangkasanUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }

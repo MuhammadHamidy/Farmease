@@ -30,6 +30,8 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/sheep"
 	"github.com/farmease/farmease-be/farmease/module/tasks"
 	"github.com/farmease/farmease-be/farmease/module/weights"
+	"github.com/farmease/farmease-be/farmease/module/fertilizers"
+	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
 
 	// Gardening (Perkebunan)
 	"github.com/farmease/farmease-be/farmease/module/aktivitas"
@@ -132,7 +134,9 @@ func serveE(cmd *cobra.Command, args []string) error {
 		healths.Module,
 		manures.Module,
 		tasks.Module,
+		routine_schedules.Module,
 		notifications.Module,
+		fertilizers.Module,
 
 		// Gardening (Perkebunan)
 		lahan.Module,

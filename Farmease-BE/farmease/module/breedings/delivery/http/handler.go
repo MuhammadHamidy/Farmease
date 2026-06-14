@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/farmease/farmease-be/farmease/module/breedings/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
@@ -122,13 +121,13 @@ func (h *BreedingHandler) RecordMating(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Param        id   path      int  true  "Mating ID"
+// @Param        id   path      string  true  "Mating ID"
 // @Success      200  {object}  domain.Mating
 // @Failure      404  {object}  responses.Response[any]
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/matings/{id} [get]
 func (h *BreedingHandler) GetMatingDetail(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	res, err := h.useCase.GetMatingDetail(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusNotFound).JSON(responses.Fail("NOT_FOUND", "Mating record not found"))
@@ -143,14 +142,14 @@ func (h *BreedingHandler) GetMatingDetail(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Param        id      path      int     true  "Mating ID"
+// @Param        id      path      string  true  "Mating ID"
 // @Param        request body      object  true  "Status details"
 // @Success      200     {object}  object
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/matings/{id}/status [patch]
 func (h *BreedingHandler) UpdateMatingStatus(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var req struct {
 		Status string `json:"status"`
 		Notes  string `json:"notes"`

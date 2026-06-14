@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
@@ -36,7 +35,7 @@ func (h *NotificationHandler) RegisterRoutes(app *fiber.App) {
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/notifications [get]
 func (h *NotificationHandler) GetMyNotifications(c *fiber.Ctx) error {
-	idAccount := 1 // Mock
+	idAccount := "00000000-0000-0000-0000-000000000000" // Mock
 	res, err := h.useCase.GetMyNotifications(c.Context(), idAccount)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
@@ -56,7 +55,7 @@ func (h *NotificationHandler) GetMyNotifications(c *fiber.Ctx) error {
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/notifications/{id}/read [patch]
 func (h *NotificationHandler) ReadNotification(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	err := h.useCase.ReadNotification(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))

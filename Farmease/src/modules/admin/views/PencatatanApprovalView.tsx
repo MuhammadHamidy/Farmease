@@ -183,10 +183,10 @@ export default defineComponent({
       }).format(new Date(ts));
 
     const formatOperatorCode = (code: string, name: string) => {
-      if (code === '1' || name.toLowerCase().includes('admin')) return 'ADM-001';
-      if (code === '2' || name.toLowerCase().includes('ternak') || name.toLowerCase().includes('kandang')) return 'OP-Ternak';
-      if (code === '3' || name.toLowerCase().includes('kebun')) return 'OP-Kebun';
-      if (code === '4' || name.toLowerCase().includes('pemilik')) return 'PEM-001';
+      if (code === '1' || name.toLowerCase().includes('admin')) return 'ADM-01';
+      if (code === '2' || name.toLowerCase().includes('ternak') || name.toLowerCase().includes('kandang')) return 'OPT-01';
+      if (code === '3' || name.toLowerCase().includes('kebun')) return 'PK001';
+      if (code === '4' || name.toLowerCase().includes('pemilik')) return 'PEM-01';
       if (/^\d+$/.test(code)) return `OP-00${code}`;
       return code;
     };
@@ -478,12 +478,62 @@ export default defineComponent({
                   )}
                 </div>
 
-                <Typography variant="h4" class="mb-2" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                  Rincian Data (JSON)
+                <Typography variant="h4" class="mb-3 mt-4" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                  Rincian Data Tersimpan
                 </Typography>
-                <pre class="approval-json-preview mb-4">
-                  {JSON.stringify(selected.value.payload?.data || selected.value.payload, null, 2)}
-                </pre>
+                <div class="approval-data-preview mb-4">
+                  {(() => {
+                    const dataObj: any = (selected.value.payload as any)?.data || selected.value.payload;
+                    const items = dataObj?.items || [];
+                    if (!items || !items.length) {
+                       return <div class="text-muted small p-3 bg-light rounded text-center">Tidak ada rincian data.</div>;
+                    }
+
+                    return items.map((item: any, i: number) => (
+                      <div key={i} class="p-3 mb-2 rounded-4 border shadow-sm" style={{ backgroundColor: '#ffffff', borderColor: '#e2dfd8' }}>
+                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                          <span class="badge bg-secondary rounded-circle" style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+                          <Typography variant="p" weight="bold" class="m-0" style={{ color: '#3d2f24' }}>
+                            {item.name || 'Data Pencatatan'}
+                          </Typography>
+                          <span class="ms-auto badge bg-light text-dark border">{item.mode === 'individu' ? 'Individu' : 'Kandang/Kelompok'}</span>
+                        </div>
+                        <div class="row g-3">
+                          {Object.entries(item).map(([key, val]) => {
+                            if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode') return null;
+                            
+                            let displayLabel = key;
+                            if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
+                            if (key === 'qty') displayLabel = 'Jumlah/Volume';
+                            if (key === 'unit') displayLabel = 'Satuan';
+                            if (key === 'note') displayLabel = 'Catatan';
+                            if (key === 'tindakan') displayLabel = 'Tindakan/Diagnosa';
+                            if (key === 'obat') displayLabel = 'Obat/Pakan/Vitamin';
+                            if (key === 'vitaminAmount') displayLabel = 'Jumlah Vitamin Masuk';
+                            if (key === 'idPejantan') displayLabel = 'ID Pejantan';
+                            if (key === 'metoda') displayLabel = 'Metode Kawin';
+                            if (key === 'kotoranState') displayLabel = 'Jenis Kotoran';
+                            if (key === 'jumlahAnak') displayLabel = 'Jumlah Anak';
+                            if (key === 'kondisiInduk') displayLabel = 'Kondisi Induk';
+                            if (key === 'kondisiAnak') displayLabel = 'Kondisi Anak';
+                            if (key === 'tanggal') displayLabel = 'Tanggal';
+                            if (key === 'kandangAnak') displayLabel = 'Kandang Anak';
+                            if (key === 'namaAnak') displayLabel = 'Nama Anak';
+                            if (key === 'beratLahir') displayLabel = 'Berat Lahir';
+                            if (key === 'pemanfaatan') displayLabel = 'Pemanfaatan (Kotoran)';
+                            
+                            return (
+                              <div key={key} class="col-6 col-sm-4">
+                                <span class="d-block text-muted mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{displayLabel}</span>
+                                <span class="d-block fw-bold text-dark text-truncate" style={{ fontSize: '0.9rem' }} title={String(val)}>{String(val)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
 
                 {selected.value.approvalStatus === 'pending' && (
                   <>

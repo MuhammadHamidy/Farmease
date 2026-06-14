@@ -100,7 +100,7 @@ export default defineComponent({
       }
     };
 
-    const handleDeleteCrop = async (id: number | undefined, code: string) => {
+    const handleDeleteCrop = async (id: string | number | undefined, code: string) => {
       if (!id) {
         alertError.value = 'ID tanaman tidak ditemukan, tidak dapat menghapus.';
         return;
@@ -341,11 +341,20 @@ export default defineComponent({
                 )}
 
                 <div class="mt-4 pt-3 border-top d-flex gap-3">
-                  <button class="btn btn-light grow fw-bold py-2.5 rounded-pill" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>Batal</button>
                   <button 
-                    class="peternakan-primary-btn grow m-0 justify-content-center" 
+                    type="button" 
+                    class="btn flex-grow-1"
+                    style={{ borderRadius: '1rem', fontWeight: 600, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
+                    onClick={() => isModalOpen.value = false} 
+                    disabled={isLoading.value}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn flex-grow-1"
+                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none' }}
                     onClick={handleCreateCrop}
-                    style={{ backgroundColor: '#4f5d2e' }}
                     disabled={availableLands.value.length === 0 || isLoading.value}
                   >
                     {isLoading.value ? 'Menyimpan...' : 'Simpan Tanaman'}

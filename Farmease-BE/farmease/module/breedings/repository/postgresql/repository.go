@@ -61,7 +61,7 @@ func (r *Repository) FindAll(ctx context.Context, status string, inbreedingFlag 
 	return list, nil
 }
 
-func (r *Repository) FindByID(ctx context.Context, id int) (*domain.Mating, error) {
+func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Mating, error) {
 	query := `
 		SELECT p.id_mating, p.id_sheep_male, p.id_sheep_female, p.mating_date, p.mating_method, p.status, p.inbreeding_flag, p.coefficient_of_inbreeding, p.notes,
 		       dj.sheep_name as name_male, db.sheep_name as name_female
@@ -94,36 +94,36 @@ func (r *Repository) Store(ctx context.Context, p *domain.Mating) error {
 	return r.db.QueryRow(ctx, query, p.IDSheepMale, p.IDSheepFemale, p.MatingDate, p.MatingMethod, p.Status, p.InbreedingFlag, p.CoefficientOfInbreeding, p.Notes).Scan(&p.IDMating, &p.CreatedAt, &p.UpdatedAt)
 }
 
-func (r *Repository) UpdateStatus(ctx context.Context, id int, status string, notes string) error {
+func (r *Repository) UpdateStatus(ctx context.Context, id string, status string, notes string) error {
 	query := `UPDATE breeding.matings SET status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP WHERE id_mating = $3`
 	_, err := r.db.Exec(ctx, query, status, notes, id)
 	return err
 }
 
-func (r *Repository) GetAncestors(ctx context.Context, id int, maxGeneration int) (map[int][]int, error) {
-	ancestors := make(map[int][]int)
+func (r *Repository) GetAncestors(ctx context.Context, id string, maxGeneration int) (map[string][]int, error) {
+	ancestors := make(map[string][]int)
 	r.getAncestorsRecursive(ctx, id, 0, maxGeneration, ancestors)
 	return ancestors, nil
 }
 
-func (r *Repository) getAncestorsRecursive(ctx context.Context, id int, currentGen int, maxGen int, result map[int][]int) {
+func (r *Repository) getAncestorsRecursive(ctx context.Context, id string, currentGen int, maxGen int, result map[string][]int) {
 	if currentGen >= maxGen {
 		return
 	}
 
-	query := `SELECT id_sire, id_dam FROM livestock.sheep WHERE id_sheep = $1`
-	var idSire, idDam *int
-	err := r.db.QueryRow(ctx, query, id).Scan(&idSire, &idDam)
+	query := `SELECT id_father, id_mother FROM livestock.sheep WHERE id_sheep = $1`
+	var idFather, idMother *string
+	err := r.db.QueryRow(ctx, query, id).Scan(&idFather, &idMother)
 	if err != nil {
 		return
 	}
 
-	if idSire != nil {
-		result[*idSire] = append(result[*idSire], currentGen+1)
-		r.getAncestorsRecursive(ctx, *idSire, currentGen+1, maxGen, result)
+	if idFather != nil && *idFather != "" {
+		result[*idFather] = append(result[*idFather], currentGen+1)
+		r.getAncestorsRecursive(ctx, *idFather, currentGen+1, maxGen, result)
 	}
-	if idDam != nil {
-		result[*idDam] = append(result[*idDam], currentGen+1)
-		r.getAncestorsRecursive(ctx, *idDam, currentGen+1, maxGen, result)
+	if idMother != nil && *idMother != "" {
+		result[*idMother] = append(result[*idMother], currentGen+1)
+		r.getAncestorsRecursive(ctx, *idMother, currentGen+1, maxGen, result)
 	}
 }

@@ -18,7 +18,14 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-X github.com/farmease/farmease-be/farmease/version.Version=docker" \
     -o farmease .
 
-# Stage 2: Runtime
+# Stage 2: Dev (for docker-compose)
+FROM golang:1.25-alpine AS dev
+
+WORKDIR /app/farmease
+RUN go install github.com/air-verse/air@latest
+CMD ["air", "-c", ".air.toml"]
+
+# Stage 3: Runtime
 FROM alpine:latest
 
 WORKDIR /app
@@ -39,7 +46,7 @@ USER farmease
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 -O /dev/null http://localhost:8080/health/livez || exit 1
+  CMD wget --quiet --tries=1 -O /dev/null http://127.0.0.1:8080/health/livez || exit 1
 
 ENTRYPOINT ["./farmease"]
 CMD ["serve"]

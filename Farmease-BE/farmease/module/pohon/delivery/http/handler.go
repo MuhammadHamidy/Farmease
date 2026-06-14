@@ -1,8 +1,6 @@
 package http
 
 import (
-	"strconv"
-
 	"github.com/farmease/farmease-be/farmease/module/pohon/domain"
 	"github.com/farmease/farmease-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
@@ -34,8 +32,8 @@ func (h *PohonHandler) FindAll(c *fiber.Ctx) error {
 }
 
 func (h *PohonHandler) FindByID(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	id := c.Params("id")
+	if id == "" {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	p, err := h.usecase.FindByID(c.Context(), id)
@@ -60,8 +58,8 @@ func (h *PohonHandler) Create(c *fiber.Ctx) error {
 }
 
 func (h *PohonHandler) Update(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	id := c.Params("id")
+	if id == "" {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	var p domain.Pohon
@@ -76,8 +74,8 @@ func (h *PohonHandler) Update(c *fiber.Ctx) error {
 }
 
 func (h *PohonHandler) Delete(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
+	id := c.Params("id")
+	if id == "" {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	if err := h.usecase.Delete(c.Context(), id); err != nil {
@@ -85,4 +83,3 @@ func (h *PohonHandler) Delete(c *fiber.Ctx) error {
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success delete tree", nil)
 }
-

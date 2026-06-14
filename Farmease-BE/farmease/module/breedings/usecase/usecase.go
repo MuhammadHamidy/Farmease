@@ -17,24 +17,24 @@ func NewUseCase(repo domain.BreedingRepository) domain.UseCase {
 
 func (u *useCase) CheckInbreeding(ctx context.Context, req domain.InbreedingCheckRequest) (*domain.InbreedingCheckResponse, error) {
 	// Traverse 5 generations
-	sireAncestors, _ := u.repo.GetAncestors(ctx, req.IDSheepMale, 5)
-	damAncestors, _ := u.repo.GetAncestors(ctx, req.IDSheepFemale, 5)
+	fatherAncestors, _ := u.repo.GetAncestors(ctx, req.IDSheepMale, 5)
+	motherAncestors, _ := u.repo.GetAncestors(ctx, req.IDSheepFemale, 5)
 
 	coi := 0.0
 	var commonAncestors []domain.CommonAncestor
 
-	for id, sireGens := range sireAncestors {
-		if damGens, ok := damAncestors[id]; ok {
+	for id, fatherGens := range fatherAncestors {
+		if motherGens, ok := motherAncestors[id]; ok {
 			// Found common ancestor
-			for _, sireGen := range sireGens {
-				for _, damGen := range damGens {
+			for _, fatherGen := range fatherGens {
+				for _, motherGen := range motherGens {
 					// Formula: (1/2)^(n+m+1)
-					coi += math.Pow(0.5, float64(sireGen+damGen+1))
+					coi += math.Pow(0.5, float64(fatherGen+motherGen+1))
 				}
 			}
 			commonAncestors = append(commonAncestors, domain.CommonAncestor{
 				IDSheep: id,
-				Paths:   []string{"sire path", "dam path"}, // Simplified placeholder
+				Paths:   []string{"jalur bapak", "jalur ibu"}, // UI labels, can stay indonesian
 			})
 		}
 	}
@@ -91,10 +91,10 @@ func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) e
 	return u.repo.Store(ctx, matingData)
 }
 
-func (u *useCase) GetMatingDetail(ctx context.Context, id int) (*domain.Mating, error) {
+func (u *useCase) GetMatingDetail(ctx context.Context, id string) (*domain.Mating, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
-func (u *useCase) UpdateMatingStatus(ctx context.Context, id int, status string, notes string) error {
+func (u *useCase) UpdateMatingStatus(ctx context.Context, id string, status string, notes string) error {
 	return u.repo.UpdateStatus(ctx, id, status, notes)
 }

@@ -1,8 +1,6 @@
 package http
 
 import (
-	"strconv"
-
 	"github.com/farmease/farmease-be/farmease/module/akun_lahan/domain"
 	"github.com/farmease/farmease-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
@@ -34,10 +32,7 @@ func (h *AkunLahanHandler) FindAll(c *fiber.Ctx) error {
 }
 
 func (h *AkunLahanHandler) FindByID(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
-	}
+	id := c.Params("id")
 	al, err := h.usecase.FindByID(c.Context(), id)
 	if err != nil {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
@@ -60,10 +55,7 @@ func (h *AkunLahanHandler) Create(c *fiber.Ctx) error {
 }
 
 func (h *AkunLahanHandler) Update(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
-	}
+	id := c.Params("id")
 	var al domain.AkunLahan
 	if err := c.BodyParser(&al); err != nil {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
@@ -76,10 +68,7 @@ func (h *AkunLahanHandler) Update(c *fiber.Ctx) error {
 }
 
 func (h *AkunLahanHandler) Delete(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
-	}
+	id := c.Params("id")
 	if err := h.usecase.Delete(c.Context(), id); err != nil {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}

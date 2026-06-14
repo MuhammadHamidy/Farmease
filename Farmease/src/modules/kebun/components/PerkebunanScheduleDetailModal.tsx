@@ -9,6 +9,7 @@ type ScheduleItem = {
   detail: string
   progress: string
   description?: string
+  rincian?: string
 }
 
 export default defineComponent({

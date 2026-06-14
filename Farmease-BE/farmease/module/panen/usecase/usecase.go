@@ -18,7 +18,7 @@ func (u *panenUsecase) FindAll(ctx context.Context) ([]domain.Panen, error) {
 	return u.repo.FindAll(ctx)
 }
 
-func (u *panenUsecase) FindByID(ctx context.Context, id int) (*domain.Panen, error) {
+func (u *panenUsecase) FindByID(ctx context.Context, id string) (*domain.Panen, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
@@ -34,6 +34,6 @@ func (u *panenUsecase) Update(ctx context.Context, p *domain.Panen) error {
 	return u.repo.Update(ctx, p)
 }
 
-func (u *panenUsecase) Delete(ctx context.Context, id int) error {
+func (u *panenUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }

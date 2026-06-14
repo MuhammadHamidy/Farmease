@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/farmease/farmease-be/farmease/module/pregnancies/domain"
 	responses "github.com/farmease/farmease-be/libraries/responses"
@@ -105,7 +104,7 @@ func (h *PregnancyHandler) GetPregnancyList(c *fiber.Ctx) error {
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/pregnancies/{id}/status [patch]
 func (h *PregnancyHandler) UpdatePregnancyStatus(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var req struct {
 		PregnancyStatus string `json:"pregnancy_status"`
 		Status          string `json:"status"` // fallback for FE

@@ -5,10 +5,7 @@ export default defineComponent({
   name: 'ActivityLog',
   props: { onClose: { type: Function, default: null } },
   setup(props) {
-    const logs = ref([
-      { id: 1, time: '2026-04-08 09:23', text: 'Masuk data berat untuk D-001' },
-      { id: 2, time: '2026-04-09 10:12', text: 'Tambah pengguna OP002' },
-    ]);
+    const logs = ref<{id: number, time: string, text: string}[]>([]);
 
     const addLog = (text = 'Aktivitas baru (FE-only)') => {
       logs.value.unshift({ id: Date.now(), time: new Date().toISOString().replace('T', ' ').slice(0,19), text });

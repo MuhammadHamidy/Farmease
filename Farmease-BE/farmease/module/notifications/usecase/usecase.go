@@ -14,10 +14,10 @@ func NewUseCase(repo domain.NotificationRepository) domain.UseCase {
 	return &useCase{repo: repo}
 }
 
-func (u *useCase) GetMyNotifications(ctx context.Context, idAccount int) ([]*domain.Notification, error) {
+func (u *useCase) GetMyNotifications(ctx context.Context, idAccount string) ([]*domain.Notification, error) {
 	return u.repo.FindNotificationsByAccount(ctx, idAccount)
 }
 
-func (u *useCase) ReadNotification(ctx context.Context, id int) error {
+func (u *useCase) ReadNotification(ctx context.Context, id string) error {
 	return u.repo.MarkNotificationRead(ctx, id)
 }

@@ -28,7 +28,7 @@ func (u *statusAktivitasUsecase) FindAll(ctx context.Context) ([]domain.StatusAk
 	return u.repo.FindAll(ctx)
 }
 
-func (u *statusAktivitasUsecase) FindByID(ctx context.Context, id int) (*domain.StatusAktivitas, error) {
+func (u *statusAktivitasUsecase) FindByID(ctx context.Context, id string) (*domain.StatusAktivitas, error) {
 	return u.repo.FindByID(ctx, id)
 }
 
@@ -105,6 +105,6 @@ func (u *statusAktivitasUsecase) Update(ctx context.Context, sa *domain.StatusAk
 	return nil
 }
 
-func (u *statusAktivitasUsecase) Delete(ctx context.Context, id int) error {
+func (u *statusAktivitasUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }

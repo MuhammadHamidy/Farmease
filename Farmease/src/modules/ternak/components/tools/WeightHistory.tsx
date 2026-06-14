@@ -5,10 +5,7 @@ export default defineComponent({
   name: 'WeightHistory',
   props: { onClose: { type: Function, default: null } },
   setup(props) {
-    const records = ref([
-      { id: 1, ternak: 'D-001', date: '2026-03-01', weight: 40 },
-      { id: 2, ternak: 'D-001', date: '2026-04-01', weight: 42 },
-    ]);
+    const records = ref<{id: number, ternak: string, date: string, weight: number}[]>([]);
 
     const form = ref({ ternak: '', date: '', weight: '' });
 

@@ -18,7 +18,7 @@ func (u *useCase) GetWeightList(ctx context.Context, filter domain.WeightFilter)
 	return u.repo.FindAll(ctx, filter)
 }
 
-func (u *useCase) GetWeightHistory(ctx context.Context, idSheep int) ([]*domain.Weight, error) {
+func (u *useCase) GetWeightHistory(ctx context.Context, idSheep string) ([]*domain.Weight, error) {
 	return u.repo.FindHistoryBySheep(ctx, idSheep)
 }
 

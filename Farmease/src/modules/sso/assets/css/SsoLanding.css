@@ -34,8 +34,7 @@
   margin-bottom: 0;
   padding-top: 3rem;
   /* Increased top padding */
-  padding-bottom: 120px;
-  /* Space for the wave SVG */
+  padding-bottom: 4rem;
 }
 
 .sso-hero__wrapper {
@@ -333,28 +332,7 @@
   font-weight: 700;
 }
 
-/* Wave SVG Transition */
-.sso-hero__wave {
-  position: absolute;
-  bottom: -1px;
-  /* Overlap slightly to prevent subpixel rendering gaps */
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-  line-height: 0;
-  z-index: 1;
-}
 
-.sso-hero__wave svg {
-  position: relative;
-  display: block;
-  width: calc(100% + 1.3px);
-  height: 80px;
-}
-
-.sso-hero__wave .shape-fill {
-  fill: var(--sso-band);
-}
 
 /* ── Judul seksi (Band Banner) ── */
 .sso-band {

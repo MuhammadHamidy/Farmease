@@ -99,7 +99,7 @@ export default defineComponent({
 
         <div class="row g-3 mb-4">
           <div class="col-12 col-md-6">
-            <label class="form-label fw-bold small text-uppercase text-secondary">Domba Jantan (Pejantan)</label>
+            <label class="form-label fw-bold small text-secondary">Domba Jantan (Pejantan)</label>
             <select
               class="form-select rounded-3"
               value={selectedMaleId.value}
@@ -113,7 +113,7 @@ export default defineComponent({
           </div>
 
           <div class="col-12 col-md-6">
-            <label class="form-label fw-bold small text-uppercase text-secondary">Domba Betina</label>
+            <label class="form-label fw-bold small text-secondary">Domba Betina</label>
             <select
               class="form-select rounded-3"
               value={selectedFemaleId.value}
@@ -170,7 +170,7 @@ export default defineComponent({
             <div class="fw-bold mb-2" style={{ fontSize: '0.95rem' }}>{result.value.message}</div>
             {result.value.ancestors && result.value.ancestors.length > 0 && (
               <div>
-                <div class="fw-bold small text-uppercase text-secondary mb-1">Nenek Moyang yang Sama:</div>
+                <div class="fw-bold small text-secondary mb-1">Nenek Moyang yang Sama:</div>
                 <ul class="mb-0 ps-3" style={{ fontSize: '0.82rem' }}>
                   {result.value.ancestors.map((a, i) => <li key={i}>{a}</li>)}
                 </ul>

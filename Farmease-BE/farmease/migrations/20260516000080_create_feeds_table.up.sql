@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS logistics;
 
 CREATE TABLE IF NOT EXISTS logistics.feeds (
-    id_feed SERIAL PRIMARY KEY,
+    id_feed UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     feed_name VARCHAR(100) NOT NULL,
     unit VARCHAR(20) NOT NULL,
     available_stock DECIMAL(10,2) DEFAULT 0.0,
@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS logistics.feeds (
 );
 
 CREATE TABLE IF NOT EXISTS logistics.feedings (
-    id_feeding SERIAL PRIMARY KEY,
-    id_sheep INT NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
-    id_feed INT NOT NULL REFERENCES logistics.feeds(id_feed) ON DELETE CASCADE,
+    id_feeding UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_sheep UUID NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
+    id_feed UUID NOT NULL REFERENCES logistics.feeds(id_feed) ON DELETE CASCADE,
     feeding_date DATE NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     unit VARCHAR(20) NOT NULL,

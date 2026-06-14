@@ -38,7 +38,33 @@ func (r *pohonRepository) FindAll(ctx context.Context) ([]domain.Pohon, error) {
 	return list, nil
 }
 
-func (r *pohonRepository) FindByID(ctx context.Context, id int) (*domain.Pohon, error) {
+func (r *pohonRepository) FindAllWithDetail(ctx context.Context) ([]domain.PohonDetail, error) {
+	query := `
+		SELECT p.id_pohon, p.kode_pohon, p.tanggal_tanam, p.varietas, p.fase_pohon, p.Lahan_id_lahan, l.jenis_tanaman 
+		FROM gardening.pohon p
+		JOIN gardening.lahan l ON p.Lahan_id_lahan = l.id_lahan
+		ORDER BY p.id_pohon ASC
+	`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []domain.PohonDetail
+	for rows.Next() {
+		var p domain.PohonDetail
+		var tTanam time.Time
+		if err := rows.Scan(&p.IDPohon, &p.KodePohon, &tTanam, &p.Varietas, &p.FasePohon, &p.LahanIDLahan, &p.JenisTanaman); err != nil {
+			return nil, err
+		}
+		p.TanggalTanam = tTanam.Format("2006-01-02")
+		list = append(list, p)
+	}
+	return list, nil
+}
+
+func (r *pohonRepository) FindByID(ctx context.Context, id string) (*domain.Pohon, error) {
 	var p domain.Pohon
 	var tTanam time.Time
 	err := r.db.QueryRow(ctx, "SELECT id_pohon, kode_pohon, tanggal_tanam, varietas, fase_pohon, Lahan_id_lahan FROM gardening.pohon WHERE id_pohon = $1", id).
@@ -73,7 +99,7 @@ func (r *pohonRepository) Update(ctx context.Context, p *domain.Pohon) error {
 	return err
 }
 
-func (r *pohonRepository) Delete(ctx context.Context, id int) error {
+func (r *pohonRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.pohon WHERE id_pohon = $1", id)
 	return err
 }

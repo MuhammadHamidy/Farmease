@@ -43,7 +43,7 @@ export default defineComponent({
       required: true
     }
   },
-  emits: ['close', 'save', 'update-category'],
+  emits: ['close', 'save', 'updateCategory'],
   setup(props, { emit }) {
     const toggleDay = (day: number) => {
       const form = props.form;
@@ -80,12 +80,13 @@ export default defineComponent({
                     <label class="pencatatan-label">Jenis Pencatatan / Kegiatan <span class="text-danger">*</span></label>
                     <Select
                       options={categories}
-                      modelValue={categories[categoryValues.indexOf(form.category)] || categories[0]}
+                      modelValue={categoryValues.indexOf(form.category) !== -1 ? categories[categoryValues.indexOf(form.category)] : ''}
+                      placeholder="Pilih jenis pencatatan / kegiatan"
                       onUpdate:modelValue={(val: string) => {
                         const idx = categories.indexOf(val);
                         form.category = categoryValues[idx];
                         form.title = val;
-                        emit('update-category');
+                        emit('updateCategory');
                       }}
                       theme={type}
                     />
@@ -95,6 +96,7 @@ export default defineComponent({
                     <Select
                       options={currentRincianOptions}
                       modelValue={form.rincian}
+                      placeholder="Pilih rincian pencatatan"
                       onUpdate:modelValue={(val: string) => {
                         form.rincian = val;
                       }}
@@ -117,6 +119,7 @@ export default defineComponent({
                     <Select
                       options={locationOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                       modelValue={form.cageCode}
+                      placeholder={type === 'peternakan' ? 'Pilih kode kandang' : 'Pilih kode lahan'}
                       onUpdate:modelValue={(val: string) => {
                         form.cageCode = val;
                       }}
@@ -135,7 +138,7 @@ export default defineComponent({
                   </div>
 
                   <div class="col-12">
-                    <label class="pencatatan-label">Jam Pelaksanaan (WIB) <span class="text-danger">*</span></label>
+                    <label class="pencatatan-label">Waktu Mulai (WIB) <span class="text-danger">*</span></label>
                     <input
                       type="time"
                       class="form-control pencatatan-input"
@@ -146,7 +149,8 @@ export default defineComponent({
                   </div>
 
                   <div class="col-12">
-                    <label class="pencatatan-label">Jam Tenggat (WIB) <span class="text-danger">*</span></label>
+                    <label class="pencatatan-label">Waktu Selesai / Tenggat (WIB) <span class="text-danger">*</span></label>
+                    <small class="text-muted d-block mb-1" style={{ fontSize: '0.7rem' }}>Batas waktu tugas harus diselesaikan. Status "Terlambat" aktif setelah waktu ini.</small>
                     <input
                       type="time"
                       class="form-control pencatatan-input"
@@ -161,11 +165,12 @@ export default defineComponent({
                     <Select
                       options={['Sekali', 'Harian', 'Mingguan', 'Bulanan']}
                       modelValue={frequencyLabel(form.frequency)}
+                      placeholder="Pilih frekuensi"
                       onUpdate:modelValue={(val: string) => {
                         if (val === 'Sekali') form.frequency = 'sekali';
                         else if (val === 'Harian') form.frequency = 'harian';
                         else if (val === 'Mingguan') form.frequency = 'mingguan';
-                        else form.frequency = 'bulanan';
+                        else if (val === 'Bulanan') form.frequency = 'bulanan';
                       }}
                       theme={type}
                     />
@@ -175,11 +180,12 @@ export default defineComponent({
                     <label class="pencatatan-label">Prioritas <span class="text-danger">*</span></label>
                     <Select
                       options={['Rendah', 'Sedang', 'Tinggi']}
-                      modelValue={form.priority === 'rendah' ? 'Rendah' : form.priority === 'tinggi' ? 'Tinggi' : 'Sedang'}
+                      modelValue={form.priority === 'rendah' ? 'Rendah' : form.priority === 'tinggi' ? 'Tinggi' : form.priority === 'sedang' ? 'Sedang' : ''}
+                      placeholder="Pilih prioritas"
                       onUpdate:modelValue={(val: string) => {
                         if (val === 'Rendah') form.priority = 'rendah';
                         else if (val === 'Tinggi') form.priority = 'tinggi';
-                        else form.priority = 'sedang';
+                        else if (val === 'Sedang') form.priority = 'sedang';
                       }}
                       theme={type}
                     />
@@ -205,6 +211,7 @@ export default defineComponent({
                       </div>
                     </div>
                   )}
+
                   {form.frequency === 'bulanan' && (
                     <div class="col-md-6">
                       <label class="pencatatan-label">Tanggal (1-28)</label>
@@ -238,7 +245,7 @@ export default defineComponent({
                   <button 
                     type="button" 
                     class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 700, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
+                    style={{ borderRadius: '1rem', fontWeight: 600, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
                     onClick={() => emit('close')}
                   >
                     Batal
@@ -246,7 +253,7 @@ export default defineComponent({
                   <button 
                     type="button" 
                     class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 700, backgroundColor: '#606C38', color: 'white', border: 'none' }}
+                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none' }}
                     onClick={() => emit('save')}
                   >
                     Simpan Tugas

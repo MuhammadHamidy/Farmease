@@ -45,7 +45,7 @@ func (r *Repository) FindAllPregnancies(ctx context.Context, status string) ([]*
 		if err != nil {
 			return nil, err
 		}
-		k.DamSheep = &d
+		k.MotherSheep = &d
 		list = append(list, &k)
 	}
 	return list, nil
@@ -59,7 +59,7 @@ func (r *Repository) StorePregnancy(ctx context.Context, k *domain.Pregnancy) er
 	return r.db.QueryRow(ctx, query, k.IDMating, k.PregnancyDate, k.PregnancyStatus, k.ExpectedBirthDate, k.Notes).Scan(&k.IDPregnancy, &k.CreatedAt, &k.UpdatedAt)
 }
 
-func (r *Repository) UpdatePregnancyStatus(ctx context.Context, id int, status string, notes string) error {
+func (r *Repository) UpdatePregnancyStatus(ctx context.Context, id string, status string, notes string) error {
 	query := `UPDATE breeding.pregnancies SET pregnancy_status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP WHERE id_pregnancy = $3`
 	_, err := r.db.Exec(ctx, query, status, notes, id)
 	return err
@@ -73,7 +73,7 @@ func (r *Repository) StoreBirth(ctx context.Context, k *domain.Birth) error {
 	return r.db.QueryRow(ctx, query, k.IDPregnancy, k.BirthDate, k.NumberOfOffspring, k.OffspringGender, k.OffspringCondition, k.Notes).Scan(&k.IDBirth, &k.CreatedAt)
 }
 
-func (r *Repository) StoreBirthWeight(ctx context.Context, idSheep int, date time.Time, weight float64) error {
+func (r *Repository) StoreBirthWeight(ctx context.Context, idSheep string, date time.Time, weight float64) error {
 	query := `
 		INSERT INTO livestock.weights (id_sheep, weighing_date, weight_kg, notes)
 		VALUES ($1, $2, $3, $4)`
@@ -101,7 +101,7 @@ func (r *Repository) FindAllBirths(ctx context.Context, from, to *time.Time) ([]
 	return list, nil
 }
 
-func (r *Repository) GetPregnancyDetail(ctx context.Context, id int) (*domain.Pregnancy, error) {
+func (r *Repository) GetPregnancyDetail(ctx context.Context, id string) (*domain.Pregnancy, error) {
 	query := `
 		SELECT k.id_pregnancy, k.id_mating, k.pregnancy_date, k.pregnancy_status, k.expected_birth_date, k.notes,
 		       p.id_sheep_male, p.id_sheep_female
@@ -110,7 +110,7 @@ func (r *Repository) GetPregnancyDetail(ctx context.Context, id int) (*domain.Pr
 		WHERE k.id_pregnancy = $1`
 	
 	var k domain.Pregnancy
-	err := r.db.QueryRow(ctx, query, id).Scan(&k.IDPregnancy, &k.IDMating, &k.PregnancyDate, &k.PregnancyStatus, &k.ExpectedBirthDate, &k.Notes, &k.IDSire, &k.IDDam)
+	err := r.db.QueryRow(ctx, query, id).Scan(&k.IDPregnancy, &k.IDMating, &k.PregnancyDate, &k.PregnancyStatus, &k.ExpectedBirthDate, &k.Notes, &k.IDFather, &k.IDMother)
 	if err != nil {
 		return nil, err
 	}

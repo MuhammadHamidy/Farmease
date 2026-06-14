@@ -88,12 +88,13 @@ export default defineComponent({
                   </div>
                   <div class="row g-2 pt-2 border-top">
                     <div class="col-6">
-                      <span class="text-muted d-block small">Sesi (Mulai):</span>
-                      <span class="fw-semibold text-dark">{props.getSessionFromTime(task.dueTime)} ({task.dueTime} WIB)</span>
+                      <span class="text-muted d-block small">⏱ Waktu Mulai:</span>
+                      <span class="fw-semibold text-dark">{task.dueTime || '-'} WIB</span>
+                      <span class="d-block text-muted" style={{ fontSize: '0.7rem' }}>Sesi {props.getSessionFromTime(task.dueTime)}</span>
                     </div>
                     <div class="col-6">
-                      <span class="text-muted d-block small">Jam Tenggat:</span>
-                      <span class="fw-semibold text-dark">{task.endTime ? `${task.endTime} WIB` : '-'}</span>
+                      <span class="text-muted d-block small">⏰ Waktu Selesai / Tenggat:</span>
+                      <span class="fw-semibold text-dark" style={{ color: (task as any).endTime ? '#dc3545' : undefined }}>{(task as any).endTime ? `${(task as any).endTime} WIB` : '-'}</span>
                     </div>
                     <div class="col-6">
                       <span class="text-muted d-block small">{props.type === 'peternakan' ? 'Kandang' : 'Lahan'}:</span>

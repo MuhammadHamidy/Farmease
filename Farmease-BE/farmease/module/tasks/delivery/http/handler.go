@@ -2,12 +2,13 @@ package http
 
 import (
 	"net/http"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type TaskHandler struct {
@@ -16,6 +17,34 @@ type TaskHandler struct {
 
 func NewTaskHandler(useCase domain.UseCase) *TaskHandler {
 	return &TaskHandler{useCase: useCase}
+}
+
+func extractAccountID(c *fiber.Ctx) string {
+	// 1. Try to get from locals (standard production middleware)
+	if userIdVal := c.Locals("X-User-Id"); userIdVal != nil {
+		if userIdStr, ok := userIdVal.(string); ok && userIdStr != "" && userIdStr != "dev-user" {
+			return userIdStr
+		}
+	}
+
+	// 2. Try to get from Authorization header token (unverified fallback for development)
+	authHeader := c.Get("Authorization")
+	if authHeader != "" {
+		parts := strings.Split(authHeader, " ")
+		if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+			tokenStr := parts[1]
+			claims := jwt.MapClaims{}
+			_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, &claims)
+			if err == nil {
+				if idAccount, ok := claims["id_account"].(string); ok && idAccount != "" {
+					return idAccount
+				}
+			}
+		}
+	}
+
+	// 3. Fallback mock for development
+	return "11111111-1111-1111-1111-111111111101"
 }
 
 func (h *TaskHandler) RegisterRoutes(app *fiber.App) {
@@ -41,7 +70,7 @@ func (h *TaskHandler) RegisterRoutes(app *fiber.App) {
 // @Failure      500      {object}  responses.Response[any]
 // @Router       /api/tasks [get]
 func (h *TaskHandler) GetMyTasks(c *fiber.Ctx) error {
-	idAccount := 1 // Mock, should get from JWT
+	idAccount := extractAccountID(c)
 	dateStr := c.Query("date")
 	var date *time.Time
 	if dateStr != "" {
@@ -76,9 +105,14 @@ func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
 		DueDate     time.Time `json:"due_date"` // fallback for FE
 		Status      string    `json:"status"`
 		Priority    string    `json:"priority"`
-		IDAccount   int       `json:"id_account"`
-		UserID      int       `json:"user_id"` // fallback for FE
+		IDAccount   string    `json:"id_account"`
+		UserID      string    `json:"user_id"` // fallback for FE
 		Category    string    `json:"category"`
+		EndTime     string    `json:"end_time"`
+		ScheduleID  *string   `json:"schedule_id"`
+		IDCage      *string   `json:"id_cage"`
+		StartTime   string    `json:"start_time"`
+		Rincian     string    `json:"rincian"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
@@ -90,14 +124,19 @@ func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
 		Status:      req.Status,
 		Priority:    req.Priority,
 		Category:    req.Category,
+		EndTime:     req.EndTime,
+		ScheduleID:  req.ScheduleID,
+		IDCage:      req.IDCage,
+		StartTime:   req.StartTime,
+		Rincian:     req.Rincian,
 	}
 
-	if req.UserID != 0 {
+	if req.UserID != "" {
 		taskItem.IDAccount = req.UserID
-	} else if req.IDAccount != 0 {
+	} else if req.IDAccount != "" {
 		taskItem.IDAccount = req.IDAccount
 	} else {
-		taskItem.IDAccount = 1 // Mock fallback
+		taskItem.IDAccount = extractAccountID(c)
 	}
 
 	if !req.TaskDate.IsZero() {
@@ -122,12 +161,20 @@ func (h *TaskHandler) CreateTask(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Param        id   path      int  true  "Task ID"
+// @Param        id   path      string  true  "Task ID"
 // @Success      200  {object}  object
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/tasks/{id}/complete [patch]
+// func (h *TaskHandler) CompleteTask(c *fiber.Ctx) error {
+// 	id := c.Params("id")
+// 	err := h.useCase.CompleteTask(c.Context(), id)
+// 	if err != nil {
+// 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
+// 	}
+// 	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
+// }
 func (h *TaskHandler) CompleteTask(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	err := h.useCase.CompleteTask(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
@@ -136,7 +183,7 @@ func (h *TaskHandler) CompleteTask(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	var req struct {
 		Title       string    `json:"title"`
 		Description string    `json:"description"`
@@ -144,9 +191,14 @@ func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
 		DueDate     time.Time `json:"due_date"` // fallback for FE
 		Status      string    `json:"status"`
 		Priority    string    `json:"priority"`
-		IDAccount   int       `json:"id_account"`
-		UserID      int       `json:"user_id"` // fallback for FE
+		IDAccount   string    `json:"id_account"`
+		UserID      string    `json:"user_id"` // fallback for FE
 		Category    string    `json:"category"`
+		EndTime     string    `json:"end_time"`
+		ScheduleID  *string   `json:"schedule_id"`
+		IDCage      *string   `json:"id_cage"`
+		StartTime   string    `json:"start_time"`
+		Rincian     string    `json:"rincian"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
@@ -159,9 +211,14 @@ func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
 		Status:      req.Status,
 		Priority:    req.Priority,
 		Category:    req.Category,
+		EndTime:     req.EndTime,
+		ScheduleID:  req.ScheduleID,
+		IDCage:      req.IDCage,
+		StartTime:   req.StartTime,
+		Rincian:     req.Rincian,
 	}
 
-	if req.UserID != 0 {
+	if req.UserID != "" {
 		taskItem.IDAccount = req.UserID
 	} else {
 		taskItem.IDAccount = req.IDAccount
@@ -181,7 +238,7 @@ func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) DeleteTask(c *fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	id := c.Params("id")
 	err := h.useCase.DeleteTask(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))

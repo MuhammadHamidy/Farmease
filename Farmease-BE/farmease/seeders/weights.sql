@@ -1,7 +1,7 @@
 -- Seed Weights
-INSERT INTO livestock.weights (id_sheep, weighing_date, weight_kg, notes) VALUES 
-(1, '2026-05-01', 45.50, 'Initial weight registration'),
-(1, '2026-05-15', 46.20, 'Regular growth check'),
-(2, '2026-05-01', 38.00, 'Healthy female weight'),
-(4, '2026-05-10', 25.40, 'Weaned lamb weighing')
-ON CONFLICT DO NOTHING;
+INSERT INTO livestock.weights (id_weight, id_sheep, weighing_date, weight_kg, notes) VALUES 
+('99999999-9999-9999-9999-999999999901', '44444444-4444-4444-4444-444444444401', '2026-05-01', 45.50, 'Initial weight registration'),
+('99999999-9999-9999-9999-999999999902', '44444444-4444-4444-4444-444444444401', '2026-05-15', 46.20, 'Regular growth check'),
+('99999999-9999-9999-9999-999999999903', '44444444-4444-4444-4444-444444444402', '2026-05-01', 38.00, 'Healthy female weight'),
+('99999999-9999-9999-9999-999999999904', '44444444-4444-4444-4444-444444444404', '2026-05-10', 25.40, 'Weaned lamb weighing')
+ON CONFLICT (id_weight) DO NOTHING;

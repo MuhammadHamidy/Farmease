@@ -10,7 +10,7 @@ export default defineComponent({
   },
   setup(props, { slots }) {
     return () => (
-      <div class={props.colClass}>
+      <div class={[props.colClass, 'mb-3']}>
         <PencatatanLabel required={props.required}>{props.label}</PencatatanLabel>
         {slots.default?.()}
       </div>

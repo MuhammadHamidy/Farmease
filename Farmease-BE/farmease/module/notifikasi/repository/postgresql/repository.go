@@ -38,7 +38,7 @@ func (r *notifikasiRepository) FindAll(ctx context.Context) ([]domain.Notifikasi
 	return list, nil
 }
 
-func (r *notifikasiRepository) FindByID(ctx context.Context, id int) (*domain.Notifikasi, error) {
+func (r *notifikasiRepository) FindByID(ctx context.Context, id string) (*domain.Notifikasi, error) {
 	var n domain.Notifikasi
 	var tTgl time.Time
 	err := r.db.QueryRow(ctx, "SELECT id_notifikasi, akun_id_akun, jadwal_rutin_id_jadwal_rutin, tipe_notifikasi, pesan, status_notifikasi, tanggal FROM gardening.notifikasi WHERE id_notifikasi = $1", id).
@@ -73,7 +73,7 @@ func (r *notifikasiRepository) Update(ctx context.Context, n *domain.Notifikasi)
 	return err
 }
 
-func (r *notifikasiRepository) Delete(ctx context.Context, id int) error {
+func (r *notifikasiRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.notifikasi WHERE id_notifikasi = $1", id)
 	return err
 }

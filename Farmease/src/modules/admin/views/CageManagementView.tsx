@@ -14,11 +14,11 @@ export default defineComponent({
   setup() {
     const isModalOpen = ref(false);
     const isEditing = ref(false);
-    const editingCageId = ref<number | null>(null);
+    const editingCageId = ref<string | number | null>(null);
     const newCage = ref<CageInfo>({
       code: '',
       name: '',
-      type: 'Domba Garut & Merino',
+      type: 'Domba Garut',
       capacity: 50
     });
     const error = ref('');
@@ -51,7 +51,7 @@ export default defineComponent({
       newCage.value = {
         code: '',
         name: '',
-        type: 'Domba Garut & Merino',
+        type: 'Domba Garut',
         capacity: 50
       };
       error.value = '';
@@ -128,7 +128,7 @@ export default defineComponent({
         newCage.value = {
           code: '',
           name: '',
-          type: 'Domba Garut & Merino',
+          type: 'Domba Garut',
           capacity: 50
         };
       } catch (err: any) {
@@ -139,7 +139,7 @@ export default defineComponent({
       }
     };
 
-    const handleDeleteCage = async (id: number | undefined, code: string) => {
+    const handleDeleteCage = async (id: string | number | undefined, code: string) => {
       if (!id) {
         alertError.value = 'ID kandang tidak ditemukan, tidak dapat menghapus.';
         return;
@@ -343,9 +343,9 @@ export default defineComponent({
         {/* Create / Edit Cage Modal */}
         {isModalOpen.value && (
           <div class="peternakan-modal-overlay" onClick={() => isModalOpen.value = false}>
-            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
               <div class="peternakan-modal-header">
-                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>
+                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value} style={{ position: 'absolute', right: '1.5rem', left: 'auto', background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -377,7 +377,7 @@ export default defineComponent({
                   <div class="col-12">
                     <label class="pencatatan-label">Fokus Jenis Domba</label>
                     <CustomSelect 
-                      options={['Domba Garut & Merino', 'Domba Dorper', 'Domba Perawatan', 'Cempe Baru (Anakan)']}
+                      options={['Domba Garut', 'Domba Texel', 'Domba Dorper', 'Domba Merino', 'Domba F2 Dorper', 'Domba F2 Garut']}
                       modelValue={newCage.value.type}
                       onUpdate:modelValue={(val: string) => newCage.value.type = val}
                     />
@@ -413,8 +413,22 @@ export default defineComponent({
                       Hapus
                     </button>
                   )}
-                  <button class="btn btn-light grow fw-bold py-2.5 rounded-pill" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>Batal</button>
-                  <button class="peternakan-primary-btn grow m-0 justify-content-center" onClick={handleSaveCage} disabled={isLoading.value}>
+                  <button 
+                    type="button" 
+                    class="btn flex-grow-1"
+                    style={{ borderRadius: '1rem', fontWeight: 600, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
+                    onClick={() => isModalOpen.value = false} 
+                    disabled={isLoading.value}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn flex-grow-1"
+                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none' }}
+                    onClick={handleSaveCage} 
+                    disabled={isLoading.value}
+                  >
                     {isLoading.value ? 'Menyimpan...' : isEditing.value ? 'Simpan Perubahan' : 'Simpan Kandang'}
                   </button>
                 </div>

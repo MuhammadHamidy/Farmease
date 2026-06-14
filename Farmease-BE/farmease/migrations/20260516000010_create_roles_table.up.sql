@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE TABLE IF NOT EXISTS auth.roles (
-    id_role SERIAL PRIMARY KEY,
+    id_role UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     role_name VARCHAR(50) NOT NULL,
     permissions VARCHAR(20) NOT NULL DEFAULT 'view',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

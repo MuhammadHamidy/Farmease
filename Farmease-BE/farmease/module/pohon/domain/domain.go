@@ -5,26 +5,32 @@ import (
 )
 
 type Pohon struct {
-	IDPohon      int    `json:"id_pohon" db:"id_pohon"`
+	IDPohon      string `json:"id_pohon" db:"id_pohon"`
 	KodePohon    string `json:"kode_pohon" db:"kode_pohon"`
 	TanggalTanam string `json:"tanggal_tanam" db:"tanggal_tanam"` // YYYY-MM-DD format
 	Varietas     string `json:"varietas" db:"varietas"`
 	FasePohon    string `json:"fase_pohon" db:"fase_pohon"`
-	LahanIDLahan int    `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
+	LahanIDLahan string `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
+}
+
+type PohonDetail struct {
+	Pohon
+	JenisTanaman string `json:"jenis_tanaman" db:"jenis_tanaman"`
 }
 
 type PohonRepository interface {
 	FindAll(ctx context.Context) ([]Pohon, error)
-	FindByID(ctx context.Context, id int) (*Pohon, error)
+	FindAllWithDetail(ctx context.Context) ([]PohonDetail, error)
+	FindByID(ctx context.Context, id string) (*Pohon, error)
 	Store(ctx context.Context, pohon *Pohon) error
 	Update(ctx context.Context, pohon *Pohon) error
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, id string) error
 }
 
 type PohonUsecase interface {
 	FindAll(ctx context.Context) ([]Pohon, error)
-	FindByID(ctx context.Context, id int) (*Pohon, error)
+	FindByID(ctx context.Context, id string) (*Pohon, error)
 	Create(ctx context.Context, pohon *Pohon) error
 	Update(ctx context.Context, pohon *Pohon) error
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, id string) error
 }

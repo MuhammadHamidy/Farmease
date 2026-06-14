@@ -38,7 +38,7 @@ func (r *akunLahanRepository) FindAll(ctx context.Context) ([]domain.AkunLahan, 
 	return list, nil
 }
 
-func (r *akunLahanRepository) FindByID(ctx context.Context, id int) (*domain.AkunLahan, error) {
+func (r *akunLahanRepository) FindByID(ctx context.Context, id string) (*domain.AkunLahan, error) {
 	var al domain.AkunLahan
 	var tTgl time.Time
 	err := r.db.QueryRow(ctx, "SELECT id_akun_lahan, tanggal_tanam, status, Lahan_id_lahan, Akun_id_akun FROM gardening.akun_lahan WHERE id_akun_lahan = $1", id).
@@ -73,7 +73,7 @@ func (r *akunLahanRepository) Update(ctx context.Context, al *domain.AkunLahan) 
 	return err
 }
 
-func (r *akunLahanRepository) Delete(ctx context.Context, id int) error {
+func (r *akunLahanRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM gardening.akun_lahan WHERE id_akun_lahan = $1", id)
 	return err
 }
