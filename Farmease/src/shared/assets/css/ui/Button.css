@@ -144,3 +144,12 @@
 .w-full {
   width: 100%;
 }
+
+.back-btn-hover:hover {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+}
+
+.back-btn-hover:hover .back-btn-icon {
+  filter: brightness(0) invert(1);
+}

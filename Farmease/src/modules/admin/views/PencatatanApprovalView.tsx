@@ -228,7 +228,8 @@ export default defineComponent({
         <div class="row g-4">
           <div class="col-12">
             <div class="view-card p-0" style={{ overflow: 'hidden' }}>
-              <div class="table-responsive">
+              {/* Desktop Table View */}
+              <div class="table-responsive d-none d-md-block">
                 <table class="admin-table mb-0">
                   <thead>
                     <tr>
@@ -380,6 +381,122 @@ export default defineComponent({
                 </table>
               </div>
 
+              {/* Mobile Card List View */}
+              <div class="d-block d-md-none p-3">
+                <div class="mobile-card-list">
+                  {paginatedItems.value.map((sub) => {
+                    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
+                    const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
+
+                    return (
+                      <div
+                        key={sub.id}
+                        class={['admin-mobile-card', selectedId.value === sub.id ? 'border-primary' : '']}
+                        onClick={() => openDetail(sub)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div class="card-top">
+                          <div class="card-info">
+                            <span class="card-name">{sub.operatorName}</span>
+                            <span class="card-sub">
+                              <code>{formatOperatorCode(sub.operatorCode, sub.operatorName)}</code>
+                            </span>
+                          </div>
+                          <div class="d-flex align-items-center gap-1">
+                            <span class={['role-badge', isPerkebunan ? 'operator-perkebunan' : 'operator-peternakan']} style={{ fontSize: '0.65rem', padding: '0.25rem 0.5rem' }}>
+                              {jenisText}
+                            </span>
+                            {isLocked(sub.id) && <span title="Data Terkunci" style={{ fontSize: '0.85rem' }}>🔒</span>}
+                          </div>
+                        </div>
+
+                        <div class="text-start" style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>
+                          <div class="text-muted small mb-1">
+                            Dikirim: {formatDate(sub.submittedAt)}
+                          </div>
+                          <div class="fw-bold text-dark text-truncate-2" title={sub.summary} style={{ minHeight: 'auto' }}>
+                            {sub.summary}
+                          </div>
+                        </div>
+
+                        <div class="card-footer flex-column gap-2 align-items-stretch" onClick={(e) => e.stopPropagation()}>
+                          <div class="d-flex justify-content-between align-items-center w-100">
+                            <span class="small text-muted">Status:</span>
+                            <span class={['status-badge', sub.approvalStatus === 'approved' ? 'approved' : sub.approvalStatus === 'rejected' ? 'rejected' : 'pending']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
+                              {sub.approvalStatus === 'approved' ? 'Disetujui' : sub.approvalStatus === 'rejected' ? 'Ditolak' : 'Belum Disetujui'}
+                            </span>
+                          </div>
+
+                          <div class="d-flex flex-wrap gap-2 justify-content-end mt-2">
+                            {sub.approvalStatus === 'pending' && !isLocked(sub.id) && (
+                              <>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white border-0"
+                                  disabled={isSubmitting.value}
+                                  onClick={() => handleApproveAction(sub.id, 'Disetujui via panel aksi')}
+                                >
+                                  {isSubmitting.value ? '...' : 'Setujui'}
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-danger px-3 rounded-pill fw-bold text-white border-0"
+                                  disabled={isSubmitting.value}
+                                  onClick={() => openRejectModal(sub.id)}
+                                >
+                                  Tolak
+                                </button>
+                              </>
+                            )}
+                            {sub.approvalStatus === 'approved' && (
+                              <>
+                                {!isLocked(sub.id) && (
+                                  <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
+                                    onClick={() => handleRejectAction(sub.id, 'Batal disetujui')}
+                                  >
+                                    Batal
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  class={['btn btn-sm px-3 rounded-pill fw-bold', isLocked(sub.id) ? 'btn-warning border-warning' : 'btn-outline-secondary']}
+                                  onClick={() => toggleLock(sub.id)}
+                                >
+                                  {isLocked(sub.id) ? 'Buka Kunci' : 'Kunci'}
+                                </button>
+                              </>
+                            )}
+                            {sub.approvalStatus === 'rejected' && !isLocked(sub.id) && (
+                              <button
+                                type="button"
+                                class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white border-0"
+                                onClick={() => handleApproveAction(sub.id, 'Disetujui kembali')}
+                              >
+                                Setujui
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-bold"
+                              onClick={() => openDetail(sub)}
+                            >
+                              Detail
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filtered.value.length === 0 && (
+                    <div class="text-center py-4 text-muted small">
+                      Tidak ada data pencatatan.
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Pagination controls */}
               <div class="d-flex align-items-center justify-content-between px-4 py-3 bg-white border-top flex-wrap gap-3">
                 <div class="text-muted small">
@@ -451,9 +568,11 @@ export default defineComponent({
             <div class="peternakan-modal-overlay animate-fade-in" onClick={() => selectedId.value = null} style={{ zIndex: 1050 }}>
               <div class="peternakan-modal-card text-start" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', backgroundColor: '#FAFAF8', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                 <div class="modal-header">
-                  <button type="button" class="close-btn" onClick={() => selectedId.value = null} style={{ position: 'absolute', right: '1rem', top: '1rem' }}>✕</button>
+                  <button type="button" class="close-btn" onClick={() => selectedId.value = null}>
+                    <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
+                  </button>
                   <h3>Detail Pencatatan</h3>
-              </div>
+                </div>
 
               <div class="modal-body py-3" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
                 <div class="mb-3">
@@ -581,7 +700,7 @@ export default defineComponent({
               </div>
 
                 <div class="modal-footer pt-3 border-top d-flex justify-content-end">
-                  <button type="button" class="btn btn-light rounded-pill px-4" onClick={() => selectedId.value = null}>Tutup</button>
+                  <button type="button" class="btn rounded-pill px-4 fw-bold text-white" style={{ backgroundColor: '#3D2F24', border: 'none' }} onClick={() => selectedId.value = null}>Tutup</button>
                 </div>
               </div>
             </div>

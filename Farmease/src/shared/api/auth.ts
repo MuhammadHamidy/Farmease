@@ -27,6 +27,30 @@ export interface AuthResponse {
   user: User
 }
 
+export interface EnumChoice {
+  value: string
+  label: string
+}
+
+export interface MetadataEnums {
+  gender: EnumChoice[]
+  sheep_status: EnumChoice[]
+  feed_category: EnumChoice[]
+  task_category: EnumChoice[]
+  task_rincian: EnumChoice[]
+  day_of_week: EnumChoice[]
+  frequency: EnumChoice[]
+  mating_method: EnumChoice[]
+  mating_status: EnumChoice[]
+  pregnancy_status: EnumChoice[]
+  offspring_gender: EnumChoice[]
+  offspring_condition: EnumChoice[]
+  manure_activity: EnumChoice[]
+  manure_dest: EnumChoice[]
+  priority: EnumChoice[]
+  task_status: EnumChoice[]
+}
+
 export const authApi = {
   login: async (payload: LoginRequest): Promise<AuthResponse> => {
     const res = await apiClient.post<any>('/api/auth/login', payload)
@@ -100,6 +124,10 @@ export const authApi = {
       updated_at: acc.updated_at,
       farm_id: acc.farm_id,
     }))
+  },
+
+  getMetadataEnums: async (): Promise<MetadataEnums> => {
+    return apiClient.get<MetadataEnums>('/api/metadata/enums')
   },
 }
 

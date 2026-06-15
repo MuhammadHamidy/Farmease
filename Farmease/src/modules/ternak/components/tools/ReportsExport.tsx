@@ -1,6 +1,6 @@
-import { defineComponent, ref, onMounted } from 'vue';
+import { defineComponent, ref } from 'vue';
 import Typography from '@/shared/ui/Typography';
-import { sheep, weightRecords, healthRecords } from '@/store/livestock';
+import { sheep } from '@/store/livestock';
 import { healthApi, weightApi, breedingApi } from '@/shared/api';
 
 // ── Helper: Generate & Download CSV ─────────────────────────────────────────
@@ -38,115 +38,105 @@ export default defineComponent({
     const loadingKey = ref<string | null>(null);
     const successMsg = ref<string | null>(null);
 
-    const exportPopulasi = async () => {
-      loadingKey.value = 'populasi';
-      try {
-        const headers = ['Kode', 'Nama', 'Ras/Jenis', 'Jenis Kelamin', 'Tgl Lahir', 'Status', 'Kandang'];
-        const rows = sheep.value.map(s => [
-          s.code, s.name, s.type, s.gender === 'jantan' ? 'Jantan' : 'Betina',
-          s.birth_date || '—', s.status, s.cage_code,
-        ]);
-        downloadCSV(`farmease_populasi_${todayStr()}.csv`, headers, rows);
-        successMsg.value = 'Laporan populasi berhasil diunduh!';
-        setTimeout(() => successMsg.value = null, 4000);
-      } finally {
-        loadingKey.value = null;
-      }
-    };
-
-    const exportBerat = async () => {
-      loadingKey.value = 'berat';
+    const exportRekapTernak = async () => {
+      loadingKey.value = 'rekap';
       try {
         let allWeights: any[] = [];
-        try { allWeights = await weightApi.getList(); } catch {}
-
-        const headers = ['ID Domba', 'Kode Domba', 'Berat (kg)', 'Tanggal Rekam'];
-        const rows = allWeights.map((w: any) => {
-          const s = sheep.value.find(x => String(x.id) === String(w.id_sheep));
-          return [String(w.id_sheep), s?.code || '—', w.weight, w.date_recorded || w.created_at];
-        });
-        downloadCSV(`farmease_berat_${todayStr()}.csv`, headers, rows);
-        successMsg.value = 'Laporan berat badan berhasil diunduh!';
-        setTimeout(() => successMsg.value = null, 4000);
-      } finally {
-        loadingKey.value = null;
-      }
-    };
-
-    const exportKesehatan = async () => {
-      loadingKey.value = 'kesehatan';
-      try {
         let allHealth: any[] = [];
-        try { allHealth = await healthApi.getGlobalList(); } catch {}
-
-        const headers = ['ID Domba', 'Kode Domba', 'Status Kesehatan', 'Deskripsi', 'Tanggal Rekam'];
-        const rows = allHealth.map((h: any) => {
-          const s = sheep.value.find(x => String(x.id) === String(h.id_sheep));
-          const healthStatus = h.health_status || h.action || h.diagnosis || '—';
-          const desc = h.description || h.notes || '—';
-          const checkDate = h.checkup_date || h.date_recorded || h.created_at || '—';
-          return [String(h.id_sheep), s?.code || '—', healthStatus, desc, checkDate];
-        });
-        downloadCSV(`farmease_kesehatan_${todayStr()}.csv`, headers, rows);
-        successMsg.value = 'Laporan kesehatan berhasil diunduh!';
-        setTimeout(() => successMsg.value = null, 4000);
-      } finally {
-        loadingKey.value = null;
-      }
-    };
-
-    const exportPerkawinan = async () => {
-      loadingKey.value = 'perkawinan';
-      try {
         let matings: any[] = [];
-        try { matings = await breedingApi.getMatingList(); } catch {}
 
-        const headers = ['ID Jantan', 'Kode Jantan', 'ID Betina', 'Kode Betina', 'Tanggal Kawin', 'Status'];
-        const rows = matings.map((m: any) => {
-          const maleId = m.id_sheep_male || m.id_male_sheep;
-          const femaleId = m.id_sheep_female || m.id_female_sheep;
-          const male = sheep.value.find(x => String(x.id) === String(maleId));
-          const female = sheep.value.find(x => String(x.id) === String(femaleId));
-          return [String(maleId || '—'), male?.code || '—', String(femaleId || '—'), female?.code || '—', m.mating_date || '—', m.status || '—'];
+        // Fetch all data in parallel
+        await Promise.all([
+          (async () => { try { allWeights = await weightApi.getList(); } catch {} })(),
+          (async () => { try { allHealth = await healthApi.getGlobalList(); } catch {} })(),
+          (async () => { try { matings = await breedingApi.getMatingList(); } catch {} })(),
+        ]);
+
+        const headers = [
+          'No',
+          'Kode Domba',
+          'Nama Domba',
+          'Jenis Kelamin',
+          'Tipe/Ras',
+          'Tanggal Lahir',
+          'Status',
+          'Kandang',
+          'Asal',
+          'Berat Terakhir (kg)',
+          'Tanggal Timbang Terakhir',
+          'Status Kesehatan Terakhir',
+          'Catatan Kesehatan Terakhir',
+          'Tanggal Periksa Terakhir',
+          'Pasangan Kawin Terakhir (Kode)',
+          'Tanggal Kawin Terakhir',
+          'Status Perkawinan Terakhir'
+        ];
+
+        const rows = sheep.value.map((s, index) => {
+          // 1. Get latest weight record
+          const sheepWeights = allWeights
+            .filter((w: any) => String(w.id_sheep) === String(s.id))
+            .sort((a: any, b: any) => new Date(b.date_recorded || b.created_at).getTime() - new Date(a.date_recorded || a.created_at).getTime());
+          const latestW = sheepWeights[0];
+          const weightVal = latestW ? latestW.weight : '—';
+          const weightDate = latestW ? (latestW.date_recorded || latestW.created_at || '').split('T')[0] : '—';
+
+          // 2. Get latest health record
+          const sheepHealth = allHealth
+            .filter((h: any) => String(h.id_sheep) === String(s.id))
+            .sort((a: any, b: any) => new Date(b.checkup_date || b.date_recorded || b.created_at).getTime() - new Date(a.checkup_date || a.date_recorded || a.created_at).getTime());
+          const latestH = sheepHealth[0];
+          const healthStatus = latestH ? (latestH.health_status || latestH.action || latestH.diagnosis || '—') : '—';
+          const healthDesc = latestH ? (latestH.description || latestH.notes || '—') : '—';
+          const healthDate = latestH ? (latestH.checkup_date || latestH.date_recorded || latestH.created_at || '').split('T')[0] : '—';
+
+          // 3. Get latest mating record
+          const sheepMatings = matings
+            .filter((m: any) => String(m.id_sheep_male || m.id_male_sheep) === String(s.id) || String(m.id_sheep_female || m.id_female_sheep) === String(s.id))
+            .sort((a: any, b: any) => new Date(b.mating_date).getTime() - new Date(a.mating_date).getTime());
+          const latestM = sheepMatings[0];
+          let partnerCode = '—';
+          let matingDate = '—';
+          let matingStatus = '—';
+          if (latestM) {
+            const isMale = String(latestM.id_sheep_male || latestM.id_male_sheep) === String(s.id);
+            const partnerId = isMale ? (latestM.id_sheep_female || latestM.id_female_sheep) : (latestM.id_sheep_male || latestM.id_male_sheep);
+            const partner = sheep.value.find(x => String(x.id) === String(partnerId));
+            partnerCode = partner ? partner.code : '—';
+            matingDate = latestM.mating_date || '—';
+            matingStatus = latestM.status || '—';
+          }
+
+          return [
+            index + 1,
+            s.code,
+            s.name,
+            s.gender === 'jantan' ? 'Jantan' : 'Betina',
+            s.type,
+            s.birth_date ? s.birth_date.split('T')[0] : '—',
+            s.status,
+            s.cage_code,
+            (s as any).origin || '—',
+            weightVal,
+            weightDate,
+            healthStatus,
+            healthDesc,
+            healthDate,
+            partnerCode,
+            matingDate,
+            matingStatus
+          ];
         });
-        downloadCSV(`farmease_perkawinan_${todayStr()}.csv`, headers, rows);
-        successMsg.value = 'Laporan perkawinan berhasil diunduh!';
+
+        downloadCSV(`farmease_rekap_ternak_${todayStr()}.csv`, headers, rows);
+        successMsg.value = 'Rekap laporan data ternak berhasil diunduh!';
         setTimeout(() => successMsg.value = null, 4000);
+      } catch (err) {
+        console.error('Error exporting combined report:', err);
       } finally {
         loadingKey.value = null;
       }
     };
-
-    const reports = [
-      {
-        key: 'populasi',
-        title: 'Laporan Populasi Ternak',
-        desc: 'Data seluruh domba aktif: kode, nama, ras, jenis kelamin, tanggal lahir, status, kandang.',
-        icon: '/icon/domba.png',
-        action: exportPopulasi,
-      },
-      {
-        key: 'berat',
-        title: 'Riwayat Berat Badan',
-        desc: 'Seluruh catatan penimbangan domba: ID, berat, tanggal pengukuran.',
-        icon: '/icon/statistic.png',
-        action: exportBerat,
-      },
-      {
-        key: 'kesehatan',
-        title: 'Riwayat Kesehatan',
-        desc: 'Log pemeriksaan kesehatan per domba: status, deskripsi, tanggal rekam.',
-        icon: '/icon/catat_sehat.png',
-        action: exportKesehatan,
-      },
-      {
-        key: 'perkawinan',
-        title: 'Data Perkawinan & Breeding',
-        desc: 'Riwayat pasangan kawin: kode jantan, kode betina, tanggal, dan status perkawinan.',
-        icon: '/icon/catat_kawin.png',
-        action: exportPerkawinan,
-      },
-    ];
 
     return () => (
       <div class="p-3">
@@ -154,7 +144,7 @@ export default defineComponent({
           <div>
             <Typography variant="h3" weight="bold" className="mb-1">Ekspor Laporan Ternak</Typography>
             <Typography variant="p" size="text-xs" color="secondary" className="m-0">
-              Unduh data real dari sistem dalam format CSV yang bisa dibuka di Excel.
+              Unduh data real dari seluruh populasi domba dalam format CSV yang bisa dibuka di Excel.
             </Typography>
           </div>
           {props.onClose && (
@@ -169,29 +159,29 @@ export default defineComponent({
         )}
 
         <div class="row g-3">
-          {reports.map(r => (
-            <div class="col-12 col-md-6" key={r.key}>
-              <div class="p-4 rounded-4 h-100" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-outline-variant)' }}>
-                <div class="d-flex align-items-center gap-3 mb-3">
-                  <div class="d-flex align-items-center justify-content-center rounded-3" style={{ width: '42px', height: '42px', backgroundColor: 'var(--color-primary-fixed)', flexShrink: 0 }}>
-                    <img src={r.icon} style={{ width: '22px', height: '22px', objectFit: 'contain' }} alt="" />
-                  </div>
-                  <div>
-                    <div class="fw-bold" style={{ fontSize: '0.85rem' }}>{r.title}</div>
-                    <div class="text-secondary" style={{ fontSize: '0.72rem' }}>{r.desc}</div>
+          <div class="col-12">
+            <div class="p-4 rounded-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-outline-variant)' }}>
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="d-flex align-items-center justify-content-center rounded-3" style={{ width: '42px', height: '42px', backgroundColor: 'var(--color-primary-fixed)', flexShrink: 0 }}>
+                  <img src="/icon/domba.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} alt="" />
+                </div>
+                <div>
+                  <div class="fw-bold" style={{ fontSize: '0.9rem' }}>Rekap Laporan Data Ternak</div>
+                  <div class="text-secondary" style={{ fontSize: '0.75rem' }}>
+                    Satu file CSV terpadu yang memuat data seluruh populasi domba aktif beserta riwayat berat badan terakhir, riwayat kesehatan terakhir, dan data perkawinan terbaru.
                   </div>
                 </div>
-                <button
-                  class="btn w-100 rounded-3 fw-bold text-white"
-                  style={{ backgroundColor: 'var(--color-primary)', fontSize: '0.82rem' }}
-                  onClick={r.action}
-                  disabled={loadingKey.value === r.key}
-                >
-                  {loadingKey.value === r.key ? '⏳ Menyiapkan...' : '📥 Unduh CSV'}
-                </button>
               </div>
+              <button
+                class="btn w-100 rounded-3 fw-bold text-white"
+                style={{ backgroundColor: 'var(--color-primary)', fontSize: '0.82rem', padding: '0.6rem' }}
+                onClick={exportRekapTernak}
+                disabled={loadingKey.value === 'rekap'}
+              >
+                {loadingKey.value === 'rekap' ? '⏳ Menyiapkan Rekap...' : '📥 Unduh Rekap Laporan Ternak'}
+              </button>
             </div>
-          ))}
+          </div>
         </div>
 
         <div class="mt-4 p-3 rounded-3 text-secondary" style={{ background: 'var(--color-gray-50-alt)', fontSize: '0.75rem', border: '1px solid #e5e7eb' }}>

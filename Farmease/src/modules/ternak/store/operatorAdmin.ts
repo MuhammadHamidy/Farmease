@@ -28,9 +28,11 @@ import {
   executeKebunApiSubmission,
   accountsList,
   fetchAccountsList,
+  metadataEnums,
+  fetchMetadataEnums,
 } from '@/store/operatorAdmin';
 import { tasksApi } from '@/shared/api';
-import { cagesList, landsList } from '@/store/navigation';
+import { cagesList, landsList, fetchCagesList, fetchLandsList } from '@/store/navigation';
 
 export {
   type OperatorTask,
@@ -52,6 +54,8 @@ export {
   executeKebunApiSubmission,
   accountsList,
   fetchAccountsList,
+  metadataEnums,
+  fetchMetadataEnums,
 };
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -165,9 +169,7 @@ watch(pencatatanSubmissions, (newVal) => {
 import { routineSchedulesApi, type ApiRoutineSchedule } from '@/shared/api';
 
 const LOCAL_SCHEDULES_KEY = 'farmease_local_schedules';
-const localSchedules = ref<RoutineSchedule[]>(
-  localStorage.getItem(LOCAL_SCHEDULES_KEY) ? JSON.parse(localStorage.getItem(LOCAL_SCHEDULES_KEY)!) : []
-);
+const localSchedules = ref<RoutineSchedule[]>([]);
 
 export const apiRoutineSchedules = ref<RoutineSchedule[]>([]);
 export const schedulesLoading = ref(false);
@@ -179,6 +181,15 @@ export const routineSchedules = computed(() => {
 export async function fetchRoutineSchedules() {
   try {
     schedulesLoading.value = true;
+
+    // Pastikan master data kandang dan lahan ter-load agar mapping cageCode berhasil
+    if (cagesList.value.length === 0) {
+      await fetchCagesList();
+    }
+    if (landsList.value.length === 0) {
+      await fetchLandsList();
+    }
+
     const list = await routineSchedulesApi.getList();
     apiRoutineSchedules.value = (list || []).map(mapApiScheduleToLocal);
   } catch (err) {
@@ -344,45 +355,29 @@ export const pendingApprovalCount = computed(
 );
 
 export async function addRoutineSchedule(schedule: Omit<RoutineSchedule, 'id' | 'createdAt'>) {
-  if (schedule.assigneeCode === 'OP002') {
-    const newSched = {
-      ...schedule,
-      id: `S-${Date.now().toString().slice(-6)}`,
-      createdAt: Date.now(),
-    };
-    localSchedules.value.unshift(newSched);
-    localStorage.setItem(LOCAL_SCHEDULES_KEY, JSON.stringify(localSchedules.value));
-    return;
-  }
-
   try {
     const apiPayload = mapLocalScheduleToApi(schedule);
     const createdApi = await routineSchedulesApi.create(apiPayload);
     const mapped = mapApiScheduleToLocal(createdApi);
     apiRoutineSchedules.value.unshift(mapped);
     await fetchTasks();
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error adding routine schedule:', err);
-    alert('Gagal membuat jadwal rutin');
+    const status = err?.response?.status;
+    const message = err?.response?.data?.error_message || err?.response?.data?.message;
+    if (status === 409) {
+      alert(`Gagal: Jadwal dengan nama dan kandang yang sama sudah ada. Silakan ubah jadwal yang ada atau buat dengan nama berbeda.`);
+    } else {
+      alert(message ? `Gagal membuat jadwal: ${message}` : 'Gagal membuat jadwal rutin');
+    }
   }
 }
 
 export async function updateRoutineSchedule(id: string, patch: Partial<Omit<RoutineSchedule, 'id' | 'createdAt'>>) {
-  const isLocal = id.startsWith('S-');
-  if (isLocal) {
-    const i = localSchedules.value.findIndex((s) => s.id === id);
-    if (i !== -1) {
-      localSchedules.value[i] = { ...localSchedules.value[i], ...patch } as RoutineSchedule;
-      localStorage.setItem(LOCAL_SCHEDULES_KEY, JSON.stringify(localSchedules.value));
-    }
-    return;
-  }
-
   try {
     const apiPayload = mapLocalScheduleToApi(patch);
     const updatedApi = await routineSchedulesApi.update(id, apiPayload);
     const mapped = mapApiScheduleToLocal(updatedApi);
-    
     const i = apiRoutineSchedules.value.findIndex((s) => s.id === id);
     if (i !== -1) {
       apiRoutineSchedules.value[i] = mapped;
@@ -395,13 +390,6 @@ export async function updateRoutineSchedule(id: string, patch: Partial<Omit<Rout
 }
 
 export async function deleteRoutineSchedule(id: string) {
-  const isLocal = id.startsWith('S-');
-  if (isLocal) {
-    localSchedules.value = localSchedules.value.filter((s) => s.id !== id);
-    localStorage.setItem(LOCAL_SCHEDULES_KEY, JSON.stringify(localSchedules.value));
-    return;
-  }
-
   try {
     await routineSchedulesApi.delete(id);
     apiRoutineSchedules.value = apiRoutineSchedules.value.filter((s) => s.id !== id);
@@ -496,8 +484,34 @@ function formatDescriptionForApi(description: string, cageCode: string, rincian?
   return finalDesc;
 }
 function mapAssigneeToUserId(assigneeCode: string): string {
-  // Selalu gunakan ID Admin karena endpoint backend /api/tasks di-mock untuk hanya mengambil tugas milik Admin (11111111-1111-1111-1111-111111111101)
-  return '11111111-1111-1111-1111-111111111101';
+  if (assigneeCode) {
+    const matchedAccount = accountsList.value.find((acc) => {
+      const cat = String(acc.operator_category || '').toLowerCase();
+      const username = String(acc.username || '').toLowerCase();
+      if (assigneeCode === 'OP002') {
+        return cat.includes('kebun') || username.includes('kebun');
+      } else if (assigneeCode === 'OP001') {
+        return cat.includes('ternak') || username === 'operator';
+      } else if (assigneeCode === 'PEM001') {
+        return cat.includes('pemilik') || username.includes('pemilik');
+      }
+      return false;
+    });
+
+    if (matchedAccount) {
+      return String(matchedAccount.id);
+    }
+  }
+
+  // Fallback defaults matching seeder IDs
+  if (assigneeCode === 'OP002') {
+    return '11111111-1111-1111-1111-111111111105'; // Operator Kebun
+  } else if (assigneeCode === 'OP001') {
+    return '11111111-1111-1111-1111-111111111103'; // Operator Ternak
+  } else if (assigneeCode === 'PEM001') {
+    return '11111111-1111-1111-1111-111111111104'; // Pemilik
+  }
+  return '11111111-1111-1111-1111-111111111101'; // Admin fallback
 }
 
 export async function addOperatorTask(task: any) {
@@ -617,10 +631,10 @@ export async function deleteOperatorTask(id: string) {
   }
 }
 
-export async function generateTasksFromSchedules() {
+export async function generateTasksFromSchedules(date?: string) {
   try {
     await routineSchedulesApi.generate(7);
-    await fetchTasks();
+    await fetchTasks(date);
     alert('Berhasil menyinkronkan tugas rutin untuk 7 hari ke depan.');
   } catch (err) {
     console.error('Error generating tasks from schedules:', err);

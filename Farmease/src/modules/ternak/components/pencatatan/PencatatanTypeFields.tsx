@@ -11,6 +11,7 @@ import { stocks } from '@/modules/ternak/store/peternakan';
 import { sheep, weightRecords } from '@/store/livestock';
 import { breedingApi } from '@/shared/api';
 import { ref } from 'vue';
+import { metadataEnums } from '@/store/operatorAdmin';
 
 export type PencatatanFormItem = {
   id: string;
@@ -331,6 +332,10 @@ export default defineComponent({
       }, 800);
     }, { immediate: true });
 
+    const isModeToggleDisabled = computed(() => {
+      return ['kotoran', 'berat_badan', 'perkawinan', 'kelahiran'].includes(props.jenisId);
+    });
+
     return () => (
       <>
         {props.showModeToggle && (
@@ -338,6 +343,7 @@ export default defineComponent({
             <PencatatanModeToggle
               modelValue={f().mode}
               onUpdateModelValue={(mode: PencatatanMode) => props.onModeChange?.(mode)}
+              disabled={isModeToggleDisabled.value}
             />
           </div>
         )}
@@ -675,10 +681,7 @@ export default defineComponent({
               <PencatatanField label="Metoda Perkawinan" colClass="col-12">
                 <PencatatanSelect
                   modelValue={f().metoda}
-                  options={[
-                    { value: 'alami', label: 'Kawin Alam' },
-                    { value: 'suntik', label: 'Inseminasi Buatan' },
-                  ]}
+                  options={metadataEnums.value.mating_method}
                   onUpdateModelValue={(v: string) => { f().metoda = v; }}
                 />
               </PencatatanField>
@@ -757,7 +760,7 @@ export default defineComponent({
               <PencatatanField label="Kondisi Anak" colClass="col-12">
                 <PencatatanSelect
                   modelValue={f().kondisiAnak}
-                  options={['Sehat', 'Lemas', 'Cacat', 'Mati']}
+                  options={metadataEnums.value.offspring_condition}
                   onUpdateModelValue={(v: string) => { f().kondisiAnak = v; }}
                 />
               </PencatatanField>

@@ -1,5 +1,6 @@
 import { defineComponent, ref, computed } from 'vue';
 import Typography from '@/shared/ui/Typography';
+import BackButton from '@/shared/ui/BackButton';
 import ReportsExport from '../components/tools/ReportsExport';
 import ActivityLog from '../components/tools/ActivityLog';
 
@@ -36,19 +37,13 @@ export default defineComponent({
           <div class="animate-fade-in">
             {/* Tool Header with Back Button */}
             <div class="d-flex align-items-center mb-4">
-              <button
+              <BackButton
                 onClick={() => activeToolId.value = null}
-                class="header-logout-btn"
-                style={{ width: '38px', height: '38px', background: 'white' }}
                 title="Kembali ke Menu Alat"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <Typography variant="span" size="text-sm" weight="extrabold" className="ms-3 text-secondary">
-                Kembali ke Alat & Laporan
-              </Typography>
+                label="Kembali ke Alat & Laporan"
+                variant="outline"
+                className="fw-extrabold text-secondary px-4 py-2"
+              />
             </div>
 
             {/* Tool Render Card */}

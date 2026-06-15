@@ -127,11 +127,22 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  text-decoration: none;
+}
+.peternakan-tab-pill:hover,
+.peternakan-tab-pill:focus {
+  text-decoration: none;
+  color: #8B5E3C;
 }
 .peternakan-tab-pill.active {
   background: #8B5E3C;
   color: #FFFFFF;
   box-shadow: 0 4px 10px rgba(139, 94, 60, 0.18);
+  text-decoration: none;
+}
+.peternakan-tab-pill.active:hover,
+.peternakan-tab-pill.active:focus {
+  color: #FFFFFF;
 }
 
 /* ── Content Area ────────────────────────── */

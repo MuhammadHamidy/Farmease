@@ -27,15 +27,12 @@ export default defineComponent({
               Tren kenaikan berat badan domba di Kandang {props.activeCageCode || '—'} (5 Bulan Terakhir)
             </Typography>
           </div>
-          <Badge variant="success" className="px-3 py-1.5" style={{ fontSize: '0.65rem' }}>
-            Kandang {props.activeCageCode || '—'}
-          </Badge>
         </div>
 
         <div class="row g-3 mb-4">
           <div class="col-6 col-md-4">
             <div class="important-cage-tile p-3">
-              <Typography variant="span" size="text-xs" className="text-secondary text-uppercase fw-bold d-block mb-1">Rata-Rata Berat</Typography>
+              <Typography variant="span" size="text-xs" className="text-secondary fw-bold d-block mb-1">Rata-Rata Berat</Typography>
               <Typography variant="h4" weight="extrabold" className="m-0" style={{ color: 'var(--color-primary)' }}>
                 {props.averageWeightCurrent}
               </Typography>
@@ -43,16 +40,16 @@ export default defineComponent({
           </div>
           <div class="col-6 col-md-4">
             <div class="important-cage-tile p-3">
-              <Typography variant="span" size="text-xs" className="text-secondary text-uppercase fw-bold d-block mb-1">Pertumbuhan</Typography>
-              <Typography variant="h4" weight="extrabold" className="m-0" style={{ color: 'var(--color-secondary)' }}>
+              <Typography variant="span" size="text-xs" className="text-secondary fw-bold d-block mb-1">Pertumbuhan</Typography>
+              <Typography variant="h4" weight="extrabold" className="m-0" style={{ color: 'var(--color-primary)' }}>
                 {props.weightGrowthString}
               </Typography>
             </div>
           </div>
           <div class="col-12 col-md-4">
             <div class="important-cage-tile p-3">
-              <Typography variant="span" size="text-xs" className="text-secondary text-uppercase fw-bold d-block mb-1">Total Populasi</Typography>
-              <Typography variant="h4" weight="extrabold" className="m-0" style={{ color: 'var(--color-on-surface)' }}>
+              <Typography variant="span" size="text-xs" className="text-secondary fw-bold d-block mb-1">Total Populasi</Typography>
+              <Typography variant="h4" weight="extrabold" className="m-0" style={{ color: 'var(--color-primary)' }}>
                 {props.totalAnimals} / {props.activeCageCapacity} Ekor
               </Typography>
             </div>

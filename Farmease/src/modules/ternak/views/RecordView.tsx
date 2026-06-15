@@ -42,7 +42,12 @@ const categoryIcons: Record<string, string> = {
   umum: '/icon/catat_jenis.png',
 };
 
-const MODE_TOGGLE_TYPES = new Set(['pakan', 'kesehatan', 'kotoran']);
+const LOCKED_TOGGLE_TYPES: Record<string, 'domba' | 'kandang'> = {
+  kotoran: 'kandang',
+  berat_badan: 'domba',
+  perkawinan: 'domba',
+  kelahiran: 'domba',
+};
 
 
 
@@ -80,15 +85,17 @@ export default defineComponent({
     });
 
     const currentDetailOptions = computed(() => detailOptions[selectedType.value] || []);
-    const showModeToggle = computed(() => MODE_TOGGLE_TYPES.has(selectedType.value));
+    const showModeToggle = computed(() => selectedType.value !== 'stok_pakan');
+    const isModeToggleDisabled = computed(() => selectedType.value in LOCKED_TOGGLE_TYPES);
 
 
 
     watch(selectedType, (newType) => {
-      if (!MODE_TOGGLE_TYPES.has(newType)) {
-        selectedScope.value = 'domba';
+      const scope = LOCKED_TOGGLE_TYPES[newType];
+      if (scope) {
+        selectedScope.value = scope;
       }
-    });
+    }, { immediate: true });
 
     const openForm = () => {
       activePencatatanForm.value = {
@@ -159,6 +166,7 @@ export default defineComponent({
                           onUpdateModelValue={(mode: PencatatanMode) => {
                             selectedScope.value = mode === 'kelompok' ? 'kandang' : 'domba';
                           }}
+                          disabled={isModeToggleDisabled.value}
                         />
                       ) : (
                         <Badge variant="solid-primary" className="px-3 py-1">Mode Domba</Badge>

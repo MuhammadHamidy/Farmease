@@ -72,6 +72,17 @@
   background-color: color-mix(in srgb, var(--color-secondary-container) 40%, transparent);
 }
 
+.pencatatan-mode-toggle.is-disabled {
+  opacity: 0.6;
+  background-color: color-mix(in srgb, var(--color-outline-variant) 15%, transparent);
+  cursor: not-allowed;
+}
+
+.pencatatan-mode-toggle.is-disabled .pencatatan-mode-btn {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .pencatatan-mode-btn {
   flex: 1;
   display: flex;

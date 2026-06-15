@@ -9,6 +9,8 @@ import { feedsApi, breedingApi } from '@/shared/api';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import Button from '@/shared/ui/Button';
+import SubmitButton from '@/shared/ui/SubmitButton';
+import BackButton from '@/shared/ui/BackButton';
 import PencatatanTypeFields, { type PencatatanFormItem } from '@/modules/ternak/components/pencatatan/PencatatanTypeFields';
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import { useRouter } from 'vue-router';
@@ -55,7 +57,7 @@ export default defineComponent({
         metoda: 'alami',
         jumlahAnak: '',
         kondisiInduk: 'Sehat',
-        kondisiAnak: 'Sehat',
+        kondisiAnak: 'sehat',
         tanggal: new Date().toISOString().split('T')[0],
         pemanfaatan: 'Pupuk Organik Kebun',
         kandangAnak: '',
@@ -145,7 +147,7 @@ export default defineComponent({
           taskId: activePencatatanForm.value?.taskId,
         } as any);
 
-        selectedPencatatanPayload.value = recapPayload.value;
+        selectedPencatatanPayload.value = null;
         activePencatatanForm.value = null;
         recapPayload.value = null;
         showRecap.value = false;
@@ -366,11 +368,11 @@ export default defineComponent({
               <div class="text-center mb-5">
                 <div style={{
                   width: '72px', height: '72px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #606C38, #30360E)',
+                  background: 'linear-gradient(135deg, #5d4e41 0%, #3D2F24 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 1rem'
+                  margin: '0 auto 1rem', padding: '0', overflow: 'hidden'
                 }}>
-                  <img src={jenisIcon} style={{ width: '36px', height: '36px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} alt="" />
+                  <img src={jenisIcon} style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block', margin: '0', padding: '0', verticalAlign: 'middle' }} alt="" />
                 </div>
                 <Typography variant="h3" weight="extrabold" className="m-0 text-almond-beige">Rekap Pencatatan</Typography>
                 <Typography variant="p" size="text-sm" color="secondary" className="mt-2 mb-0">
@@ -421,9 +423,16 @@ export default defineComponent({
                     <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{recapPayload.value.data.summary}</span>
                   </div>
                   {activePencatatanForm.value?.taskId && (
-                    <div style={{ marginTop: '0.5rem', padding: '0.65rem 0.85rem', background: '#F0F7FF', borderRadius: '10px', border: '1px solid #BDE0FE' }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#1A5276' }}>
-                        🔗 Terhubung ke Tugas Rutin — status tugas akan berubah ke <b>Menunggu Validasi</b> setelah klik Selesai.
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', alignItems: 'center', marginTop: '0.25rem', paddingTop: '0.75rem', borderTop: '1px dashed #E6D9CE' }}>
+                      <span style={{ color: '#6C757D', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <img src="/icon/rutin_task.png" style={{ width: '16px', height: '16px', objectFit: 'contain' }} alt="" />
+                        Tugas Rutin
+                      </span>
+                      <span style={{ fontWeight: '700', color: '#30360E', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        {activePencatatanForm.value?.rincian?.[0]?.name || 'Tugas Terkait'}
+                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', background: '#FCF3CF', color: '#B7950B', borderRadius: '6px', fontWeight: '700' }}>
+                          Menunggu Validasi
+                        </span>
                       </span>
                     </div>
                   )}
@@ -431,44 +440,142 @@ export default defineComponent({
               </div>
 
               {/* Items detail */}
-              {items.map((item: any, idx: number) => (
-                <div key={idx} style={{
-                  background: '#FAFAF8', borderRadius: '14px', padding: '1rem',
-                  border: '1px solid #E6D9CE', marginBottom: '0.75rem'
-                }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#9E9E9E', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                    Rincian #{idx + 1} — {item.name}
+              {items.map((item: any, idx: number) => {
+                const isCage = item.mode === 'kelompok' || activePencatatanForm.value?.scope === 'kandang';
+                const targetLabel = isCage ? 'ID Kandang' : 'ID Domba';
+
+                let qtyLabel = 'Jumlah';
+                if (jenis.id === 'pakan') qtyLabel = 'Jumlah Pakan';
+                else if (jenis.id === 'stok_pakan') qtyLabel = 'Jumlah Masuk';
+                else if (jenis.id === 'kotoran') qtyLabel = 'Jumlah Produksi';
+                else if (jenis.id === 'berat_badan') qtyLabel = 'Berat Badan';
+                else if (jenis.id === 'kelahiran') qtyLabel = 'Berat Lahir';
+
+                return (
+                  <div key={idx} style={{
+                    background: '#FAFAF8', borderRadius: '14px', padding: '1rem',
+                    border: '1px solid #E6D9CE', marginBottom: '0.75rem'
+                  }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: '700', color: '#9E9E9E', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                      Rincian #{idx + 1} — {item.name}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      {item.targetId && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>{targetLabel}</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.targetId}</span>
+                        </div>
+                      )}
+                      {item.qty && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>{qtyLabel}</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.qty} {item.unit || ''}</span>
+                        </div>
+                      )}
+                      {item.tindakan && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tindakan</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tindakan}</span>
+                        </div>
+                      )}
+                      {item.obat && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>
+                            {jenis.id === 'pakan' ? 'Jenis Pakan' : 'Obat / Vitamin'}
+                          </span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
+                        </div>
+                      )}
+                      {item.vitaminAmount && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Dosis</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.vitaminAmount} ml</span>
+                        </div>
+                      )}
+                      {item.kotoranState && jenis.id === 'kotoran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Kondisi Kotoran</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">: {item.kotoranState}</span>
+                        </div>
+                      )}
+                      {item.pemanfaatan && jenis.id === 'kotoran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pemanfaatan</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.pemanfaatan}</span>
+                        </div>
+                      )}
+                      {item.idPejantan && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>ID Pejantan</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.idPejantan}</span>
+                        </div>
+                      )}
+                      {item.metoda && jenis.id === 'perkawinan' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Metode Kawin</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">: {item.metoda}</span>
+                        </div>
+                      )}
+                      {item.namaAnak && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Nama Anak</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.namaAnak}</span>
+                        </div>
+                      )}
+                      {item.kandangAnak && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Kandang Anak</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.kandangAnak}</span>
+                        </div>
+                      )}
+                      {item.jumlahAnak && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Jumlah Anak</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.jumlahAnak} ekor</span>
+                        </div>
+                      )}
+                      {item.beratLahir && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Berat Lahir</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.beratLahir} kg</span>
+                        </div>
+                      )}
+                      {item.kondisiAnak && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Kondisi Anak</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.kondisiAnak}</span>
+                        </div>
+                      )}
+                      {item.kondisiInduk && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Kondisi Induk</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.kondisiInduk}</span>
+                        </div>
+                      )}
+                      {item.note && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem', padding: '0.5rem', background: '#F5F5F5', borderRadius: '8px' }}>
+                          <span style={{ color: '#6C757D', fontWeight: '600' }}>Catatan</span>
+                          <span style={{ color: '#424242', fontWeight: '500', lineHeight: '1.4' }}>{item.note}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                    {item.targetId && <span style={{ background: '#E8F5E9', color: '#2E7D32', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>ID: {item.targetId}</span>}
-                    {item.qty && <span style={{ background: '#E3F2FD', color: '#1565C0', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>{item.qty} {item.unit || ''}</span>}
-                    {item.tindakan && <span style={{ background: '#FFF3E0', color: '#E65100', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>{item.tindakan}</span>}
-                    {item.obat && <span style={{ background: '#F3E5F5', color: '#6A1B9A', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>{item.obat}</span>}
-                    {item.note && <span style={{ background: '#F5F5F5', color: '#424242', borderRadius: '8px', padding: '0.15rem 0.5rem', fontSize: '0.72rem', fontWeight: '600' }}>📝 {item.note}</span>}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                <button
-                  type="button"
-                  class="btn rounded-pill fw-bold"
-                  style={{ flex: 1, padding: '0.75rem', border: '1.5px solid #D8DCC8', background: 'transparent', color: '#606C38', fontSize: '0.9rem' }}
+                <BackButton
                   onClick={() => { showRecap.value = false; }}
-                  disabled={isSubmitting.value}
-                >
-                  ← Ubah Data
-                </button>
-                <button
-                  type="button"
-                  class="btn rounded-pill fw-bold text-white"
-                  style={{ flex: 2, padding: '0.75rem', background: 'linear-gradient(135deg, #606C38, #30360E)', border: 'none', fontSize: '0.95rem', boxShadow: '0 4px 12px rgba(48,54,14,0.3)' }}
+                  label="Ubah Data"
+                  style={{ flex: 1 }}
+                />
+                <SubmitButton
+                  label="Kirim Pencatatan"
+                  loading={isSubmitting.value}
                   onClick={handleFinalSubmit}
-                  disabled={isSubmitting.value}
-                >
-                  {isSubmitting.value ? '⏳ Mengirim...' : '✅ Selesai — Kirim ke Admin'}
-                </button>
+                  style={{ flex: 2 }}
+                />
               </div>
 
               <CustomAlertModal alert={alertModal.value} onClose={closeAlertModal} />
@@ -514,9 +621,12 @@ export default defineComponent({
                 <Button variant="secondary" shape="pill" onClick={goBack} disabled={isSubmitting.value} className="flex-grow-1 flex-md-grow-0 text-center">
                   Batal
                 </Button>
-                <Button variant="primary" shape="pill" onClick={handleSaved} className="shadow-sm flex-grow-1 flex-md-grow-0 text-center" disabled={isSubmitting.value}>
-                  {isSubmitting.value ? 'Menyimpan...' : 'Simpan'}
-                </Button>
+                <SubmitButton
+                  label="Simpan"
+                  loading={isSubmitting.value}
+                  onClick={handleSaved}
+                  className="shadow-sm flex-grow-1 flex-md-grow-0 text-center"
+                />
               </div>
             </div>
 

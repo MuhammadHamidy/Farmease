@@ -13,7 +13,6 @@ import {
   addRoutineSchedule,
   updateRoutineSchedule,
   deleteRoutineSchedule,
-  generateTasksFromSchedules,
   fetchRoutineSchedules,
   operatorTasks,
   fetchTasks,
@@ -23,7 +22,8 @@ import {
   type PencatatanCategory,
   type ScheduleFrequency,
   type OperatorTask,
-  fetchAccountsList
+  fetchAccountsList,
+  metadataEnums
 } from '@/modules/ternak/store/operatorAdmin';
 
 const operators = [
@@ -79,13 +79,27 @@ export default defineComponent({
       await fetchTasks(newVal);
     });
 
-    const categories = computed(() => props.type === 'peternakan'
-      ? ['Pakan', 'Kesehatan', 'Kotoran', 'Perkawinan', 'Kelahiran', 'Umum']
-      : ['Penyiraman', 'Pemupukan', 'Pemangkasan', 'Panen', 'Pembersihan', 'Umum']);
+    const categories = computed(() => {
+      const allCats = metadataEnums.value?.task_category || [];
+      const filterKeys = props.type === 'peternakan'
+        ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
+        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
       
-    const categoryValues = computed(() => props.type === 'peternakan'
-      ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-      : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum']);
+      return allCats
+        .filter(c => filterKeys.includes(c.value))
+        .map(c => c.label);
+    });
+      
+    const categoryValues = computed(() => {
+      const allCats = metadataEnums.value?.task_category || [];
+      const filterKeys = props.type === 'peternakan'
+        ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
+        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+      
+      return allCats
+        .filter(c => filterKeys.includes(c.value))
+        .map(c => c.value);
+    });
 
     const ternakRincianOptions: Record<string, string[]> = {
       pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Suplementasi'],
@@ -153,6 +167,23 @@ export default defineComponent({
 
     const currentRincianOptions = computed(() => {
       if (!form.category) return [];
+      
+      const allRincian = metadataEnums.value?.task_rincian || [];
+      const categoryMap: Record<string, string[]> = {
+        pakan: ['Pakan Pagi', 'Pakan Sore', 'Konversi Pakan'],
+        kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
+        kotoran: ['Pembersihan Kandang', 'Fermentasi Kotoran'],
+        perkawinan: ['Kawin Alami', 'Inseminasi Buatan'],
+        kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
+      };
+      
+      const allowedVals = categoryMap[form.category];
+      if (allowedVals) {
+        return allRincian
+          .filter(r => allowedVals.includes(r.value))
+          .map(r => r.label);
+      }
+      
       const opts = props.type === 'peternakan' ? ternakRincianOptions : kebunRincianOptions;
       return opts[form.category] || ['Lainnya'];
     });
@@ -193,13 +224,13 @@ export default defineComponent({
 
     onMounted(async () => {
       await fetchAccountsList();
-      await fetchTasks(dateFilter.value);
-      await fetchRoutineSchedules();
       if (props.type === 'perkebunan') {
         await fetchLandsList();
       } else {
         await fetchCagesList();
       }
+      await fetchTasks(dateFilter.value);
+      await fetchRoutineSchedules();
     });
 
     const frequencyLabel = (f: string) => {
@@ -429,7 +460,6 @@ export default defineComponent({
             </Typography>
           </div>
           <div class="d-flex gap-2 flex-wrap">
-
               <Button 
                 variant="solid" 
                 onClick={openAdd}
@@ -603,15 +633,23 @@ export default defineComponent({
               </div>
               <div class="peternakan-modal-body text-center pt-3">
                 <p class="mb-4" style={{ color: '#2C3E50', fontSize: '1rem' }}>
-                  Apakah Anda yakin ingin menghapus tugas <br/><strong>"{taskToDelete.value.title}"</strong>?
+                  {taskToDelete.value.scheduleId 
+                    ? <span>Apakah Anda yakin ingin menghapus jadwal rutin <br/><strong>"{taskToDelete.value.title}"</strong> beserta seluruh tugasnya?</span>
+                    : <span>Apakah Anda yakin ingin menghapus tugas <br/><strong>"{taskToDelete.value.title}"</strong>?</span>
+                  }
                 </p>
                 <div class="d-flex gap-2 w-100 mt-2">
                   <button class="btn btn-light w-50 fw-bold py-2 rounded-pill" onClick={() => isDeleteModalOpen.value = false}>Batal</button>
                   <button class="btn w-50 fw-bold py-2 rounded-pill text-white" style={{ backgroundColor: 'var(--color-danger, #dc3545)' }} onClick={async () => {
-                    await deleteOperatorTask(taskToDelete.value!.id);
+                    if (taskToDelete.value!.scheduleId) {
+                      await deleteRoutineSchedule(taskToDelete.value!.scheduleId);
+                      displayToast('Jadwal rutin dan seluruh tugasnya berhasil dihapus!');
+                    } else {
+                      await deleteOperatorTask(taskToDelete.value!.id);
+                      displayToast('Tugas berhasil dihapus!');
+                    }
                     isDeleteModalOpen.value = false;
                     isDetailOpen.value = false;
-                    displayToast('Tugas berhasil dihapus!');
                     await fetchTasks(dateFilter.value);
                   }}>Ya, Hapus</button>
                 </div>

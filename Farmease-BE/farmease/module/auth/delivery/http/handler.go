@@ -29,6 +29,8 @@ func (h *AuthHandler) RegisterRoutes(app *fiber.App) {
 
 	roles := api.Group("/roles")
 	roles.Get("/", h.GetRoleList)
+
+	api.Get("/metadata/enums", h.GetMetadataEnums)
 }
 
 // Login godoc
@@ -141,4 +143,155 @@ func (h *AuthHandler) GetRoleList(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 	return c.Status(http.StatusOK).JSON(res)
+}
+
+type EnumChoice struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
+
+type MetadataEnumsResponse struct {
+	Gender             []EnumChoice `json:"gender"`
+	SheepStatus        []EnumChoice `json:"sheep_status"`
+	FeedCategory       []EnumChoice `json:"feed_category"`
+	TaskCategory       []EnumChoice `json:"task_category"`
+	TaskRincian        []EnumChoice `json:"task_rincian"`
+	DayOfWeek          []EnumChoice `json:"day_of_week"`
+	Frequency          []EnumChoice `json:"frequency"`
+	MatingMethod       []EnumChoice `json:"mating_method"`
+	MatingStatus       []EnumChoice `json:"mating_status"`
+	PregnancyStatus    []EnumChoice `json:"pregnancy_status"`
+	OffspringGender    []EnumChoice `json:"offspring_gender"`
+	OffspringCondition []EnumChoice `json:"offspring_condition"`
+	ManureActivity     []EnumChoice `json:"manure_activity"`
+	ManureDest         []EnumChoice `json:"manure_dest"`
+	Priority           []EnumChoice `json:"priority"`
+	TaskStatus         []EnumChoice `json:"task_status"`
+}
+
+// GetMetadataEnums godoc
+// @Summary      Get list of all system static enums
+// @Description  Retrieve value-label choices for form fields to prevent free text entry
+// @Tags         metadata
+// @Accept       json
+// @Produce      json
+// @Success      200     {object}  MetadataEnumsResponse
+// @Router       /api/metadata/enums [get]
+func (h *AuthHandler) GetMetadataEnums(c *fiber.Ctx) error {
+	response := MetadataEnumsResponse{
+		Gender: []EnumChoice{
+			{Value: "jantan", Label: "Jantan"},
+			{Value: "betina", Label: "Betina"},
+		},
+		SheepStatus: []EnumChoice{
+			{Value: "aktif", Label: "Aktif"},
+			{Value: "hamil", Label: "Hamil"},
+			{Value: "dijual", Label: "Dijual"},
+			{Value: "mati", Label: "Mati"},
+			{Value: "disembelih", Label: "Disembelih"},
+		},
+		FeedCategory: []EnumChoice{
+			{Value: "hijauan", Label: "Hijauan"},
+			{Value: "konsentrat", Label: "Konsentrat"},
+			{Value: "pellet", Label: "Pellet"},
+			{Value: "greenery", Label: "Greenery"},
+			{Value: "vitamin", Label: "Vitamin"},
+		},
+		TaskCategory: []EnumChoice{
+			{Value: "pakan", Label: "Pemberian Pakan"},
+			{Value: "kesehatan", Label: "Kesehatan / Pengobatan"},
+			{Value: "kotoran", Label: "Kotoran / Sanitasi"},
+			{Value: "perkawinan", Label: "Perkawinan"},
+			{Value: "kelahiran", Label: "Kelahiran"},
+			{Value: "penyiraman", Label: "Penyiraman"},
+			{Value: "pemupukan", Label: "Pemupukan"},
+			{Value: "pembersihan", Label: "Pembersihan Lahan"},
+			{Value: "pemangkasan", Label: "Pemangkasan"},
+			{Value: "panen", Label: "Panen"},
+			{Value: "weighing", Label: "Penimbangan Berat"},
+			{Value: "maintenance", Label: "Pemeliharaan"},
+			{Value: "admin", Label: "Administrasi"},
+			{Value: "umum", Label: "Umum"},
+		},
+		TaskRincian: []EnumChoice{
+			{Value: "Pakan Pagi", Label: "Pakan Pagi"},
+			{Value: "Pakan Sore", Label: "Pakan Sore"},
+			{Value: "Konversi Pakan", Label: "Konversi Pakan"},
+			{Value: "Pemberian Obat", Label: "Pemberian Obat"},
+			{Value: "Pemberian Vitamin", Label: "Pemberian Vitamin"},
+			{Value: "Vaksinasi", Label: "Vaksinasi"},
+			{Value: "Pemeriksaan Medis", Label: "Pemeriksaan Medis"},
+			{Value: "Pembersihan Kandang", Label: "Pembersihan Kandang"},
+			{Value: "Fermentasi Kotoran", Label: "Fermentasi Kotoran"},
+			{Value: "Kawin Alami", Label: "Kawin Alami"},
+			{Value: "Inseminasi Buatan", Label: "Inseminasi Buatan"},
+			{Value: "Pencatatan Kelahiran", Label: "Pencatatan Kelahiran"},
+			{Value: "Pemeriksaan Anak & Induk", Label: "Pemeriksaan Anak & Induk"},
+		},
+		DayOfWeek: []EnumChoice{
+			{Value: "Senin", Label: "Senin"},
+			{Value: "Selasa", Label: "Selasa"},
+			{Value: "Rabu", Label: "Rabu"},
+			{Value: "Kamis", Label: "Kamis"},
+			{Value: "Jumat", Label: "Jumat"},
+			{Value: "Sabtu", Label: "Sabtu"},
+			{Value: "Minggu", Label: "Minggu"},
+		},
+		Frequency: []EnumChoice{
+			{Value: "sekali", Label: "Sekali"},
+			{Value: "harian", Label: "Harian"},
+			{Value: "mingguan", Label: "Mingguan"},
+			{Value: "bulanan", Label: "Bulanan"},
+		},
+		MatingMethod: []EnumChoice{
+			{Value: "alami", Label: "Alami"},
+			{Value: "ib", Label: "Inseminasi Buatan (IB)"},
+		},
+		MatingStatus: []EnumChoice{
+			{Value: "proses", Label: "Dalam Proses"},
+			{Value: "sukses", Label: "Sukses"},
+			{Value: "gagal", Label: "Gagal"},
+		},
+		PregnancyStatus: []EnumChoice{
+			{Value: "dikandung", Label: "Dikandung"},
+			{Value: "melahirkan", Label: "Melahirkan"},
+			{Value: "keguguran", Label: "Keguguran"},
+		},
+		OffspringGender: []EnumChoice{
+			{Value: "jantan", Label: "Jantan"},
+			{Value: "betina", Label: "Betina"},
+			{Value: "campuran", Label: "Campuran"},
+		},
+		OffspringCondition: []EnumChoice{
+			{Value: "sehat", Label: "Sehat"},
+			{Value: "lemas", Label: "Lemas"},
+			{Value: "cacat", Label: "Cacat"},
+			{Value: "mati", Label: "Mati"},
+		},
+		ManureActivity: []EnumChoice{
+			{Value: "collection", Label: "Pengumpulan"},
+			{Value: "fermentation", Label: "Fermentasi"},
+			{Value: "distribution", Label: "Penyaluran"},
+		},
+		ManureDest: []EnumChoice{
+			{Value: "internal", Label: "Internal"},
+			{Value: "internal_kebun", Label: "Internal Kebun"},
+			{Value: "external_sale", Label: "Penjualan Eksternal"},
+		},
+		Priority: []EnumChoice{
+			{Value: "rendah", Label: "Rendah"},
+			{Value: "sedang", Label: "Sedang"},
+			{Value: "tinggi", Label: "Tinggi"},
+		},
+		TaskStatus: []EnumChoice{
+			{Value: "belum", Label: "Belum Dikerjakan"},
+			{Value: "proses", Label: "Sedang Diproses"},
+			{Value: "selesai", Label: "Selesai"},
+			{Value: "terlambat", Label: "Terlambat"},
+			{Value: "pending", Label: "Pending"},
+			{Value: "done", Label: "Selesai (Done)"},
+			{Value: "menunggu", Label: "Menunggu Validasi"},
+		},
+	}
+	return c.Status(fiber.StatusOK).JSON(response)
 }

@@ -70,7 +70,13 @@ export default defineComponent({
           return;
         }
       } catch (err: any) {
-        console.warn('Backend login failed, falling back to mock auth:', err);
+        console.warn('Backend login failed:', err);
+        // If the server is offline (no response received or network error)
+        if (!err.response || err.code === 'ERR_NETWORK') {
+          error.value = 'Koneksi ke server gagal. Pastikan backend aktif.';
+          loading.value = false;
+          return;
+        }
       }
 
       const account = authenticateSso(user, pass);

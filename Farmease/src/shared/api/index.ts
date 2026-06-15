@@ -1,7 +1,7 @@
 export { default as apiClient } from './client'
 export * from './client'
 
-export { default as authApi, type User, type AuthResponse } from './auth'
+export { default as authApi, type User, type AuthResponse, type EnumChoice, type MetadataEnums } from './auth'
 
 export { default as peternakan } from './peternakan'
 export * from './peternakan'

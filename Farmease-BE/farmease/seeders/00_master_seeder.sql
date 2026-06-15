@@ -1,4 +1,57 @@
+-- CLEANUP: Remove duplicate routine schedules (keep only the oldest per title+category+cage+account)
+-- Uniqueness is: same title + same category + same cage + same account = same schedule
+-- This is idempotent and safe to run repeatedly
+DO $$
+BEGIN
+    -- Delete tasks linked to duplicate schedules
+    DELETE FROM operations.tasks
+    WHERE schedule_id IN (
+        SELECT id FROM operations.routine_schedules
+        WHERE id NOT IN (
+            SELECT DISTINCT ON (title, category, COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''))
+                id
+            FROM operations.routine_schedules
+            ORDER BY title, category, COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''), created_at ASC
+        )
+    );
+
+    -- Delete duplicate schedules (keep oldest per title+category+cage+account)
+    DELETE FROM operations.routine_schedules
+    WHERE id NOT IN (
+        SELECT DISTINCT ON (title, category, COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''))
+            id
+        FROM operations.routine_schedules
+        ORDER BY title, category, COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''), created_at ASC
+    );
+
+    -- Fix FK: tasks.schedule_id should CASCADE DELETE (not SET NULL)
+    -- so that deleting a schedule also removes all its generated tasks
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'tasks_schedule_id_fkey'
+          AND table_schema = 'operations'
+          AND table_name = 'tasks'
+    ) THEN
+        EXECUTE 'ALTER TABLE operations.tasks DROP CONSTRAINT tasks_schedule_id_fkey';
+        EXECUTE 'ALTER TABLE operations.tasks ADD CONSTRAINT tasks_schedule_id_fkey
+            FOREIGN KEY (schedule_id) REFERENCES operations.routine_schedules(id) ON DELETE CASCADE';
+    END IF;
+
+    -- Drop old index if exists (it used wrong key), then recreate with correct key
+    DROP INDEX IF EXISTS uq_routine_schedules_active;
+
+    -- Apply unique index if not exists (for existing running databases)
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes WHERE indexname = 'uq_routine_schedules_active'
+    ) THEN
+        EXECUTE 'CREATE UNIQUE INDEX uq_routine_schedules_active
+            ON operations.routine_schedules (title, category, COALESCE(id_cage::TEXT, ''''), COALESCE(id_account::TEXT, ''''))
+            WHERE is_active = TRUE';
+    END IF;
+END $$;
+
 -- 1. AUTH
+
 INSERT INTO auth.roles (id_role, role_name, permissions) VALUES 
 ('00000000-0000-0000-0000-000000000001', 'Admin', 'full'),
 ('00000000-0000-0000-0000-000000000002', 'Operator', 'write')

@@ -180,9 +180,9 @@ func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 	query := `
 		UPDATE livestock.sheep
-		SET sheep_name = $1, id_cage = $2, status = $3, updated_at = CURRENT_TIMESTAMP
-		WHERE id_sheep = $4`
-	_, err := r.db.Exec(ctx, query, s.SheepName, s.IDCage, s.Status, s.IDSheep)
+		SET sheep_code = $1, sheep_name = $2, gender = $3, date_of_birth = $4::DATE, status = $5, origin = $6, id_cage = $7, id_type = $8, id_father = $9, id_mother = $10, updated_at = CURRENT_TIMESTAMP
+		WHERE id_sheep = $11`
+	_, err := r.db.Exec(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, s.IDCage, s.IDType, s.IDFather, s.IDMother, s.IDSheep)
 	return err
 }
 

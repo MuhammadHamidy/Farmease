@@ -41,10 +41,9 @@ services:
     container_name: farmease_migrate
     volumes:
       - ./Farmease-BE/farmease/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
     command: >
-      -path=/migrations
-      -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/${DB_NAME:-farmease_be}?sslmode=disable
-      up
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/${DB_NAME:-farmease_be}?sslmode=disable up || true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,7 +58,7 @@ services:
     environment:
       PGPASSWORD: ${DB_PASSWORD:-pass}
     command: >
-      sh -c "for f in /seeders/*.sql; do psql -h postgres -U ${DB_USER:-user} -d ${DB_NAME:-farmease_be} -f \"$$f\"; done"
+      sh -c "for f in /seeders/*.sql; do psql -h postgres -U ${DB_USER:-user} -d ${DB_NAME:-farmease_be} -f \"$$f\"; done || true"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -101,13 +100,14 @@ services:
       - ./Farmease-BE/farmease:/app/farmease
       - ./Farmease-BE/go.work:/app/go.work
       - backend_logs:/app/logs
+      - go_mod_cache:/go/pkg/mod
     networks:
       - farmease_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:8080/health/livez"]
-      interval: 30s
-      timeout: 10s
+      interval: 5s
+      timeout: 5s
       retries: 5
       start_period: 120s
 
@@ -137,6 +137,8 @@ volumes:
   postgres_data:
     driver: local
   backend_logs:
+    driver: local
+  go_mod_cache:
     driver: local
 
 networks:

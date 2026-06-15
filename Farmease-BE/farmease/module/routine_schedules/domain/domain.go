@@ -29,6 +29,7 @@ type RoutineSchedule struct {
 type RoutineScheduleRepository interface {
 	FindAll(ctx context.Context) ([]*RoutineSchedule, error)
 	FindByID(ctx context.Context, id string) (*RoutineSchedule, error)
+	FindDuplicate(ctx context.Context, rs *RoutineSchedule) (*RoutineSchedule, error)
 	Store(ctx context.Context, rs *RoutineSchedule) error
 	Update(ctx context.Context, rs *RoutineSchedule) error
 	Delete(ctx context.Context, id string) error
@@ -42,4 +43,5 @@ type RoutineScheduleUsecase interface {
 	Update(ctx context.Context, rs *RoutineSchedule) error
 	Delete(ctx context.Context, id string) error
 	GenerateTasks(ctx context.Context, windowDays int) error
+	GenerateTasksForSchedule(ctx context.Context, scheduleID string, windowDays int) error
 }

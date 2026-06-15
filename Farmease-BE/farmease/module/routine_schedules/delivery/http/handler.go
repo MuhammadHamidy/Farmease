@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules/domain"
@@ -94,11 +95,15 @@ func (h *RoutineScheduleHandler) Create(c *fiber.Ctx) error {
 
 	err := h.useCase.Create(c.Context(), rs)
 	if err != nil {
+		// Return 409 Conflict for duplicate schedule, 500 for other errors
+		if strings.Contains(err.Error(), "sudah ada") {
+			return c.Status(http.StatusConflict).JSON(responses.Fail("DUPLICATE_SCHEDULE", err.Error()))
+		}
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 
-	// Trigger generation immediately for the new schedule
-	_ = h.useCase.GenerateTasks(c.Context(), 7)
+	// Generate tasks ONLY for this new schedule (not all schedules)
+	_ = h.useCase.GenerateTasksForSchedule(c.Context(), rs.ID, 7)
 
 	return c.Status(http.StatusCreated).JSON(rs)
 }
@@ -149,8 +154,8 @@ func (h *RoutineScheduleHandler) Update(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 
-	// Trigger generation immediately to refresh tasks for the next 7 days
-	_ = h.useCase.GenerateTasks(c.Context(), 7)
+	// Regenerate tasks ONLY for this updated schedule (not all schedules)
+	_ = h.useCase.GenerateTasksForSchedule(c.Context(), rs.ID, 7)
 
 	return c.Status(http.StatusOK).JSON(rs)
 }

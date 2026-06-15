@@ -112,7 +112,7 @@ export default defineComponent({
                     style={{ backgroundColor: 'var(--color-primary)' }}
                     onClick={props.onGoToPencatatan}
                   >
-                    ✍️ Kerjakan Tugas
+                    Kerjakan Tugas
                   </button>
                 )}
               </div>

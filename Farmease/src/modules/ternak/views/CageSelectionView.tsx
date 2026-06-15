@@ -1,6 +1,7 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { userSession, cageSession, cagesList, fetchCagesList, cagesLoading } from '@/store/navigation';
+import BackButton from '@/shared/ui/BackButton';
 import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
 
 export default defineComponent({
@@ -56,14 +57,10 @@ export default defineComponent({
           width: '100%',
           boxShadow: '0 25px 50px -12px #3d2f2414'
         }}>
-          {/* Card Accent Top Line */}
-          <div class="position-absolute top-0 start-0 w-100" style={{ height: '6px', backgroundColor: 'var(--color-primary)', borderRadius: '4px 4px 0 0' }}></div>
+          {/* Card Accent Top Line removed */}
 
           {/* Title */}
           <div class="text-center mb-4">
-            <div class="d-inline-flex align-items-center justify-content-center mb-3">
-              <img src="/icon/security.png" alt="Masuk Kandang" style={{ height: '48px', width: '48px', objectFit: 'contain' }} />
-            </div>
             <h2 class="fw-extrabold text-on-surface mb-1" style={{ letterSpacing: '-0.02em', fontSize: 'var(--font-size-3xl)', fontFamily: 'var(--font-outfit), sans-serif' }}>Pilih Kandang Kerja</h2>
             <p class="text-on-surface-variant small m-0">Silakan pilih salah satu kandang di bawah untuk mulai pencatatan harian</p>
           </div>
@@ -128,15 +125,11 @@ export default defineComponent({
           )}
 
           {/* Cancel/Logout Link */}
-          <div class="text-center">
-            <button 
-              type="button" 
-              class="btn py-2 px-4 rounded-pill fw-bold text-secondary bg-light border hover-bg-light-cream transition-all"
-              style={{ fontFamily: 'var(--font-outfit), sans-serif', fontSize: 'var(--font-size-sm)' }}
+          <div class="d-flex justify-content-center">
+            <BackButton
               onClick={goBackToLogin}
-            >
-              ← Kembali ke Login (Keluar)
-            </button>
+              label="Kembali ke Login (Keluar)"
+            />
           </div>
         </div>
       </div>

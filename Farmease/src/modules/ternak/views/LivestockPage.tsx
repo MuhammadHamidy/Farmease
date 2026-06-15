@@ -6,7 +6,6 @@ import Typography from '@/shared/ui/Typography';
 import { useNotifications } from '@/shared/composables/useNotifications';
 import DashboardView from './DashboardView';
 import RecordView from './RecordView';
-import RecordDetailView from './RecordDetailView';
 import HistoryView from './HistoryView';
 import LivestockDetailView from './LivestockDetailView';
 import RecordFormView from './RecordFormView';
@@ -185,7 +184,6 @@ export default defineComponent({
           <div class="peternakan-content">
             <router-view />
             <RecordFormView />
-            <RecordDetailView />
           </div>
 
           {/* Notification Detail Modal */}

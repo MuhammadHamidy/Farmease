@@ -35,6 +35,9 @@ export interface Sheep {
   status: string
   notifications: number
   cage_code: string
+  origin?: string
+  adg?: number
+  adg_label?: string
 }
 
 export interface Cage {
@@ -73,6 +76,18 @@ import { cagesList } from './navigation'
 
 function mapSheep(row: ApiSheep): Sheep {
   const cage = cagesList.value.find((c) => c.id === row.id_cage)
+  
+  let mappedStatus = row.status || '';
+  const statusLower = mappedStatus.toLowerCase();
+  if (statusLower === 'aktif') mappedStatus = 'Sehat';
+  else if (statusLower === 'hamil') mappedStatus = 'Hamil';
+  else if (statusLower === 'dijual' || statusLower === 'terjual') mappedStatus = 'Terjual';
+  else if (statusLower === 'mati') mappedStatus = 'Mati';
+  else if (statusLower === 'disembelih') mappedStatus = 'Disembelih';
+  else {
+    mappedStatus = mappedStatus.charAt(0).toUpperCase() + mappedStatus.slice(1);
+  }
+
   return {
     id: String(row.id_sheep),
     code: row.sheep_code,
@@ -80,11 +95,14 @@ function mapSheep(row: ApiSheep): Sheep {
     type: row.type_name || String(row.id_type),
     gender: row.gender,
     birth_date: row.date_of_birth,
-    age: '',
-    weight: '',
-    status: row.status,
+    age: (row as any).age_string || '',
+    weight: (row as any).last_weight ? `${(row as any).last_weight} kg` : '',
+    status: mappedStatus,
     notifications: 0,
     cage_code: cage ? cage.code : String(row.id_cage),
+    origin: row.origin || '',
+    adg: (row as any).adg,
+    adg_label: (row as any).adg_label,
   }
 }
 
@@ -286,10 +304,20 @@ export async function updateSheepStatus(id: string, status: string) {
     loading.value = true
     error.value = null
 
-    await sheepApi.updateStatus(Number(id), status)
+    // Normalize UI status to database-compatible lowercase enum
+    const apiStatus = status.toLowerCase() === 'sehat' ? 'aktif' : status.toLowerCase();
+    await sheepApi.updateStatus(Number(id), apiStatus)
     const index = sheep.value.findIndex((s) => s.id === id)
     if (index !== -1) {
-      sheep.value[index] = { ...sheep.value[index]!, status }
+      // Map back to UI status representation for frontend state consistency
+      let mappedStatus = status;
+      if (apiStatus === 'aktif') mappedStatus = 'Sehat';
+      else if (apiStatus === 'hamil') mappedStatus = 'Hamil';
+      else if (apiStatus === 'dijual') mappedStatus = 'Terjual';
+      else if (apiStatus === 'mati') mappedStatus = 'Mati';
+      else if (apiStatus === 'disembelih') mappedStatus = 'Disembelih';
+
+      sheep.value[index] = { ...sheep.value[index]!, status: mappedStatus }
     }
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Failed to update sheep status'
@@ -369,10 +397,18 @@ export async function fetchSilsilah(id: string | number) {
   try {
     detailLoading.value = true
     detailError.value = null
-    currentSilsilah.value = await sheepApi.getSilsilah(id)
+    try {
+      currentSilsilah.value = await sheepApi.getSilsilah(id)
+    } catch (err1) {
+      console.warn('getSilsilah failed, trying getGenealogy...', err1)
+      currentSilsilah.value = await sheepApi.getGenealogy(id)
+    }
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat silsilah'
-    console.error('Error fetching silsilah:', err)
+    console.error('Error fetching silsilah/genealogy:', err)
+    // Create an empty structure so it doesn't show "Data silsilah tidak tersedia"
+    // The UI will just show "Tidak Diketahui" for empty parents
+    currentSilsilah.value = { id_sheep: id, sheep_code: '', sheep_name: '', gender: '' }
   } finally {
     detailLoading.value = false
   }

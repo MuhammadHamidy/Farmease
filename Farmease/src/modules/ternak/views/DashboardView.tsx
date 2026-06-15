@@ -11,7 +11,6 @@ import BirthAlerts, { type BirthAlert } from '../components/dashboard/BirthAlert
 import DashboardStats from '../components/dashboard/DashboardStats';
 import RoutineTasks from '../components/dashboard/RoutineTasks';
 import WeightChart from '../components/dashboard/WeightChart';
-import UpcomingSchedule from '../components/dashboard/UpcomingSchedule';
 import LivestockListWidget from '../components/dashboard/LivestockListWidget';
 import TaskDetailModal from '../components/dashboard/TaskDetailModal';
 import AddLivestockModal from '../components/shared/AddLivestockModal';
@@ -28,7 +27,7 @@ export default defineComponent({
     const isLoading = ref(false);
     
     const birthAlerts = ref<BirthAlert[]>([]);
-    const upcomingTasks = ref<any[]>([]);
+
 
     const activeCageCode = computed(() => cageSession.value?.code || '');
 
@@ -79,26 +78,7 @@ export default defineComponent({
         // skip
       }
 
-      try {
-        const allTasks = [];
-        for (let i = 1; i <= 7; i++) {
-          const dateObj = new Date();
-          dateObj.setDate(dateObj.getDate() + i);
-          const dateStr = dateObj.toISOString().split('T')[0]!;
-          try {
-            const dayTasks = await tasksApi.getList(dateStr);
-            const mapped = dayTasks.map((taskItem: any) => {
-              const local = mapApiTaskToLocal(taskItem);
-              return { ...local, scheduledDate: dateStr };
-            });
-            allTasks.push(...mapped);
-          } catch { /* skip */ }
-        }
-        const activeCode = (activeCageCode.value || '').trim().toUpperCase();
-        upcomingTasks.value = allTasks
-          .filter(t => !activeCode || (t.cageCode || '').trim().toUpperCase() === activeCode)
-          .slice(0, 8);
-      } catch { /* skip */ }
+
     };
 
     onMounted(fetchDashboardData);
@@ -258,7 +238,7 @@ export default defineComponent({
             </div>
           </div>
 
-          <UpcomingSchedule upcomingTasks={upcomingTasks.value} />
+
 
           <LivestockListWidget 
             cageInventory={cageInventory.value}

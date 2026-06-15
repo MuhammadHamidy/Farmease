@@ -35,6 +35,16 @@ func (u *useCase) Create(ctx context.Context, rs *domain.RoutineSchedule) error 
 		rs.Priority = "sedang"
 	}
 	rs.IsActive = true
+
+	// Check for duplicate schedule before saving
+	existing, err := u.repo.FindDuplicate(ctx, rs)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return fmt.Errorf("jadwal rutin dengan judul '%s', kategori '%s', frekuensi '%s', dan waktu mulai '%s' sudah ada", rs.Title, rs.Category, rs.Frequency, rs.StartTime)
+	}
+
 	return u.repo.Store(ctx, rs)
 }
 
@@ -84,68 +94,88 @@ func (u *useCase) GenerateTasks(ctx context.Context, windowDays int) error {
 	}
 
 	for _, rs := range schedules {
-		for d := 0; d <= windowDays; d++ {
-			targetDate := todayMidnight.AddDate(0, 0, d)
-
-			if !shouldGenerateTask(rs, targetDate) {
-				continue
-			}
-
-			// Check if task already exists for this schedule and target date
-			existingTask, err := u.taskRepo.FindByScheduleAndDate(ctx, rs.ID, targetDate)
-			if err != nil {
-				// Log error or ignore
-				continue
-			}
-			if existingTask != nil {
-				// Task already generated, skip deduplication
-				continue
-			}
-
-			// Combine date and start time
-			taskTime := targetDate
-			if rs.StartTime != "" {
-				parts := strings.Split(rs.StartTime, ":")
-				if len(parts) >= 2 {
-					var hour, min, sec int
-					fmt.Sscanf(parts[0], "%d", &hour)
-					fmt.Sscanf(parts[1], "%d", &min)
-					if len(parts) >= 3 {
-						fmt.Sscanf(parts[2], "%d", &sec)
-					}
-					taskTime = time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), hour, min, sec, 0, localLoc)
-				}
-			}
-
-			assigneeID := ""
-			if rs.IDAccount != nil {
-				assigneeID = *rs.IDAccount
-			}
-
-			newTask := &tasksDomain.Task{
-				Title:       rs.Title,
-				Description: rs.Description,
-				TaskDate:    taskTime,
-				EndTime:     rs.EndTime,
-				Status:      "pending",
-				Priority:    rs.Priority,
-				IDAccount:   assigneeID,
-				Category:    rs.Category,
-				ScheduleID:  &rs.ID,
-				IDCage:      rs.IDCage,
-				StartTime:   rs.StartTime,
-				Rincian:     rs.Rincian,
-			}
-
-			err = u.taskRepo.StoreTask(ctx, newTask)
-			if err != nil {
-				// Failed to store, log and continue to not block others
-				continue
-			}
-		}
+		u.generateForSchedule(ctx, rs, todayMidnight, windowDays, localLoc)
 	}
 
 	return nil
+}
+
+func (u *useCase) GenerateTasksForSchedule(ctx context.Context, scheduleID string, windowDays int) error {
+	localLoc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		localLoc = time.Local
+	}
+
+	today := time.Now().In(localLoc)
+	todayMidnight := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, localLoc)
+
+	rs, err := u.repo.FindByID(ctx, scheduleID)
+	if err != nil || rs == nil {
+		return err
+	}
+
+	u.generateForSchedule(ctx, rs, todayMidnight, windowDays, localLoc)
+	return nil
+}
+
+func (u *useCase) generateForSchedule(ctx context.Context, rs *domain.RoutineSchedule, todayMidnight time.Time, windowDays int, localLoc *time.Location) {
+	for d := 0; d <= windowDays; d++ {
+		targetDate := todayMidnight.AddDate(0, 0, d)
+
+		if !shouldGenerateTask(rs, targetDate) {
+			continue
+		}
+
+		// Check if task already exists for this schedule and target date
+		existingTask, err := u.taskRepo.FindByScheduleAndDate(ctx, rs.ID, targetDate)
+		if err != nil {
+			continue
+		}
+		if existingTask != nil {
+			// Task already generated, skip
+			continue
+		}
+
+		// Combine date and start time
+		taskTime := targetDate
+		if rs.StartTime != "" {
+			parts := strings.Split(rs.StartTime, ":")
+			if len(parts) >= 2 {
+				var hour, min, sec int
+				fmt.Sscanf(parts[0], "%d", &hour)
+				fmt.Sscanf(parts[1], "%d", &min)
+				if len(parts) >= 3 {
+					fmt.Sscanf(parts[2], "%d", &sec)
+				}
+				taskTime = time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), hour, min, sec, 0, localLoc)
+			}
+		}
+
+		assigneeID := ""
+		if rs.IDAccount != nil {
+			assigneeID = *rs.IDAccount
+		}
+
+		newTask := &tasksDomain.Task{
+			Title:       rs.Title,
+			Description: rs.Description,
+			TaskDate:    taskTime,
+			EndTime:     rs.EndTime,
+			Status:      "pending",
+			Priority:    rs.Priority,
+			IDAccount:   assigneeID,
+			Category:    rs.Category,
+			ScheduleID:  &rs.ID,
+			IDCage:      rs.IDCage,
+			StartTime:   rs.StartTime,
+			Rincian:     rs.Rincian,
+		}
+
+		err = u.taskRepo.StoreTask(ctx, newTask)
+		if err != nil {
+			fmt.Printf("Error storing generated task: %v\n", err)
+		}
+	}
 }
 
 func shouldGenerateTask(rs *domain.RoutineSchedule, targetDate time.Time) bool {

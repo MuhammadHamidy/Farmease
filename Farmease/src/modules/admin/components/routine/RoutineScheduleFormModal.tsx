@@ -65,10 +65,7 @@ export default defineComponent({
             <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
               <div class="peternakan-modal-header">
                 <button class="peternakan-modal-close" onClick={() => emit('close')}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                  <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                 </button>
                 <div class="peternakan-modal-title">
                   {isEditing ? 'Edit Jadwal Rutin' : 'Tambah Jadwal Rutin'}
@@ -241,19 +238,11 @@ export default defineComponent({
                   </div>
 
                 </div>
-                <div class="d-flex gap-3 mt-4 pt-3 border-top">
+                <div class="mt-4 pt-3 border-top">
                   <button 
                     type="button" 
-                    class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 600, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
-                    onClick={() => emit('close')}
-                  >
-                    Batal
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none' }}
+                    class="btn w-100"
+                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none', padding: '0.65rem 0' }}
                     onClick={() => emit('save')}
                   >
                     Simpan Tugas

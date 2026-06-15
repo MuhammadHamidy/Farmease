@@ -4,6 +4,7 @@ import { selectedPencatatanPayload } from '@/store/navigation';
 import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin';
 import RecordSummary from '@/modules/ternak/components/pencatatan/RecordSummary';
 import Button from '@/shared/ui/Button';
+import BackButton from '@/shared/ui/BackButton';
 import Badge from '@/shared/ui/Badge';
 import Typography from '@/shared/ui/Typography';
 
@@ -32,14 +33,12 @@ export default defineComponent({
         <div class="pencatatan-detail-overlay animate-fade-in record-summary">
           <div class="container-fluid mx-auto" style={{ maxWidth: '1200px' }}>
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-              <Button variant="ghost" onClick={goBack}>
-                <div class="d-flex align-items-center gap-2">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style={{ opacity: 0.7 }}>
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                  </svg>
-                  <span class="fw-bold">Kembali ke Pencatatan</span>
-                </div>
-              </Button>
+              <BackButton
+                variant="ghost"
+                onClick={goBack}
+                label="Kembali ke Pencatatan"
+                className="fw-bold"
+              />
 
               <div class="d-flex gap-2">
                 <Button variant="primary" shape="pill" onClick={goBack}>

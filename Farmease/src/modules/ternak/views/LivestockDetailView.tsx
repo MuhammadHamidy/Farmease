@@ -1,27 +1,23 @@
-import { defineComponent, computed, ref, watch, type PropType } from 'vue';
+import { defineComponent, computed, ref, watch, type PropType, Teleport } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { cagesList } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
-import {
-  sheep,
-  currentSheepDetail,
-  currentSilsilah,
-  currentHealthRecords,
-  currentWeightRecords,
-  detailLoading,
-  fetchSheepById,
-  fetchSilsilah,
-  fetchHealthForSheep,
-  fetchWeightForSheep,
-  fetchMatingForSheep,
-  currentMatingRecords,
+import BackButton from '@/shared/ui/BackButton';
+import { 
+  currentSheepDetail, currentSilsilah, currentHealthRecords, currentWeightRecords, currentMatingRecords,
+  fetchSheepById, fetchSilsilah, fetchHealthForSheep, fetchWeightForSheep, fetchMatingForSheep, sheep, detailLoading
 } from '@/store/livestock';
+import EditLivestockModal from '../components/shared/EditLivestockModal';
+import SheepWeightChart from '../components/shared/SheepWeightChart';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 // calcADG is now handled by the backend
 
-const SilsilahNode = ({ node, label, depth = 0 }: { node: any; label: string; depth?: number }) => {
+const SilsilahNode = (props: { node: any; label: string; depth?: number }) => {
+  const node = props.node;
+  const label = props.label;
+  const depth = props.depth ?? 0;
   if (!node) {
     return (
       <div
@@ -61,6 +57,7 @@ export default defineComponent({
     const route = useRoute();
     const router = useRouter();
     const showReminderSheet = ref(false);
+    const showEditProfileModal = ref(false);
 
     const selectedTernakId = computed(() => route.params.id as string);
 
@@ -93,6 +90,19 @@ export default defineComponent({
       },
       { immediate: true },
     );
+    
+    const refreshData = async () => {
+      const numId = Number(selectedTernakId.value);
+      if (!isNaN(numId)) {
+        await Promise.all([
+          fetchSheepById(numId),
+          fetchSilsilah(numId),
+          fetchHealthForSheep(numId),
+          fetchWeightForSheep(numId),
+          fetchMatingForSheep(numId),
+        ]);
+      }
+    };
 
     const t = computed(() => {
       if (currentSheepDetail.value) {
@@ -177,7 +187,7 @@ export default defineComponent({
             ? new Date(s.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
             : '—',
           kandang: kandangStr,
-          asal: (s as any).origin || '—',
+          asal: s.origin || '—',
         };
       }
       return null;
@@ -189,11 +199,38 @@ export default defineComponent({
     const matingRecords = computed(() => currentMatingRecords.value);
 
     const latestWeight = computed(() => {
-      if (weightRecords.value.length === 0) return '—';
-      const sorted = [...weightRecords.value].sort((a, b) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
-      return sorted[0] ? `${sorted[0].weight} kg` : '—';
+      if (weightRecords.value.length > 0) {
+        const sorted = [...weightRecords.value].sort((a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime(),
+        );
+        if (sorted[0]) return `${sorted[0].weight} kg`;
+      }
+      
+      // Fallback
+      if (currentSheepDetail.value && (currentSheepDetail.value as any).last_weight) {
+        return `${(currentSheepDetail.value as any).last_weight} kg`;
+      }
+      if (sheepFromList.value && sheepFromList.value.weight && sheepFromList.value.weight !== '—') {
+        return sheepFromList.value.weight;
+      }
+
+      return '—';
+    });
+
+    const chartRecords = computed(() => {
+      if (weightRecords.value.length > 0) return weightRecords.value;
+      
+      // Fallback: Jika tidak ada riwayat, tampilkan 1 titik dari berat awal
+      const fallbackWeight = parseFloat((currentSheepDetail.value as any)?.last_weight || (sheepFromList.value as any)?.weight || '0');
+      if (fallbackWeight > 0) {
+        return [{
+          id: 'initial',
+          sheep_id: selectedTernakId.value,
+          date: (currentSheepDetail.value as any)?.created_at || (currentSheepDetail.value as any)?.date_of_birth || new Date().toISOString(),
+          weight: fallbackWeight
+        }];
+      }
+      return [];
     });
 
     // ── ADG calculation (FR2-03) ──
@@ -218,7 +255,7 @@ export default defineComponent({
         return (
           <div class="text-center py-5">
             <Typography>Data tidak ditemukan</Typography>
-            <button onClick={handleBack} class="peternakan-primary-btn mt-3">Kembali</button>
+            <BackButton onClick={handleBack} className="mt-3" />
           </div>
         );
       }
@@ -228,33 +265,8 @@ export default defineComponent({
       return (
         <div class="animate-fade-in-up">
           {/* Back Button */}
-          <div class="d-flex align-items-center mb-4">
-            <button
-              onClick={handleBack}
-              class="btn rounded-pill d-flex align-items-center gap-2 px-4 py-2 fw-bold"
-              style={{
-                background: 'transparent',
-                border: '1.5px solid var(--color-primary)',
-                color: 'var(--color-primary)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseover={(e: MouseEvent) => {
-                const target = e.currentTarget as HTMLButtonElement;
-                target.style.background = 'var(--color-primary)';
-                target.style.color = '#fff';
-              }}
-              onMouseout={(e: MouseEvent) => {
-                const target = e.currentTarget as HTMLButtonElement;
-                target.style.background = 'transparent';
-                target.style.color = 'var(--color-primary)';
-              }}
-              title="Kembali ke Daftar"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Kembali
-            </button>
+          <div class="mb-4">
+            <BackButton onClick={handleBack} title="Kembali ke Daftar" />
           </div>
 
           {/* Detail Header */}
@@ -263,19 +275,36 @@ export default defineComponent({
               <img src="/icon/domba.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} alt="Domba" />
             </div>
             <div class="grow w-100">
-              <div class="d-flex align-items-center gap-2 mb-1">
-                <Typography variant="h1" size="text-3xl" weight="extrabold" className="m-0" style={{ color: 'var(--color-surface)' }}>
-                  {ternak.nama}
-                </Typography>
-                <Badge variant={ternak.status === 'Sehat' ? 'success' : (ternak.status === 'Hamil' ? 'warning' : 'danger')} className="ms-2">
-                  {ternak.status}
-                </Badge>
-              </div>
-              <Typography variant="p" weight="bold" className="mb-4" style={{ color: 'var(--color-outline-variant)' }}>
-                {ternak.code} • {ternak.jenis} • {ternak.jk}
-              </Typography>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                  <Typography variant="h1" size="text-3xl" weight="extrabold" className="m-0" style={{ color: 'var(--color-surface)' }}>
+                    {ternak.nama}
+                  </Typography>
+                  <div class="d-inline-flex align-items-center">
+                    <Badge variant={ternak.status === 'Sehat' ? 'solid-success' : (ternak.status === 'Hamil' ? 'solid-warning' : 'solid-danger')} className="ms-2">
+                      {ternak.status}
+                    </Badge>
+                  </div>
+                </div>
 
-              {/* Stat Cards including ADG */}
+                <button 
+                  class="btn btn-outline-light rounded-pill d-flex align-items-center gap-2 fw-bold ms-auto"
+                  onClick={() => showEditProfileModal.value = true}
+                  style={{ fontSize: '0.85rem', color: 'var(--color-surface)', borderColor: 'var(--color-surface)' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                  </svg>
+                  Ubah Profil
+                </button>
+              </div>
+
+              <ul class="mb-4" style={{ listStyle: 'none', padding: 0, margin: 0, color: 'var(--color-outline-variant)', fontSize: '0.9rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <li><strong>Kode Domba:</strong> {ternak.code}</li>
+                <li><strong>Tipe/Jenis:</strong> {ternak.jenis}</li>
+                <li><strong>Jenis Kelamin:</strong> {ternak.jk}</li>
+              </ul>
+              
               <div class="detail-info-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '1rem' }}>
                 {[
                   { label: 'Umur', value: ternak.umur },
@@ -324,25 +353,9 @@ export default defineComponent({
                   Riwayat Kesehatan & Pertumbuhan
                 </Typography>
 
-                {/* Riwayat Berat Badan */}
-                {weightRecords.value.length > 0 && (
-                  <div class="mb-4">
-                    <Typography variant="span" size="text-xs" weight="bold" className="text-secondary text-uppercase d-block mb-2">Riwayat Berat Badan</Typography>
-                    <div class="d-flex flex-column gap-2">
-                      {[...weightRecords.value]
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                        .slice(0, 5)
-                        .map(w => (
-                          <div key={w.id} class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light">
-                            <Typography variant="span" size="text-sm" weight="bold" className="text-secondary">
-                              {new Date(w.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
-                            </Typography>
-                            <Badge variant="success" className="px-3 py-1">{w.weight} kg</Badge>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
+                <div class="mb-4">
+                  <SheepWeightChart records={chartRecords.value} />
+                </div>
 
                 {/* Riwayat Kesehatan */}
                 {healthRecords.value.length > 0 && (
@@ -470,7 +483,7 @@ export default defineComponent({
                 </div>
 
                 {/* Warning jika silsilah tidak lengkap */}
-                {(!silsilah.value?.father || !silsilah.value?.mother) && (
+                {(!silsilah.value?.father || !silsilah.value?.mother) && !String(ternak.asal).toLowerCase().includes('pembelian') && (
                   <div class="alert alert-warning mt-3 py-2 px-3 rounded-3" style={{ fontSize: '0.8rem' }}>
                     ⚠️ Silsilah tidak lengkap — data induk {!silsilah.value?.father ? 'jantan (sire)' : 'betina (dam)'} tidak tersedia. Validasi inbreeding mungkin tidak akurat.
                   </div>
@@ -478,8 +491,18 @@ export default defineComponent({
               </div>
             )}
           </div>
+
+          {/* Modals */}
+          <Teleport to="body">
+            <EditLivestockModal 
+              isOpen={showEditProfileModal.value}
+              sheepData={currentSheepDetail.value}
+              onClose={() => showEditProfileModal.value = false}
+              onSuccess={refreshData}
+            />
+          </Teleport>
         </div>
       );
     };
-  },
+  }
 });

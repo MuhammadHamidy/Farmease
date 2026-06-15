@@ -7,7 +7,7 @@ import PerkebunanRecordingCard from '../components/PerkebunanRecordingCard'
 import PerkebunanScheduleList from '../components/PerkebunanScheduleList'
 import PerkebunanSelectionModal from '../components/PerkebunanSelectionModal'
 import PerkebunanScheduleDetailModal from '../components/PerkebunanScheduleDetailModal'
-import { landSession, userSession } from '@/store/navigation'
+import { landSession, userSession, fetchLandsList } from '@/store/navigation'
 import { operatorTasks, fetchTasks, fetchAccountsList } from '@/modules/ternak/store/operatorAdmin'
 
 const jenisPencatatan = [
@@ -54,6 +54,7 @@ export default defineComponent({
 
     onMounted(async () => {
       await fetchAccountsList()
+      await fetchLandsList()
       if (operatorTasks.value.length === 0) {
         await fetchTasks()
       }

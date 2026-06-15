@@ -1,12 +1,24 @@
 CREATE SCHEMA IF NOT EXISTS livestock;
 
+DO $$ BEGIN
+    CREATE TYPE livestock.gender_enum AS ENUM ('jantan', 'betina');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE livestock.sheep_status_enum AS ENUM ('aktif', 'hamil', 'dijual', 'mati', 'disembelih');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 CREATE TABLE IF NOT EXISTS livestock.sheep (
     id_sheep UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sheep_code VARCHAR(20) UNIQUE NOT NULL,
     sheep_name VARCHAR(100),
-    gender VARCHAR(10) NOT NULL,
+    gender livestock.gender_enum NOT NULL,
     date_of_birth DATE,
-    status VARCHAR(20) NOT NULL DEFAULT 'aktif',
+    status livestock.sheep_status_enum NOT NULL DEFAULT 'aktif',
     origin VARCHAR(50),
     id_cage UUID REFERENCES master.cages(id_cage),
     id_type UUID REFERENCES master.sheep_types(id_type),

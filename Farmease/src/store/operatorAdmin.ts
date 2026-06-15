@@ -1,12 +1,141 @@
 import { ref, computed } from 'vue';
-import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, type User } from '@/shared/api';
+import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, type User, type MetadataEnums, type EnumChoice } from '@/shared/api';
 import { sheep } from '@/store/livestock';
-import { cagesList, landsList } from '@/store/navigation';
+import { cagesList, landsList, fetchCagesList, fetchLandsList } from '@/store/navigation';
 
 export const accountsList = ref<User[]>([]);
 
+export const metadataEnums = ref<MetadataEnums>({
+  gender: [
+    { value: 'jantan', label: 'Jantan' },
+    { value: 'betina', label: 'Betina' }
+  ],
+  sheep_status: [
+    { value: 'aktif', label: 'Aktif' },
+    { value: 'hamil', label: 'Hamil' },
+    { value: 'dijual', label: 'Dijual' },
+    { value: 'mati', label: 'Mati' },
+    { value: 'disembelih', label: 'Disembelih' }
+  ],
+  feed_category: [
+    { value: 'hijauan', label: 'Hijauan' },
+    { value: 'konsentrat', label: 'Konsentrat' },
+    { value: 'pellet', label: 'Pellet' },
+    { value: 'greenery', label: 'Greenery' },
+    { value: 'vitamin', label: 'Vitamin' }
+  ],
+  task_category: [
+    { value: 'pakan', label: 'Pemberian Pakan' },
+    { value: 'kesehatan', label: 'Kesehatan / Pengobatan' },
+    { value: 'kotoran', label: 'Kotoran / Sanitasi' },
+    { value: 'perkawinan', label: 'Perkawinan' },
+    { value: 'kelahiran', label: 'Kelahiran' },
+    { value: 'penyiraman', label: 'Penyiraman' },
+    { value: 'pemupukan', label: 'Pemupukan' },
+    { value: 'pembersihan', label: 'Pembersihan Lahan' },
+    { value: 'pemangkasan', label: 'Pemangkasan' },
+    { value: 'panen', label: 'Panen' },
+    { value: 'weighing', label: 'Penimbangan Berat' },
+    { value: 'maintenance', label: 'Pemeliharaan' },
+    { value: 'admin', label: 'Administrasi' },
+    { value: 'umum', label: 'Umum' }
+  ],
+  task_rincian: [
+    { value: 'Pakan Pagi', label: 'Pakan Pagi' },
+    { value: 'Pakan Sore', label: 'Pakan Sore' },
+    { value: 'Konversi Pakan', label: 'Konversi Pakan' },
+    { value: 'Pemberian Obat', label: 'Pemberian Obat' },
+    { value: 'Pemberian Vitamin', label: 'Pemberian Vitamin' },
+    { value: 'Vaksinasi', label: 'Vaksinasi' },
+    { value: 'Pemeriksaan Medis', label: 'Pemeriksaan Medis' },
+    { value: 'Pembersihan Kandang', label: 'Pembersihan Kandang' },
+    { value: 'Fermentasi Kotoran', label: 'Fermentasi Kotoran' },
+    { value: 'Kawin Alami', label: 'Kawin Alami' },
+    { value: 'Inseminasi Buatan', label: 'Inseminasi Buatan' },
+    { value: 'Pencatatan Kelahiran', label: 'Pencatatan Kelahiran' },
+    { value: 'Pemeriksaan Anak & Induk', label: 'Pemeriksaan Anak & Induk' }
+  ],
+  day_of_week: [
+    { value: 'Senin', label: 'Senin' },
+    { value: 'Selasa', label: 'Selasa' },
+    { value: 'Rabu', label: 'Rabu' },
+    { value: 'Kamis', label: 'Kamis' },
+    { value: 'Jumat', label: 'Jumat' },
+    { value: 'Sabtu', label: 'Sabtu' },
+    { value: 'Minggu', label: 'Minggu' }
+  ],
+  frequency: [
+    { value: 'sekali', label: 'Sekali' },
+    { value: 'harian', label: 'Harian' },
+    { value: 'mingguan', label: 'Mingguan' },
+    { value: 'bulanan', label: 'Bulanan' }
+  ],
+  mating_method: [
+    { value: 'alami', label: 'Alami' },
+    { value: 'ib', label: 'Inseminasi Buatan (IB)' }
+  ],
+  mating_status: [
+    { value: 'proses', label: 'Dalam Proses' },
+    { value: 'sukses', label: 'Sukses' },
+    { value: 'gagal', label: 'Gagal' }
+  ],
+  pregnancy_status: [
+    { value: 'dikandung', label: 'Dikandung' },
+    { value: 'melahirkan', label: 'Melahirkan' },
+    { value: 'keguguran', label: 'Keguguran' }
+  ],
+  offspring_gender: [
+    { value: 'jantan', label: 'Jantan' },
+    { value: 'betina', label: 'Betina' },
+    { value: 'campuran', label: 'Campuran' }
+  ],
+  offspring_condition: [
+    { value: 'sehat', label: 'Sehat' },
+    { value: 'lemas', label: 'Lemas' },
+    { value: 'cacat', label: 'Cacat' },
+    { value: 'mati', label: 'Mati' }
+  ],
+  manure_activity: [
+    { value: 'collection', label: 'Pengumpulan' },
+    { value: 'fermentation', label: 'Fermentasi' },
+    { value: 'distribution', label: 'Penyaluran' }
+  ],
+  manure_dest: [
+    { value: 'internal', label: 'Internal' },
+    { value: 'internal_kebun', label: 'Internal Kebun' },
+    { value: 'external_sale', label: 'Penjualan Eksternal' }
+  ],
+  priority: [
+    { value: 'rendah', label: 'Rendah' },
+    { value: 'sedang', label: 'Sedang' },
+    { value: 'tinggi', label: 'Tinggi' }
+  ],
+  task_status: [
+    { value: 'belum', label: 'Belum Dikerjakan' },
+    { value: 'proses', label: 'Sedang Diproses' },
+    { value: 'selesai', label: 'Selesai' },
+    { value: 'terlambat', label: 'Terlambat' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'done', label: 'Selesai (Done)' },
+    { value: 'menunggu', label: 'Menunggu Validasi' }
+  ]
+});
+
+export async function fetchMetadataEnums() {
+  try {
+    const enums = await authApi.getMetadataEnums();
+    if (enums) {
+      metadataEnums.value = enums;
+    }
+  } catch (err) {
+    console.error('Failed to fetch metadata enums, using local fallbacks:', err);
+  }
+}
+
 export async function fetchAccountsList() {
   try {
+    // Proactively fetch enums whenever accounts list is requested (common layout mounts)
+    await fetchMetadataEnums();
     const list = await authApi.getAccounts();
     accountsList.value = list;
   } catch (err) {
@@ -38,6 +167,7 @@ export interface OperatorTask {
   idCage?: string;
   rincian?: string;
   createdAt: number;
+  idAccount?: string;
 }
 
 // BE Task shape (from /api/tasks)
@@ -259,7 +389,7 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
   if (['selesai', 'completed', 'done', 'approved'].includes(rawStatus)) {
     // Terminal status — cannot be overridden
     computedStatus = 'selesai';
-  } else if (['proses', 'in_progress', 'pending', 'menunggu'].includes(rawStatus)) {
+  } else if (['proses', 'in_progress', 'menunggu'].includes(rawStatus)) {
     computedStatus = 'proses';
   } else if (['terlambat', 'overdue'].includes(rawStatus)) {
     computedStatus = 'terlambat';
@@ -332,6 +462,7 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
     idCage: t.id_cage || undefined,
     rincian: rincian || undefined,
     createdAt: new Date(t.created_at || Date.now()).getTime(),
+    idAccount: userIdStr,
   } as any;
 }
 
@@ -339,6 +470,15 @@ export async function fetchTasks(date?: string) {
   try {
     tasksLoading.value = true;
     tasksError.value = null;
+
+    // Pastikan master data kandang dan lahan ter-load agar mapping cageCode berhasil
+    if (cagesList.value.length === 0) {
+      await fetchCagesList();
+    }
+    if (landsList.value.length === 0) {
+      await fetchLandsList();
+    }
+
     const list = await tasksApi.getList(date);
     operatorTasks.value = (list || []).map(mapApiTaskToLocal);
   } catch (err: unknown) {
@@ -669,10 +809,13 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
           isoDate = new Date().toISOString();
         }
 
-        let userId = "11111111-1111-1111-1111-111111111101"; // Fallback Admin ID
-        const adminAcc = accountsList.value.find(acc => acc.username === 'admin');
-        if (adminAcc) {
-          userId = String(adminAcc.id);
+        let userId = task.idAccount;
+        if (!userId) {
+          userId = "11111111-1111-1111-1111-111111111103"; // Fallback Operator Ternak
+          const defaultAcc = accountsList.value.find(acc => acc.username === 'operator');
+          if (defaultAcc) {
+            userId = String(defaultAcc.id);
+          }
         }
         await tasksApi.update(input.taskId, {
           title: task.title,

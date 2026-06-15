@@ -127,11 +127,22 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  text-decoration: none;
+}
+.peternakan-tab-pill:hover,
+.peternakan-tab-pill:focus {
+  text-decoration: none;
+  color: #8B5E3C;
 }
 .peternakan-tab-pill.active {
   background: #8B5E3C;
   color: #FFFFFF;
   box-shadow: 0 4px 10px #3d2f242e;
+  text-decoration: none;
+}
+.peternakan-tab-pill.active:hover,
+.peternakan-tab-pill.active:focus {
+  color: #FFFFFF;
 }
 
 /* ── Content Area ────────────────────────── */
@@ -442,6 +453,18 @@
   flex-direction: column;
 }
 
+@media (max-width: 576px) {
+  .peternakan-modal-card {
+    padding: 1rem 1rem 1.5rem 1rem !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 95vh !important;
+  }
+  .peternakan-modal-title {
+    font-size: 1.15rem !important;
+    padding: 0 2rem !important;
+  }
+}
+
 .peternakan-modal-header {
   display: flex;
   align-items: center;
@@ -459,13 +482,19 @@
 }
 .peternakan-modal-close {
   position: absolute;
-  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 1.25rem;
   background: none;
   border: none;
   font-size: var(--font-size-2xl);
   cursor: pointer;
   color: #6B7280;
   transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 .peternakan-modal-close:hover {
   color: #111827;
@@ -742,7 +771,7 @@
 .cage-select-card {
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--color-outline-variant);
+  border: 1px solid #E5E7EB;
   background-color: #ffffff;
 }
 .cage-select-card:hover {

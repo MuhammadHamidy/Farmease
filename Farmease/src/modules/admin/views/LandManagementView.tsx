@@ -393,11 +393,8 @@ export default defineComponent({
           <div class="peternakan-modal-overlay" onClick={() => isModalOpen.value = false}>
             <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
               <div class="peternakan-modal-header">
-                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value} style={{ position: 'absolute', right: '1.5rem', left: 'auto', background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>
+                  <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                 </button>
                 <div class="peternakan-modal-title">
                   {isEditing.value ? 'Ubah Lahan' : 'Tambah Lahan Baru'}
@@ -466,7 +463,7 @@ export default defineComponent({
                   {isEditing.value && (
                     <button 
                       type="button" 
-                      class="btn btn-outline-danger py-2.5 rounded-pill px-4 fw-bold"
+                      class="btn btn-outline-danger py-2.5 rounded-pill px-4 fw-bold flex-grow-1"
                       onClick={async () => {
                         await handleDeleteLand(editingLandId.value ?? undefined, newLand.value.code);
                         isModalOpen.value = false;
@@ -478,17 +475,8 @@ export default defineComponent({
                   )}
                   <button 
                     type="button" 
-                    class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 600, color: '#606C38', borderColor: '#606C38', backgroundColor: 'transparent' }}
-                    onClick={() => isModalOpen.value = false}
-                    disabled={isLoading.value}
-                  >
-                    Batal
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn flex-grow-1"
-                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none' }}
+                    class={isEditing.value ? 'btn flex-grow-1' : 'btn w-100'}
+                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none', padding: '0.65rem 0' }}
                     onClick={handleSaveLand}
                     disabled={isLoading.value}
                   >

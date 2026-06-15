@@ -21,9 +21,24 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # Stage 2: Dev (for docker-compose)
 FROM golang:1.25-alpine AS dev
 
-WORKDIR /app/farmease
+WORKDIR /app
+
+# Install air and pre-download dependencies so the volume cache is warm on first run
 RUN go install github.com/air-verse/air@latest
+
+# Copy module files first (better Docker layer caching)
+COPY framework/go.mod framework/go.sum ./framework/
+COPY libraries/go.mod libraries/go.sum ./libraries/
+COPY farmease/go.mod farmease/go.sum ./farmease/
+COPY go.work go.work.sum* ./
+
+# Pre-download all dependencies into GOPATH/pkg/mod
+RUN go work sync && \
+    cd farmease && go mod download
+
+WORKDIR /app/farmease
 CMD ["air", "-c", ".air.toml"]
+
 
 # Stage 3: Runtime
 FROM alpine:latest
