@@ -32,6 +32,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/notifications"
 	"github.com/farmease/farmease-be/farmease/module/notifikasi"
 	"github.com/farmease/farmease-be/farmease/module/submissions"
+	"github.com/farmease/farmease-be/farmease/module/pencatatan_types"
 )
 
 // @title           Farmease API
@@ -117,6 +118,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		notifications.Module,
 		notifikasi.Module,
 		submissions.Module,
+		pencatatan_types.Module,
 
 		fx.Provide(
 			fx.Annotate(

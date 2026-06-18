@@ -253,32 +253,7 @@ export default defineComponent({
             {/* ── Scrollable Body ── */}
             <div style="padding: 1rem 1.25rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem; width: 100%; box-sizing: border-box;">
               
-              {/* Tambah Button */}
-              <div style="display: flex; justify-content: flex-end;">
-                <button
-                  type="button"
-                  onClick={() => emit('add')}
-                  style="
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.4rem;
-                    background: #38431f;
-                    color: #fff;
-                    border: none;
-                    border-radius: 0.5rem;
-                    padding: 0.55rem 1rem;
-                    font-size: 0.9rem;
-                    font-weight: 700;
-                    cursor: pointer;
-                    transition: all 0.18s ease;
-                  "
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                  {currentButtonLabel.value}
-                </button>
-              </div>
+
 
               {/* Section Heading */}
               <div style="text-align: left;">

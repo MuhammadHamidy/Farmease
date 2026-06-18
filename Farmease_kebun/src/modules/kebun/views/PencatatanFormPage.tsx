@@ -13,6 +13,12 @@ import RincianBottomSheet from '../components/pencatatan/RincianBottomSheet'
 import JenisBottomSheet from '../components/pencatatan/JenisBottomSheet'
 import PencatatanPrimaryButton from '../components/pencatatan/PencatatanPrimaryButton'
 import { manureApi, pohonApi } from '@/shared/api'
+import {
+  fetchPencatatanTypesCatalog,
+  jenisPencatatanList,
+  getRincianForJenis,
+  addRincianPencatatan,
+} from '@/store/pencatatanTypes'
 import '@/modules/kebun/assets/css/PerkebunanDetailPages.css'
 
 const KebunGenericFormFields = KebunGenericFormFieldsRaw as any
@@ -55,26 +61,6 @@ const panduanTeknisByRincian: Record<string, string> = {
   'Penyiraman Rutin': 'Siram pagi atau sore hari. Pastikan drainase baik agar tidak terjadi genangan.',
   'Pembersihan Gulma': 'Bersihkan gulma secara rutin. Gunakan mulsa untuk menekan pertumbuhan kembali.',
   'Aplikasi Pestisida': 'Gunakan pestisida terdaftar sesuai dosis. Pakai APD lengkap. Catat waktu dan jenis aplikasi.',
-}
-
-const ALL_JENIS = [
-  'Panen', 'Pemangkasan', 'Pembersihan', 'Pembuahan',
-  'Pemberian Obat', 'Pemupukan', 'Penanaman', 'Penyiraman',
-  'Stok Obat', 'Stok Pupuk',
-]
-
-const rincianByJenis: Record<string, string[]> = {
-  'Penanaman': ['Bibit Baru', 'Penggantian Bibit'],
-  'Pembuahan': ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
-  'Pemangkasan': ['Pemangkasan Ranting', 'Pemangkasan Bentuk', 'Pemangkasan Peremajaan'],
-  'Panen': ['Panen Buah'],
-  'Pemupukan': ['Pemupukan Organik', 'Pemupukan Anorganik'],
-  'Penyiraman': ['Siram Manual', 'Irigrasi Drip / Pipanisasi', 'Biopori'],
-  'Pembersihan': ['Penyiangan Gulma', 'Pembumbunan Tanah', 'Sanitasi Serasah & Ranting'],
-  'Pengendalian Hama': ['Insektisida', 'Fungisida', 'Pestisida'],
-  'Pemberian Obat': ['Insektisida', 'Fungisida', 'Pestisida'],
-  'Stok Obat': ['Tambah Obat'],
-  'Stok Pupuk': ['Stok Masuk', 'Stok Keluar'],
 }
 
 export default defineComponent({
@@ -138,11 +124,7 @@ export default defineComponent({
     const rincianSearch = ref('')
     const draftRincian = ref('')
 
-    const availableRincianList = computed(() => {
-      const list = rincianByJenis[selectedJenis.value] || []
-      if (!rincianSearch.value) return list
-      return list.filter(r => r.toLowerCase().includes(rincianSearch.value.toLowerCase()))
-    })
+    const availableRincianList = computed(() => getRincianForJenis(selectedJenis.value))
 
     const openRincianModal = () => {
       draftRincian.value = selectedRincian.value
@@ -179,7 +161,7 @@ export default defineComponent({
       dosisPerangsang: '', deskripsiPembuahan: '', alasanPenanaman: 'Alasan Penanaman',
       kodePohonManual: '', teknikPengendalian: 'Teknik Pengendalian', namaPestisida: '',
       dosisPestisida: '', volumeAir: '', namaGejala: '', targetHama: '',
-      teknikPenyiraman: 'Teknik Penyiraman', sesiPenyiraman: 'Sesi Penyiraman', deskripsiPenyiraman: '',
+      teknikPenyiraman: 'Teknik Penyiraman', sesiPenyiraman: 'Semua Sesi', deskripsiPenyiraman: '',
       metodePerlakuan: 'Metode Perlakuan', jenisHormon: '',
       diameterBuah: '', satuanDiameter: 'Satuan Diameter',
       jumlahBuahDibuang: '', sisaBuahPerTandan: '',
@@ -189,12 +171,18 @@ export default defineComponent({
       namaOPT: '',
       volumeObat: '',
       satuanVolumeObat: 'Satuan Volume',
-      teknikPemberianObat: 'Teknik Pemberian',
+      teknikPemberianObat: 'Jenis Obat',
       volumeLarutan: '',
       satuanVolumeLarutan: 'Satuan Volume',
       satuanVolumeAir: 'Satuan Volume',
       tanggalKadaluarsa: '',
       jumlahLubangBiopori: '',
+      alatPembersihan: 'Alat Pembersihan',
+      jenisGulma: 'Jenis Gulma',
+      beratGulma: '',
+      bahanPembumbun: 'Bahan Pembumbunan',
+      beratBahanPembumbun: '',
+      bagianPembersihan: 'Bagian Pembersihan',
     })
 
     const selectedVarietas = ref('Semua Varietas')
@@ -219,22 +207,72 @@ export default defineComponent({
 
     const obatStocks = computed(() => {
       const r = (selectedRincian.value || '').toLowerCase()
+      const allObat = [
+        { name: 'Mankozeb', qty: '500 Gram (g)', expiry: '02 - 12 - 2026', type: 'fungisida' },
+        { name: 'Fungisida Tembaga', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'fungisida' },
+        { name: 'Sipermetrin 50EC', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'insektisida' },
+        { name: 'Imidakloprid', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'insektisida' },
+        { name: 'Ekstrak Nimba', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'pestisida' },
+        { name: 'Ekstrak Bawang Putih', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'pestisida' }
+      ]
+
       if (r.includes('fungisida')) {
-        return [
-          { name: 'Mankozeb', qty: '500 Gram (g)', expiry: '02 - 12 - 2026' },
-          { name: 'Fungisida Tembaga', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026' }
-        ]
+        return allObat.filter(o => o.type === 'fungisida')
       } else if (r.includes('insektisida')) {
-        return [
-          { name: 'Sipermetrin 50EC', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026' },
-          { name: 'Imidakloprid', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026' }
-        ]
-      } else {
-        return [
-          { name: 'Ekstrak Nimba', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026' },
-          { name: 'Ekstrak Bawang Putih', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026' }
-        ]
+        return allObat.filter(o => o.type === 'insektisida')
+      } else if (r.includes('pestisida')) {
+        return allObat.filter(o => o.type === 'pestisida')
       }
+      return allObat
+    })
+
+    const pupukStocks = computed(() => {
+      const r = selectedRincian.value.toLowerCase()
+      const landName = (landSession.value?.name || '').toLowerCase()
+      
+      const allAlpukatPupuk = [
+        { name: 'Kotoran Domba', qty: `${manureStock.value.toFixed(1)} Kilogram (kg)`, expiry: '-', type: 'organik', form: 'padat' },
+        { name: 'Pupuk Kandang', qty: '15 Kilogram (kg)', expiry: '02 - 12 - 2026', type: 'organik', form: 'padat' },
+        { name: 'NPK', qty: '2 Kilogram (kg)', expiry: '02 - 12 - 2026', type: 'anorganik', form: 'padat' },
+        { name: 'Urea', qty: '2 Kilogram (kg)', expiry: '02 - 12 - 2026', type: 'anorganik', form: 'padat' },
+        { name: 'SP - 36', qty: '2 Kilogram (kg)', expiry: '02 - 12 - 2026', type: 'anorganik', form: 'padat' },
+        { name: 'POC Air Kelapa', qty: '50 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'organik', form: 'cair' },
+        { name: 'Fungisida Tembaga', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'anorganik', form: 'cair' }
+      ]
+
+      const allKelengkengPupuk = [
+        { name: 'Kotoran Domba', qty: `${manureStock.value.toFixed(1)} Kilogram (kg)`, expiry: '-', type: 'organik', form: 'padat' },
+        { name: 'Pupuk Kandang', qty: '500 Gram (g)', expiry: '02 - 12 - 2026', type: 'organik', form: 'padat' },
+        { name: 'NPK Kelengkeng', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'anorganik', form: 'cair' }
+      ]
+
+      const pool = landName.includes('alpukat') ? allAlpukatPupuk : allKelengkengPupuk
+
+      if (r.includes('cair')) {
+        return pool.filter(p => p.form === 'cair')
+      } else if (r.includes('padat')) {
+        return pool.filter(p => p.form === 'padat')
+      } else if (r.includes('organik')) {
+        return pool.filter(p => p.type === 'organik')
+      } else if (r.includes('anorganik')) {
+        return pool.filter(p => p.type === 'anorganik')
+      }
+      return pool
+    })
+
+    const stockBoxTitle = computed(() => {
+      const j = selectedJenis.value
+      const r = selectedRincian.value.toLowerCase()
+      if (j === 'Pemberian Obat' || j === 'Stok Obat') {
+        return 'Informasi Stok Obat'
+      }
+      if (j === 'Pemupukan' || j === 'Stok Pupuk') {
+        if (r.includes('cair')) return 'Informasi Stok Pupuk Cair'
+        if (r.includes('organik')) return 'Informasi Stok Pupuk Organik'
+        if (r.includes('anorganik')) return 'Informasi Stok Pupuk Anorganik'
+        return 'Informasi Stok Pupuk'
+      }
+      return ''
     })
 
     watch(selectedTrees, (codes) => {
@@ -262,6 +300,7 @@ export default defineComponent({
     }
 
     onMounted(() => {
+      fetchPencatatanTypesCatalog()
       formState.value.kodePohon = selectedTrees.value.join(', ')
       fetchManureStock()
       fetchTrees()
@@ -316,13 +355,12 @@ export default defineComponent({
     return () => (
       <div class="pencatatan-page">
         <div class="pencatatan-topbar">
-          <button type="button" class="pencatatan-back-btn" onClick={goBack}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            Kembali
-          </button>
+          <div style="max-width: 1280px; margin: 0 auto; width: 100%; display: flex; align-items: center; padding: 0 0.75rem;">
+            <button type="button" class="pencatatan-back-btn" onClick={goBack}>
+              <img src="/icon/arrow-left/white-16.svg" alt="Kembali" style="width: 14px; height: 14px; margin-right: 4px;" />
+              Kembali
+            </button>
+          </div>
         </div>
 
         <div class="pencatatan-content">
@@ -356,51 +394,39 @@ export default defineComponent({
                 icon="/icon/jenis_kebun.png"
                 label="Pilih jenis pencatatan"
                 value={selectedJenis.value}
-                clickable
-                showChevron
-                onClick={openJenisModal}
+                clickable={!route.query.jenis}
+                showChevron={!route.query.jenis}
+                onClick={!route.query.jenis ? openJenisModal : undefined}
               />
               <PencatatanSelectionField
                 icon="/icon/rincian_kebun.png"
                 label="Pilih rincian pencatatan"
                 value={selectedRincian.value}
-                clickable
-                showChevron
-                onClick={openRincianModal}
+                clickable={!route.query.rincian}
+                showChevron={!route.query.rincian}
+                onClick={!route.query.rincian ? openRincianModal : undefined}
               />
             </div>
           </div>
 
           {panduanTeknis.value && <PanduanTeknisBanner text={panduanTeknis.value} />}
 
-          {(selectedJenis.value === 'Pemberian Obat' || selectedJenis.value === 'Stok Obat') && (
+          {stockBoxTitle.value && (
             <div style="margin-bottom:0.85rem;">
-              <h3 style="font-size:1rem; font-weight:800; color:#111827; margin:0 0 0.5rem;">Informasi Stok Obat</h3>
-              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:0.75rem;">
-                {obatStocks.value.map(stock => (
-                  <div key={stock.name} style="border:1.5px solid #dce1d0; border-radius:0.65rem; background:#fff; padding:1rem 0.85rem; text-align:left;">
-                    <strong style="display:block; font-size:1rem; font-weight:800; color:#111827;">{stock.name}</strong>
-                    <span style="display:block; font-size:0.85rem; color:#111827; font-weight:700; margin:0.25rem 0;">{stock.qty}</span>
-                    <span style="font-size:0.72rem; color:#6b7280; font-weight:600;">Kadaluarsa: {stock.expiry}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {selectedJenis.value === 'Pemupukan' && selectedRincian.value === 'Pupuk Organik' && (
-            <div style="margin-bottom:0.85rem;">
-              <h3 style="font-size:1rem; font-weight:800; color:#111827; margin:0 0 0.5rem;">Informasi Stok Pupuk Organik</h3>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-                <div style="border:1.5px solid #dce1d0; border-radius:0.65rem; background:#fff; padding:1rem 0.85rem; text-align:center;">
-                  <strong style="display:block; font-size:1rem; font-weight:800; color:#111827;">Kotoran Domba</strong>
-                  <span style="font-size:0.72rem; color:#6b7280; font-weight:600;">Asal Pupuk</span>
+              <h3 style="font-size:1rem; font-weight:800; color:#111827; margin:0 0 0.5rem;">{stockBoxTitle.value}</h3>
+              {(selectedJenis.value === 'Pemberian Obat' || selectedJenis.value === 'Stok Obat' ? obatStocks.value : pupukStocks.value).length === 0 ? (
+                <p style="font-size:0.85rem; color:#9ca3af; margin:0; font-weight:600;">Tidak ada stok tersedia untuk rincian ini.</p>
+              ) : (
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:0.75rem;">
+                  {(selectedJenis.value === 'Pemberian Obat' || selectedJenis.value === 'Stok Obat' ? obatStocks.value : pupukStocks.value).map(stock => (
+                    <div key={stock.name} style="border:1.5px solid #dce1d0; border-radius:0.65rem; background:#fff; padding:1rem 0.85rem; text-align:left;">
+                      <strong style="display:block; font-size:1rem; font-weight:800; color:#111827;">{stock.name}</strong>
+                      <span style="display:block; font-size:0.85rem; color:#111827; font-weight:700; margin:0.25rem 0;">{stock.qty}</span>
+                      <span style="font-size:0.72rem; color:#6b7280; font-weight:600;">{stock.expiry === '-' ? 'Asal Pupuk: Internal' : `Kadaluarsa: ${stock.expiry}`}</span>
+                    </div>
+                  ))}
                 </div>
-                <div style="border:1.5px solid #dce1d0; border-radius:0.65rem; background:#fff; padding:1rem 0.85rem; text-align:center;">
-                  <strong style="display:block; font-size:1rem; font-weight:800; color:#111827;">{manureStock.value.toFixed(1)} Kg</strong>
-                  <span style="font-size:0.72rem; color:#6b7280; font-weight:600;">Jumlah Stok</span>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -412,7 +438,7 @@ export default defineComponent({
           )}
 
           <PencatatanFormContainer>
-            {activeMode.value === 'pohon' && selectedJenis.value !== 'Stok Obat' && (
+            {activeMode.value === 'pohon' && selectedJenis.value !== 'Stok Obat' && selectedJenis.value !== 'Stok Pupuk' && (
               <TreeSelectionGrid
                 trees={filteredTrees.value}
                 selectedCodes={selectedTrees.value}
@@ -443,7 +469,7 @@ export default defineComponent({
 
         <JenisBottomSheet
           show={showJenisModal.value}
-          options={ALL_JENIS}
+          options={jenisPencatatanList.value}
           selected={draftJenis.value}
           search={jenisSearch.value}
           onClose={() => { showJenisModal.value = false }}
@@ -462,6 +488,15 @@ export default defineComponent({
           onSave={saveRincian}
           onUpdate:selected={(val: string) => { draftRincian.value = val }}
           onUpdate:search={(val: string) => { rincianSearch.value = val }}
+          onAdd={async () => {
+            const nama = window.prompt('Masukkan nama rincian pencatatan baru:')
+            if (!nama?.trim() || selectedJenis.value === 'Jenis Pencatatan') return
+            try {
+              await addRincianPencatatan(selectedJenis.value, nama.trim())
+            } catch {
+              alert('Gagal menambah rincian. Pastikan backend berjalan.')
+            }
+          }}
         />
 
         {alertModal.value.isOpen && (

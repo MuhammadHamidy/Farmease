@@ -73,7 +73,7 @@ router.beforeEach((to, from, next) => {
   // Redirect to SSO if no token is present in localStorage/session
   const publicPaths = ['/login', '/sso'];
   if (!authApi.getToken() && !publicPaths.includes(to.path)) {
-    window.location.href = 'http://localhost:3000/';
+    window.location.href = 'http://localhost:3000/?service=kebun';
     return;
   }
 

@@ -11,7 +11,7 @@
   "redis_password": "",
   "redis_db": 0,
   "ssoApiUrl": "http://localhost:8080",
-  "redirectUrl": "http://localhost:3000/callback",
+  "redirectUrl": "http://localhost:3002/callback",
   "jwtSecret": "farmease-secret-key-123",
   "log_level": "debug",
   "log_format": "console",

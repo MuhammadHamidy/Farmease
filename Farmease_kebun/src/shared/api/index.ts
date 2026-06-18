@@ -17,6 +17,7 @@ export {
   akunLahanApi,
   submissionsApi,
   statusAktivitasApi,
+  pencatatanTypesApi,
   notificationsApi as notifikasiApi,
   type Lahan,
   type Pohon,
@@ -27,6 +28,9 @@ export {
   type AkunLahan,
   type PencatatanSubmission,
   type StatusAktivitas,
+  type PencatatanTypesCatalog,
+  type JenisPencatatanItem,
+  type RincianPencatatanItem,
   type Notification as Notifikasi,
 } from './perkebunan'
 

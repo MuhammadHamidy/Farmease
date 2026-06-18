@@ -348,38 +348,192 @@ export default defineComponent({
           })()}
 
           {props.kindTitle === 'Pembersihan' && (() => {
-            const isRumputLiar = rincian.toLowerCase().includes('rumput')
-            const catatanPlaceholder = isRumputLiar
-              ? 'Contoh: kondisi rumput'
-              : 'Contoh: kendala, kondisi dan lain lain'
+            const isPenyiangan = rincian === 'Penyiangan Gulma'
+            const isPembumbunan = rincian === 'Pembumbunan Tanah'
+            const isSanitasi = rincian === 'Sanitasi Serasah & Ranting'
 
             return (
               <>
-                <div class="form-group">
-                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Jenis Limbah</span>
-                  <PerkebunanFormSelect
-                    modelValue={f().jenisLimbah}
-                    options={['Guguran Daun', 'Ranting Kering', 'Rumput Liar (Gulma)', 'Limbah Buah Busuk']}
-                    placeholder="Jenis Limbah"
-                    onUpdate:modelValue={(val) => { f().jenisLimbah = val }}
-                  />
-                </div>
+                {props.activeMode === 'lahan' && (
+                  <div class="form-group">
+                    <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Varietas</span>
+                    <PerkebunanFormSelect
+                      modelValue={props.selectedVarietas}
+                      options={props.varietasOptions}
+                      placeholder="Semua Varietas"
+                      onUpdate:modelValue={(val) => emit('update:selectedVarietas', val)}
+                    />
+                  </div>
+                )}
 
-                <div class="form-group">
-                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Total Berat Limbah (Kg)</span>
-                  <PerkebunanFormInput
-                    modelValue={f().beratLimbah}
-                    placeholder="Contoh: 2"
-                    onUpdate:modelValue={(val) => { f().beratLimbah = val }}
-                  />
-                </div>
+                {isPenyiangan && (
+                  <>
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Alat Pembersihan</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().alatPembersihan}
+                        options={['Manual', 'Cangkul', 'Sarit', 'Mesin Potong Rumput']}
+                        placeholder="Alat Pembersihan"
+                        onUpdate:modelValue={(val) => { f().alatPembersihan = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Jenis Gulma</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().jenisGulma}
+                        options={['Tekian', 'Rerumputan', 'Gulma Daun Lebar', 'Lainnya']}
+                        placeholder="Jenis Gulma"
+                        onUpdate:modelValue={(val) => { f().jenisGulma = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Masukkan Total Berat Gulma</span>
+                      <PerkebunanFormInput
+                        modelValue={f().beratGulma}
+                        placeholder="Catatan"
+                        onUpdate:modelValue={(val) => { f().beratGulma = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Satuan Berat</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().satuanBerat}
+                        options={['Kilogram (Kg)', 'Gram (g)']}
+                        placeholder="Satuan Berat"
+                        onUpdate:modelValue={(val) => { f().satuanBerat = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Pemanfaatan</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().tujuanPemanfaatan}
+                        options={['Pakan Ternak', 'Kompos', 'Dibuang']}
+                        placeholder="Pemanfaatan"
+                        onUpdate:modelValue={(val) => { f().tujuanPemanfaatan = val }}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {isPembumbunan && (
+                  <>
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Bahan Pembumbun</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().bahanPembumbun}
+                        options={['Tanah Humus', 'Tanah Kompos', 'Tanah Galian Lahan']}
+                        placeholder="Bahan Pembumbunan"
+                        onUpdate:modelValue={(val) => { f().bahanPembumbun = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Masukkan Total Berat Bahan Pembumbun</span>
+                      <PerkebunanFormInput
+                        modelValue={f().beratBahanPembumbun}
+                        placeholder="Catatan"
+                        onUpdate:modelValue={(val) => { f().beratBahanPembumbun = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Satuan Berat</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().satuanBerat}
+                        options={['Kilogram (Kg)', 'Gram (g)']}
+                        placeholder="Satuan Berat"
+                        onUpdate:modelValue={(val) => { f().satuanBerat = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Pemanfaatan</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().tujuanPemanfaatan}
+                        options={['Pakan Ternak', 'Kompos', 'Dibuang']}
+                        placeholder="Pemanfaatan"
+                        onUpdate:modelValue={(val) => { f().tujuanPemanfaatan = val }}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {isSanitasi && (
+                  <>
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Bagian Pembersihan</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().bagianPembersihan}
+                        options={['Serasah Daun', 'Ranting/Cabang Mati', 'Batang Pohon', 'Lainnya']}
+                        placeholder="Bagian Pembersihan"
+                        onUpdate:modelValue={(val) => { f().bagianPembersihan = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Masukkan Total Berat</span>
+                      <PerkebunanFormInput
+                        modelValue={f().beratLimbah}
+                        placeholder="Catatan"
+                        onUpdate:modelValue={(val) => { f().beratLimbah = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Satuan Berat</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().satuanBerat}
+                        options={['Kilogram (Kg)', 'Gram (g)']}
+                        placeholder="Satuan Berat"
+                        onUpdate:modelValue={(val) => { f().satuanBerat = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Pemanfaatan</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().tujuanPemanfaatan}
+                        options={['Pakan Ternak', 'Kompos', 'Dibuang']}
+                        placeholder="Pemanfaatan"
+                        onUpdate:modelValue={(val) => { f().tujuanPemanfaatan = val }}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {!isPenyiangan && !isPembumbunan && !isSanitasi && (
+                  <>
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Jenis Limbah</span>
+                      <PerkebunanFormSelect
+                        modelValue={f().jenisLimbah}
+                        options={['Guguran Daun', 'Ranting Kering', 'Rumput Liar (Gulma)', 'Limbah Buah Busuk']}
+                        placeholder="Jenis Limbah"
+                        onUpdate:modelValue={(val) => { f().jenisLimbah = val }}
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Total Berat Limbah (Kg)</span>
+                      <PerkebunanFormInput
+                        modelValue={f().beratLimbah}
+                        placeholder="Contoh: 2"
+                        onUpdate:modelValue={(val) => { f().beratLimbah = val }}
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div class="form-group">
                   <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Catatan (Opsional)</span>
                   <PerkebunanFormInput
                     modelValue={f().deskripsiPembersihan}
                     type="textarea"
-                    placeholder={catatanPlaceholder}
+                    placeholder="Catatan"
                     onUpdate:modelValue={(val) => { f().deskripsiPembersihan = val }}
                   />
                 </div>
@@ -406,7 +560,7 @@ export default defineComponent({
                     />
                   </div>
                   <div class="form-group">
-                    <span class="field-label">Jenis Hormon (Opsional)</span>
+                    <span class="field-label">Masukkan Jenis Hormon (Opsional)</span>
                     <PerkebunanFormInput
                       modelValue={f().jenisHormon}
                       placeholder="Contoh: ZPT"
@@ -448,7 +602,7 @@ export default defineComponent({
                     />
                   </div>
                   <div class="form-group">
-                    <span class="field-label">Jumlah Buah Dibuang</span>
+                    <span class="field-label">Masukkan Jumlah Buah Dibuang</span>
                     <PerkebunanFormInput
                       modelValue={f().jumlahBuahDibuang}
                       type="number"
@@ -457,7 +611,7 @@ export default defineComponent({
                     />
                   </div>
                   <div class="form-group">
-                    <span class="field-label">Sisa Buah per Tandan</span>
+                    <span class="field-label">Masukkan Sisa Buah per Tandan</span>
                     <PerkebunanFormInput
                       modelValue={f().sisaBuahPerTandan}
                       type="number"
@@ -491,7 +645,7 @@ export default defineComponent({
                     />
                   </div>
                   <div class="form-group">
-                    <span class="field-label">Jumlah Buah / Malai yang Dibungkus</span>
+                    <span class="field-label">Masukkan Jumlah Buah / Malai yang Dibungkus</span>
                     <PerkebunanFormInput
                       modelValue={f().jumlahBuahDibungkus}
                       type="number"
@@ -570,7 +724,7 @@ export default defineComponent({
                 <PerkebunanFormInput
                   modelValue={f().deskripsiPanen}
                   type="textarea"
-                  placeholder="Contoh: kendala, kondisi dan lain lain"
+                  placeholder="Catatan"
                   onUpdate:modelValue={(val) => { f().deskripsiPanen = val }}
                 />
               </div>
@@ -642,7 +796,7 @@ export default defineComponent({
             </>
           )}
 
-          {props.kindTitle === 'Stok Obat' && (
+          {(props.kindTitle === 'Stok Obat' || props.kindTitle === 'Stok Pupuk') && (
             <>
               <div class="form-group">
                 <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Jenis Obat</span>
@@ -723,7 +877,7 @@ export default defineComponent({
             </>
           )}
 
-          {(props.kindTitle === 'Stok Pakan' || props.kindTitle === 'Stok Pupuk') && (() => {
+          {props.kindTitle === 'Stok Pakan' && (() => {
             const isMasuk = rincian.includes('Masuk') || rincian.includes('Tambah')
             return (
               <>
