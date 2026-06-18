@@ -30,11 +30,19 @@ func (h *PregnancyHandler) RegisterRoutes(app *fiber.App) {
 
 	kelahiran := api.Group("/kelahiran")
 	h.registerBirthsGroup(kelahiran)
+
+	// Add breeding prefix routes to match prompt exactly
+	breeding := api.Group("/breeding")
+	breedingPregnancies := breeding.Group("/pregnancies")
+	h.registerPregnanciesGroup(breedingPregnancies)
+	breedingBirths := breeding.Group("/births")
+	h.registerBirthsGroup(breedingBirths)
 }
 
 func (h *PregnancyHandler) registerPregnanciesGroup(group fiber.Router) {
 	group.Post("/", h.RecordPregnancy)
 	group.Get("/", h.GetPregnancyList)
+	group.Post("/check", h.CheckPregnancy)
 	group.Patch("/:id/status", h.UpdatePregnancyStatus)
 }
 
@@ -169,4 +177,30 @@ func (h *PregnancyHandler) GetBirthHistory(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 	return c.Status(http.StatusOK).JSON(res)
+}
+
+// CheckPregnancy godoc
+// @Summary      Submit pregnancy check result
+// @Description  Submit the check result for a pregnancy (Kontrol Kebuntingan)
+// @Tags         pregnancies
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request body      domain.PregnancyCheckRequest  true  "Check details"
+// @Success      200     {object}  object
+// @Failure      400     {object}  responses.Response[any]
+// @Failure      500     {object}  responses.Response[any]
+// @Router       /api/pregnancies/check [post]
+func (h *PregnancyHandler) CheckPregnancy(c *fiber.Ctx) error {
+	var req domain.PregnancyCheckRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
+	}
+
+	err := h.useCase.CheckPregnancy(c.Context(), req)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
 }

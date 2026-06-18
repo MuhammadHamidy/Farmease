@@ -1,4 +1,4 @@
-﻿package farms
+package farms
 
 import (
 "github.com/gofiber/fiber/v2"
@@ -12,12 +12,10 @@ import (
 // Module exports the farms module for Fx.
 var Module = fx.Options(
 fx.Provide(
-postgresql.NewRepository,
 fx.Annotate(
 postgresql.NewRepository,
 fx.As(new(domain.FarmRepository)),
 ),
-usecase.NewUseCase,
 fx.Annotate(
 usecase.NewUseCase,
 fx.As(new(domain.UseCase)),

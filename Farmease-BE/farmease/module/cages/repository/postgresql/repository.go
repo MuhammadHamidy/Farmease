@@ -131,8 +131,8 @@ func (r *Repository) GetCageStats(ctx context.Context, id string) (*domain.CageS
 	query := `
 		SELECT 
 			COUNT(*) as total_animals,
-			COUNT(*) FILTER (WHERE status = 'Sehat') as healthy,
-			COUNT(*) FILTER (WHERE status IN ('Sakit', 'Hamil')) as attention_needed
+			COUNT(*) FILTER (WHERE status = 'aktif') as healthy,
+			COUNT(*) FILTER (WHERE status = 'hamil') as attention_needed
 		FROM livestock.sheep 
 		WHERE id_cage = $1`
 	var totalAnimals, healthy, attentionNeeded int64

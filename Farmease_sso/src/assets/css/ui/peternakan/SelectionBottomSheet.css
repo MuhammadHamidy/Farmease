@@ -1,0 +1,283 @@
+/* ── Selection Bottom Sheet – OvisManage Color System ─────── */
+.selection-bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.selection-bottom-sheet-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.selection-bottom-sheet-card {
+  width: 100%;
+  max-width: 600px;
+  background: var(--color-surface);
+  border-radius: 20px 20px 0 0;
+  padding: 0.75rem 1.25rem 2rem 1.25rem;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+  display: flex;
+  flex-direction: column;
+  max-height: 88vh;
+}
+.selection-bottom-sheet-overlay.active .selection-bottom-sheet-card {
+  transform: translateY(0);
+}
+
+/* ── Drag Handle ─────────────────────────────────────── */
+.selection-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--color-surface-container-highest);
+  border-radius: 10px;
+  margin: 0.25rem auto 1.25rem auto;
+  flex-shrink: 0;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.selection-sheet-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1.5px solid var(--color-outline-variant);
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+.selection-sheet-close {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-primary);
+  padding: 0;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1; /* Stay above the title */
+}
+.selection-sheet-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  letter-spacing: -0.02em;
+  font-family: var(--font-manrope);
+  pointer-events: none; /* Don't capture clicks */
+  margin: 0;
+}
+
+/* ── Search Bar ─────────────────────────────────────── */
+.selection-sheet-search-container {
+  position: relative;
+  margin-bottom: 1rem;
+}
+.selection-sheet-search-input {
+  width: 100%;
+  padding: 0.75rem 1.25rem 0.75rem 2.75rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--color-outline-variant);
+  background: var(--color-surface-container-lowest);
+  font-size: 0.9rem;
+  font-family: var(--font-manrope);
+  color: var(--color-on-surface-variant);
+  transition: all 0.2s;
+}
+.selection-sheet-search-input::placeholder { color: var(--color-outline); }
+.selection-sheet-search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(21, 66, 18, 0.08);
+}
+.selection-sheet-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-outline);
+  display: flex;
+  align-items: center;
+}
+
+/* ── Add Button ──────────────────────────────────────── */
+.selection-sheet-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: auto;
+  margin-bottom: 1.25rem;
+  transition: opacity 0.2s;
+  font-family: var(--font-manrope);
+}
+.selection-sheet-add-btn:hover { opacity: 0.88; }
+.selection-sheet-add-btn:active { transform: scale(0.97); }
+
+/* ── Options List ────────────────────────────────────── */
+.selection-sheet-options-list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.selection-sheet-options-list::-webkit-scrollbar { display: none; }
+
+.selection-sheet-option-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--color-surface-container-low);
+  border: none;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.selection-sheet-option-item:hover {
+  background: var(--color-surface-container);
+}
+.selection-sheet-option-item.selected {
+  background: var(--color-primary-fixed);
+  box-shadow: 0 2px 8px rgba(21, 66, 18, 0.08);
+  border: 1.5px solid var(--color-primary-fixed-dim);
+}
+
+/* ── Icon Box ─────────────────────────────────────────── */
+.selection-sheet-row-icon-box {
+  width: 44px;
+  height: 44px;
+  background: var(--color-surface-container-high);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}
+.selection-sheet-option-item.selected .selection-sheet-row-icon-box {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ── Item Text ─────────────────────────────────────────── */
+.selection-sheet-row-body { flex: 1; }
+.selection-sheet-row-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  margin-bottom: 1px;
+}
+.selection-sheet-row-desc {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-on-surface-variant);
+  font-weight: 700;
+}
+
+/* ── Radio Indicator ─────────────────────────────────── */
+.selection-sheet-radio-circle {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-outline);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+.selection-sheet-option-item.selected .selection-sheet-radio-circle {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.selection-sheet-radio-inner {
+  width: 9px;
+  height: 9px;
+  background: white;
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+}
+.selection-sheet-option-item.selected .selection-sheet-radio-inner {
+  transform: scale(1);
+}
+
+/* ── Checkbox Indicator (Multi-select) ──────────────── */
+.selection-sheet-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-outline);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  color: var(--color-on-primary);
+}
+.selection-sheet-checkbox.selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* ── Selected Count Label ────────────────────────────── */
+.selection-sheet-selected-count {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.6rem;
+  font-family: var(--font-manrope);
+}
+
+/* ── Submit Button ────────────────────────────────────── */
+.selection-sheet-submit-container {
+  padding-top: 1.25rem;
+  margin-top: auto;
+}
+.selection-sheet-submit-btn {
+  width: 100%;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  padding: 1rem;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: var(--font-manrope);
+}
+.selection-sheet-submit-btn:hover { opacity: 0.88; }
+.selection-sheet-submit-btn:active { transform: scale(0.98); }
+.selection-sheet-submit-btn:disabled {
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+  cursor: not-allowed;
+  transform: none;
+}

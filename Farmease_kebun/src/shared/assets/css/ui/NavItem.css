@@ -1,0 +1,16 @@
+.nav-item-box {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-item-box.active {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.nav-item-box.inactive {
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
+}
+.nav-item-box:hover.inactive {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+}

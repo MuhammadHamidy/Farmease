@@ -12,6 +12,7 @@ import {
 
 export interface SheepDetail extends ApiSheep {
   cage_code?: string
+  photo_url?: string
 }
 
 export interface Silsilah {
@@ -38,6 +39,7 @@ export interface Sheep {
   origin?: string
   adg?: number
   adg_label?: string
+  photo_url?: string
 }
 
 export interface Cage {
@@ -103,6 +105,7 @@ function mapSheep(row: ApiSheep): Sheep {
     origin: row.origin || '',
     adg: (row as any).adg,
     adg_label: (row as any).adg_label,
+    photo_url: row.photo_url || '',
   }
 }
 
@@ -144,7 +147,7 @@ export async function fetchSheep(cageCode?: string) {
     error.value = null
 
     const list = await sheepApi.getList()
-    const mapped = list.map(mapSheep)
+    const mapped = (list || []).map(mapSheep)
     sheep.value = cageCode
       ? mapped.filter((s) => s.cage_code === cageCode)
       : mapped
@@ -165,7 +168,7 @@ export async function fetchCages() {
     error.value = null
 
     const list = await cagesApi.getList()
-    cages.value = list.map((c) => ({
+    cages.value = (list || []).map((c) => ({
       id: String(c.id_cage),
       code: c.cage_code,
       name: c.cage_name || `Kandang ${c.cage_code}`,
@@ -187,8 +190,8 @@ export async function fetchHealthRecords(sheepId?: string) {
     error.value = null
 
     if (sheepId) {
-      const list = await healthApi.getList(Number(sheepId))
-      healthRecords.value = list.map((h) => ({
+      const list = await healthApi.getList(String(sheepId))
+      healthRecords.value = (list || []).map((h) => ({
         id: String((h as any).id_health || h.id),
         sheep_id: String(h.id_sheep),
         date: h.date_recorded || (h as any).checkup_date || '',
@@ -197,7 +200,7 @@ export async function fetchHealthRecords(sheepId?: string) {
       }))
     } else {
       const list = await healthApi.getGlobalList()
-      healthRecords.value = list.map((h) => ({
+      healthRecords.value = (list || []).map((h) => ({
         id: String((h as any).id_health || h.id),
         sheep_id: String(h.id_sheep),
         date: h.date_recorded || (h as any).checkup_date || '',
@@ -219,10 +222,10 @@ export async function fetchWeightRecords(sheepId?: string) {
     error.value = null
 
     const list = sheepId
-      ? await weightApi.getSheepHistory(Number(sheepId))
+      ? await weightApi.getSheepHistory(String(sheepId))
       : await weightApi.getList()
 
-    weightRecords.value = list.map((w) => ({
+    weightRecords.value = (list || []).map((w) => ({
       id: String((w as any).id_weight || w.id),
       sheep_id: String(w.id_sheep),
       date: w.date_recorded || (w as any).weighing_date || '',
@@ -242,11 +245,11 @@ export async function fetchFeedRecords(sheepId?: string) {
     error.value = null
 
     if (sheepId) {
-      const list = await feedsApi.getFeedingHistory(Number(sheepId))
+      const list = await feedsApi.getFeedingHistory(String(sheepId))
       feedRecords.value = (list as FeedRecord[]) ?? []
     } else {
       const list = await feedsApi.getList()
-      feedRecords.value = list.map((f) => ({
+      feedRecords.value = (list || []).map((f) => ({
         id: String((f as any).id_feed || f.id),
         sheep_id: '',
         type: f.feed_type || (f as any).category || '',
@@ -284,7 +287,7 @@ export async function updateSheep(id: string, data: Record<string, unknown>) {
     loading.value = true
     error.value = null
 
-    const updated = await sheepApi.update(Number(id), data as Partial<ApiSheep>)
+    const updated = await sheepApi.update(String(id), data as Partial<ApiSheep>)
     const mapped = mapSheep(updated)
     const index = sheep.value.findIndex((s) => s.id === id)
     if (index !== -1) {
@@ -306,7 +309,7 @@ export async function updateSheepStatus(id: string, status: string) {
 
     // Normalize UI status to database-compatible lowercase enum
     const apiStatus = status.toLowerCase() === 'sehat' ? 'aktif' : status.toLowerCase();
-    await sheepApi.updateStatus(Number(id), apiStatus)
+    await sheepApi.updateStatus(String(id), apiStatus)
     const index = sheep.value.findIndex((s) => s.id === id)
     if (index !== -1) {
       // Map back to UI status representation for frontend state consistency
@@ -332,7 +335,7 @@ export async function addHealthRecord(sheepId: string, data: Record<string, unkn
     loading.value = true
     error.value = null
 
-    const created = await healthApi.create(Number(sheepId), data)
+    const created = await healthApi.create(String(sheepId), data)
     const record: HealthRecord = {
       id: String((created as any).id_health || created.id),
       sheep_id: String(created.id_sheep),
@@ -355,7 +358,7 @@ export async function addWeightRecord(sheepId: string, data: Record<string, unkn
     loading.value = true
     error.value = null
 
-    const created = await weightApi.record(Number(sheepId), data)
+    const created = await weightApi.record(String(sheepId), data)
     const record: WeightRecord = {
       id: String((created as any).id_weight || created.id),
       sheep_id: String(created.id_sheep),
@@ -451,7 +454,7 @@ export async function fetchMatingForSheep(id: string | number) {
   try {
     detailError.value = null
     const list = await breedingApi.getMatingList()
-    currentMatingRecords.value = list.filter((m: any) => 
+    currentMatingRecords.value = (list || []).filter((m: any) => 
       m.id_female_sheep === id || m.id_male_sheep === id || 
       m.id_sheep_female === id || m.id_sheep_male === id
     ).map((m: any) => {

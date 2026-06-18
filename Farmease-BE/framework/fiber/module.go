@@ -90,7 +90,9 @@ func NewFiber(cfg *Config) *fiber.App {
 	}))
 
 	app.Use(recover.New())
-	app.Use(helmet.New())
+	app.Use(helmet.New(helmet.Config{
+		CrossOriginResourcePolicy: "cross-origin",
+	}))
 
 	if cfg.CORSAllowedOrigins != "" {
 		app.Use(cors.New(cors.Config{

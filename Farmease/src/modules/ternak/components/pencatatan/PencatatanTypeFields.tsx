@@ -4,12 +4,12 @@ import PencatatanField from './PencatatanField';
 import PencatatanInput from './PencatatanInput';
 import PencatatanSelect from './PencatatanSelect';
 import PencatatanTextarea from './PencatatanTextarea';
-import { landsList, fetchLandsList, cageSession, cagesList } from '@/store/navigation';
+import { landsList, fetchLandsList, cageSession, cagesList, activePencatatanForm } from '@/store/navigation';
 import PencatatanModeToggle from './PencatatanModeToggle';
 import type { PencatatanMode } from './PencatatanModeToggle';
 import { stocks } from '@/modules/ternak/store/peternakan';
 import { sheep, weightRecords } from '@/store/livestock';
-import { breedingApi } from '@/shared/api';
+import { breedingApi, feedsApi, pemangkasanApi, type EnumChoice } from '@/shared/api';
 import { ref } from 'vue';
 import { metadataEnums } from '@/store/operatorAdmin';
 
@@ -35,6 +35,15 @@ export type PencatatanFormItem = {
   kandangAnak: string;
   namaAnak: string;
   beratLahir: string;
+  asalSemen?: string;
+  namaInseminator?: string;
+  waktuIB?: string;
+  sumberPejantan?: 'internal' | 'eksternal';
+  donorName?: string;
+  donorOrigin?: string;
+  idMating?: string;
+  metodePemeriksaan?: string;
+  hasilPemeriksaan?: string;
 };
 
 export default defineComponent({
@@ -48,8 +57,25 @@ export default defineComponent({
   setup(props) {
     const f = () => props.form;
 
+    const pruningOptions = ref<any[]>([]);
+
+    onMounted(async () => {
+      try {
+        const res = await pemangkasanApi.getList();
+        // Hanya ambil yang punya jumlah > 0
+        pruningOptions.value = res
+          .filter((p: any) => Number(p.jumlah) > 0)
+          .map((p: any) => ({
+            value: `Pemangkasan ${p.nama_rincian_aktivitas || 'Daun'}`,
+            label: `[Kebun] Pemangkasan ${p.nama_rincian_aktivitas || 'Daun'} (${p.jumlah} ${p.satuan})`
+          }));
+      } catch (e) {
+        console.error('Failed to load pruning for dropdown', e);
+      }
+    });
+
     const feedStockOptions = computed(() => {
-      return stocks.value
+      const dbStocks = stocks.value
         .filter((s: any) => {
           const cat = (s.category || '').toLowerCase();
           return ['hijauan', 'konsentrat', 'pellet', 'greenery'].includes(cat) || cat.includes('pakan');
@@ -58,12 +84,14 @@ export default defineComponent({
           value: s.name,
           label: s.name
         }));
+      
+      return [...dbStocks, ...pruningOptions.value];
     });
 
     // Kalkulasi Otomatis Pakan berdasarkan ID
     watch(
       () => f().targetId,
-      (newTarget) => {
+      async (newTarget) => {
         if (props.jenisId === 'pakan') {
           // Jangan auto isi jika kosong, kecuali mode kelompok
           if ((!newTarget || newTarget.length < 2) && f().mode === 'individu') {
@@ -71,23 +99,23 @@ export default defineComponent({
             return;
           }
 
-          let calculatedQty = '';
-          
           if (f().mode === 'kelompok' || !f().mode || f().mode !== 'individu') {
-             // Hitung jumlah domba di kandang
-             let multiplier = 10;
              if (newTarget) {
-                const count = sheep.value.filter(s => s.cage_code === newTarget).length;
-                if (count > 0) multiplier = count;
+               try {
+                 const res = await feedsApi.getRecommendationByCage(newTarget);
+                 f().qty = ((res.total_hijauan_kg || 0) + (res.total_konsentrat_kg || 0)).toFixed(1);
+               } catch(e) {
+                 f().qty = '';
+               }
              }
-             calculatedQty = (2.5 * multiplier).toFixed(1); 
           } else {
-             // Mode individu: kalkulasi pseudo-random berdasarkan string ID
-             const hash = newTarget.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-             calculatedQty = ((hash % 25) / 10 + 2.5).toFixed(1); 
+             try {
+               const res = await feedsApi.getRecommendation(newTarget);
+               f().qty = (res.total_pakan_harian_kg || 0).toFixed(1);
+             } catch(e) {
+               f().qty = '';
+             }
           }
-          
-          f().qty = calculatedQty;
           
           if (!f().obat && feedStockOptions.value.length > 0) {
              f().obat = feedStockOptions.value[0]?.value || '';
@@ -97,9 +125,69 @@ export default defineComponent({
       { immediate: true }
     );
 
+    const activeMatings = ref<any[]>([]);
+    const isLoadingMatings = ref(false);
+
+    const fetchActiveMatings = async () => {
+      try {
+        isLoadingMatings.value = true;
+        const list = await breedingApi.getMatingList({ status: 'proses' });
+        activeMatings.value = list || [];
+      } catch (err) {
+        console.error('Failed to fetch active matings:', err);
+      } finally {
+        isLoadingMatings.value = false;
+      }
+    };
+
+    const getMatingLabel = (mating: any) => {
+      const female = sheep.value.find(s => String(s.id) === String(mating.id_sheep_female));
+      const femaleLabel = female ? `[${female.code}] ${female.name}` : `Domba Betina #${mating.id_sheep_female}`;
+      
+      const matingDate = new Date(mating.mating_date);
+      const diffDays = mating.days_since_mating || 0;
+      
+      const dateStr = matingDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+      return `${femaleLabel} — Kawin: ${dateStr} (${diffDays} hari lalu)`;
+    };
+
+    // Watch for form mating ID and prefill targetId
+    watch(
+      () => props.form.idMating,
+      async (newVal) => {
+        if (newVal) {
+          let mating = activeMatings.value.find(m => String(m.id_mating) === String(newVal));
+          if (!mating) {
+            try {
+              mating = await breedingApi.getMatingDetail(newVal);
+            } catch (err) {
+              console.error('Failed to fetch mating detail:', err);
+            }
+          }
+          if (mating) {
+            const female = sheep.value.find(s => String(s.id) === String(mating.id_sheep_female));
+            props.form.targetId = female ? female.code : String(mating.id_sheep_female);
+            if (female) {
+              selectedBaseSheepId.value = String(female.id);
+            }
+          }
+        }
+      },
+      { immediate: true }
+    );
+
     onMounted(() => {
       if (landsList.value.length === 0) {
         fetchLandsList();
+      }
+      if (props.jenisId === 'perkawinan') {
+        if (props.form.name === 'Kontrol Kebuntingan') {
+          fetchActiveMatings();
+        } else if (props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan') {
+          props.form.metoda = 'ib';
+        } else if (props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami') {
+          props.form.metoda = 'alami';
+        }
       }
     });
 
@@ -128,12 +216,22 @@ export default defineComponent({
 
     const baseSheepOptions = computed(() => {
       const activeCode = cageSession.value?.code || '';
-      return sheep.value
-        .filter(s => s.cage_code === activeCode && !['Mati', 'Terjual', 'Disembelih'].includes(s.status))
-        .map(s => ({
-          value: s.id,
-          label: `[${s.code}] ${s.name} (${s.gender === 'jantan' ? 'Jantan' : 'Betina'})`
-        }));
+      const list = sheep.value
+        .filter(s => s.cage_code === activeCode && !['Mati', 'Terjual', 'Disembelih'].includes(s.status));
+      
+      if (props.jenisId === 'perkawinan' && (props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.metoda === 'ib')) {
+        return list
+          .filter(s => s.gender === 'betina')
+          .map(s => ({
+            value: s.id,
+            label: `[${s.code}] ${s.name} (Betina - Kandang ${s.cage_code})`
+          }));
+      }
+
+      return list.map(s => ({
+        value: s.id,
+        label: `[${s.code}] ${s.name} (${s.gender === 'jantan' ? 'Jantan' : 'Betina'} - Kandang ${s.cage_code})`
+      }));
     });
 
     const activeCageSheepOptions = computed(() => {
@@ -191,6 +289,9 @@ export default defineComponent({
       if (!s) {
         props.form.targetId = '';
         props.form.idPejantan = '';
+        if (props.form.name === 'Kontrol Kebuntingan') {
+          props.form.idMating = '';
+        }
         return;
       }
       if (s.gender === 'betina') {
@@ -199,6 +300,13 @@ export default defineComponent({
       } else {
         props.form.idPejantan = s.id;
         props.form.targetId = '';
+      }
+
+      if (props.jenisId === 'perkawinan' && props.form.name === 'Kontrol Kebuntingan' && props.form.idMating) {
+        const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
+        if (mating && String(mating.id_sheep_female) !== String(s.id)) {
+          props.form.idMating = '';
+        }
       }
     };
 
@@ -211,36 +319,21 @@ export default defineComponent({
           .filter(s => s.gender === 'jantan' && s.cage_code !== activeCode && !['Mati', 'Terjual', 'Disembelih'].includes(s.status))
           .map(s => ({
             value: s.id,
-            label: `[${s.code}] ${s.name} (Kandang ${s.cage_code})`
+            label: `[${s.code}] ${s.name} (Jantan - Kandang ${s.cage_code})`
           }));
       } else {
         return sheep.value
           .filter(s => s.gender === 'betina' && s.cage_code !== activeCode && !['Mati', 'Terjual', 'Disembelih'].includes(s.status))
           .map(s => ({
             value: s.id,
-            label: `[${s.code}] ${s.name} (Kandang ${s.cage_code})`
+            label: `[${s.code}] ${s.name} (Betina - Kandang ${s.cage_code})`
           }));
       }
     });
 
-    const getSheepAgeString = (birthDateStr: string) => {
-      if (!birthDateStr) return '—';
-      const birth = new Date(birthDateStr);
-      const now = new Date();
-      const diffTime = Math.abs(now.getTime() - birth.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays < 30) {
-        return `${diffDays} hari`;
-      }
-      const months = Math.floor(diffDays / 30.43);
-      if (months < 12) {
-        return `${months} bulan`;
-      }
-      const years = Math.floor(months / 12);
-      const remainingMonths = months % 12;
-      if (remainingMonths === 0) return `${years} tahun`;
-      return `${years} tahun ${remainingMonths} bulan`;
+    const getSheepAgeString = (s: any) => {
+      if (!s) return '—';
+      return s.age_string || '—';
     };
 
     const getSheepWeight = (sheepId: string) => {
@@ -253,32 +346,7 @@ export default defineComponent({
 
     const getBirahiStatus = (s: any) => {
       if (!s) return '—';
-      const now = new Date();
-      let ageInMonths = 0;
-      if (s.birth_date) {
-        const bd = new Date(s.birth_date);
-        ageInMonths = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
-      }
-      if (s.gender === 'betina') {
-        if (s.status === 'Sehat' && ageInMonths >= 8) {
-          return 'Ya (Siap Kawin / Birahi)';
-        }
-        if (s.status === 'Hamil') {
-          return 'Tidak (Sedang Hamil)';
-        }
-        if (ageInMonths < 8) {
-          return 'Tidak (Belum Cukup Umur < 8 bln)';
-        }
-        return `Tidak (${s.status})`;
-      } else {
-        if (s.status === 'Sehat' && ageInMonths >= 12) {
-          return 'Ya (Siap Kawin / Pejantan Siap)';
-        }
-        if (ageInMonths < 12) {
-          return 'Tidak (Belum Cukup Umur < 12 bln)';
-        }
-        return `Tidak (${s.status})`;
-      }
+      return s.mating_status || '—';
     };
 
     watch([() => props.form.targetId, () => props.form.idPejantan], ([id1Str, id2Str]) => {
@@ -310,7 +378,7 @@ export default defineComponent({
         }
 
         try {
-          const res = await breedingApi.checkInbreeding(Number(male.id), Number(female.id));
+          const res = await breedingApi.checkInbreeding(male.id, female.id);
           const flag = res?.inbreeding_flag ?? false;
           const pct = res?.inbreeding_percentage ? res.inbreeding_percentage.toFixed(2) + '%' : '';
           const category = res?.risk_category ? `(${res.risk_category})` : '';
@@ -331,6 +399,40 @@ export default defineComponent({
         }
       }, 800);
     }, { immediate: true });
+
+    const matingMethodOptions = computed(() => {
+      const base = selectedBaseSheep.value;
+      if (base && base.gender === 'jantan') {
+        return metadataEnums.value.mating_method.filter((matingMethod: EnumChoice) => matingMethod.value === 'alami');
+      }
+      return metadataEnums.value.mating_method;
+    });
+
+    const labelPejantan = computed(() => {
+      if (f().metoda === 'ib') {
+        return 'Pilih Pejantan (Sumber Semen) *';
+      }
+      return selectedBaseSheep.value?.gender === 'betina'
+        ? 'Pilih Pasangan (Pejantan Luar Kandang) *'
+        : 'Pilih Pasangan (Betina Luar Kandang) *';
+    });
+
+    watch(selectedBaseSheep, (newBase) => {
+      if (newBase && newBase.gender === 'jantan' && f().metoda === 'ib' && props.form.name !== 'IB' && props.form.name !== 'Inseminasi Buatan') {
+        f().metoda = 'alami';
+      }
+    });
+
+    const estimasiTanggalLahir = computed(() => {
+      const tglStr = f().tanggal || new Date().toISOString().split('T')[0];
+      try {
+        const d = new Date(tglStr as string);
+        d.setDate(d.getDate() + 148);
+        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+      } catch (e) {
+        return '—';
+      }
+    });
 
     const isModeToggleDisabled = computed(() => {
       return ['kotoran', 'berat_badan', 'perkawinan', 'kelahiran'].includes(props.jenisId);
@@ -375,7 +477,7 @@ export default defineComponent({
 
           {props.jenisId === 'perkawinan' && (
             <PencatatanField
-              label={f().mode === 'individu' ? 'ID Domba' : 'ID Kandang'}
+              label={f().mode === 'individu' ? (f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' ? 'ID Domba Betina' : 'ID Domba') : 'ID Kandang'}
               colClass="col-12"
               required
             >
@@ -410,7 +512,7 @@ export default defineComponent({
                   </div>
                   <div class="col-6">
                     <span class="text-muted small d-block">Umur</span>
-                    <span class="fw-bold">{getSheepAgeString(selectedBaseSheep.value.birth_date)}</span>
+                    <span class="fw-bold">{getSheepAgeString(selectedBaseSheep.value)}</span>
                   </div>
                   <div class="col-6 mt-1">
                     <span class="text-muted small d-block">Berat Badan</span>
@@ -431,26 +533,77 @@ export default defineComponent({
             </div>
           )}
 
-          {props.jenisId === 'perkawinan' && f().mode === 'individu' && selectedBaseSheep.value && (
-            <PencatatanField
-              label={selectedBaseSheep.value.gender === 'betina' ? 'Pilih Pasangan (Pejantan Luar Kandang)' : 'Pilih Pasangan (Betina Luar Kandang)'}
-              colClass="col-12"
-              required
-            >
-              <PencatatanSelect
-                modelValue={selectedBaseSheep.value.gender === 'betina' ? f().idPejantan : f().targetId}
-                options={partnerOptions.value}
-                placeholder={selectedBaseSheep.value.gender === 'betina' ? 'Pilih Pejantan Pasangan' : 'Pilih Betina Pasangan'}
-                onUpdateModelValue={(v: string) => {
-                  if (selectedBaseSheep.value?.gender === 'betina') {
-                    f().idPejantan = v;
-                  } else {
-                    f().targetId = v;
-                  }
-                }}
-              />
-            </PencatatanField>
-          )}
+          {props.jenisId === 'perkawinan' && f().mode === 'individu' && selectedBaseSheep.value && (() => {
+            const isIB = f().metoda === 'ib' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan';
+            return (
+              <>
+                {isIB && (
+                  <PencatatanField label="Sumber Pejantan" colClass="col-12" required>
+                    <div class="d-flex gap-4 mt-2">
+                      <label class="d-flex align-items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="internal"
+                          name={`sumberPejantan-${f().id}`}
+                          checked={f().sumberPejantan !== 'eksternal'}
+                          onChange={() => { f().sumberPejantan = 'internal'; }}
+                        />
+                        <span>Pejantan Internal</span>
+                      </label>
+                      <label class="d-flex align-items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="eksternal"
+                          name={`sumberPejantan-${f().id}`}
+                          checked={f().sumberPejantan === 'eksternal'}
+                          onChange={() => { f().sumberPejantan = 'eksternal'; }}
+                        />
+                        <span>Donor Eksternal (Straw)</span>
+                      </label>
+                    </div>
+                  </PencatatanField>
+                )}
+
+                {!(isIB && f().sumberPejantan === 'eksternal') ? (
+                  <PencatatanField
+                    label={labelPejantan.value}
+                    colClass="col-12"
+                    required
+                  >
+                    <PencatatanSelect
+                      modelValue={selectedBaseSheep.value.gender === 'betina' ? f().idPejantan : f().targetId}
+                      options={partnerOptions.value}
+                      placeholder={selectedBaseSheep.value.gender === 'betina' ? 'Pilih Pejantan Pasangan / Donor Semen' : 'Pilih Betina Pasangan'}
+                      onUpdateModelValue={(v: string) => {
+                        if (selectedBaseSheep.value?.gender === 'betina') {
+                          f().idPejantan = v;
+                        } else {
+                          f().targetId = v;
+                        }
+                      }}
+                    />
+                  </PencatatanField>
+                ) : (
+                  <>
+                    <PencatatanField label="Nama / ID Pejantan Donor" colClass="col-12" required>
+                      <PencatatanInput
+                        modelValue={f().donorName || ''}
+                        placeholder="Misal: Donor Sire X"
+                        onUpdateModelValue={(v: string) => { f().donorName = v; }}
+                      />
+                    </PencatatanField>
+                    <PencatatanField label="Instansi / Balai Asal Pejantan Donor" colClass="col-12" required>
+                      <PencatatanInput
+                        modelValue={f().donorOrigin || ''}
+                        placeholder="Misal: BIB Lembang"
+                        onUpdateModelValue={(v: string) => { f().donorOrigin = v; }}
+                      />
+                    </PencatatanField>
+                  </>
+                )}
+              </>
+            );
+          })()}
 
           {props.jenisId === 'perkawinan' && f().mode === 'individu' && selectedPartnerSheep.value && (
             <div class="col-12 animate-fade-in">
@@ -465,7 +618,7 @@ export default defineComponent({
                   </div>
                   <div class="col-6">
                     <span class="text-muted small d-block">Umur</span>
-                    <span class="fw-bold">{getSheepAgeString(selectedPartnerSheep.value.birth_date)}</span>
+                    <span class="fw-bold">{getSheepAgeString(selectedPartnerSheep.value)}</span>
                   </div>
                   <div class="col-6 mt-1">
                     <span class="text-muted small d-block">Berat Badan</span>
@@ -668,42 +821,195 @@ export default defineComponent({
 
           {props.jenisId === 'perkawinan' && (
             <>
-              {f().mode === 'kelompok' && (
-                <PencatatanField label="Pejantan" colClass="col-12" required>
-                  <PencatatanSelect
-                    modelValue={f().idPejantan}
-                    options={pejantanOptions.value}
-                    placeholder="Pilih Pejantan"
-                    onUpdateModelValue={(v: string) => { f().idPejantan = v; }}
-                  />
-                </PencatatanField>
-              )}
-              <PencatatanField label="Metoda Perkawinan" colClass="col-12">
-                <PencatatanSelect
-                  modelValue={f().metoda}
-                  options={metadataEnums.value.mating_method}
-                  onUpdateModelValue={(v: string) => { f().metoda = v; }}
-                />
-              </PencatatanField>
+              {props.form.name === 'Kontrol Kebuntingan' ? (
+                <>
+                  <PencatatanField label="Pilih Data Perkawinan *" colClass="col-12" required>
+                    {props.form.idMating && activePencatatanForm.value?.idMating ? (
+                      <div class="p-3 rounded-4 bg-light border border-light-cream fw-semibold">
+                        {(() => {
+                          const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
+                          return mating ? getMatingLabel(mating) : `ID Perkawinan: ${props.form.idMating}`;
+                        })()}
+                      </div>
+                    ) : (
+                      <PencatatanSelect
+                        modelValue={props.form.idMating || ''}
+                        options={(() => {
+                          let list = activeMatings.value;
+                          if (selectedBaseSheepId.value) {
+                            list = list.filter(m => String(m.id_sheep_female) === String(selectedBaseSheepId.value));
+                          }
+                          return list.map(m => ({
+                            value: m.id_mating,
+                            label: getMatingLabel(m)
+                          }));
+                        })()}
+                        placeholder="Pilih perkawinan yang akan diperiksa"
+                        onUpdateModelValue={(v: string) => {
+                          props.form.idMating = v;
+                          const mating = activeMatings.value.find(m => String(m.id_mating) === String(v));
+                          if (mating) {
+                            const female = sheep.value.find(s => String(s.id) === String(mating.id_sheep_female));
+                            props.form.targetId = female ? female.code : String(mating.id_sheep_female);
+                            if (female) {
+                              selectedBaseSheepId.value = String(female.id);
+                            }
+                          }
+                        }}
+                      />
+                    )}
+                  </PencatatanField>
 
-              {/* Automatic Pedigree Check Result */}
-              {inbreedingResult.value && (
-                <div class="col-12 mt-2 animate-fade-in">
-                  <div
-                    class={['alert py-3 rounded-4 border-0 small m-0', !inbreedingResult.value.safe && !inbreedingResult.value.error ? 'alert-danger' : 'alert-success']} 
-                    style={{
-                      backgroundColor: !inbreedingResult.value.safe && !inbreedingResult.value.error ? 'var(--color-danger-bg)' : (inbreedingResult.value.error ? 'var(--color-gray-50)' : 'var(--color-success-bg-alt)'),
-                      color: !inbreedingResult.value.safe && !inbreedingResult.value.error ? 'var(--color-danger-text)' : (inbreedingResult.value.error ? 'var(--color-gray-600)' : '#1E4620')
-                    }}
-                  >
-                    <div class="d-flex align-items-center gap-2">
-                      <span style={{ fontSize: '1.2rem' }}>
-                        {!inbreedingResult.value.safe && !inbreedingResult.value.error ? '⚠️' : (inbreedingResult.value.error ? 'ℹ️' : '✅')}
-                      </span>
-                      <span class="fw-bold">{inbreedingResult.value.text}</span>
+                  <PencatatanField label="Tanggal Pemeriksaan *" colClass="col-12" required>
+                    <PencatatanInput
+                      type="date"
+                      modelValue={props.form.tanggal}
+                      onUpdateModelValue={(v: string) => { props.form.tanggal = v; }}
+                    />
+                  </PencatatanField>
+
+                  <PencatatanField label="Metode Pemeriksaan *" colClass="col-12" required>
+                    <PencatatanSelect
+                      modelValue={props.form.metodePemeriksaan || 'manual'}
+                      options={[
+                        { value: 'non_return_estrus', label: 'Non-Return Estrus' },
+                        { value: 'usg_palpasi', label: 'USG / Palpasi' },
+                        { value: 'manual', label: 'Manual / Palpasi Tangan' }
+                      ]}
+                      placeholder="Pilih metode pemeriksaan"
+                      onUpdateModelValue={(v: string) => { props.form.metodePemeriksaan = v; }}
+                    />
+                  </PencatatanField>
+
+                  <PencatatanField label="Hasil Pemeriksaan *" colClass="col-12" required>
+                    <div class="d-flex flex-column gap-2 mt-2">
+                      <label class="d-flex align-items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="masih_menunggu"
+                          name={`hasilPemeriksaan-${props.form.id}`}
+                          checked={props.form.hasilPemeriksaan === 'masih_menunggu'}
+                          onChange={() => { props.form.hasilPemeriksaan = 'masih_menunggu'; }}
+                        />
+                        <span>Masih Menunggu (Perlu Pemeriksaan Ulang Nanti)</span>
+                      </label>
+                      <label class="d-flex align-items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="bunting_terkonfirmasi"
+                          name={`hasilPemeriksaan-${props.form.id}`}
+                          checked={props.form.hasilPemeriksaan === 'bunting_terkonfirmasi'}
+                          onChange={() => { props.form.hasilPemeriksaan = 'bunting_terkonfirmasi'; }}
+                        />
+                        <span class="text-success fw-bold">Bunting Terkonfirmasi</span>
+                      </label>
+                      <label class="d-flex align-items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="gagal"
+                          name={`hasilPemeriksaan-${props.form.id}`}
+                          checked={props.form.hasilPemeriksaan === 'gagal'}
+                          onChange={() => { props.form.hasilPemeriksaan = 'gagal'; }}
+                        />
+                        <span class="text-danger">Gagal / Tidak Bunting</span>
+                      </label>
+                      <label class="d-flex align-items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="keguguran"
+                          name={`hasilPemeriksaan-${props.form.id}`}
+                          checked={props.form.hasilPemeriksaan === 'keguguran'}
+                          onChange={() => { props.form.hasilPemeriksaan = 'keguguran'; }}
+                        />
+                        <span class="text-warning">Keguguran</span>
+                      </label>
                     </div>
-                  </div>
-                </div>
+                  </PencatatanField>
+                </>
+              ) : (
+                <>
+                  {f().mode === 'kelompok' && (
+                    <PencatatanField label="Pejantan" colClass="col-12" required>
+                      <PencatatanSelect
+                        modelValue={f().idPejantan}
+                        options={pejantanOptions.value}
+                        placeholder="Pilih Pejantan"
+                        onUpdateModelValue={(v: string) => { f().idPejantan = v; }}
+                      />
+                    </PencatatanField>
+                  )}
+
+                  {f().mode === 'individu' && (
+                    <>
+                      {props.form.name !== 'IB' && props.form.name !== 'Inseminasi Buatan' && props.form.name !== 'Kawin Alam' && props.form.name !== 'Kawin Alami' && (
+                        <PencatatanField label="Metoda Perkawinan" colClass="col-12">
+                          <PencatatanSelect
+                            modelValue={f().metoda}
+                            options={matingMethodOptions.value}
+                            onUpdateModelValue={(v: string) => { f().metoda = v; }}
+                          />
+                        </PencatatanField>
+                      )}
+
+                      {f().metoda === 'ib' && (
+                        <>
+                          <PencatatanField label="Kode Batch / Nomor Straw Semen" colClass="col-12" required>
+                            <PencatatanInput
+                              modelValue={f().asalSemen || ''}
+                              placeholder="Masukkan nomor batch atau kode straw sperma beku"
+                              onUpdateModelValue={(v: string) => { f().asalSemen = v; }}
+                            />
+                          </PencatatanField>
+                          <PencatatanField label="Nama Inseminator" colClass="col-12" required>
+                            <PencatatanInput
+                              modelValue={f().namaInseminator || ''}
+                              placeholder="Catat nama petugas/inseminator yang melakukan tindakan IB"
+                              onUpdateModelValue={(v: string) => { f().namaInseminator = v; }}
+                            />
+                          </PencatatanField>
+                          <PencatatanField label="Tanggal dan Jam IB" colClass="col-12" required>
+                            <PencatatanInput
+                              type="datetime-local"
+                              modelValue={f().waktuIB || ''}
+                              onUpdateModelValue={(v: string) => { f().waktuIB = v; }}
+                            />
+                          </PencatatanField>
+
+                          <div class="col-12 mt-3">
+                            <div class="p-3 rounded-4" style={{ color: '#1B4F72', background: '#EBF5FB', border: '1px solid #AED6F1' }}>
+                              <div class="fw-bold mb-1" style={{ fontSize: '0.85rem' }}>
+                                ℹ️ Estimasi Hari Kelahiran (Gestasi 148 Hari)
+                              </div>
+                              <div style={{ fontSize: '0.85rem' }}>
+                                Perkiraan tanggal melahirkan induk betina: <strong class="text-dark">{estimasiTanggalLahir.value}</strong>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Automatic Pedigree Check Result */}
+                      {inbreedingResult.value && (
+                        <div class="col-12 mt-2 animate-fade-in">
+                          <div
+                            class={['alert py-3 rounded-4 border-0 small m-0', !inbreedingResult.value.safe && !inbreedingResult.value.error ? 'alert-danger' : 'alert-success']}
+                            style={{
+                              backgroundColor: !inbreedingResult.value.safe && !inbreedingResult.value.error ? 'var(--color-danger-bg)' : (inbreedingResult.value.error ? 'var(--color-gray-50)' : 'var(--color-success-bg-alt)'),
+                              color: !inbreedingResult.value.safe && !inbreedingResult.value.error ? 'var(--color-danger-text)' : (inbreedingResult.value.error ? 'var(--color-gray-600)' : '#1E4620')
+                            }}
+                          >
+                            <div class="d-flex align-items-center gap-2">
+                              <span style={{ fontSize: '1.2rem' }}>
+                                {!inbreedingResult.value.safe && !inbreedingResult.value.error ? '⚠️' : (inbreedingResult.value.error ? 'ℹ️' : '✅')}
+                              </span>
+                              <span class="fw-bold">{inbreedingResult.value.text}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
               )}
             </>
           )}

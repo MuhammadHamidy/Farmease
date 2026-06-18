@@ -1,7 +1,7 @@
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
-import { feedsApi } from '@/shared/api';
+import { feedsApi, pemangkasanApi } from '@/shared/api';
 import { weightRecords, sheep } from '@/store/livestock';
 import { cageSession } from '@/store/navigation';
 
@@ -20,31 +20,23 @@ export default defineComponent({
 
     const activeCageCode = computed(() => cageSession.value?.code || '');
 
-    // Ambil berat terbaru tiap domba aktif di kandang ini
+    const dailyFeedNeeded = ref({ hijauan: 0, konsentrat: 0, activeSheepCount: 0 });
+
     const totalActiveBW = computed(() => {
+      // Hanya fallback UI display jika perlu (tidak dipakai kalkulasi pakan)
       const activeSheep = sheep.value.filter(
         s => s.cage_code === activeCageCode.value && !['Mati', 'Terjual', 'Disembelih'].includes(s.status)
       );
       let total = 0;
       for (const s of activeSheep) {
-        // Cari record berat terbaru untuk domba ini
         const records = weightRecords.value
           .filter(w => w.sheep_id === s.id)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        if (records.length > 0) {
-          total += records[0]!.weight;
-        } else {
-          total += 30; // asumsi 30 kg jika belum ada data berat
-        }
+        if (records.length > 0) total += records[0]!.weight;
+        else total += 30; 
       }
       return total;
     });
-
-    // FR4-01: Kebutuhan pakan harian = 10% total BB aktif
-    const dailyFeedNeeded = computed(() => ({
-      hijauan: Math.round(totalActiveBW.value * FEED_PCT_OF_BW * 10) / 10,
-      konsentrat: Math.round(totalActiveBW.value * FEED_PCT_OF_BW * 0.3 * 10) / 10, // ~3% BB untuk konsentrat
-    }));
 
     const stocksWithAlert = computed(() =>
       apiStocks.value.map(s => ({
@@ -63,6 +55,14 @@ export default defineComponent({
       error.value = null;
       try {
         apiStocks.value = await feedsApi.getList();
+        if (activeCageCode.value) {
+          const res = await feedsApi.getRecommendationByCage(activeCageCode.value);
+          dailyFeedNeeded.value = {
+            hijauan: res.total_hijauan_kg || 0,
+            konsentrat: res.total_konsentrat_kg || 0,
+            activeSheepCount: res.jumlah_domba || 0
+          };
+        }
       } catch (e: any) {
         error.value = e.message || 'Gagal memuat data stok pakan';
       } finally {
@@ -90,7 +90,44 @@ export default defineComponent({
       }
     };
 
-    onMounted(loadStocks);
+    const pruningData = ref<any[]>([]);
+    const pruningLoading = ref(false);
+
+    async function loadPruning() {
+      pruningLoading.value = true;
+      try {
+        const res = await pemangkasanApi.getList();
+        pruningData.value = res.filter(p => Number(p.jumlah) > 0);
+      } catch (e: any) {
+        console.error('Gagal memuat pemangkasan:', e);
+      } finally {
+        pruningLoading.value = false;
+      }
+    }
+
+    const convertPruningToFeed = async (p: any) => {
+      addLoading.value = true;
+      error.value = null;
+      try {
+        await feedsApi.create({
+          feed_name: `Pemangkasan ${p.nama_rincian_aktivitas || 'Daun'}`,
+          feed_type: 'hijauan',
+          stock: Number(p.jumlah) || 0,
+          unit: p.satuan || 'kg',
+        });
+        await loadStocks();
+        alert(`Berhasil mengonversi ${p.jumlah} ${p.satuan} ${p.nama_rincian_aktivitas || 'Daun'} menjadi pakan!`);
+      } catch (e: any) {
+        error.value = e.message || 'Gagal mengonversi pemangkasan';
+      } finally {
+        addLoading.value = false;
+      }
+    };
+
+    onMounted(() => {
+      loadStocks();
+      loadPruning();
+    });
 
     return () => (
       <div class="p-3">
@@ -141,7 +178,7 @@ export default defineComponent({
                   <div class="text-center p-2 bg-white rounded-3 border">
                     <div class="fw-bold text-secondary" style={{ fontSize: '0.65rem', textTransform: 'uppercase' }}>Domba Aktif</div>
                     <div class="fw-bold" style={{ color: 'var(--color-on-surface)', fontSize: '1.1rem' }}>
-                      {sheep.value.filter(s => s.cage_code === activeCageCode.value && !['Mati', 'Terjual', 'Disembelih'].includes(s.status)).length} ekor
+                      {dailyFeedNeeded.value.activeSheepCount || sheep.value.filter(s => s.cage_code === activeCageCode.value && !['Mati', 'Terjual', 'Disembelih'].includes(s.status)).length} ekor
                     </div>
                   </div>
                 </div>
@@ -191,6 +228,33 @@ export default defineComponent({
             </div>
           </div>
           {error.value && <div class="text-danger small mt-2">{error.value}</div>}
+        </div>
+
+        {/* Hasil Pemangkasan dari Kebun */}
+        <div class="mb-4 p-3 rounded-4" style={{ background: '#f8fae6', border: '1.5px solid #d4d8b6' }}>
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <img src="/icon/rutin_task.png" style={{ width: '20px', height: '20px', objectFit: 'contain' }} alt="" />
+            <Typography variant="h4" weight="semibold" className="m-0 fs-6" style={{ color: '#4a5d23' }}>Hasil Pemangkasan Kebun</Typography>
+          </div>
+          {pruningLoading.value ? (
+            <div class="text-center py-2 text-secondary" style={{ fontSize: '0.85rem' }}>Mengecek data kebun...</div>
+          ) : pruningData.value.length === 0 ? (
+            <div class="text-center py-2 text-secondary" style={{ fontSize: '0.85rem' }}>Belum ada hasil pemangkasan terbaru</div>
+          ) : (
+            <div class="d-flex flex-column gap-2">
+              {pruningData.value.map((p, idx) => (
+                <div key={idx} class="d-flex align-items-center justify-content-between p-2 rounded-3" style={{ background: '#fff', border: '1px solid #e0e4cc' }}>
+                  <div>
+                    <div class="fw-bold" style={{ fontSize: '0.82rem', color: '#333' }}>Pemangkasan {p.nama_rincian_aktivitas || 'Daun'}</div>
+                    <div class="text-secondary mt-1" style={{ fontSize: '0.7rem' }}>{p.tanggal_aktivitas?.split('T')[0] || '-'} • Jumlah: <span class="fw-bold" style={{ color: 'var(--color-primary)' }}>{p.jumlah} {p.satuan}</span></div>
+                  </div>
+                  <button class="btn btn-sm text-white fw-bold px-3 py-1 rounded-pill" style={{ backgroundColor: 'var(--color-primary)', fontSize: '0.72rem' }} onClick={() => convertPruningToFeed(p)} disabled={addLoading.value}>
+                    + Jadikan Pakan
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Daftar Stok dari API */}

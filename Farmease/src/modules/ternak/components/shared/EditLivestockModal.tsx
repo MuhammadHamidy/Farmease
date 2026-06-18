@@ -3,6 +3,7 @@ import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/admin/Select';
 import { updateSheep, updateSheepStatus, sheep } from '@/store/livestock';
 import { metadataEnums } from '@/store/operatorAdmin';
+import { cagesList } from '@/store/navigation';
 
 export default defineComponent({
   name: 'EditLivestockModal',
@@ -45,7 +46,19 @@ export default defineComponent({
       status: '',
       id_father: '',
       id_mother: '',
+      photo_url: '',
+      id_cage: '',
     });
+    const selectedFile = ref<File | null>(null);
+    const previewUrl = ref<string | null>(null);
+
+    const onFileChange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        selectedFile.value = target.files[0];
+        previewUrl.value = URL.createObjectURL(selectedFile.value);
+      }
+    };
 
     const statusOptions = ['Sehat', 'Sakit', 'Hamil', 'Melahirkan', 'Dijual', 'Mati'];
 
@@ -89,7 +102,11 @@ export default defineComponent({
           status: resolvedStatus,
           id_father: sheepData.id_father || '',
           id_mother: sheepData.id_mother || '',
+          photo_url: sheepData.photo_url || '',
+          id_cage: sheepData.id_cage || '',
         };
+        selectedFile.value = null;
+        previewUrl.value = sheepData.photo_url ? `http://localhost:8081${sheepData.photo_url}` : null;
         // Reset umurMethod to tanggal since we load the actual date
         umurMethod.value = 'tanggal';
         selectedPoel.value = '';
@@ -127,7 +144,17 @@ export default defineComponent({
           id_type: String(resolvedIdType),
           id_father: editDomba.value.id_father ? String(editDomba.value.id_father) : null,
           id_mother: editDomba.value.id_mother ? String(editDomba.value.id_mother) : null,
+          photo_url: editDomba.value.photo_url,
+          id_cage: editDomba.value.id_cage || '',
         };
+
+        if (selectedFile.value) {
+          const { uploadApi } = await import('@/shared/api/peternakan');
+          const uploadedUrl = await uploadApi.uploadPhoto(selectedFile.value);
+          if (uploadedUrl) {
+            payload.photo_url = uploadedUrl;
+          }
+        }
 
         const id = props.sheepData.id || props.sheepData.id_sheep;
         await Promise.all([
@@ -167,6 +194,7 @@ export default defineComponent({
                     placeholder="Contoh: D-007"
                     modelValue={editDomba.value.code}
                     onUpdate:modelValue={(v: string) => editDomba.value.code = v}
+                    disabled={true}
                   />
                 </div>
 
@@ -176,6 +204,7 @@ export default defineComponent({
                     placeholder="Masukkan nama domba"
                     modelValue={editDomba.value.name}
                     onUpdate:modelValue={(v: string) => editDomba.value.name = v}
+                    disabled={true}
                   />
                 </div>
 
@@ -186,6 +215,7 @@ export default defineComponent({
                     options={['Garut', 'Texel', 'Dorper', 'Merino', 'F2 Dorper', 'F2 Garut']}
                     modelValue={editDomba.value.type}
                     onUpdate:modelValue={(v: string) => editDomba.value.type = v}
+                    disabled={true}
                   />
                 </div>
 
@@ -196,13 +226,14 @@ export default defineComponent({
                     options={['Jantan', 'Betina']}
                     modelValue={editDomba.value.gender}
                     onUpdate:modelValue={(v: string) => editDomba.value.gender = v}
+                    disabled={true}
                   />
                 </div>
 
                 <div class="col-12">
                   <label class="form-label text-secondary small fw-bold mb-2 d-block" style={{ marginBottom: '0.5rem' }}>Metode Penentuan Umur <span class="text-danger">*</span></label>
                   <div class="d-flex gap-4 mb-3">
-                    <label class="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <label class="d-flex align-items-center gap-2" style={{ cursor: 'not-allowed', opacity: 0.7 }}>
                       <input 
                         type="radio" 
                         name="umur_method_edit" 
@@ -210,10 +241,11 @@ export default defineComponent({
                         checked={umurMethod.value === 'tanggal'}
                         onChange={() => umurMethod.value = 'tanggal'}
                         style={{ accentColor: 'var(--color-primary)' }}
+                        disabled={true}
                       />
                       <span style={{ fontSize: '0.9rem', color: 'var(--color-gray-800)' }}>Tanggal Lahir Pasti</span>
                     </label>
-                    <label class="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <label class="d-flex align-items-center gap-2" style={{ cursor: 'not-allowed', opacity: 0.7 }}>
                       <input 
                         type="radio" 
                         name="umur_method_edit" 
@@ -221,6 +253,7 @@ export default defineComponent({
                         checked={umurMethod.value === 'poel'}
                         onChange={() => umurMethod.value = 'poel'}
                         style={{ accentColor: 'var(--color-primary)' }}
+                        disabled={true}
                       />
                       <span style={{ fontSize: '0.9rem', color: 'var(--color-gray-800)' }}>Perkiraan dari Poel</span>
                     </label>
@@ -234,6 +267,7 @@ export default defineComponent({
                         placeholder="YYYY-MM-DD"
                         modelValue={editDomba.value.birth_date}
                         onUpdate:modelValue={(v: string) => editDomba.value.birth_date = v}
+                        disabled={true}
                       />
                     </div>
                   ) : (
@@ -244,6 +278,7 @@ export default defineComponent({
                         options={poelOptions}
                         modelValue={selectedPoel.value}
                         onUpdate:modelValue={(v: string) => selectedPoel.value = v}
+                        disabled={true}
                       />
                       {computedPoelDateIso.value ? (
                         <small class="d-block mt-1 fw-bold" style={{ color: 'var(--color-primary)' }}>
@@ -254,6 +289,19 @@ export default defineComponent({
                       )}
                     </div>
                   )}
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label text-secondary small fw-bold mb-2">Kandang <span class="text-danger">*</span></label>
+                  <CustomSelect
+                    placeholder="Pilih Kandang"
+                    options={cagesList.value.map(cage => `${cage.code} — ${cage.name}`)}
+                    modelValue={editDomba.value.id_cage ? (cagesList.value.find(cage => String(cage.id) === String(editDomba.value.id_cage))?.code + ' — ' + cagesList.value.find(cage => String(cage.id) === String(editDomba.value.id_cage))?.name) : ''}
+                    onUpdate:modelValue={(val: string) => {
+                      const found = cagesList.value.find(cage => `${cage.code} — ${cage.name}` === val);
+                      editDomba.value.id_cage = found ? String(found.id) : '';
+                    }}
+                  />
                 </div>
 
                 <div class="col-12">
@@ -273,33 +321,33 @@ export default defineComponent({
                     options={['Ternak Sendiri', 'Pembelian', 'Hibah', 'Kelahiran di Kandang']}
                     modelValue={editDomba.value.origin}
                     onUpdate:modelValue={(v: string) => editDomba.value.origin = v}
+                    disabled={true}
                   />
                 </div>
 
                 <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Bapak — Opsional</label>
-                  <CustomSelect
-                    options={['— Tidak Diketahui —', ...sheep.value.filter(sheepItem => sheepItem.gender === 'jantan' && String(sheepItem.id) !== String(props.sheepData?.id_sheep || props.sheepData?.id)).map(sheepItem => `${sheepItem.code} — ${sheepItem.name}`)]}
-                    modelValue={editDomba.value.id_father ? (sheep.value.find(sheepItem => String(sheepItem.id) === String(editDomba.value.id_father))?.code + ' — ' + sheep.value.find(sheepItem => String(sheepItem.id) === String(editDomba.value.id_father))?.name) : '— Tidak Diketahui —'}
-                    onUpdate:modelValue={(val: string) => {
-                      if (val === '— Tidak Diketahui —') editDomba.value.id_father = '';
-                      else editDomba.value.id_father = sheep.value.find(sheepItem => `${sheepItem.code} — ${sheepItem.name}` === val)?.id || '';
-                    }}
-                    placeholder="Pilih Bapak"
-                  />
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Ibu — Opsional</label>
-                  <CustomSelect
-                    options={['— Tidak Diketahui —', ...sheep.value.filter(sheepItem => sheepItem.gender === 'betina' && String(sheepItem.id) !== String(props.sheepData?.id_sheep || props.sheepData?.id)).map(sheepItem => `${sheepItem.code} — ${sheepItem.name}`)]}
-                    modelValue={editDomba.value.id_mother ? (sheep.value.find(sheepItem => String(sheepItem.id) === String(editDomba.value.id_mother))?.code + ' — ' + sheep.value.find(sheepItem => String(sheepItem.id) === String(editDomba.value.id_mother))?.name) : '— Tidak Diketahui —'}
-                    onUpdate:modelValue={(val: string) => {
-                      if (val === '— Tidak Diketahui —') editDomba.value.id_mother = '';
-                      else editDomba.value.id_mother = sheep.value.find(sheepItem => `${sheepItem.code} — ${sheepItem.name}` === val)?.id || '';
-                    }}
-                    placeholder="Pilih Ibu"
-                  />
+                  <label class="form-label text-secondary small fw-bold mb-2">Foto Domba</label>
+                  <div class="d-flex align-items-center gap-3">
+                    <div style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-gray-200)', backgroundColor: '#f8f9fa' }}>
+                      {previewUrl.value ? (
+                        <img src={previewUrl.value} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                          <img src="/img/placeholder/sheep-avatar.svg" alt="Placeholder" style={{ width: '40px', opacity: 0.5 }} />
+                        </div>
+                      )}
+                    </div>
+                    <div class="flex-grow-1">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={onFileChange} 
+                        class="form-control" 
+                        style={{ fontSize: '0.9rem' }} 
+                      />
+                      <small class="text-muted d-block mt-1">Format: JPG, PNG. Maks 2MB.</small>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="mt-4 pt-3 border-top border-light">

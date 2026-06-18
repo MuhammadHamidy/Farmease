@@ -9,7 +9,8 @@ export const adminRoutes: RouteRecordRaw[] = [
     beforeEnter: () => {
       const role = userSession.value?.role;
       if (role === 'Admin' || role === 'Owner' || role === 'Pemilik') return true;
-      return { name: 'home' };
+      // If operator or not logged in, redirect to home (which handles SSO redirect or operator route)
+      return '/';
     },
   },
 ];

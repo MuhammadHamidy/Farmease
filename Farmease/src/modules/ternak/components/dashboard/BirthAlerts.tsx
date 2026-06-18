@@ -15,7 +15,8 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props) {
+  emits: ['keguguran'],
+  setup(props, { emit }) {
     return () => {
       if (props.alerts.length === 0) return null;
 
@@ -39,9 +40,18 @@ export default defineComponent({
                   — Domba <strong>{alert.code}</strong> diperkirakan melahirkan pada {alert.estimatedDate}
                 </span>
               </div>
-              <Badge variant={alert.daysLeft <= 3 ? 'warning' : 'success'} className="px-3 py-1">
-                {alert.daysLeft <= 3 ? '⚠️ Segera' : '📅 Mendekati'}
-              </Badge>
+              <div class="d-flex flex-column align-items-end gap-2">
+                <Badge variant={alert.daysLeft <= 3 ? 'warning' : 'success'} className="px-3 py-1">
+                  {alert.daysLeft <= 3 ? '⚠️ Segera' : '📅 Mendekati'}
+                </Badge>
+                <button 
+                  class="btn btn-sm btn-outline-danger fw-bold" 
+                  style={{ fontSize: '0.7rem' }}
+                  onClick={() => emit('keguguran', alert.id)}
+                >
+                  Lapor Keguguran
+                </button>
+              </div>
             </div>
           ))}
         </div>

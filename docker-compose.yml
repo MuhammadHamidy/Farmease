@@ -13,6 +13,7 @@ services:
       - "${DB_PORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d ${DB_NAME:-farmease_be}"]
       interval: 10s
@@ -36,14 +37,42 @@ services:
       - farmease_network
     restart: unless-stopped
 
-  migrate:
+  sso_migrate:
     image: migrate/migrate
-    container_name: farmease_migrate
+    container_name: farmease_sso_migrate
+    volumes:
+      - ./sso-be/sso/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/farmease_sso?sslmode=disable up || true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - farmease_network
+
+  peternakan_migrate:
+    image: migrate/migrate
+    container_name: farmease_peternakan_migrate
     volumes:
       - ./Farmease-BE/farmease/migrations:/migrations:ro
     entrypoint: ["/bin/sh", "-c"]
     command: >
-      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/${DB_NAME:-farmease_be}?sslmode=disable up || true"
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/farmease_peternakan?sslmode=disable up || true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - farmease_network
+
+  kebun_migrate:
+    image: migrate/migrate
+    container_name: farmease_kebun_migrate
+    volumes:
+      - ./kebun-be/kebun/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/farmease_kebun?sslmode=disable up || true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,36 +83,42 @@ services:
     image: postgres:15-alpine
     container_name: farmease_seeder
     volumes:
-      - ./Farmease-BE/farmease/seeders:/seeders:ro
+      - ./sso-be/sso/seeders:/sso_seeders:ro
+      - ./Farmease-BE/farmease/seeders:/peternakan_seeders:ro
+      - ./kebun-be/kebun/seeders:/kebun_seeders:ro
     environment:
       PGPASSWORD: ${DB_PASSWORD:-pass}
     command: >
-      sh -c "for f in /seeders/*.sql; do psql -h postgres -U ${DB_USER:-user} -d ${DB_NAME:-farmease_be} -f \"$$f\"; done || true"
+      sh -c "echo 'Seeding SSO...'; for f in /sso_seeders/*.sql; do [ -e \"$$f\" ] && psql -h postgres -U $${DB_USER:-user} -d farmease_sso -f \"$$f\" || true; done; echo 'Seeding Peternakan...'; for f in /peternakan_seeders/*.sql; do [ -e \"$$f\" ] && psql -h postgres -U $${DB_USER:-user} -d farmease_peternakan -f \"$$f\" || true; done; echo 'Seeding Kebun...'; for f in /kebun_seeders/*.sql; do [ -e \"$$f\" ] && psql -h postgres -U $${DB_USER:-user} -d farmease_kebun -f \"$$f\" || true; done"
     depends_on:
-      migrate:
+      sso_migrate:
+        condition: service_completed_successfully
+      peternakan_migrate:
+        condition: service_completed_successfully
+      kebun_migrate:
         condition: service_completed_successfully
     networks:
       - farmease_network
 
-  backend:
+  sso_backend:
     build:
-      context: Farmease-BE
-      dockerfile: farmease/Dockerfile
+      context: sso-be
+      dockerfile: sso/Dockerfile
       target: dev
-    container_name: farmease_backend
+    container_name: farmease_sso_backend
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
+      sso_migrate:
         condition: service_completed_successfully
       seeder:
         condition: service_completed_successfully
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_PORT: "8080"
-      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/${DB_NAME:-farmease_be}?sslmode=disable
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/farmease_sso?sslmode=disable
       APP_REDIS_ADDRESS: redis:6379
       APP_REDIS_PASSWORD: ""
       APP_REDIS_DB: "0"
@@ -92,8 +127,54 @@ services:
       APP_CORS_ALLOWED_ORIGINS: "*"
       APP_LOG_LEVEL: debug
       APP_LOG_FORMAT: console
+      APP_EXPORTER: none
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "8080:8080"
+    volumes:
+      - ./sso-be/framework:/app/framework
+      - ./sso-be/libraries:/app/libraries
+      - ./sso-be/sso:/app/sso
+      - ./sso-be/go.work:/app/go.work
+      - backend_logs:/app/logs
+      - go_mod_cache:/go/pkg/mod
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/health/livez || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+
+  peternakan_backend:
+    build:
+      context: Farmease-BE
+      dockerfile: farmease/Dockerfile
+      target: dev
+    container_name: farmease_peternakan_backend
+    depends_on:
+      sso_backend:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8081"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/farmease_peternakan?sslmode=disable
+      APP_REDIS_ADDRESS: redis:6379
+      APP_REDIS_PASSWORD: ""
+      APP_REDIS_DB: "0"
+      APP_SSOAPIURL: http://sso_backend:8080
+      APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
+      APP_CORS_ALLOWED_ORIGINS: "*"
+      APP_LOG_LEVEL: debug
+      APP_LOG_FORMAT: console
+      APP_EXPORTER: none
+    ports:
+      - "8081:8081"
     volumes:
       - ./Farmease-BE/framework:/app/framework
       - ./Farmease-BE/libraries:/app/libraries
@@ -105,29 +186,133 @@ services:
       - farmease_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:8080/health/livez"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/health/livez || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 120s
+      start_period: 600s
 
-  frontend:
+  perkebunan_backend:
     build:
-      context: Farmease
+      context: kebun-be
+      dockerfile: kebun/Dockerfile
+      target: dev
+    container_name: farmease_perkebunan_backend
+    depends_on:
+      sso_backend:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8082"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@postgres:5432/farmease_kebun?sslmode=disable
+      APP_REDIS_ADDRESS: redis:6379
+      APP_REDIS_PASSWORD: ""
+      APP_REDIS_DB: "0"
+      APP_SSOAPIURL: http://sso_backend:8080
+      APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
+      APP_CORS_ALLOWED_ORIGINS: "*"
+      APP_LOG_LEVEL: debug
+      APP_LOG_FORMAT: console
+      APP_EXPORTER: none
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./kebun-be/framework:/app/framework
+      - ./kebun-be/libraries:/app/libraries
+      - ./kebun-be/kebun:/app/kebun
+      - ./kebun-be/go.work:/app/go.work
+      - backend_logs:/app/logs
+      - go_mod_cache:/go/pkg/mod
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8082/health/livez || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+
+  frontend_sso:
+    build:
+      context: Farmease_sso
       dockerfile: Dockerfile
+      target: builder
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
-    container_name: farmease_frontend
+    container_name: farmease_sso_frontend
     depends_on:
-      backend:
+      sso_backend:
         condition: service_healthy
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "3000:3000"
+    volumes:
+      - ./Farmease_sso:/app
+      - /app/node_modules
+    command: npm run dev -- --host
     networks:
       - farmease_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend_peternakan:
+    build:
+      context: Farmease
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        VITE_API_BASE_URL: http://localhost:8081
+    container_name: farmease_peternakan_frontend
+    depends_on:
+      peternakan_backend:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./Farmease:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend_perkebunan:
+    build:
+      context: Farmease_kebun
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        VITE_API_BASE_URL: http://localhost:8082
+    container_name: farmease_perkebunan_frontend
+    depends_on:
+      perkebunan_backend:
+        condition: service_healthy
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./Farmease_kebun:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3002"]
       interval: 30s
       timeout: 10s
       retries: 3

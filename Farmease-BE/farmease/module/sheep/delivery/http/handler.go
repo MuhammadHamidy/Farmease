@@ -24,6 +24,7 @@ func (h *SheepHandler) RegisterRoutes(app *fiber.App) {
 func (h *SheepHandler) registerGroup(group fiber.Router) {
 	group.Get("/", h.GetSheepList)
 	group.Post("/", h.RegisterSheep)
+	group.Post("/external-donor", h.RegisterExternalDonor)
 	group.Get("/:id", h.GetSheepDetail)
 	group.Put("/:id", h.UpdateSheep)
 	group.Patch("/:id/status", h.UpdateSheepStatus)

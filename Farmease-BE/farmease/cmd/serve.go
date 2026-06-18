@@ -1,7 +1,12 @@
 package cmd
 
 import (
+	"context"
+	"log"
+	"os"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	internalConfig "github.com/farmease/farmease-be/farmease/config"
 	_ "github.com/farmease/farmease-be/farmease/docs"
@@ -29,26 +34,10 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/pregnancies"
 	"github.com/farmease/farmease-be/farmease/module/sheep"
 	"github.com/farmease/farmease-be/farmease/module/tasks"
+	"github.com/farmease/farmease-be/farmease/module/upload"
 	"github.com/farmease/farmease-be/farmease/module/weights"
-	"github.com/farmease/farmease-be/farmease/module/fertilizers"
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
-
-	// Gardening (Perkebunan)
-	"github.com/farmease/farmease-be/farmease/module/aktivitas"
-	"github.com/farmease/farmease-be/farmease/module/akun_lahan"
-	"github.com/farmease/farmease-be/farmease/module/lahan"
-	"github.com/farmease/farmease-be/farmease/module/notifikasi"
-	"github.com/farmease/farmease-be/farmease/module/panen"
-	"github.com/farmease/farmease-be/farmease/module/pemangkasan"
-	"github.com/farmease/farmease-be/farmease/module/jadwal_rutin"
-	"github.com/farmease/farmease-be/farmease/module/perawatan"
-	"github.com/farmease/farmease-be/farmease/module/pohon"
-	"github.com/farmease/farmease-be/farmease/module/status_aktivitas"
-
-	// Core
-	"github.com/farmease/farmease-be/farmease/module/auth"
-	"github.com/farmease/farmease-be/farmease/module/roles"
-	"github.com/farmease/farmease-be/farmease/module/users"
+	"github.com/farmease/farmease-be/farmease/module/submissions"
 )
 
 // @title           Farmease API
@@ -113,15 +102,12 @@ func serveE(cmd *cobra.Command, args []string) error {
 			internalConfig.Otel,
 			internalConfig.Logger,
 			internalConfig.InternalApp,
-			middleware.NewAuthorizationMiddleware,
+			func(idpProvider idp.IDPProvider, appCfg *internalConfig.InternalAppConfig) *middleware.AuthorizationMiddleware {
+				return middleware.NewAuthorizationMiddlewareWithSSO(idpProvider, nil, nil, appCfg.SsoApiUrl)
+			},
 		),
 
 		middleware.HealthModule,
-
-		// Core
-		roles.Module,
-		users.Module,
-		auth.Module,
 
 		// Livestock (Peternakan)
 		farms.Module,
@@ -136,19 +122,8 @@ func serveE(cmd *cobra.Command, args []string) error {
 		tasks.Module,
 		routine_schedules.Module,
 		notifications.Module,
-		fertilizers.Module,
-
-		// Gardening (Perkebunan)
-		lahan.Module,
-		pohon.Module,
-		perawatan.Module,
-		pemangkasan.Module,
-		panen.Module,
-		akun_lahan.Module,
-		aktivitas.Module,
-		jadwal_rutin.Module,
-		notifikasi.Module,
-		status_aktivitas.Module,
+		upload.Module,
+		submissions.Module,
 
 		fx.Provide(
 			fx.Annotate(
@@ -158,6 +133,42 @@ func serveE(cmd *cobra.Command, args []string) error {
 		),
 		fx.Invoke(func(app *gofiber.App) {
 			app.Get("/swagger/*", filterSwagger.WrapHandler)
+			os.MkdirAll("./public/uploads", 0755)
+			app.Static("/uploads", "./public/uploads")
+		}),
+		fx.Invoke(func(lc fx.Lifecycle, db *pgxpool.Pool) {
+			lc.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					if db == nil {
+						log.Println("DB_UPGRADE: pgxpool is nil, skipping upgrades")
+						return nil
+					}
+					go func() {
+						bgCtx := context.Background()
+						log.Println("DB_UPGRADE: starting database enums and table updates in background")
+						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'eksternal'"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TYPE operations.task_rincian_enum ADD VALUE IF NOT EXISTS 'Kontrol Kebuntingan'"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to alter task_rincian_enum: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TABLE breeding.matings ADD COLUMN IF NOT EXISTS straw_code VARCHAR(100) NULL"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to add straw_code to breeding.matings: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TABLE breeding.matings ADD COLUMN IF NOT EXISTS inseminator VARCHAR(100) NULL"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to add inseminator to breeding.matings: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TABLE operations.tasks ADD COLUMN IF NOT EXISTS id_mating UUID NULL REFERENCES breeding.matings(id_mating) ON DELETE SET NULL"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to add id_mating to operations.tasks: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "CREATE INDEX IF NOT EXISTS idx_tasks_id_mating ON operations.tasks(id_mating)"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to create tasks index: %v", err)
+						}
+						log.Println("DB_UPGRADE: database updates execution finished in background")
+					}()
+					return nil
+				},
+			})
 		}),
 	).Run()
 

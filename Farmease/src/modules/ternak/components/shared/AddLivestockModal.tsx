@@ -81,7 +81,18 @@ export default defineComponent({
       origin: '',
       id_father: '',
       id_mother: '',
+      photo_url: '',
     });
+    const selectedFile = ref<File | null>(null);
+    const previewUrl = ref<string | null>(null);
+
+    const onFileChange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        selectedFile.value = target.files[0];
+        previewUrl.value = URL.createObjectURL(selectedFile.value);
+      }
+    };
 
     watch([umurMethod], ([newMethod]) => {
       if (newMethod === 'tanggal') {
@@ -126,11 +137,22 @@ export default defineComponent({
           id_type: String(resolvedIdType),
           id_father: newDomba.value.id_father ? String(newDomba.value.id_father) : null,
           id_mother: newDomba.value.id_mother ? String(newDomba.value.id_mother) : null,
+          photo_url: '',
         };
+
+        if (selectedFile.value) {
+          const { uploadApi } = await import('@/shared/api/peternakan');
+          const uploadedUrl = await uploadApi.uploadPhoto(selectedFile.value);
+          if (uploadedUrl) {
+            payload.photo_url = uploadedUrl;
+          }
+        }
 
         await addSheep(payload);
         
-        newDomba.value = { code: '', name: '', type: '', birth_date: '', gender: '', status: '', origin: '', id_father: '', id_mother: '' };
+        newDomba.value = { code: '', name: '', type: '', birth_date: '', gender: '', status: '', origin: '', id_father: '', id_mother: '', photo_url: '' };
+        selectedFile.value = null;
+        previewUrl.value = null;
         selectedPoel.value = '';
         
         props.onSuccess();
@@ -254,26 +276,28 @@ export default defineComponent({
                   />
                 </div>
                 <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Bapak — Opsional</label>
-                  <CustomSelect
-                    options={['— Tidak Diketahui —', ...sheep.value.filter(sheepItem => sheepItem.gender === 'jantan').map(sheepItem => `${sheepItem.code} — ${sheepItem.name}`)]}
-                    modelValue={newDomba.value.id_father ? (sheep.value.find(sheepItem => sheepItem.id === newDomba.value.id_father)?.code + ' — ' + sheep.value.find(sheepItem => sheepItem.id === newDomba.value.id_father)?.name) : '— Tidak Diketahui —'}
-                    onUpdate:modelValue={(val: string) => {
-                      const found = sheep.value.find(sheepItem => val.startsWith(sheepItem.code));
-                      newDomba.value.id_father = found ? found.id : '';
-                    }}
-                  />
-                </div>
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Ibu — Opsional</label>
-                  <CustomSelect
-                    options={['— Tidak Diketahui —', ...sheep.value.filter(sheepItem => sheepItem.gender === 'betina').map(sheepItem => `${sheepItem.code} — ${sheepItem.name}`)]}
-                    modelValue={newDomba.value.id_mother ? (sheep.value.find(sheepItem => sheepItem.id === newDomba.value.id_mother)?.code + ' — ' + sheep.value.find(sheepItem => sheepItem.id === newDomba.value.id_mother)?.name) : '— Tidak Diketahui —'}
-                    onUpdate:modelValue={(val: string) => {
-                      const found = sheep.value.find(sheepItem => val.startsWith(sheepItem.code));
-                      newDomba.value.id_mother = found ? found.id : '';
-                    }}
-                  />
+                  <label class="form-label text-secondary small fw-bold mb-2">Foto Domba</label>
+                  <div class="d-flex align-items-center gap-3">
+                    <div style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-gray-200)', backgroundColor: '#f8f9fa' }}>
+                      {previewUrl.value ? (
+                        <img src={previewUrl.value} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                          <img src="/img/placeholder/sheep-avatar.svg" alt="Placeholder" style={{ width: '40px', opacity: 0.5 }} />
+                        </div>
+                      )}
+                    </div>
+                    <div class="flex-grow-1">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={onFileChange} 
+                        class="form-control" 
+                        style={{ fontSize: '0.9rem' }} 
+                      />
+                      <small class="text-muted d-block mt-1">Format: JPG, PNG. Maks 2MB.</small>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
+	"github.com/farmease/farmease-be/libraries/middleware"
 	"github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,10 +14,14 @@ import (
 
 type TaskHandler struct {
 	useCase domain.UseCase
+	auth    *middleware.AuthorizationMiddleware
 }
 
-func NewTaskHandler(useCase domain.UseCase) *TaskHandler {
-	return &TaskHandler{useCase: useCase}
+func NewTaskHandler(useCase domain.UseCase, auth *middleware.AuthorizationMiddleware) *TaskHandler {
+	return &TaskHandler{
+		useCase: useCase,
+		auth:    auth,
+	}
 }
 
 func extractAccountID(c *fiber.Ctx) string {
@@ -50,7 +55,7 @@ func extractAccountID(c *fiber.Ctx) string {
 func (h *TaskHandler) RegisterRoutes(app *fiber.App) {
 	api := app.Group("/api")
 
-	tasks := api.Group("/tasks")
+	tasks := api.Group("/tasks", h.auth.Authenticate())
 	tasks.Get("/", h.GetMyTasks)
 	tasks.Post("/", h.CreateTask)
 	tasks.Put("/:id", h.UpdateTask)
@@ -71,6 +76,13 @@ func (h *TaskHandler) RegisterRoutes(app *fiber.App) {
 // @Router       /api/tasks [get]
 func (h *TaskHandler) GetMyTasks(c *fiber.Ctx) error {
 	idAccount := extractAccountID(c)
+	var roleName string
+	if roleVal := c.Locals("X-Role-Name"); roleVal != nil {
+		if roleStr, ok := roleVal.(string); ok {
+			roleName = roleStr
+		}
+	}
+
 	dateStr := c.Query("date")
 	var date *time.Time
 	if dateStr != "" {
@@ -78,7 +90,7 @@ func (h *TaskHandler) GetMyTasks(c *fiber.Ctx) error {
 		date = &parsedTime
 	}
 
-	res, err := h.useCase.GetMyTasks(c.Context(), idAccount, date)
+	res, err := h.useCase.GetMyTasks(c.Context(), idAccount, roleName, date)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}

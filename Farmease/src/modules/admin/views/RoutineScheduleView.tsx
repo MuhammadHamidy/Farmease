@@ -24,7 +24,7 @@ import {
   type OperatorTask,
   fetchAccountsList,
   metadataEnums
-} from '@/modules/ternak/store/operatorAdmin';
+} from '@/store/operatorAdmin';
 
 const operators = [
   { code: 'OP001', name: 'Operator Ternak' },
@@ -64,7 +64,6 @@ export default defineComponent({
 
     const sessionFilter = ref('Semua Sesi');
     const statusFilter = ref('Semua Status');
-    // Use local date (WIB), not UTC date from toISOString()
     const getLocalDateStr = () => {
       const now = new Date();
       const y = now.getFullYear();
@@ -73,7 +72,6 @@ export default defineComponent({
       return `${y}-${m}-${d}`;
     };
     const dateFilter = ref(getLocalDateStr());
-
 
     watch(dateFilter, async (newVal) => {
       await fetchTasks(newVal);
@@ -296,14 +294,6 @@ export default defineComponent({
     const openDetail = (task: OperatorTask) => {
       selectedTask.value = task;
       isDetailOpen.value = true;
-    };
-
-    const toggleDay = (day: number) => {
-      if (form.daysOfWeek.includes(day)) {
-        form.daysOfWeek = form.daysOfWeek.filter((d) => d !== day);
-      } else {
-        form.daysOfWeek = [...form.daysOfWeek, day].sort();
-      }
     };
 
     const saveSchedule = async () => {

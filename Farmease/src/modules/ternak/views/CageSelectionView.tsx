@@ -37,7 +37,7 @@ export default defineComponent({
       localStorage.removeItem('user');
       userSession.value = null;
       cageSession.value = null;
-      router.push({ name: 'home' });
+      window.location.href = 'http://localhost:3000/';
     };
 
     const getCageBadgeClass = (type: string) => {

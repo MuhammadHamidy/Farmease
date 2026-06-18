@@ -16,6 +16,8 @@ type Sheep struct {
 	AgeDays         int        `json:"age_days,omitempty"`
 	AgeMonths       float64    `json:"age_months,omitempty"`
 	AgeString       string     `json:"age_string,omitempty"`
+	IsReadyToMate   bool       `json:"is_ready_to_mate,omitempty" db:"-"`
+	MatingStatus    string     `json:"mating_status,omitempty" db:"-"`
 	Status          string     `json:"status" db:"status"`
 	Origin          string     `json:"origin" db:"origin"`
 	IDCage          string     `json:"id_cage" db:"id_cage"`
@@ -29,6 +31,7 @@ type Sheep struct {
 	TypeName        string     `json:"type_name,omitempty" db:"type_name"`
 	ADG             *int       `json:"adg,omitempty"`
 	ADGLabel        string     `json:"adg_label,omitempty"`
+	PhotoURL        string     `json:"photo_url,omitempty" db:"photo_url"`
 	Father          *Parent    `json:"father,omitempty"`
 	Mother          *Parent    `json:"mother,omitempty"`
 	CreatedBy       *string    `json:"created_by,omitempty" db:"created_by"`
@@ -53,7 +56,9 @@ type SheepFilter struct {
 
 type Genealogy struct {
 	IDSheep   string     `json:"id_sheep"`
+	SheepCode string     `json:"sheep_code"`
 	SheepName string     `json:"sheep_name"`
+	Gender    string     `json:"gender"`
 	Father    *Genealogy `json:"father,omitempty"`
 	Mother    *Genealogy `json:"mother,omitempty"`
 }
@@ -70,6 +75,7 @@ type SheepRepository interface {
 	FindAll(ctx context.Context, filter SheepFilter) ([]*Sheep, int, error)
 	FindByID(ctx context.Context, id string) (*Sheep, error)
 	FindByCode(ctx context.Context, code string) (*Sheep, error)
+	FindExternalDonor(ctx context.Context, name, origin string) (*Sheep, error)
 	Store(ctx context.Context, s *Sheep) error
 	Update(ctx context.Context, s *Sheep) error
 	UpdateStatus(ctx context.Context, id string, status string, notes string) error
@@ -82,6 +88,7 @@ type SheepRepository interface {
 type UseCase interface {
 	GetSheepList(ctx context.Context, filter SheepFilter) ([]*Sheep, int, error)
 	RegisterSheep(ctx context.Context, s *Sheep) error
+	GetOrCreateExternalDonor(ctx context.Context, name, origin string) (*Sheep, error)
 	GetSheepDetail(ctx context.Context, id string) (*Sheep, error)
 	UpdateSheep(ctx context.Context, id string, s *Sheep) error
 	UpdateSheepStatus(ctx context.Context, id string, status string, notes string) error

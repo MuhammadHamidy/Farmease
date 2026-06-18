@@ -1,11 +1,11 @@
 import { defineComponent, computed, onMounted } from 'vue';
 import { cagesList, fetchCagesList } from '@/store/navigation';
 import { sheep, fetchSheep, weightRecords, fetchWeightRecords } from '@/store/livestock';
-import { pendingApprovalCount } from '@/modules/ternak/store/operatorAdmin';
+import { pendingApprovalCount } from '@/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
 import StatCard from '@/shared/ui/StatCard';
 import Badge from '@/shared/ui/Badge';
-import ReportsExport from '@/modules/ternak/components/tools/ReportsExport';
+import ReportsExport from '@/modules/admin/components/tools/ReportsExport';
 
 export default defineComponent({
   name: 'DasborPeternakanView',
@@ -27,7 +27,6 @@ export default defineComponent({
     const mortalitas30Hari = computed(() => {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 30);
-      // Hitung berdasarkan tanggal update jika ada, atau jumlah status mati
       return sheep.value.filter(s => s.status === 'Mati' || s.status === 'Disembelih' || s.status === 'Terjual').length;
     });
 

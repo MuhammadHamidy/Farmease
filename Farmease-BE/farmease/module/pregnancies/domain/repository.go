@@ -29,7 +29,17 @@ type Birth struct {
 	OffspringCondition string         `json:"offspring_condition" db:"offspring_condition"`
 	Notes              string         `json:"notes" db:"notes"`
 	OffspringList      []NewOffspring `json:"offspring_list,omitempty"`
+	IDTask             string         `json:"id_task,omitempty" db:"-"`
 	CreatedAt          time.Time      `json:"created_at" db:"created_at"`
+}
+
+type PregnancyCheckRequest struct {
+	IDMating           string    `json:"id_mating"`
+	TanggalPemeriksaan time.Time `json:"tanggal_pemeriksaan"`
+	MetodePemeriksaan  string    `json:"metode_pemeriksaan"`
+	Hasil              string    `json:"hasil"`
+	Catatan            string    `json:"catatan"`
+	IDTask             string    `json:"id_task"`
 }
 
 type SheepShort struct {
@@ -59,6 +69,7 @@ type UseCase interface {
 	RecordPregnancy(ctx context.Context, k *Pregnancy) error
 	GetPregnancyList(ctx context.Context, status string) ([]*Pregnancy, error)
 	UpdatePregnancyStatus(ctx context.Context, id string, status string, notes string) error
+	CheckPregnancy(ctx context.Context, req PregnancyCheckRequest) error
 	RecordBirth(ctx context.Context, k *Birth) error
 	GetBirthHistory(ctx context.Context, from, to *time.Time) ([]*Birth, error)
 }

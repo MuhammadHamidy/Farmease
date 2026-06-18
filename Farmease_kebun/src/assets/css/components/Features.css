@@ -1,0 +1,39 @@
+.features-section {
+  background-color: transparent;
+}
+.feature-card {
+  border-radius: 2.5rem;
+  border-color: #f3f4f6 !important;
+  box-shadow: 0 20px 25px -5px rgba(229, 231, 235, 0.4), 0 8px 10px -6px rgba(229, 231, 235, 0.4) !important;
+}
+.group:hover .feature-card, .feature-card:hover {
+  transform: translateY(-0.5rem);
+}
+.feature-icon-wrapper {
+  width: 3.5rem;
+  height: 3.5rem;
+  background-color: rgba(216, 219, 202, 0.3);
+  border-radius: 1rem;
+  padding: 0.8rem;
+}
+.feature-card:hover .feature-icon-wrapper {
+  background-color: #A78D78;
+}
+.feature-icon {
+  color: #A78D78;
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.feature-card:hover .feature-icon {
+  color: white;
+}
+.feature-title {
+  font-family: Outfit, sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+.feature-desc {
+  font-weight: 500;
+  line-height: 1.625;
+}

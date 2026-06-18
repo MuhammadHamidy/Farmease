@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -49,6 +50,33 @@ func (u *useCase) RegisterSheep(ctx context.Context, sheep *domain.Sheep) error 
 	}
 
 	return u.repo.Store(ctx, sheep)
+}
+
+func (u *useCase) GetOrCreateExternalDonor(ctx context.Context, name, origin string) (*domain.Sheep, error) {
+	// Look up if exists
+	donor, err := u.repo.FindExternalDonor(ctx, name, origin)
+	if err == nil && donor != nil {
+		return donor, nil
+	}
+
+	// Create new external donor stub
+	// Unique code: DN-YYMMDDHHMMSS
+	code := fmt.Sprintf("DN-%s", time.Now().Format("060102150405"))
+
+	newDonor := &domain.Sheep{
+		SheepCode: code,
+		SheepName: name,
+		Gender:    "jantan",
+		Status:    "eksternal",
+		Origin:    origin,
+	}
+
+	err = u.repo.Store(ctx, newDonor)
+	if err != nil {
+		return nil, err
+	}
+
+	return newDonor, nil
 }
 
 func (u *useCase) GetSheepDetail(ctx context.Context, id string) (*domain.Sheep, error) {

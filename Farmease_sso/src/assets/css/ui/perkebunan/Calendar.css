@@ -1,0 +1,20 @@
+.calendar-mockup {
+  border-color: #EBEBEB !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+.calendar-input {
+  border-color: #EBEBEB !important;
+  transition: all 0.2s;
+}
+.calendar-input:hover {
+  border-color: #A78D78 !important;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.hover-bg:hover {
+  background-color: #FDFBF7;
+  border-radius: 4px;
+}
+.text-xs { font-size: 0.7rem; }
+.text-sm { font-size: 0.85rem; }

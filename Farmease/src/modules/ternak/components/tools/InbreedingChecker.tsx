@@ -48,8 +48,8 @@ export default defineComponent({
 
       try {
         const response = await breedingApi.checkInbreeding(
-          Number(selectedMaleId.value),
-          Number(selectedFemaleId.value),
+          selectedMaleId.value,
+          selectedFemaleId.value,
         );
 
         // Handle API response — try both possible formats
