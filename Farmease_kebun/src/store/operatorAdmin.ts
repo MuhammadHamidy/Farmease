@@ -743,7 +743,8 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
     panenApi, 
     perawatanApi, 
     aktivitasApi,
-    feedsApi
+    feedsApi,
+    pohonApi
   } = await import('@/shared/api');
   const items = (input.payload as any)?.data?.items ?? [];
 
@@ -812,6 +813,46 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             })()
           );
         }
+      } else if (typeLower === 'penanaman') {
+        promises.push(
+          aktivitasApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penanaman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Bibit Baru',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+
+        if (item.selectedRincian === 'Bibit Baru') {
+          promises.push(
+            pohonApi.create({
+              kode_pohon: item.kodePohonManual || 'P-' + Date.now().toString().slice(-4),
+              jenis: item.selectedVarietas || 'Alpukat',
+              status: 'Vegetatif',
+              id_lahan: landId,
+            })
+          );
+        } else if (item.selectedRincian === 'Penggantian Bibit') {
+          promises.push(
+            (async () => {
+              try {
+                const trees = await pohonApi.getList();
+                const targetCode = item.kodePohonManual || item.kodePohon;
+                const foundTree = trees.find(t => String(t.kode_pohon).toUpperCase() === String(targetCode).toUpperCase());
+                if (foundTree) {
+                  await pohonApi.update(foundTree.id, {
+                    ...foundTree,
+                    created_at: new Date().toISOString().split('T')[0],
+                    status: 'Vegetatif'
+                  });
+                }
+              } catch (err) {
+                console.error('Failed to update replaced tree:', err);
+              }
+            })()
+          );
+        }
       } else if (typeLower === 'panen') {
         const qty = parseInt(item.jumlahPanen || item.qty || item.amount || 0, 10);
         promises.push(
@@ -865,6 +906,59 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             Lahan_id_lahan: landId,
           } as any)
         );
+      } else if (typeLower === 'pembersihan') {
+        promises.push(
+          aktivitasApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pembersihan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pembersihan',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+
+        let weightVal = parseFloat(item.beratGulma || item.beratBahanPembumbun || item.beratLimbah || 0);
+        if (!isNaN(weightVal) && weightVal > 0 && item.tujuanPemanfaatan === 'Pakan Ternak') {
+          // Normalize to kg if unit is gram
+          const unitLower = (item.satuanBerat || '').toLowerCase();
+          if (unitLower.includes('gram') || unitLower === 'g') {
+            weightVal = weightVal / 1000;
+          }
+
+          let feedName = 'Gulma / Rumput Liar (Mentah)';
+          if (item.selectedRincian === 'Sanitasi Serasah & Ranting') {
+            const landName = (foundLand?.name || '').toLowerCase();
+            if (landName.includes('kelengkeng')) {
+              feedName = 'Daun Kelengkeng (Mentah)';
+            } else {
+              feedName = 'Daun Alpukat (Mentah)';
+            }
+          }
+          promises.push(
+            (async () => {
+              try {
+                const feedsList = await feedsApi.getList();
+                const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
+                if (existingFeed) {
+                  try {
+                    await feedsApi.updateStock(existingFeed.id, weightVal, 'tambah');
+                  } catch {
+                    await feedsApi.updateStok(existingFeed.id, weightVal, 'tambah');
+                  }
+                } else {
+                  await feedsApi.create({
+                    feed_name: feedName,
+                    feed_type: 'Hijauan',
+                    unit: 'kg',
+                    stock: weightVal
+                  } as any);
+                }
+              } catch (err) {
+                console.error('Failed to update feed stock for circular ecosystem from pembersihan:', err);
+              }
+            })()
+          );
+        }
       } else {
         promises.push(
           aktivitasApi.create({

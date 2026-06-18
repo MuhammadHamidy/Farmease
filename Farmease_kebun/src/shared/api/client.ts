@@ -26,8 +26,15 @@ class ApiClient {
       },
     })
 
-    // Request interceptor - add auth token
+    // Request interceptor - choose baseURL dynamically and add auth token
     this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      const url = config.url || ''
+      if (url.startsWith('/api/auth') || url.startsWith('/api/accounts') || url.startsWith('/api/metadata')) {
+        config.baseURL = import.meta.env.VITE_SSO_API_BASE_URL || 'http://localhost:8080'
+      } else {
+        config.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082'
+      }
+
       const token = localStorage.getItem('authToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`

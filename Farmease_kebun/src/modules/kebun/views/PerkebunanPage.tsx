@@ -9,34 +9,13 @@ import PerkebunanSelectionModal from '../components/PerkebunanSelectionModal'
 import PerkebunanScheduleDetailModal from '../components/PerkebunanScheduleDetailModal'
 import { landSession, userSession, fetchLandsList } from '@/store/navigation'
 import { operatorTasks, fetchTasks, fetchAccountsList } from '@/store/operatorAdmin'
-
-const jenisPencatatan = [
-  'Panen',
-  'Pemangkasan',
-  'Pembersihan',
-  'Pembuahan',
-  'Pemberian Obat',
-  'Pemupukan',
-  'Penanaman',
-  'Penyiraman',
-  'Stok Pakan',
-  'Stok Pupuk',
-  'Stok Obat',
-]
-
-const rincianPencatatanByJenis: Record<string, string[]> = {
-  'Panen':                        ['Panen Buah'],
-  'Pemangkasan':                  ['Pemangkasan Ranting', 'Pemangkasan Bentuk', 'Pemangkasan Peremajaan'],
-  'Pembersihan':                  ['Penyiangan Gulma', 'Pembumbunan Tanah', 'Sanitasi Serasah & Ranting'],
-  'Pembuahan':                    ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
-  'Pemberian Obat':               ['Insektisida', 'Fungisida', 'Pestisida'],
-  'Pemupukan':                    ['Pemupukan Organik', 'Pemupukan Anorganik'],
-  'Penanaman':                    ['Bibit Baru', 'Penggantian Bibit'],
-  'Penyiraman':                   ['Siram Manual', 'Irigrasi Drip / Pipanisasi', 'Biopori'],
-  'Stok Pakan':                   ['Pakan Masuk', 'Pakan Keluar'],
-  'Stok Pupuk':                   ['Pupuk Masuk', 'Pupuk Keluar'],
-  'Stok Obat':                    ['Tambah Obat'],
-}
+import {
+  fetchPencatatanTypesCatalog,
+  jenisPencatatanList,
+  rincianPencatatanByJenis,
+  addJenisPencatatan,
+  addRincianPencatatan,
+} from '@/store/pencatatanTypes'
 
 export default defineComponent({
   name: 'PerkebunanPage',
@@ -59,6 +38,7 @@ export default defineComponent({
     }).format(new Date())
 
     onMounted(async () => {
+      await fetchPencatatanTypesCatalog()
       await fetchAccountsList()
       await fetchLandsList()
       if (operatorTasks.value.length === 0) {
@@ -376,9 +356,9 @@ export default defineComponent({
             initialStage={activeField.value ?? 'jenis'}
             selectedJenis={draftJenis.value}
             selectedRincian={draftRincian.value}
-            jenisItems={jenisPencatatan.map((item) => ({ label: item }))}
+            jenisItems={jenisPencatatanList.value.map((item) => ({ label: item }))}
             rincianItemsByJenis={Object.fromEntries(
-              Object.entries(rincianPencatatanByJenis).map(([jenis, items]) => [
+              Object.entries(rincianPencatatanByJenis.value).map(([jenis, items]) => [
                 jenis,
                 items.map((item) => ({ label: item, sublabel: jenis })),
               ]),
@@ -389,7 +369,25 @@ export default defineComponent({
               selectedRincian.value = rincian || 'Rincian Pencatatan'
               closeModal()
             }}
-            onAdd={() => { alert('Fitur tambah rincian baru hanya dapat diakses oleh Admin Utama.') }}
+            onAdd={async () => {
+              if (activeField.value === 'jenis') {
+                const nama = window.prompt('Masukkan nama jenis pencatatan baru:')
+                if (!nama?.trim()) return
+                try {
+                  await addJenisPencatatan(nama.trim())
+                } catch {
+                  alert('Gagal menambah jenis. Pastikan backend berjalan.')
+                }
+                return
+              }
+              const nama = window.prompt('Masukkan nama rincian pencatatan baru:')
+              if (!nama?.trim() || draftJenis.value === 'Jenis Pencatatan') return
+              try {
+                await addRincianPencatatan(draftJenis.value, nama.trim())
+              } catch {
+                alert('Gagal menambah rincian. Pastikan backend berjalan.')
+              }
+            }}
           />
 
           {/* Detail Jadwal Pengingat Modal */}

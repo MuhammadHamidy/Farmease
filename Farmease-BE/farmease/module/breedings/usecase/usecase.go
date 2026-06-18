@@ -124,6 +124,20 @@ func (u *useCase) GetMatingList(ctx context.Context, status string, inbreedingFl
 }
 
 func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) error {
+	// Validation checks
+	if matingData.IDSheepFemale == "" {
+		return fmt.Errorf("domba betina wajib terisi")
+	}
+	if matingData.MatingMethod == "ib" {
+		if matingData.IDSheepMale == "" && (matingData.ExternalDonor == nil || matingData.ExternalDonor.Name == "") {
+			return fmt.Errorf("sumber pejantan (internal atau external donor) wajib terisi untuk inseminasi buatan")
+		}
+	} else {
+		if matingData.IDSheepMale == "" {
+			return fmt.Errorf("pejantan wajib terisi untuk kawin alami")
+		}
+	}
+
 	// 1. If mating is IB and has an external donor, register or find the external donor first
 	if matingData.MatingMethod == "ib" && matingData.ExternalDonor != nil && matingData.ExternalDonor.Name != "" {
 		donor, err := u.sheepRepo.FindExternalDonor(ctx, matingData.ExternalDonor.Name, matingData.ExternalDonor.Origin)

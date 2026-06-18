@@ -548,7 +548,7 @@ export interface PencatatanSubmission {
   operatorCode: string;
   operatorName: string;
   cageCode: string;
-  scope: 'domba' | 'kandang';
+  scope: 'domba' | 'kandang' | 'pohon' | 'lahan';
   summary: string;
   payload: Record<string, unknown>;
   submittedAt: number;
@@ -607,6 +607,43 @@ export const statusAktivitasApi = {
   },
 }
 
+// ============ Pencatatan Types (Jenis & Rincian) ============
+export interface JenisPencatatanItem {
+  id_jenis: string
+  nama: string
+  sort_order: number
+  is_active: boolean
+}
+
+export interface RincianPencatatanItem {
+  id_rincian: string
+  jenis_id: string
+  jenis_nama?: string
+  nama: string
+  sort_order: number
+  is_active: boolean
+}
+
+export interface PencatatanTypesCatalog {
+  jenis: JenisPencatatanItem[]
+  rincian_by_jenis: Record<string, RincianPencatatanItem[]>
+}
+
+export const pencatatanTypesApi = {
+  getCatalog: async (): Promise<PencatatanTypesCatalog> => {
+    return await apiClient.get<PencatatanTypesCatalog>('/api/v1/pencatatan-types/catalog')
+  },
+  getRincianByJenis: async (jenisNama: string): Promise<RincianPencatatanItem[]> => {
+    return await apiClient.get<RincianPencatatanItem[]>(`/api/v1/pencatatan-types/jenis/${encodeURIComponent(jenisNama)}/rincian`)
+  },
+  createJenis: async (payload: { nama: string; sort_order?: number }): Promise<JenisPencatatanItem> => {
+    return await apiClient.post<JenisPencatatanItem>('/api/v1/pencatatan-types/jenis', payload)
+  },
+  createRincian: async (payload: { jenis_nama: string; nama: string; sort_order?: number }): Promise<RincianPencatatanItem> => {
+    return await apiClient.post<RincianPencatatanItem>('/api/v1/pencatatan-types/rincian', payload)
+  },
+}
+
 export default {
   lahan: lahanApi,
   pohon: pohonApi,
@@ -620,4 +657,5 @@ export default {
   routineSchedules: routineSchedulesApi,
   submissions: submissionsApi,
   statusAktivitas: statusAktivitasApi,
+  pencatatanTypes: pencatatanTypesApi,
 }

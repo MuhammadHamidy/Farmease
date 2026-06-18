@@ -24,9 +24,7 @@ export default defineComponent({
           <div class="pencatatan-selection-field__value">{props.value}</div>
         </div>
         {props.showChevron && (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
+          <img src="/icon/arrow-right/grey-16.svg" alt="Chevron" style="width: 14px; height: 14px;" />
         )}
       </div>
     )

@@ -111,237 +111,7 @@ export interface RoutineSchedule {
 // Submissions re-exported from global store
 import { routineSchedulesApi, type ApiRoutineSchedule } from '@/shared/api';
 
-const LOCAL_SCHEDULES_KEY = 'farmease_local_schedules';
-const localSchedules = ref<RoutineSchedule[]>([]);
 
-export const apiRoutineSchedules = ref<RoutineSchedule[]>([]);
-export const schedulesLoading = ref(false);
-
-export const routineSchedules = computed(() => {
-  return [...apiRoutineSchedules.value, ...localSchedules.value];
-});
-
-export async function fetchRoutineSchedules() {
-  try {
-    schedulesLoading.value = true;
-
-    // Pastikan master data kandang dan lahan ter-load agar mapping cageCode berhasil
-    if (cagesList.value.length === 0) {
-      await fetchCagesList();
-    }
-    if (landsList.value.length === 0) {
-      await fetchLandsList();
-    }
-
-    const list = await routineSchedulesApi.getList();
-    apiRoutineSchedules.value = (list || []).map(mapApiScheduleToLocal);
-  } catch (err) {
-    console.error('Error fetching routine schedules:', err);
-  } finally {
-    schedulesLoading.value = false;
-  }
-}
-
-export function mapApiScheduleToLocal(api: ApiRoutineSchedule): RoutineSchedule {
-  const startDate = (api.start_date || '').split('T')[0];
-  const time = api.start_time ? api.start_time.substring(0, 5) : '08:00';
-  const endTime = api.end_time ? api.end_time.substring(0, 5) : '';
-
-  // Resolve cage code from id_cage UUID using cagesList and landsList
-  let cageCode = '';
-  if (api.id_cage) {
-    const foundCage = cagesList.value.find((c) => String(c.id) === String(api.id_cage));
-    if (foundCage) {
-      cageCode = foundCage.code;
-    } else {
-      const foundLand = landsList.value.find((l) => String(l.id) === String(api.id_cage));
-      if (foundLand) {
-        cageCode = foundLand.code;
-      }
-    }
-  }
-  if (!cageCode) {
-    cageCode = 'A'; // default fallback for livestock schedules
-  }
-
-  // Resolve assigneeCode and assigneeName from id_account UUID dynamically
-  let assigneeCode = 'OP001';
-  let assigneeName = 'Operator Ternak';
-  if (api.id_account) {
-    const userIdStr = String(api.id_account);
-    const foundAcc = accountsList.value.find((acc) => String(acc.id) === userIdStr);
-    if (foundAcc) {
-      const cat = String(foundAcc.operator_category || '').toLowerCase();
-      if (cat.includes('kebun')) {
-        assigneeCode = 'OP002';
-        assigneeName = 'Operator Kebun';
-      } else if (cat.includes('ternak') || cat.includes('operator')) {
-        assigneeCode = 'OP001';
-        assigneeName = 'Operator Ternak';
-      } else if (cat.includes('pemilik') || foundAcc.username === 'pemilik') {
-        assigneeCode = 'PEM001';
-        assigneeName = 'Pemilik';
-      } else {
-        assigneeCode = 'OP001';
-        assigneeName = 'Operator Ternak';
-      }
-    } else {
-      if (userIdStr === '11111111-1111-1111-1111-111111111105' || userIdStr === '11111111-1111-1111-1111-111111111107' || userIdStr === 'OP002') {
-        assigneeCode = 'OP002';
-        assigneeName = 'Operator Kebun';
-      } else if (userIdStr === '11111111-1111-1111-1111-111111111104') {
-        assigneeCode = 'PEM001';
-        assigneeName = 'Pemilik';
-      } else {
-        assigneeCode = 'OP001';
-        assigneeName = 'Operator Ternak';
-      }
-    }
-  }
-
-  return {
-    id: api.id,
-    title: api.title,
-    description: api.description,
-    category: api.category,
-    cageCode,
-    assigneeCode,
-    assigneeName,
-    frequency: api.frequency,
-    startDate: startDate,
-    time: time,
-    endTime: endTime,
-    priority: (api.priority as any) || 'sedang',
-    daysOfWeek: api.days_of_week || [],
-    dayOfMonth: api.day_of_month || 1,
-    active: api.is_active,
-    rincian: api.rincian,
-    createdAt: api.created_at ? new Date(api.created_at).getTime() : Date.now(),
-  };
-}
-
-function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRoutineSchedule> {
-  // Resolve id_cage UUID from cageCode using cagesList and landsList
-  let idCage: string | undefined = undefined;
-  if (local.cageCode) {
-    const foundCage = cagesList.value.find((c) => String(c.code).toUpperCase() === String(local.cageCode).toUpperCase());
-    if (foundCage && foundCage.id !== undefined) {
-      idCage = String(foundCage.id);
-    } else {
-      const foundLand = landsList.value.find((l) => String(l.code).toUpperCase() === String(local.cageCode).toUpperCase());
-      if (foundLand && foundLand.id !== undefined) {
-        idCage = String(foundLand.id);
-      }
-    }
-  }
-
-  // Resolve id_account UUID from assigneeCode dynamically
-  let idAccount: string | undefined = undefined;
-  if (local.assigneeCode) {
-    const matchedAccount = accountsList.value.find((acc) => {
-      const cat = String(acc.operator_category || '').toLowerCase();
-      const username = String(acc.username || '').toLowerCase();
-      if (local.assigneeCode === 'OP002') {
-        return cat.includes('kebun') || username.includes('kebun');
-      } else if (local.assigneeCode === 'OP001') {
-        return cat.includes('ternak') || username.includes('ternak') || username.includes('kandang') || username === 'operator';
-      } else if (local.assigneeCode === 'PEM001') {
-        return cat.includes('pemilik') || username.includes('pemilik');
-      }
-      return false;
-    });
-
-    if (matchedAccount) {
-      idAccount = String(matchedAccount.id);
-    } else {
-      if (local.assigneeCode === 'OP002') {
-        idAccount = '11111111-1111-1111-1111-111111111105'; // Operator Kebun
-      } else if (local.assigneeCode === 'OP001') {
-        idAccount = '11111111-1111-1111-1111-111111111106'; // Operator Ternak
-      } else if (local.assigneeCode === 'PEM001') {
-        idAccount = '11111111-1111-1111-1111-111111111104'; // Pemilik
-      } else {
-        idAccount = '11111111-1111-1111-1111-111111111106'; // Fallback to Operator Ternak
-      }
-    }
-  }
-
-  const payload: Partial<ApiRoutineSchedule> = {
-    title: local.title,
-    description: local.description,
-    category: local.category,
-    frequency: local.frequency,
-    days_of_week: local.daysOfWeek,
-    day_of_month: local.dayOfMonth,
-    priority: local.priority,
-    id_cage: idCage,
-    id_account: idAccount,
-    rincian: local.rincian,
-    is_active: local.active,
-  };
-
-  if (local.startDate) {
-    payload.start_date = `${local.startDate}T00:00:00Z`;
-  }
-  if (local.time) {
-    payload.start_time = local.time.includes(':') ? (local.time.split(':').length === 2 ? `${local.time}:00` : local.time) : '08:00:00';
-  }
-  if (local.endTime) {
-    payload.end_time = local.endTime.includes(':') ? (local.endTime.split(':').length === 2 ? `${local.endTime}:00` : local.endTime) : '';
-  }
-
-  return payload;
-}
-
-export const pendingApprovalCount = computed(
-  () => pencatatanSubmissions.value.filter((s) => s.approvalStatus === 'pending').length,
-);
-
-export async function addRoutineSchedule(schedule: Omit<RoutineSchedule, 'id' | 'createdAt'>) {
-  try {
-    const apiPayload = mapLocalScheduleToApi(schedule);
-    const createdApi = await routineSchedulesApi.create(apiPayload);
-    const mapped = mapApiScheduleToLocal(createdApi);
-    apiRoutineSchedules.value.unshift(mapped);
-    await fetchTasks();
-  } catch (err: any) {
-    console.error('Error adding routine schedule:', err);
-    const status = err?.response?.status;
-    const message = err?.response?.data?.error_message || err?.response?.data?.message;
-    if (status === 409) {
-      alert(`Gagal: Jadwal dengan nama dan kandang yang sama sudah ada. Silakan ubah jadwal yang ada atau buat dengan nama berbeda.`);
-    } else {
-      alert(message ? `Gagal membuat jadwal: ${message}` : 'Gagal membuat jadwal rutin');
-    }
-  }
-}
-
-export async function updateRoutineSchedule(id: string, patch: Partial<Omit<RoutineSchedule, 'id' | 'createdAt'>>) {
-  try {
-    const apiPayload = mapLocalScheduleToApi(patch);
-    const updatedApi = await routineSchedulesApi.update(id, apiPayload);
-    const mapped = mapApiScheduleToLocal(updatedApi);
-    const i = apiRoutineSchedules.value.findIndex((s) => s.id === id);
-    if (i !== -1) {
-      apiRoutineSchedules.value[i] = mapped;
-    }
-    await fetchTasks();
-  } catch (err) {
-    console.error('Error updating routine schedule:', err);
-    alert('Gagal memperbarui jadwal rutin');
-  }
-}
-
-export async function deleteRoutineSchedule(id: string) {
-  try {
-    await routineSchedulesApi.delete(id);
-    apiRoutineSchedules.value = apiRoutineSchedules.value.filter((s) => s.id !== id);
-    await fetchTasks();
-  } catch (err) {
-    console.error('Error deleting routine schedule:', err);
-    alert('Gagal menghapus jadwal rutin');
-  }
-}
 
 // Approval functions re-exported from global store
 
@@ -375,7 +145,7 @@ function formatDescriptionForApi(description: string, cageCode: string, rincian?
 }
 function mapAssigneeToUserId(assigneeCode: string): string {
   if (assigneeCode) {
-    const matchedAccount = accountsList.value.find((acc) => {
+    const matchedAccount = accountsList.value.find((acc: any) => {
       const cat = String(acc.operator_category || '').toLowerCase();
       const username = String(acc.username || '').toLowerCase();
       if (assigneeCode === 'OP002') {
@@ -477,7 +247,7 @@ export async function updateOperatorTask(id: string, patch: any) {
       isoDate = new Date().toISOString();
     }
 
-    const existingStatus = operatorTasks.value.find(t => t.id === id)?.status || 'belum';
+    const existingStatus = operatorTasks.value.find((t: any) => t.id === id)?.status || 'belum';
     const payload = {
       user_id: userId,
       title: apiTitle,
@@ -493,7 +263,7 @@ export async function updateOperatorTask(id: string, patch: any) {
     console.log('Updating task payload:', payload);
     const updatedApiTask = await tasksApi.update(id, payload);
     const localTask = mapApiTaskToLocal(updatedApiTask);
-    const index = operatorTasks.value.findIndex(t => t.id === id);
+    const index = operatorTasks.value.findIndex((t: any) => t.id === id);
     if (index !== -1) {
       operatorTasks.value[index] = localTask;
     }
@@ -514,7 +284,7 @@ export async function updateOperatorTask(id: string, patch: any) {
 export async function deleteOperatorTask(id: string) {
   try {
     await tasksApi.delete(id);
-    operatorTasks.value = operatorTasks.value.filter(t => t.id !== id);
+    operatorTasks.value = operatorTasks.value.filter((t: any) => t.id !== id);
   } catch (err) {
     console.error('Error deleting operator task:', err);
     alert(err instanceof Error ? err.message : 'Gagal menghapus tugas');

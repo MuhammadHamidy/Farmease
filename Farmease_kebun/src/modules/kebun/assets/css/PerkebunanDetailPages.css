@@ -28,7 +28,7 @@
 
 .pencatatan-content {
   padding: 0.75rem;
-  max-width: 780px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -441,19 +441,22 @@
   z-index: 1100;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .rincian-sheet {
   background: #fff;
-  border-radius: 1.25rem 1.25rem 0 0;
-  width: 100%;
-  max-width: 480px;
-  max-height: 88vh;
+  border-radius: 1.25rem;
+  width: min(100%, 380px);
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  animation: pencatatanSlideUp 0.25s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  animation: pencatatanScaleUp 0.25s ease;
 }
 
 @keyframes pencatatanSlideUp {
