@@ -61,15 +61,17 @@ export default defineComponent({
       try {
         const pregnancies = await pregnancyApi.getList();
         birthAlerts.value = pregnancies
-          .filter((p: any) => p.status === 'active' || p.status === 'confirmed')
+          .filter((p: any) => p.pregnancy_status === 'dikandung')
           .map((p: any) => {
             const daysLeft = p.days_remaining || 0;
             const estBirth = new Date(p.expected_birth_date);
-            const sheepData = sheep.value.find(s => String(s.id) === String(p.id_sheep));
+            const sheepId = p.mother_sheep ? p.mother_sheep.id_sheep : null;
+            const sheepData = sheep.value.find(s => String(s.id) === String(sheepId));
             return {
-              code: sheepData?.code || `#${p.id_sheep}`,
+              code: sheepData?.code || `#${sheepId}`,
               daysLeft,
               estimatedDate: estBirth.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+              id: p.id_pregnancy,
             };
           })
           .filter((a: any) => a.daysLeft >= 0 && a.daysLeft <= 14)
@@ -77,8 +79,17 @@ export default defineComponent({
       } catch (e) {
         // skip
       }
+    };
 
-
+    const handleKeguguran = async (id: string) => {
+      if (!confirm('Apakah Anda yakin ingin melaporkan keguguran untuk domba ini? Status kehamilan akan dibatalkan.')) return;
+      
+      try {
+        await pregnancyApi.updateStatus(id, 'keguguran');
+        await fetchDashboardData(); // Refresh data
+      } catch (e) {
+        alert('Gagal melaporkan keguguran');
+      }
     };
 
     onMounted(fetchDashboardData);
@@ -187,7 +198,7 @@ export default defineComponent({
     return () => {
       return (
         <div class="peternakan-dashboard animate-fade-in">
-          <BirthAlerts alerts={birthAlerts.value} />
+          <BirthAlerts alerts={birthAlerts.value} onKeguguran={handleKeguguran} />
 
           <div class="peternakan-title-card mb-4 overflow-hidden text-start">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 position-relative" style={{ zIndex: 1 }}>

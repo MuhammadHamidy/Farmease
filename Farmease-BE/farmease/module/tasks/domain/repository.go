@@ -19,12 +19,13 @@ type Task struct {
 	IDCage      *string   `json:"id_cage,omitempty" db:"id_cage"`
 	StartTime   string    `json:"start_time" db:"start_time"`
 	Rincian     string    `json:"rincian" db:"rincian"`
+	IDMating    *string   `json:"id_mating,omitempty" db:"id_mating"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type TaskRepository interface {
-	FindTasksByAccount(ctx context.Context, idAccount string, date *time.Time) ([]*Task, error)
+	FindTasksByAccount(ctx context.Context, idAccount, roleName string, date *time.Time) ([]*Task, error)
 	FindByID(ctx context.Context, id string) (*Task, error)
 	StoreTask(ctx context.Context, t *Task) error
 	UpdateTask(ctx context.Context, t *Task) error
@@ -34,7 +35,7 @@ type TaskRepository interface {
 }
 
 type UseCase interface {
-	GetMyTasks(ctx context.Context, idAccount string, date *time.Time) ([]*Task, error)
+	GetMyTasks(ctx context.Context, idAccount, roleName string, date *time.Time) ([]*Task, error)
 	CreateTask(ctx context.Context, t *Task) error
 	UpdateTask(ctx context.Context, id string, t *Task) error
 	CompleteTask(ctx context.Context, id string) error

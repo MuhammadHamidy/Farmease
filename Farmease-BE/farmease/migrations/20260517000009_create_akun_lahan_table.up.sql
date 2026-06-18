@@ -1,8 +1,0 @@
-CREATE TABLE IF NOT EXISTS gardening.akun_lahan (
-    id_akun_lahan UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tanggal_tanam TIMESTAMP NOT NULL,
-    status VARCHAR(50) NOT NULL,
-    Lahan_id_lahan UUID REFERENCES gardening.lahan(id_lahan) ON DELETE CASCADE,
-    Akun_id_akun UUID REFERENCES auth.accounts(id_account) ON DELETE CASCADE
-);
-

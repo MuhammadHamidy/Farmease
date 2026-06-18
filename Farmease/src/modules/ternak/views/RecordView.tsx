@@ -6,6 +6,7 @@ import Button from '@/shared/ui/Button';
 import PencatatanField from '@/modules/ternak/components/pencatatan/PencatatanField';
 import PencatatanSelect from '@/modules/ternak/components/pencatatan/PencatatanSelect';
 import { activePencatatanForm, cageSession, prefilledPencatatanType, prefilledPencatatanRincian, prefilledPencatatanTaskId } from '@/store/navigation';
+import { operatorTasks } from '@/store/operatorAdmin';
 import PencatatanModeToggle from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 
@@ -51,9 +52,12 @@ const LOCKED_TOGGLE_TYPES: Record<string, 'domba' | 'kandang'> = {
 
 
 
+import { useRouter } from 'vue-router';
+
 export default defineComponent({
   name: 'PencatatanView',
   setup() {
+    const router = useRouter();
     const now = ref(new Date());
     const selectedScope = ref<'domba' | 'kandang'>('domba');
     const selectedType = ref<string>('pakan');
@@ -98,8 +102,13 @@ export default defineComponent({
     }, { immediate: true });
 
     const openForm = () => {
+      const taskId = prefilledPencatatanTaskId.value;
+      const linkedTask = taskId ? operatorTasks.value.find(t => String(t.id) === String(taskId)) : null;
+      const idMating = linkedTask ? (linkedTask as any).idMating : undefined;
+
       activePencatatanForm.value = {
-        taskId: prefilledPencatatanTaskId.value, // Pass the task ID if available
+        taskId: taskId, // Pass the task ID if available
+        idMating: idMating, // Pass the mating ID if available
         scope: selectedScope.value,
         jenis: {
           id: selectedType.value,
@@ -116,6 +125,7 @@ export default defineComponent({
       
       // Clear it so it won't leak to subsequent unconnected recordings
       prefilledPencatatanTaskId.value = null;
+      router.push({ name: 'ternak-pencatatan-form' });
     };
 
     const handleTypeChange = (typeId: string) => {

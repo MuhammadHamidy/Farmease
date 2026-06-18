@@ -125,12 +125,19 @@ export default defineComponent({
                 <div class="col-12 col-md-6 col-xl-4" key={sheepItem.id}>
                   <div class="peternakan-item-card h-100 flex-column align-items-stretch" style={{ opacity: 0.75 }}>
                     <div class="d-flex align-items-center gap-3">
-                      <div class="peternakan-item-avatar d-flex align-items-center justify-content-center bg-light rounded-circle" style={{ width: '48px', height: '48px', flexShrink: 0 }}>
-                        <img src="/icon/domba.png" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                      <div class="peternakan-item-avatar d-flex align-items-center justify-content-center bg-light rounded-circle" style={{ width: '48px', height: '48px', flexShrink: 0, overflow: 'hidden' }}>
+                        {sheepItem.photo_url ? (
+                          <img src={`http://localhost:8081${sheepItem.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                        ) : (
+                          <img src="/icon/domba.png" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                        )}
                       </div>
                       <div class="d-flex flex-column min-w-0 flex-grow-1">
-                        <span class="peternakan-item-headline">{sheepItem.name}</span>
-                        <span class="peternakan-item-subline">{sheepItem.code} • Kandang {sheepItem.cage_code}</span>
+                        <span class="peternakan-item-headline d-block mb-1">{sheepItem.name}</span>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                          <span class="badge bg-light text-secondary border border-light-subtle rounded-pill" style={{ fontSize: '0.65rem', fontWeight: 600 }}>ID: {sheepItem.code}</span>
+                          <span class="badge bg-light text-secondary border border-light-subtle rounded-pill" style={{ fontSize: '0.65rem', fontWeight: 600 }}>Kandang {sheepItem.cage_code}</span>
+                        </div>
                       </div>
                     </div>
                     <div class="d-flex flex-wrap gap-2 mt-3">
@@ -154,12 +161,19 @@ export default defineComponent({
               <div class="col-12 col-md-6 col-xl-4" key={sheepItem.id}>
                 <div class="peternakan-item-card h-100 flex-column align-items-stretch">
                   <div class="d-flex align-items-center gap-3">
-                    <div class="peternakan-item-avatar d-flex align-items-center justify-content-center bg-light rounded-circle" style={{ width: '48px', height: '48px', flexShrink: 0 }}>
-                      <img src="/icon/domba.png" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                    <div class="peternakan-item-avatar d-flex align-items-center justify-content-center bg-light rounded-circle" style={{ width: '48px', height: '48px', flexShrink: 0, overflow: 'hidden' }}>
+                      {sheepItem.photo_url ? (
+                        <img src={`http://localhost:8081${sheepItem.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                      ) : (
+                        <img src="/icon/domba.png" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                      )}
                     </div>
                     <div class="d-flex flex-column min-w-0 flex-grow-1">
-                      <span class="peternakan-item-headline">{sheepItem.name}</span>
-                      <span class="peternakan-item-subline">{sheepItem.code} • Kandang {sheepItem.cage_code}</span>
+                      <span class="peternakan-item-headline d-block mb-1">{sheepItem.name}</span>
+                      <div class="d-flex flex-wrap gap-1 mt-1">
+                        <span class="badge bg-light text-secondary border border-light-subtle rounded-pill" style={{ fontSize: '0.65rem', fontWeight: 600 }}>ID: {sheepItem.code}</span>
+                        <span class="badge bg-light text-secondary border border-light-subtle rounded-pill" style={{ fontSize: '0.65rem', fontWeight: 600 }}>Kandang {sheepItem.cage_code}</span>
+                      </div>
                     </div>
                   </div>
                   

@@ -214,7 +214,7 @@ export default defineComponent({
           </div>
         )}
 
-        {/* Dynamic Cage Cards (Requirement a) */}
+        {/* Dynamic Cage Cards */}
         <div class="row g-3 mb-4">
           {cagesList.value.map(c => {
             const count = sheep.value.filter(s => s.cage_code === c.code).length;
@@ -246,7 +246,7 @@ export default defineComponent({
           )}
         </div>
 
-        {/* Table View (Desktop - Requirement b & c) */}
+        {/* Table View (Desktop) */}
         <div class="view-card d-none d-md-block">
           <table class="admin-table">
             <thead>
@@ -300,7 +300,7 @@ export default defineComponent({
           </table>
         </div>
 
-        {/* List View (Mobile - Requirement b & c) */}
+        {/* List View (Mobile) */}
         <div class="mobile-only d-md-none">
           <div class="mobile-card-list">
             {cagesList.value.map(c => {

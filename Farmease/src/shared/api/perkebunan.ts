@@ -1,4 +1,4 @@
-import apiClient from './client'
+import { kebunClient as apiClient } from './client'
 
 // ============ Lahan (Land/Plot) ============
 export interface Lahan {
@@ -223,14 +223,26 @@ export const perawatanApi = {
 
 // ============ Pemangkasan (Pruning) ============
 export interface Pemangkasan {
-  id: string | number
-  tanggal_pemangkasan: string
-  deskripsi: string
-  id_pohon: string | number
-  status: string
-  created_at: string
-  updated_at: string
+  id_pemangkasan: string
+  Aktivitas_id_aktivitas: string
+  tanggal_aktivitas?: string
+  nama_jenis_aktivitas?: string
+  nama_rincian_aktivitas?: string
+  jumlah: string | number
+  satuan: string
+  keterangan: string
+  Lahan_id_lahan: string
+
+  // Backward compatibility fields
+  id?: string | number
+  tanggal_pemangkasan?: string
+  deskripsi?: string
+  id_pohon?: string | number
+  status?: string
+  created_at?: string
+  updated_at?: string
 }
+
 
 export const pemangkasanApi = {
   getList: async (): Promise<Pemangkasan[]> => {

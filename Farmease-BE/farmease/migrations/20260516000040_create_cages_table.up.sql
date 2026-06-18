@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS master.cages (
     capacity INT NOT NULL,
     cage_type VARCHAR(20) NOT NULL,
     cage_name VARCHAR(100),
-    farm_id UUID REFERENCES master.farms(id),
+    farm_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

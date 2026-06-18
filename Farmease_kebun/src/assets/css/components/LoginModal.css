@@ -1,0 +1,571 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+/* ── OvisManage Design System ────────────────────────────── */
+:root {
+  /* Colors Palette - Brown */
+  --color-surface: #faf8f5;
+  --color-surface-dim: #d4c9ba;
+  --color-surface-bright: #faf8f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f2ed;
+  --color-surface-container: #ede8e0;
+  --color-surface-container-high: #e5ddd5;
+  --color-surface-container-highest: #e1d4c2;
+  --color-on-surface: #1a1a1a;
+  --color-on-surface-variant: #4a423a;
+  --color-inverse-surface: #2f2f2d;
+  --color-inverse-on-surface: #f1eeea;
+  --color-outline: #7a6f65;
+  --color-outline-variant: #ccc0b4;
+  --color-surface-tint: #5d4e41;
+  --color-primary: #3d2f24;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #5d4e41;
+  --color-on-primary-container: #d4c4b0;
+  --color-inverse-primary: #c4b0a0;
+  --color-secondary: #a78d78;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #d4c4b0;
+  --color-on-secondary-container: #6b5a4d;
+  --color-tertiary: #8b7355;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #b5a18c;
+  --color-on-tertiary-container: #3d2f24;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  
+  --color-primary-fixed: #e1d4c2;
+  --color-primary-fixed-dim: #d4c4b0;
+  --color-on-primary-fixed: #291c0e;
+  --color-on-primary-fixed-variant: #5d4e41;
+  
+  --color-secondary-fixed: #e1d4c2;
+  --color-secondary-fixed-dim: #d4c4b0;
+  --color-on-secondary-fixed: #291c0e;
+  --color-on-secondary-fixed-variant: #8b7355;
+  
+  --color-tertiary-fixed: #d4c4b0;
+  --color-tertiary-fixed-dim: #c4b0a0;
+  --color-on-tertiary-fixed: #291c0e;
+  --color-on-tertiary-fixed-variant: #5d4e41;
+  
+  --color-background: #faf8f5;
+  --color-on-background: #1a1a1a;
+  --color-surface-variant: #e1d4c2;
+
+  /* Fonts */
+  --font-family: 'Manrope', sans-serif;
+
+  /* Rounded Corners */
+  --rounded-sm: 0.125rem;
+  --rounded-default: 0.25rem;
+  --rounded-md: 0.375rem;
+  --rounded-lg: 0.5rem;
+  --rounded-xl: 0.75rem;
+  --rounded-full: 9999px;
+
+  /* Spacing */
+  --spacing-base: 8px;
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 48px;
+  --spacing-card-padding: 20px;
+  --spacing-stack-sm: 4px;
+  --spacing-stack-md: 12px;
+  --spacing-stack-lg: 32px;
+}
+
+/* ── Web Layout Container ───────────────────────────────── */
+.login-web-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--color-background);
+  font-family: var(--font-family);
+  box-sizing: border-box;
+}
+
+/* ── Brand Sidebar Showcase Column ──────────────────────── */
+.login-brand-sidebar {
+  flex: 0 0 42%;
+  max-width: 42%;
+  background: linear-gradient(135deg, var(--color-primary-container) 0%, var(--color-primary) 100%);
+  color: var(--color-on-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4.5rem 3.5rem;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: inset -12px 0 36px rgba(0, 0, 0, 0.08);
+}
+
+/* Decorative grid pattern in branding sidebar */
+.login-brand-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
+                    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.brand-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 2;
+}
+
+.tractor-icon-wrapper-sidebar {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary-fixed);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.tractor-icon-wrapper-sidebar:hover {
+  transform: scale(1.05);
+}
+
+.sidebar-brand-name {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-sidebar-body {
+  z-index: 2;
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-right: 1.5rem;
+}
+
+.sidebar-main-title {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 48px;
+  letter-spacing: -0.02em;
+  color: var(--color-on-primary);
+  margin: 0 0 1.5rem 0;
+}
+
+.sidebar-main-desc {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 26px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 2.5rem 0;
+}
+
+.sidebar-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.feature-icon-wrapper {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-fixed);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.feature-icon-wrapper svg {
+  display: block;
+  stroke: var(--color-primary-fixed);
+  stroke-width: 3px;
+}
+
+.brand-sidebar-footer {
+  z-index: 2;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Form Column Showcase ────────────────────────────────── */
+.login-form-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--color-surface);
+  padding: 3.5rem 2rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+  align-items: center;
+}
+
+/* Mobile top branding */
+.login-mobile-header {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.mobile-brand-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ── Login Central Web Card ──────────────────────────────── */
+.login-web-card {
+  width: 100%;
+  max-width: 450px;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.035) !important;
+  padding: 2.75rem 2.5rem !important;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+/* Typography styles based on the spec */
+.card-main-title {
+  font-family: var(--font-family);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--color-on-surface);
+  margin: 0 0 var(--spacing-stack-sm) 0;
+}
+
+.card-main-subtitle {
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-on-surface-variant);
+  margin: 0 0 var(--spacing-stack-md) 0;
+}
+
+/* ── Forms and Inputs ─────────────────────────────────────── */
+.form-label-custom {
+  display: block;
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+  color: var(--color-on-surface);
+  margin-bottom: var(--spacing-stack-sm);
+}
+
+.role-selector-flex {
+  display: flex;
+  gap: var(--spacing-stack-sm);
+  width: 100%;
+  margin-bottom: var(--spacing-stack-md);
+}
+
+.role-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-stack-sm);
+  padding: 0.75rem 0.5rem;
+  border-radius: var(--rounded-lg);
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--color-outline-variant);
+  background-color: var(--color-surface-container-lowest);
+  color: var(--color-on-surface-variant);
+  outline: none;
+}
+
+.role-btn.active {
+  background-color: var(--color-primary-fixed);
+  border-color: var(--color-primary-fixed-dim);
+  color: var(--color-primary);
+}
+
+.role-btn:hover:not(.active) {
+  border-color: var(--color-outline);
+  background-color: var(--color-surface-container-low);
+}
+
+.role-icon {
+  stroke-width: 2.25px;
+}
+
+.input-wrapper-custom {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-prefix-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--color-on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.form-input-custom {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--rounded-lg);
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-on-surface);
+  background-color: var(--color-surface-container-lowest);
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-input-custom:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(21, 66, 18, 0.08);
+}
+
+.form-input-custom::placeholder {
+  color: var(--color-on-surface-variant);
+  opacity: 0.75;
+}
+
+.input-suffix-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem;
+  outline: none;
+}
+
+.input-suffix-btn:hover {
+  color: var(--color-on-surface);
+}
+
+.forgot-password-link {
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.forgot-password-link:hover {
+  opacity: 0.85;
+  text-decoration: underline;
+}
+
+.hint-text-custom {
+  font-family: var(--font-family);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-on-surface-variant);
+}
+
+/* ── Error Handling Banner ───────────────────────────────── */
+.error-banner {
+  background-color: var(--color-error-container);
+  border: 1px solid var(--color-error);
+  color: var(--color-on-error-container);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--rounded-md);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-stack-sm);
+}
+
+/* ── Submit Button ───────────────────────────────────────── */
+.submit-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  border-radius: var(--rounded-lg);
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-stack-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-container);
+}
+
+.submit-btn:hover:not(:disabled) .arrow-icon {
+  transform: translateX(4px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Back Navigation Button ──────────────────────────────── */
+.back-home-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  outline: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.back-home-btn:hover {
+  color: var(--color-primary);
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+.login-web-footer {
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  padding: 0 var(--spacing-gutter);
+}
+
+.support-link {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.support-link:hover {
+  color: var(--color-primary-container);
+  text-decoration: underline;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Responsive Screen Adjustments ───────────────────────── */
+@media (max-width: 991px) {
+  .login-web-container {
+    flex-direction: column;
+  }
+  
+  .login-brand-sidebar {
+    display: none !important;
+  }
+  
+  .login-form-column {
+    width: 100%;
+    padding: 2rem 1.5rem;
+    min-height: 100vh;
+  }
+}
+
+/* Centered Login Page Support */
+.login-page-centered {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
+.login-centered-card {
+  z-index: 5;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant) !important;
+  box-shadow: 0 20px 40px rgba(21, 66, 18, 0.05) !important;
+}
+
+.btn-primary-custom {
+  background-color: var(--color-primary-fixed) !important;
+  border-color: var(--color-primary-fixed-dim) !important;
+  color: var(--color-primary) !important;
+}
+
+.btn-light-custom {
+  background-color: var(--color-surface-container-low) !important;
+  border-color: var(--color-outline-variant) !important;
+  color: var(--color-on-surface-variant) !important;
+}
+
+.btn-light-custom:hover {
+  background-color: var(--color-surface-container) !important;
+}
+
+/* Animations */
+.animate-bounce-slow {
+  animation: bounceSlow 3s infinite ease-in-out;
+}
+
+@keyframes bounceSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}

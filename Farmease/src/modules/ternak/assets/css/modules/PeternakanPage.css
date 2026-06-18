@@ -628,6 +628,21 @@
   }
 }
 
+.btn-edit-profile {
+  font-size: 0.85rem !important;
+  color: var(--color-surface) !important;
+  border: 1.5px solid var(--color-surface) !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease !important;
+  padding: 0.4rem 1.2rem !important;
+}
+
+.btn-edit-profile:hover {
+  background-color: var(--color-surface) !important;
+  color: var(--color-primary) !important;
+  border-color: var(--color-surface) !important;
+}
+
 .detail-avatar-box {
   width: 120px;
   height: 120px;

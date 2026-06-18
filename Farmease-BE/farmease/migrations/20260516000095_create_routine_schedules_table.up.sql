@@ -19,7 +19,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE operations.task_rincian_enum AS ENUM ('Pakan Pagi', 'Pakan Sore', 'Konversi Pakan', 'Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis', 'Pembersihan Kandang', 'Fermentasi Kotoran', 'Kawin Alami', 'Inseminasi Buatan', 'Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk');
+    CREATE TYPE operations.task_rincian_enum AS ENUM ('Pakan Pagi', 'Pakan Sore', 'Konversi Pakan', 'Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis', 'Pembersihan Kandang', 'Fermentasi Kotoran', 'Kawin Alami', 'Inseminasi Buatan', 'Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk', 'Kontrol Kebuntingan');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS operations.routine_schedules (
     end_time        TIME,
     priority        operations.priority_enum DEFAULT 'sedang',
     id_cage         UUID REFERENCES master.cages(id_cage) ON DELETE SET NULL,
-    id_account      UUID REFERENCES auth.accounts(id_account) ON DELETE SET NULL,
+    id_account      UUID,
     rincian         operations.task_rincian_enum,
     is_active       BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMPTZ DEFAULT NOW(),

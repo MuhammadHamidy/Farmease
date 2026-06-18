@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS breeding.matings (
     inbreeding_flag BOOLEAN DEFAULT FALSE,
     coefficient_of_inbreeding DECIMAL(10,8) DEFAULT 0.0,
     notes TEXT,
+    straw_code VARCHAR(100) NULL,
+    inseminator VARCHAR(100) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

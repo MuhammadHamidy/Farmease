@@ -7,7 +7,8 @@ export default defineComponent({
     modelValue: { type: String, default: '' },
     placeholder: { type: String, default: '' },
     type: { type: String, default: 'text' },
-    icon: { type: Function, default: null }
+    icon: { type: Function, default: null },
+    disabled: { type: Boolean, default: false }
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -28,6 +29,8 @@ export default defineComponent({
           placeholder={props.placeholder}
           value={props.modelValue}
           onInput={handleInput}
+          disabled={props.disabled}
+          style={props.disabled ? { backgroundColor: '#e9ecef', cursor: 'not-allowed', color: '#6c757d', opacity: 1 } : {}}
         />
       </div>
     );

@@ -1,4 +1,4 @@
-import apiClient from './client'
+import { ssoClient as apiClient } from './client'
 
 export interface LoginRequest {
   email: string

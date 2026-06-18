@@ -1,0 +1,30 @@
+package domain
+
+import (
+	"context"
+	"time"
+)
+
+type Notification struct {
+	IDNotification string    `json:"id_notification" db:"id_notification"`
+	Title          string    `json:"title" db:"title"`
+	Message        string    `json:"message" db:"message"`
+	IsRead         bool      `json:"is_read" db:"is_read"`
+	IDAccount      string    `json:"id_account" db:"id_account"`
+	Type           string    `json:"type" db:"type"` // system/reminder/submission
+	TaskID         *string   `json:"task_id,omitempty" db:"task_id"`
+	SubmissionID   *string   `json:"submission_id,omitempty" db:"submission_id"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+}
+
+type NotificationRepository interface {
+	FindNotificationsByAccount(ctx context.Context, idAccount string) ([]*Notification, error)
+	StoreNotification(ctx context.Context, n *Notification) error
+	MarkNotificationRead(ctx context.Context, id string) error
+	GenerateDynamicReminders(ctx context.Context, idAccount string, now time.Time) error
+}
+
+type UseCase interface {
+	GetMyNotifications(ctx context.Context, idAccount string) ([]*Notification, error)
+	ReadNotification(ctx context.Context, id string) error
+}

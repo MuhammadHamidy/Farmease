@@ -30,6 +30,11 @@ import {
   fetchAccountsList,
   metadataEnums,
   fetchMetadataEnums,
+  pencatatanSubmissions,
+  fetchSubmissions,
+  approveSubmission,
+  rejectSubmission,
+  pendingApprovalCount,
 } from '@/store/operatorAdmin';
 import { tasksApi } from '@/shared/api';
 import { cagesList, landsList, fetchCagesList, fetchLandsList } from '@/store/navigation';
@@ -56,6 +61,11 @@ export {
   fetchAccountsList,
   metadataEnums,
   fetchMetadataEnums,
+  pencatatanSubmissions,
+  fetchSubmissions,
+  approveSubmission,
+  rejectSubmission,
+  pendingApprovalCount,
 };
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -98,74 +108,7 @@ export interface RoutineSchedule {
   createdAt: number;
 }
 
-// Pencatatan submissions — state lokal untuk approval flow (bisa diganti API ke depannya)
-const STORAGE_KEY = 'farmease_submissions';
-const stored = localStorage.getItem(STORAGE_KEY);
-const defaultSubmissions: PencatatanSubmission[] = [
-  {
-    id: 'SUB-001',
-    type: 'pakan',
-    typeLabel: 'Pemberian Pakan',
-    operatorCode: 'OP001',
-    operatorName: 'Budi Ternak',
-    cageCode: 'A',
-    scope: 'kandang',
-    summary: 'Pakan hijauan rumput gajah 25kg',
-    payload: { data: { items: [{ name: 'Rumput Gajah', qty: 25, unit: 'kg' }] } },
-    submittedAt: Date.now() - 3600000 * 2,
-    approvalStatus: 'pending'
-  },
-  {
-    id: 'SUB-002',
-    type: 'pemangkasan',
-    typeLabel: 'Pemangkasan Ranting',
-    operatorCode: 'OP002',
-    operatorName: 'Siti Aminah',
-    cageCode: 'L0002',
-    scope: 'kandang',
-    summary: 'Pangkas ranting kering pohon Alpukat',
-    payload: { data: { items: [{ name: 'Alpukat', action: 'Pangkas Ranting' }] } },
-    submittedAt: Date.now() - 3600000 * 5,
-    approvalStatus: 'pending'
-  },
-  {
-    id: 'SUB-003',
-    type: 'kesehatan',
-    typeLabel: 'Pemeriksaan Kesehatan',
-    operatorCode: 'OP001',
-    operatorName: 'Budi Ternak',
-    cageCode: 'B',
-    scope: 'domba',
-    summary: 'Pemberian obat cacing domba Garut',
-    payload: { data: { items: [{ targetId: 'D012', tindakan: 'Obat Cacing' }] } },
-    submittedAt: Date.now() - 3600000 * 24,
-    approvalStatus: 'approved',
-    reviewedAt: Date.now() - 3600000 * 23,
-    reviewedBy: 'Admin Utama',
-    reviewNote: 'Sesuai dengan prosedur pemeriksaan berkala.'
-  },
-  {
-    id: 'SUB-004',
-    type: 'panen',
-    typeLabel: 'Panen Hasil Kebun',
-    operatorCode: 'OP002',
-    operatorName: 'Siti Aminah',
-    cageCode: 'L001',
-    scope: 'kandang',
-    summary: 'Panen buah jeruk matang 50kg',
-    payload: { data: { items: [{ name: 'Jeruk', qty: 50, unit: 'kg' }] } },
-    submittedAt: Date.now() - 3600000 * 30,
-    approvalStatus: 'pending'
-  }
-];
-
-export const pencatatanSubmissions = ref<PencatatanSubmission[]>(
-  stored ? JSON.parse(stored) : defaultSubmissions
-);
-
-watch(pencatatanSubmissions, (newVal) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
-}, { deep: true });
+// Submissions re-exported from global store
 import { routineSchedulesApi, type ApiRoutineSchedule } from '@/shared/api';
 
 const LOCAL_SCHEDULES_KEY = 'farmease_local_schedules';
@@ -301,7 +244,7 @@ function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRout
       if (local.assigneeCode === 'OP002') {
         return cat.includes('kebun') || username.includes('kebun');
       } else if (local.assigneeCode === 'OP001') {
-        return cat.includes('ternak') || username === 'operator';
+        return cat.includes('ternak') || username.includes('ternak') || username.includes('kandang') || username === 'operator';
       } else if (local.assigneeCode === 'PEM001') {
         return cat.includes('pemilik') || username.includes('pemilik');
       }
@@ -314,11 +257,11 @@ function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRout
       if (local.assigneeCode === 'OP002') {
         idAccount = '11111111-1111-1111-1111-111111111105'; // Operator Kebun
       } else if (local.assigneeCode === 'OP001') {
-        idAccount = '11111111-1111-1111-1111-111111111103'; // Operator Ternak
+        idAccount = '11111111-1111-1111-1111-111111111106'; // Operator Ternak
       } else if (local.assigneeCode === 'PEM001') {
         idAccount = '11111111-1111-1111-1111-111111111104'; // Pemilik
       } else {
-        idAccount = '11111111-1111-1111-1111-111111111103'; // Fallback to Operator Ternak
+        idAccount = '11111111-1111-1111-1111-111111111106'; // Fallback to Operator Ternak
       }
     }
   }
@@ -400,60 +343,7 @@ export async function deleteRoutineSchedule(id: string) {
   }
 }
 
-export async function approveSubmission(id: string, reviewerName: string, note = '') {
-  const sub = pencatatanSubmissions.value.find((s) => s.id === id);
-  if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
-  
-  // Call API depending on type
-  const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
-  
-  const payloadToExecute: SubmitPencatatanInput = {
-    type: sub.type,
-    scope: sub.scope,
-    summary: sub.summary,
-    payload: sub.payload as any,
-    operatorCode: sub.operatorCode,
-    operatorName: sub.operatorName,
-    cageCode: sub.cageCode,
-    taskId: sub.taskId
-  };
-
-  let result;
-  if (isPerkebunan) {
-    result = await executeKebunApiSubmission(payloadToExecute);
-  } else {
-    result = await executeTernakApiSubmission(payloadToExecute);
-  }
-
-  if (result.success) {
-    sub.approvalStatus = 'approved';
-    sub.reviewedAt = Date.now();
-    sub.reviewedBy = reviewerName;
-    sub.reviewNote = note;
-
-    if (sub.taskId) {
-      try {
-        await completeTask(sub.taskId);
-      } catch (err) {
-        console.error('Failed to complete task (might be mock task):', err);
-      }
-    }
-
-    return { success: true, message: result.message };
-  } else {
-    return { success: false, message: result.message };
-  }
-}
-
-export function rejectSubmission(id: string, reviewerName: string, note: string) {
-  const sub = pencatatanSubmissions.value.find((s) => s.id === id);
-  if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
-  sub.approvalStatus = 'rejected';
-  sub.reviewedAt = Date.now();
-  sub.reviewedBy = reviewerName;
-  sub.reviewNote = note;
-  return { success: true, message: 'Pencatatan berhasil ditolak.' };
-}
+// Approval functions re-exported from global store
 
 function formatTitleForApi(title: string, category: string): string {
   const titleLower = title.toLowerCase();
@@ -491,7 +381,7 @@ function mapAssigneeToUserId(assigneeCode: string): string {
       if (assigneeCode === 'OP002') {
         return cat.includes('kebun') || username.includes('kebun');
       } else if (assigneeCode === 'OP001') {
-        return cat.includes('ternak') || username === 'operator';
+        return cat.includes('ternak') || username.includes('ternak') || username.includes('kandang') || username === 'operator';
       } else if (assigneeCode === 'PEM001') {
         return cat.includes('pemilik') || username.includes('pemilik');
       }
@@ -507,7 +397,7 @@ function mapAssigneeToUserId(assigneeCode: string): string {
   if (assigneeCode === 'OP002') {
     return '11111111-1111-1111-1111-111111111105'; // Operator Kebun
   } else if (assigneeCode === 'OP001') {
-    return '11111111-1111-1111-1111-111111111103'; // Operator Ternak
+    return '11111111-1111-1111-1111-111111111106'; // Operator Ternak
   } else if (assigneeCode === 'PEM001') {
     return '11111111-1111-1111-1111-111111111104'; // Pemilik
   }

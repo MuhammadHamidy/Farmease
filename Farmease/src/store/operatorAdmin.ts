@@ -1,5 +1,4 @@
-import { ref, computed } from 'vue';
-import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, type User, type MetadataEnums, type EnumChoice } from '@/shared/api';
+import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, routineSchedulesApi, type ApiRoutineSchedule, type User, type MetadataEnums, type EnumChoice, submissionsApi, type ApiSubmission } from '@/shared/api';
 import { sheep } from '@/store/livestock';
 import { cagesList, landsList, fetchCagesList, fetchLandsList } from '@/store/navigation';
 
@@ -53,7 +52,8 @@ export const metadataEnums = ref<MetadataEnums>({
     { value: 'Kawin Alami', label: 'Kawin Alami' },
     { value: 'Inseminasi Buatan', label: 'Inseminasi Buatan' },
     { value: 'Pencatatan Kelahiran', label: 'Pencatatan Kelahiran' },
-    { value: 'Pemeriksaan Anak & Induk', label: 'Pemeriksaan Anak & Induk' }
+    { value: 'Pemeriksaan Anak & Induk', label: 'Pemeriksaan Anak & Induk' },
+    { value: 'Kontrol Kebuntingan', label: 'Kontrol Kebuntingan' }
   ],
   day_of_week: [
     { value: 'Senin', label: 'Senin' },
@@ -461,6 +461,7 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
     scheduleId: t.schedule_id || undefined,
     idCage: t.id_cage || undefined,
     rincian: rincian || undefined,
+    idMating: (t as any).id_mating || undefined,
     createdAt: new Date(t.created_at || Date.now()).getTime(),
     idAccount: userIdStr,
   } as any;
@@ -603,17 +604,49 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
           } as any),
         );
       } else if (input.type === 'perkawinan') {
-        // Catat perkawinan
-        promises.push(
-          breedingApi.recordMating({
-            id_sheep_male: item.idPejantan || '',
+        if (item.name === 'Kontrol Kebuntingan') {
+          promises.push(
+            pregnancyApi.checkPregnancy({
+              id_mating: item.idMating || '',
+              tanggal_pemeriksaan: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+              metode_pemeriksaan: item.metodePemeriksaan || 'manual',
+              hasil: item.hasilPemeriksaan || 'masih_menunggu',
+              catatan: item.note || '',
+              id_task: input.taskId || '',
+            })
+          );
+        } else {
+          // Catat perkawinan
+          const isIB = item.metoda === 'ib';
+          const notesStr = item.note || '';
+        
+          const matingPayload: any = {
             id_sheep_female: sheepId || '',
-            mating_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+            mating_date: isIB && item.waktuIB
+              ? `${item.waktuIB}:00Z` 
+              : (item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString()),
             mating_method: item.metoda || 'alami',
             status: 'proses',
-            notes: item.note || '',
-          } as any),
-        );
+            notes: notesStr,
+          };
+
+          if (isIB) {
+            matingPayload.straw_code = item.asalSemen || '';
+            matingPayload.inseminator = item.namaInseminator || '';
+            if (item.sumberPejantan === 'eksternal') {
+              matingPayload.external_donor = {
+                name: item.donorName || '',
+                origin: item.donorOrigin || '',
+              };
+            } else {
+              matingPayload.id_sheep_male = item.idPejantan || '';
+            }
+          } else {
+            matingPayload.id_sheep_male = item.idPejantan || '';
+          }
+
+          promises.push(breedingApi.recordMating(matingPayload));
+        }
       } else if (input.type === 'kelahiran') {
         // Catat kelahiran (requires pregnancy ID lookup)
         const matchedPregnancy = pregnancyList.find(
@@ -738,24 +771,44 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
 }
 
 export async function executeKebunApiSubmission(input: SubmitPencatatanInput): Promise<SubmitResult> {
-  // Extract API calls from PencatatanFormPage
-  const { pemangkasanApi } = await import('@/shared/api');
+  const { 
+    pemangkasanApi, 
+    panenApi, 
+    perawatanApi, 
+    aktivitasApi,
+    feedsApi
+  } = await import('@/shared/api');
   const items = (input.payload as any)?.data?.items ?? [];
+
   try {
+    if (landsList.value.length === 0) {
+      await fetchLandsList();
+    }
+
+    const promises: Promise<unknown>[] = [];
+
     for (const item of items) {
-      if (input.type === 'pemangkasan') {
-        const weight = parseFloat(item.jumlahPemangkasan);
+      const foundLand = landsList.value.find(
+        (l) => String(l.code).toUpperCase() === String(input.cageCode || '').toUpperCase()
+      );
+      const landId = foundLand && foundLand.id ? String(foundLand.id) : 'b1111111-1111-1111-1111-111111111101';
+      const typeLower = (input.type || '').toLowerCase();
+
+      if (typeLower === 'pemangkasan') {
+        const weight = parseFloat(item.jumlahPemangkasan || item.qty || item.amount || 0);
         if (!isNaN(weight) && weight > 0) {
-          await pemangkasanApi.create({
-            Aktivitas_id_aktivitas: 1,
-            tanggal_aktivitas: new Date().toISOString().split('T')[0],
-            nama_jenis_aktivitas: 'Pemangkasan',
-            nama_rincian_aktivitas: item.selectedRincian || 'Pemangkasan',
-            jumlah: String(weight),
-            satuan: 'kg',
-            keterangan: item.deskripsiPemangkasan || 'Pemangkasan rutin',
-            Lahan_id_lahan: 1,
-          } as any);
+          promises.push(
+            pemangkasanApi.create({
+              Aktivitas_id_aktivitas: '',
+              tanggal_aktivitas: new Date().toISOString().split('T')[0],
+              nama_jenis_aktivitas: 'Pemangkasan',
+              nama_rincian_aktivitas: item.selectedRincian || 'Pemangkasan',
+              jumlah: String(weight),
+              satuan: 'kg',
+              keterangan: item.deskripsiPemangkasan || 'Pemangkasan rutin',
+              Lahan_id_lahan: landId,
+            } as any)
+          );
 
           let feedName = 'Daun Alpukat (Mentah)';
           const rincian = (item.selectedRincian || '').toLowerCase();
@@ -767,29 +820,102 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             }
           }
 
-          const feedsList = await feedsApi.getList();
-          const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
-
-          if (existingFeed) {
-            try {
-              await feedsApi.updateStock(existingFeed.id, weight, 'tambah');
-            } catch {
-              await feedsApi.updateStok(existingFeed.id, weight, 'tambah');
-            }
-          } else {
-            await feedsApi.create({
-              feed_name: feedName,
-              feed_type: 'Hijauan',
-              unit: 'kg',
-              stock: weight
-            } as any);
-          }
+          promises.push(
+            (async () => {
+              try {
+                const feedsList = await feedsApi.getList();
+                const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
+                if (existingFeed) {
+                  try {
+                    await feedsApi.updateStock(existingFeed.id, weight, 'tambah');
+                  } catch {
+                    await feedsApi.updateStok(existingFeed.id, weight, 'tambah');
+                  }
+                } else {
+                  await feedsApi.create({
+                    feed_name: feedName,
+                    feed_type: 'Hijauan',
+                    unit: 'kg',
+                    stock: weight
+                  } as any);
+                }
+              } catch (err) {
+                console.error('Failed to update feed stock for circular ecosystem:', err);
+              }
+            })()
+          );
         }
+      } else if (typeLower === 'panen') {
+        const qty = parseInt(item.jumlahPanen || item.qty || item.amount || 0, 10);
+        promises.push(
+          panenApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Panen',
+            nama_rincian_aktivitas: item.selectedRincian || 'Panen Buah',
+            jumlah: isNaN(qty) ? 0 : qty,
+            satuan: item.unit || item.satuan || 'kg',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'pemberian obat' || typeLower === 'perawatan') {
+        const dosisVal = parseFloat(item.dosisPestisida || item.dosisObat || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Perawatan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pestisida',
+            jenis_bahan: 'obat',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: item.unit || 'ml',
+            bagian_pohon: item.bagianPohon || 'Daun',
+            teknik_perawatan: item.teknikPengendalian || 'Semprot',
+            nama_obat: item.namaPestisida || item.namaObat || 'Obat',
+            deskripsi: item.deskripsiPerawatan || 'Pemberian obat rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'pemupukan') {
+        const dosisVal = parseFloat(item.jumlahBeratPupuk || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Perawatan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pupuk',
+            jenis_bahan: 'pupuk',
+            fase_pohon: item.fasePohon || 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: item.unit || 'kg',
+            bagian_pohon: item.bagianPohon || 'Akar',
+            teknik_perawatan: item.teknikPemupukan || 'Tebar',
+            nama_obat: item.jenisPupukDetail || item.jenisPupuk || 'Pupuk',
+            deskripsi: item.deskripsiPemupukan || 'Pemupukan rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else {
+        promises.push(
+          aktivitasApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: input.type.charAt(0).toUpperCase() + input.type.slice(1),
+            nama_rincian_aktivitas: item.selectedRincian || 'Aktivitas rutin',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
       }
     }
+
+    await Promise.all(promises);
     return { success: true, message: 'Pencatatan kebun dieksekusi' };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Gagal mengeksekusi pencatatan kebun';
+    console.error('Error executing kebun submission:', err);
     return { success: false, message: msg };
   }
 }
@@ -811,8 +937,8 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
 
         let userId = task.idAccount;
         if (!userId) {
-          userId = "11111111-1111-1111-1111-111111111103"; // Fallback Operator Ternak
-          const defaultAcc = accountsList.value.find(acc => acc.username === 'operator');
+          userId = "11111111-1111-1111-1111-111111111106"; // Fallback Operator Ternak
+          const defaultAcc = accountsList.value.find(acc => acc.username === 'operator' || acc.username.includes('kandang'));
           if (defaultAcc) {
             userId = String(defaultAcc.id);
           }
@@ -836,6 +962,676 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
     }
   }
 
-  // Hanya me-return success, API execution ditahan hingga disetujui admin
-  return { success: true, message: 'Pencatatan berhasil dimasukkan ke antrean' };
+  const generatedId = `SUB-${Date.now().toString().slice(-6)}`;
+  const submissionData: any = {
+    id: generatedId,
+    type: input.type,
+    typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
+    operatorCode: input.operatorCode || 'OP001',
+    operatorName: input.operatorName || 'Operator Ternak',
+    cageCode: input.cageCode || 'A',
+    scope: input.scope,
+    summary: input.summary,
+    payload: input.payload,
+    submittedAt: new Date().toISOString(),
+    approvalStatus: 'pending',
+    taskId: input.taskId
+  };
+
+  try {
+    const created = await submissionsApi.create(submissionData);
+    const mapped = {
+      ...submissionData,
+      submittedAt: new Date(created.submittedAt || submissionData.submittedAt).getTime(),
+      approvalStatus: created.approvalStatus || 'pending'
+    };
+    pencatatanSubmissions.value.unshift(mapped);
+    return { success: true, message: 'Pencatatan berhasil dimasukkan ke antrean' };
+  } catch (err) {
+    console.warn('Backend unavailable, saving submission offline:', err);
+    const offlineList = loadLocalOfflineSubmissions();
+    offlineList.push(submissionData);
+    saveLocalOfflineSubmissions(offlineList);
+
+    const mapped = {
+      ...submissionData,
+      submittedAt: Date.now(),
+      isOfflineDraft: true,
+    };
+    pencatatanSubmissions.value.unshift(mapped);
+    return { success: true, message: 'Koneksi terputus. Pencatatan berhasil disimpan secara lokal di perangkat Anda.' };
+  }
 }
+
+export interface PencatatanSubmission {
+  id: string;
+  type: string;
+  typeLabel: string;
+  operatorCode: string;
+  operatorName: string;
+  cageCode: string;
+  scope: 'domba' | 'kandang';
+  summary: string;
+  payload: Record<string, unknown>;
+  submittedAt: number;
+  approvalStatus: ApprovalStatus;
+  reviewedAt?: number;
+  reviewedBy?: string;
+  reviewNote?: string;
+  taskId?: string;
+  isOfflineDraft?: boolean;
+}
+
+export interface RoutineSchedule {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  cageCode: string;
+  assigneeCode: string;
+  assigneeName: string;
+  frequency: string;
+  startDate?: string;
+  time: string;
+  endTime: string;
+  priority: 'rendah' | 'sedang' | 'tinggi';
+  daysOfWeek: number[];
+  dayOfMonth: number;
+  active: boolean;
+  rincian?: string;
+  createdAt: number;
+}
+
+// Pencatatan submissions — offline local storage queue
+const OFFLINE_STORAGE_KEY = 'farmease_offline_submissions';
+
+export const loadLocalOfflineSubmissions = (): PencatatanSubmission[] => {
+  const stored = localStorage.getItem(OFFLINE_STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const saveLocalOfflineSubmissions = (subs: PencatatanSubmission[]) => {
+  localStorage.setItem(OFFLINE_STORAGE_KEY, JSON.stringify(subs));
+};
+
+export const pencatatanSubmissions = ref<PencatatanSubmission[]>(
+  loadLocalOfflineSubmissions().map(item => ({ ...item, isOfflineDraft: true }))
+);
+
+export const submissionsLoading = ref(false);
+export const submissionsError = ref<string | null>(null);
+
+export async function fetchSubmissions() {
+  try {
+    submissionsLoading.value = true;
+    submissionsError.value = null;
+    const list = await submissionsApi.getList();
+    
+    // Parse backend submissions
+    const serverList = (list || []).map((s: any) => ({
+      id: s.id,
+      type: s.type,
+      typeLabel: s.typeLabel || s.type_label,
+      operatorCode: s.operatorCode || s.operator_code,
+      operatorName: s.operatorName || s.operator_name,
+      cageCode: s.cageCode || s.cage_code,
+      scope: s.scope,
+      summary: s.summary,
+      payload: s.payload,
+      submittedAt: s.submittedAt ? new Date(s.submittedAt).getTime() : Date.now(),
+      approvalStatus: s.approvalStatus || s.approval_status,
+      reviewedAt: s.reviewedAt ? new Date(s.reviewedAt).getTime() : undefined,
+      reviewedBy: s.reviewedBy || s.reviewed_by,
+      reviewNote: s.reviewNote || s.review_note,
+      taskId: s.taskId || s.task_id,
+      isOfflineDraft: false,
+    } as any));
+
+    // Merge with any offline drafts
+    const offlineList = loadLocalOfflineSubmissions().map(item => ({ ...item, isOfflineDraft: true }));
+    
+    // De-duplicate: filter out any offline drafts that have already been synced (same ID)
+    const filteredOffline = offlineList.filter(off => !serverList.some(srv => srv.id === off.id));
+
+    pencatatanSubmissions.value = [...filteredOffline, ...serverList];
+  } catch (err: any) {
+    submissionsError.value = err?.message || 'Gagal memuat antrean pencatatan';
+    console.error('Error fetching submissions:', err);
+    pencatatanSubmissions.value = loadLocalOfflineSubmissions().map(item => ({ ...item, isOfflineDraft: true }));
+  } finally {
+    submissionsLoading.value = false;
+  }
+}
+
+export async function syncOfflineSubmissions() {
+  if (!navigator.onLine) return;
+  const offlineList = loadLocalOfflineSubmissions();
+  if (offlineList.length === 0) return;
+
+  console.log(`Menyinkronkan ${offlineList.length} pencatatan offline ke backend...`);
+  const remainingOffline: any[] = [];
+
+  for (const sub of offlineList) {
+    try {
+      const payloadToSend = {
+        ...sub,
+        submittedAt: new Date(sub.submittedAt).toISOString(),
+      };
+      await submissionsApi.create(payloadToSend);
+    } catch (err) {
+      console.error(`Gagal menyinkronkan draf ${sub.id}:`, err);
+      remainingOffline.push(sub);
+    }
+  }
+
+  saveLocalOfflineSubmissions(remainingOffline);
+  await fetchSubmissions();
+}
+
+// Sync listener
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', syncOfflineSubmissions);
+  setTimeout(syncOfflineSubmissions, 3000);
+}
+
+const LOCAL_SCHEDULES_KEY = 'farmease_local_schedules';
+const localSchedules = ref<RoutineSchedule[]>([]);
+
+export const apiRoutineSchedules = ref<RoutineSchedule[]>([]);
+export const schedulesLoading = ref(false);
+
+export const routineSchedules = computed(() => {
+  return [...apiRoutineSchedules.value, ...localSchedules.value];
+});
+
+export async function fetchRoutineSchedules() {
+  try {
+    schedulesLoading.value = true;
+
+    // Pastikan master data kandang dan lahan ter-load agar mapping cageCode berhasil
+    if (cagesList.value.length === 0) {
+      await fetchCagesList();
+    }
+    if (landsList.value.length === 0) {
+      await fetchLandsList();
+    }
+
+    const list = await routineSchedulesApi.getList();
+    apiRoutineSchedules.value = (list || []).map(mapApiScheduleToLocal);
+  } catch (err) {
+    console.error('Error fetching routine schedules:', err);
+  } finally {
+    schedulesLoading.value = false;
+  }
+}
+
+export function mapApiScheduleToLocal(api: ApiRoutineSchedule): RoutineSchedule {
+  const startDate = (api.start_date || '').split('T')[0];
+  const time = api.start_time ? api.start_time.substring(0, 5) : '08:00';
+  const endTime = api.end_time ? api.end_time.substring(0, 5) : '';
+
+  // Resolve cage code from id_cage UUID using cagesList and landsList
+  let cageCode = '';
+  if (api.id_cage) {
+    const foundCage = cagesList.value.find((c) => String(c.id) === String(api.id_cage));
+    if (foundCage) {
+      cageCode = foundCage.code;
+    } else {
+      const foundLand = landsList.value.find((l) => String(l.id) === String(api.id_cage));
+      if (foundLand) {
+        cageCode = foundLand.code;
+      }
+    }
+  }
+  if (!cageCode) {
+    cageCode = 'A'; // default fallback for livestock schedules
+  }
+
+  // Resolve assigneeCode and assigneeName from id_account UUID dynamically
+  let assigneeCode = 'OP001';
+  let assigneeName = 'Operator Ternak';
+  if (api.id_account) {
+    const userIdStr = String(api.id_account);
+    const foundAcc = accountsList.value.find((acc) => String(acc.id) === userIdStr);
+    if (foundAcc) {
+      const cat = String(foundAcc.operator_category || '').toLowerCase();
+      if (cat.includes('kebun')) {
+        assigneeCode = 'OP002';
+        assigneeName = 'Operator Kebun';
+      } else if (cat.includes('ternak') || cat.includes('operator')) {
+        assigneeCode = 'OP001';
+        assigneeName = 'Operator Ternak';
+      } else if (cat.includes('pemilik') || foundAcc.username === 'pemilik') {
+        assigneeCode = 'PEM001';
+        assigneeName = 'Pemilik';
+      } else {
+        assigneeCode = 'OP001';
+        assigneeName = 'Operator Ternak';
+      }
+    } else {
+      if (userIdStr === '11111111-1111-1111-1111-111111111105' || userIdStr === '11111111-1111-1111-1111-111111111107' || userIdStr === 'OP002') {
+        assigneeCode = 'OP002';
+        assigneeName = 'Operator Kebun';
+      } else if (userIdStr === '11111111-1111-1111-1111-111111111104') {
+        assigneeCode = 'PEM001';
+        assigneeName = 'Pemilik';
+      } else {
+        assigneeCode = 'OP001';
+        assigneeName = 'Operator Ternak';
+      }
+    }
+  }
+
+  return {
+    id: api.id,
+    title: api.title,
+    description: api.description,
+    category: api.category,
+    cageCode,
+    assigneeCode,
+    assigneeName,
+    frequency: api.frequency,
+    startDate: startDate,
+    time: time,
+    endTime: endTime,
+    priority: (api.priority as any) || 'sedang',
+    daysOfWeek: api.days_of_week || [],
+    dayOfMonth: api.day_of_month || 1,
+    active: api.is_active,
+    rincian: api.rincian,
+    createdAt: api.created_at ? new Date(api.created_at).getTime() : Date.now(),
+  };
+}
+
+function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRoutineSchedule> {
+  // Resolve id_cage UUID from cageCode using cagesList and landsList
+  let idCage: string | undefined = undefined;
+  if (local.cageCode) {
+    const foundCage = cagesList.value.find((c) => String(c.code).toUpperCase() === String(local.cageCode).toUpperCase());
+    if (foundCage && foundCage.id !== undefined) {
+      idCage = String(foundCage.id);
+    } else {
+      const foundLand = landsList.value.find((l) => String(l.code).toUpperCase() === String(local.cageCode).toUpperCase());
+      if (foundLand && foundLand.id !== undefined) {
+        idCage = String(foundLand.id);
+      }
+    }
+  }
+
+  // Resolve id_account UUID from assigneeCode dynamically
+  let idAccount: string | undefined = undefined;
+  if (local.assigneeCode) {
+    const matchedAccount = accountsList.value.find((acc) => {
+      const cat = String(acc.operator_category || '').toLowerCase();
+      const username = String(acc.username || '').toLowerCase();
+      if (local.assigneeCode === 'OP002') {
+        return cat.includes('kebun') || username.includes('kebun');
+      } else if (local.assigneeCode === 'OP001') {
+        return cat.includes('ternak') || username.includes('ternak') || username.includes('kandang') || username === 'operator';
+      } else if (local.assigneeCode === 'PEM001') {
+        return cat.includes('pemilik') || username.includes('pemilik');
+      }
+      return false;
+    });
+
+    if (matchedAccount) {
+      idAccount = String(matchedAccount.id);
+    } else {
+      if (local.assigneeCode === 'OP002') {
+        idAccount = '11111111-1111-1111-1111-111111111105'; // Operator Kebun
+      } else if (local.assigneeCode === 'OP001') {
+        idAccount = '11111111-1111-1111-1111-111111111106'; // Operator Ternak
+      } else if (local.assigneeCode === 'PEM001') {
+        idAccount = '11111111-1111-1111-1111-111111111104'; // Pemilik
+      } else {
+        idAccount = '11111111-1111-1111-1111-111111111106'; // Fallback to Operator Ternak
+      }
+    }
+  }
+
+  const payload: Partial<ApiRoutineSchedule> = {
+    title: local.title,
+    description: local.description,
+    category: local.category,
+    frequency: local.frequency,
+    days_of_week: local.daysOfWeek,
+    day_of_month: local.dayOfMonth,
+    priority: local.priority,
+    id_cage: idCage,
+    id_account: idAccount,
+    rincian: local.rincian,
+    is_active: local.active,
+  };
+
+  if (local.startDate) {
+    payload.start_date = `${local.startDate}T00:00:00Z`;
+  }
+  if (local.time) {
+    payload.start_time = local.time.includes(':') ? (local.time.split(':').length === 2 ? `${local.time}:00` : local.time) : '08:00:00';
+  }
+  if (local.endTime) {
+    payload.end_time = local.endTime.includes(':') ? (local.endTime.split(':').length === 2 ? `${local.endTime}:00` : local.endTime) : '';
+  }
+
+  return payload;
+}
+
+export const pendingApprovalCount = computed(
+  () => pencatatanSubmissions.value.filter((s) => {
+    if (s.approvalStatus !== 'pending') return false;
+    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((s.type || '').toLowerCase());
+    return !isPerkebunan;
+  }).length,
+);
+
+export async function addRoutineSchedule(schedule: Omit<RoutineSchedule, 'id' | 'createdAt'>) {
+  try {
+    const apiPayload = mapLocalScheduleToApi(schedule);
+    const createdApi = await routineSchedulesApi.create(apiPayload);
+    const mapped = mapApiScheduleToLocal(createdApi);
+    apiRoutineSchedules.value.unshift(mapped);
+    await fetchTasks();
+  } catch (err: any) {
+    console.error('Error adding routine schedule:', err);
+    const status = err?.response?.status;
+    const message = err?.response?.data?.error_message || err?.response?.data?.message;
+    if (status === 409) {
+      alert(`Gagal: Jadwal dengan nama dan kandang yang sama sudah ada. Silakan ubah jadwal yang ada atau buat dengan nama berbeda.`);
+    } else {
+      alert(message ? `Gagal membuat jadwal: ${message}` : 'Gagal membuat jadwal rutin');
+    }
+  }
+}
+
+export async function updateRoutineSchedule(id: string, patch: Partial<Omit<RoutineSchedule, 'id' | 'createdAt'>>) {
+  try {
+    const apiPayload = mapLocalScheduleToApi(patch);
+    const updatedApi = await routineSchedulesApi.update(id, apiPayload);
+    const mapped = mapApiScheduleToLocal(updatedApi);
+    const i = apiRoutineSchedules.value.findIndex((s) => s.id === id);
+    if (i !== -1) {
+      apiRoutineSchedules.value[i] = mapped;
+    }
+    await fetchTasks();
+  } catch (err) {
+    console.error('Error updating routine schedule:', err);
+    alert('Gagal memperbarui jadwal rutin');
+  }
+}
+
+export async function deleteRoutineSchedule(id: string) {
+  try {
+    await routineSchedulesApi.delete(id);
+    apiRoutineSchedules.value = apiRoutineSchedules.value.filter((s) => s.id !== id);
+    await fetchTasks();
+  } catch (err) {
+    console.error('Error deleting routine schedule:', err);
+    alert('Gagal menghapus jadwal rutin');
+  }
+}
+
+export async function approveSubmission(id: string, reviewerName: string, note = '') {
+  const sub = pencatatanSubmissions.value.find((s) => s.id === id);
+  if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
+  
+  // Call API depending on type - exclude peternakan types to handle all gardening types correctly
+  const isPerkebunan = !['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'berat_badan', 'stok_pakan'].includes((sub.type || '').toLowerCase());
+  
+  const payloadToExecute: SubmitPencatatanInput = {
+    type: sub.type,
+    scope: sub.scope,
+    summary: sub.summary,
+    payload: sub.payload as any,
+    operatorCode: sub.operatorCode,
+    operatorName: sub.operatorName,
+    cageCode: sub.cageCode,
+    taskId: sub.taskId
+  };
+
+  let result;
+  if (isPerkebunan) {
+    result = await executeKebunApiSubmission(payloadToExecute);
+  } else {
+    result = await executeTernakApiSubmission(payloadToExecute);
+  }
+
+  if (result.success) {
+    try {
+      await submissionsApi.update(id, {
+        approvalStatus: 'approved',
+        reviewedBy: reviewerName,
+        reviewNote: note,
+        reviewedAt: Date.now(),
+      });
+      
+      sub.approvalStatus = 'approved';
+      sub.reviewedAt = Date.now();
+      sub.reviewedBy = reviewerName;
+      sub.reviewNote = note;
+
+      if (sub.taskId) {
+        try {
+          await completeTask(sub.taskId);
+        } catch (err) {
+          console.error('Failed to complete task (might be mock task):', err);
+        }
+      }
+
+      return { success: true, message: result.message };
+    } catch (err: any) {
+      console.error('Failed to update submission status on server:', err);
+      return { success: false, message: 'Gagal memperbarui status persetujuan di server: ' + err.message };
+    }
+  } else {
+    return { success: false, message: result.message };
+  }
+}
+
+export async function rejectSubmission(id: string, reviewerName: string, note: string) {
+  const sub = pencatatanSubmissions.value.find((s) => s.id === id);
+  if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
+  
+  try {
+    await submissionsApi.update(id, {
+      approvalStatus: 'rejected',
+      reviewedBy: reviewerName,
+      reviewNote: note,
+      reviewedAt: Date.now(),
+    });
+    
+    sub.approvalStatus = 'rejected';
+    sub.reviewedAt = Date.now();
+    sub.reviewedBy = reviewerName;
+    sub.reviewNote = note;
+    return { success: true, message: 'Pencatatan berhasil ditolak.' };
+  } catch (err: any) {
+    console.error('Failed to reject submission on server:', err);
+    return { success: false, message: 'Gagal menolak pencatatan di server: ' + err.message };
+  }
+}
+
+function formatTitleForApi(title: string, category: string): string {
+  const titleLower = title.toLowerCase();
+  if (category === 'pakan' && !titleLower.includes('pakan') && !titleLower.includes('makan')) {
+    return `${title} (Pakan)`;
+  }
+  if (category === 'kesehatan' && !titleLower.includes('sehat') && !titleLower.includes('sakit') && !titleLower.includes('obat') && !titleLower.includes('vitamin') && !titleLower.includes('kesehatan')) {
+    return `${title} (Kesehatan)`;
+  }
+  if (category === 'kotoran' && !titleLower.includes('kotoran') && !titleLower.includes('kohe') && !titleLower.includes('pupuk')) {
+    return `${title} (Kotoran)`;
+  }
+  if (category === 'perkawinan' && !titleLower.includes('kawin') && !titleLower.includes('breeding')) {
+    return `${title} (Perkawinan)`;
+  }
+  if (category === 'kelahiran' && !titleLower.includes('lahir') && !titleLower.includes('anak')) {
+    return `${title} (Kelahiran)`;
+  }
+  return title;
+}
+
+function formatDescriptionForApi(description: string, cageCode: string, rincian?: string): string {
+  const cleanDesc = (description || '').replace(/\s*\(Kandang\s+[A-C]\)/gi, '').trim();
+  let finalDesc = `${cleanDesc} (Kandang ${cageCode.toUpperCase()})`;
+  if (rincian) {
+    finalDesc += ` [Rincian: ${rincian}]`;
+  }
+  return finalDesc;
+}
+
+function mapAssigneeToUserId(assigneeCode: string): string {
+  if (assigneeCode) {
+    const matchedAccount = accountsList.value.find((acc) => {
+      const cat = String(acc.operator_category || '').toLowerCase();
+      const username = String(acc.username || '').toLowerCase();
+      if (assigneeCode === 'OP002') {
+        return cat.includes('kebun') || username.includes('kebun');
+      } else if (assigneeCode === 'OP001') {
+        return cat.includes('ternak') || username.includes('ternak') || username.includes('kandang') || username === 'operator';
+      } else if (assigneeCode === 'PEM001') {
+        return cat.includes('pemilik') || username.includes('pemilik');
+      }
+      return false;
+    });
+
+    if (matchedAccount) {
+      return String(matchedAccount.id);
+    }
+  }
+
+  // Fallback defaults matching seeder IDs
+  if (assigneeCode === 'OP002') {
+    return '11111111-1111-1111-1111-111111111105'; // Operator Kebun
+  } else if (assigneeCode === 'OP001') {
+    return '11111111-1111-1111-1111-111111111106'; // Operator Ternak
+  } else if (assigneeCode === 'PEM001') {
+    return '11111111-1111-1111-1111-111111111104'; // Pemilik
+  }
+  return '11111111-1111-1111-1111-111111111101'; // Admin fallback
+}
+
+export async function addOperatorTask(task: any) {
+  try {
+    const userId = mapAssigneeToUserId(task.assigneeCode);
+
+    const apiTitle = formatTitleForApi(task.title, task.category);
+    const apiDesc = formatDescriptionForApi(task.description, task.cageCode, task.rincian);
+
+    const rawTime = task.dueTime || '08:00';
+    let timeStr = rawTime.replace('.', ':');
+    if (!timeStr.includes(':')) {
+      const cleaned = timeStr.replace(/[^0-9]/g, '');
+      if (cleaned.length === 4) timeStr = `${cleaned.slice(0, 2)}:${cleaned.slice(2, 4)}`;
+      else if (cleaned.length === 3) timeStr = `0${cleaned.slice(0, 1)}:${cleaned.slice(1, 3)}`;
+      else if (cleaned.length <= 2) timeStr = `${cleaned.padStart(2, '0')}:00`;
+    }
+
+    // Convert local WIB time to UTC ISO string correctly
+    let isoDate: string;
+    if (task.dueDate) {
+      const localDt = new Date(`${task.dueDate}T${timeStr}:00`);
+      isoDate = localDt.toISOString();
+    } else {
+      isoDate = new Date().toISOString();
+    }
+
+    const payload = {
+      user_id: userId,
+      title: apiTitle,
+      description: apiDesc,
+      due_date: isoDate,
+      task_date: isoDate,
+      end_time: task.endTime || '',
+      status: task.status,
+      priority: task.priority,
+      category: task.category || 'umum'
+    };
+
+    const createdApiTask = await tasksApi.create(payload);
+    const localTask = mapApiTaskToLocal(createdApiTask);
+    operatorTasks.value.unshift(localTask);
+  } catch (err) {
+    console.error('Error adding operator task:', err);
+    let errMsg = err instanceof Error ? err.message : 'Gagal menambah tugas';
+    if (err && (err as any).response && (err as any).response.data) {
+      if ((err as any).response.data.error && (err as any).response.data.error.message) {
+        errMsg += '\nServer Error: ' + (err as any).response.data.error.message;
+      } else if ((err as any).response.data.message) {
+        errMsg += '\nServer Error: ' + (err as any).response.data.message;
+      }
+    }
+    alert(errMsg);
+  }
+}
+
+export async function updateOperatorTask(id: string, patch: any) {
+  try {
+    const userId = mapAssigneeToUserId(patch.assigneeCode);
+
+    const apiTitle = formatTitleForApi(patch.title, patch.category);
+    const apiDesc = formatDescriptionForApi(patch.description, patch.cageCode, patch.rincian);
+
+    const timeStr = patch.dueTime || '08:00';
+    let isoDate: string;
+    if (patch.dueDate) {
+      const localDt = new Date(`${patch.dueDate}T${timeStr}:00`);
+      isoDate = localDt.toISOString();
+    } else {
+      isoDate = new Date().toISOString();
+    }
+
+    const existingStatus = operatorTasks.value.find(t => t.id === id)?.status || 'belum';
+    const payload = {
+      user_id: userId,
+      title: apiTitle,
+      description: apiDesc,
+      due_date: isoDate,
+      task_date: isoDate,
+      end_time: patch.endTime || '',
+      status: patch.status || existingStatus,
+      priority: patch.priority,
+      category: patch.category || 'umum'
+    };
+
+    console.log('Updating task payload:', payload);
+    const updatedApiTask = await tasksApi.update(id, payload);
+    const localTask = mapApiTaskToLocal(updatedApiTask);
+    const index = operatorTasks.value.findIndex(t => t.id === id);
+    if (index !== -1) {
+      operatorTasks.value[index] = localTask;
+    }
+  } catch (err) {
+    console.error('Error updating operator task:', err);
+    let errMsg = err instanceof Error ? err.message : 'Gagal memperbarui tugas';
+    if (err && (err as any).response && (err as any).response.data) {
+      if ((err as any).response.data.error && (err as any).response.data.error.message) {
+        errMsg += '\nServer Error: ' + (err as any).response.data.error.message;
+      } else if ((err as any).response.data.message) {
+        errMsg += '\nServer Error: ' + (err as any).response.data.message;
+      }
+    }
+    alert(errMsg);
+  }
+}
+
+export async function deleteOperatorTask(id: string) {
+  try {
+    await tasksApi.delete(id);
+    operatorTasks.value = operatorTasks.value.filter(t => t.id !== id);
+  } catch (err) {
+    console.error('Error deleting operator task:', err);
+    alert(err instanceof Error ? err.message : 'Gagal menghapus tugas');
+  }
+}
+
+export async function generateTasksFromSchedules(date?: string) {
+  try {
+    await routineSchedulesApi.generate(7);
+    await fetchTasks(date);
+    alert('Berhasil menyinkronkan tugas rutin untuk 7 hari ke depan.');
+  } catch (err) {
+    console.error('Error generating tasks from schedules:', err);
+    alert('Gagal menyinkronkan tugas rutin');
+  }
+}
+

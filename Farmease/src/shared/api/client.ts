@@ -6,7 +6,9 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+export const SSO_API_BASE_URL = import.meta.env.VITE_SSO_API_URL || 'http://localhost:8080'
+export const PETERNAKAN_API_BASE_URL = import.meta.env.VITE_PETERNAKAN_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
+export const KEBUN_API_BASE_URL = import.meta.env.VITE_KEBUN_API_URL || 'http://localhost:8082'
 
 export interface ApiResponse<T = any> {
   status: string
@@ -14,12 +16,12 @@ export interface ApiResponse<T = any> {
   data: T
 }
 
-class ApiClient {
+export class ApiClient {
   private client: AxiosInstance
 
-  constructor() {
+  constructor(baseURL: string) {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: baseURL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -98,4 +100,8 @@ class ApiClient {
   }
 }
 
-export default new ApiClient()
+export const ssoClient = new ApiClient(SSO_API_BASE_URL)
+export const peternakanClient = new ApiClient(PETERNAKAN_API_BASE_URL)
+export const kebunClient = new ApiClient(KEBUN_API_BASE_URL)
+
+export default peternakanClient

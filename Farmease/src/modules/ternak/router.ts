@@ -33,6 +33,11 @@ export const ternakRoutes: RouteRecordRaw[] = [
             name: 'ternak-detail',
             component: () => import('./views/LivestockDetailView'),
           },
+          {
+            path: 'pencatatan/form',
+            name: 'ternak-pencatatan-form',
+            component: () => import('./views/RecordFormView'),
+          },
         ],
       },
       {

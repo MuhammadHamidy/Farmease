@@ -15,10 +15,19 @@ type Mating struct {
 	InbreedingFlag          bool        `json:"inbreeding_flag" db:"inbreeding_flag"`
 	CoefficientOfInbreeding float64     `json:"coefficient_of_inbreeding" db:"coefficient_of_inbreeding"`
 	Notes                   string      `json:"notes" db:"notes"`
+	StrawCode               string      `json:"straw_code" db:"straw_code"`
+	Inseminator             string      `json:"inseminator" db:"inseminator"`
+	ExternalDonor           *ExternalDonor `json:"external_donor,omitempty" db:"-"`
 	MaleSheep               *SheepShort `json:"male_sheep,omitempty"`
 	FemaleSheep             *SheepShort `json:"female_sheep,omitempty"`
+	DaysSinceMating         int         `json:"days_since_mating,omitempty" db:"-"`
 	CreatedAt               time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt               time.Time   `json:"updated_at" db:"updated_at"`
+}
+
+type ExternalDonor struct {
+	Name   string `json:"name"`
+	Origin string `json:"origin"`
 }
 
 type SheepShort struct {

@@ -7,7 +7,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE livestock.sheep_status_enum AS ENUM ('aktif', 'hamil', 'dijual', 'mati', 'disembelih');
+    CREATE TYPE livestock.sheep_status_enum AS ENUM ('aktif', 'hamil', 'dijual', 'mati', 'disembelih', 'eksternal');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -24,8 +24,9 @@ CREATE TABLE IF NOT EXISTS livestock.sheep (
     id_type UUID REFERENCES master.sheep_types(id_type),
     id_father UUID REFERENCES livestock.sheep(id_sheep),
     id_mother UUID REFERENCES livestock.sheep(id_sheep),
-    created_by UUID REFERENCES auth.accounts(id_account),
-    updated_by UUID REFERENCES auth.accounts(id_account),
+    photo_url VARCHAR(255),
+    created_by UUID,
+    updated_by UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -2,14 +2,12 @@ import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import '@/modules/admin/assets/css/modules/AdminPage.css';
 import { userSession, cageSession } from '@/store/navigation';
-import { pendingApprovalCount } from '@/modules/ternak/store/operatorAdmin';
+import { pendingApprovalCount } from '@/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
 import DasborPeternakanView from './DasborPeternakanView.tsx';
-import DasborPerkebunanView from './DasborPerkebunanView.tsx';
 import RoutineScheduleView from './RoutineScheduleView.tsx';
 import PencatatanApprovalView from './PencatatanApprovalView.tsx';
 import CageManagementView from './CageManagementView.tsx';
-import LandManagementView from './LandManagementView.tsx';
 
 export default defineComponent({
   name: 'AdminPage',
@@ -21,7 +19,9 @@ export default defineComponent({
     const handleLogout = () => {
       userSession.value = null;
       cageSession.value = null;
-      router.push({ name: 'home' });
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.location.href = 'http://localhost:3000/';
     };
 
     return () => {
@@ -67,14 +67,6 @@ export default defineComponent({
                   <img src="/icon/dashboard/green-24.svg" alt="Dasbor Peternakan" class="menu-icon" />
                   <span>Dasbor Peternakan</span>
                 </button>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'dasbor_kebun' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'dasbor_kebun'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/statistic.png" alt="Dasbor Perkebunan" class="menu-icon" />
-                  <span>Dasbor Perkebunan</span>
-                </button>
               </div>
 
               {/* Peternakan Category */}
@@ -95,27 +87,6 @@ export default defineComponent({
                 >
                   <img src="/icon/schedule/green-24.svg" alt="Jadwal" class="menu-icon" />
                   <span>Jadwal Rutin Peternakan</span>
-                </button>
-              </div>
-
-              {/* Perkebunan Category */}
-              <div class="menu-category">
-                <span class="category-label">Perkebunan</span>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'lahan' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'lahan'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/lahan.png" alt="Lahan" class="menu-icon" />
-                  <span>Manajemen Lahan</span>
-                </button>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'jadwal' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'jadwal'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/schedule/green-24.svg" alt="Jadwal" class="menu-icon" />
-                  <span>Jadwal Rutin Perkebunan</span>
                 </button>
               </div>
 
@@ -147,48 +118,43 @@ export default defineComponent({
                 <span>Keluar Panel</span>
               </button>
             </div>
-          </aside>
+            </aside>
 
-          {/* ── Mobile Hamburger Header ── */}
-          <div class="mobile-header d-flex d-md-none justify-content-between align-items-center px-3">
-            <button 
-              type="button" 
-              class="btn p-0 border-0 text-dark" 
-              onClick={() => isSidebarOpen.value = !isSidebarOpen.value}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-            </button>
-            <Typography variant="span" weight="extrabold" size="text-sm" color="coffee-brown">FARMease Admin</Typography>
-            <div style={{ width: '24px' }}></div>
-          </div>
-
-          {/* Mobile Overlay */}
-          {isSidebarOpen.value && (
-            <div class="sidebar-overlay d-md-none" onClick={() => isSidebarOpen.value = false} />
-          )}
-
-          {/* ── Main Panel Content ── */}
-          <div class="admin-main-content">
-            <div class="admin-content-inner">
-              {activeTab.value === 'dasbor_ternak' && <DasborPeternakanView />}
-              {activeTab.value === 'dasbor_kebun' && <DasborPerkebunanView />}
-              {activeTab.value === 'kandang' && <CageManagementView />}
-              {activeTab.value === 'jadwal_ternak' && <RoutineScheduleView type="peternakan" />}
-
-              {activeTab.value === 'jadwal' && <RoutineScheduleView type="perkebunan" />}
-              {activeTab.value === 'lahan' && <LandManagementView />}
-              {activeTab.value === 'persetujuan' && <PencatatanApprovalView />}
+            {/* ── Mobile Hamburger Header ── */}
+            <div class="mobile-header d-flex d-md-none justify-content-between align-items-center px-3">
+              <button 
+                type="button" 
+                class="btn p-0 border-0 text-dark" 
+                onClick={() => isSidebarOpen.value = !isSidebarOpen.value}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+              <Typography variant="span" weight="extrabold" size="text-sm" color="coffee-brown">FARMease Admin</Typography>
+              <div style={{ width: '24px' }}></div>
             </div>
+
+            {/* Mobile Overlay */}
+            {isSidebarOpen.value && (
+              <div class="sidebar-overlay d-md-none" onClick={() => isSidebarOpen.value = false} />
+            )}
+
+            {/* ── Main Panel Content ── */}
+            <div class="admin-main-content">
+              <div class="admin-content-inner">
+                {activeTab.value === 'dasbor_ternak' && <DasborPeternakanView />}
+                {activeTab.value === 'kandang' && <CageManagementView />}
+                {activeTab.value === 'jadwal_ternak' && <RoutineScheduleView type="peternakan" />}
+                {activeTab.value === 'persetujuan' && <PencatatanApprovalView />}
+              </div>
+            </div>
+
           </div>
-
         </div>
-      </div>
-    );
-  };
-},
+      );
+    };
+  },
 });
-

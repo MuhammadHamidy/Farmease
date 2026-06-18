@@ -1,2 +1,0 @@
-DROP TABLE IF EXISTS operations.notifications CASCADE;
-DROP SCHEMA IF EXISTS operations CASCADE;

@@ -1,0 +1,34 @@
+/* ── StatCard ───────────────────────────────────────────── */
+.stat-card {
+  border-radius: 1rem;
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  box-shadow: 0 4px 16px rgba(40,54,24,0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(40,54,24,0.2);
+}
+.stat-card-icon {
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+.stat-card-value {
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+.stat-card-label {
+  opacity: 0.85;
+  margin: 0 !important;
+}
+.stat-card-sub {
+  opacity: 0.65;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+  margin-top: 0.25rem;
+}

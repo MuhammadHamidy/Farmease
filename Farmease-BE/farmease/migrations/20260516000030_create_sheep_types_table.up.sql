@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS master;
+
 CREATE TABLE IF NOT EXISTS master.sheep_types (
     id_type UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type_name VARCHAR(100) NOT NULL,

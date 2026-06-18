@@ -8,7 +8,6 @@ import DashboardView from './DashboardView';
 import RecordView from './RecordView';
 import HistoryView from './HistoryView';
 import LivestockDetailView from './LivestockDetailView';
-import RecordFormView from './RecordFormView';
 
 const tabs = [
   { id: 'dasbor',      label: 'Dasbor & Ternak' },
@@ -66,7 +65,7 @@ export default defineComponent({
       localStorage.removeItem('user');
       userSession.value = null;
       cageSession.value = null;
-      router.push({ name: 'home' });
+      window.location.href = 'http://localhost:3000/';
     };
 
     const getCageBadgeClass = (type: string) => {
@@ -85,7 +84,7 @@ export default defineComponent({
             <div class="header-left-group">
               <div 
                 class="peternakan-logo-container" 
-                onClick={() => router.push({ name: 'home' })} 
+                onClick={() => { window.location.href = 'http://localhost:3000/'; }} 
                 style={{ cursor: 'pointer' }}
               >
                 <img src="/icon/logo_farmease.png" alt="FARMease" style={{ height: '44px', objectFit: 'contain' }} />
@@ -154,8 +153,8 @@ export default defineComponent({
               {/* Logout Button */}
               <button 
                 class="header-logout-btn" 
-                onClick={() => { userSession.value = null; cageSession.value = null; router.push({ name: 'home' }) }}
-                title="Keluar"
+                onClick={() => { cageSession.value = null; router.push({ name: 'ternak-pilih-kandang' }) }}
+                title="Keluar ke Pilih Kandang"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -183,7 +182,6 @@ export default defineComponent({
 
           <div class="peternakan-content">
             <router-view />
-            <RecordFormView />
           </div>
 
           {/* Notification Detail Modal */}

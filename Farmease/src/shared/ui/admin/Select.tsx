@@ -8,7 +8,8 @@ export default defineComponent({
     modelValue: { type: String, default: '' },
     options: { type: Array as PropType<string[] | { value: string; label: string }[]>, required: true },
     placeholder: { type: String, default: 'Pilih' },
-    theme: { type: String, default: 'peternakan' }
+    theme: { type: String, default: 'peternakan' },
+    disabled: { type: Boolean, default: false }
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -29,7 +30,10 @@ export default defineComponent({
       return found ? found.label : props.placeholder;
     };
 
-    const toggleOpen = () => isOpen.value = !isOpen.value;
+    const toggleOpen = () => {
+      if (props.disabled) return;
+      isOpen.value = !isOpen.value;
+    };
 
     const selectOption = (val: string) => {
       emit('update:modelValue', val);
@@ -50,10 +54,19 @@ export default defineComponent({
         <div 
           class={['custom-select', isOpen.value ? 'is-open' : '']}
           onClick={toggleOpen}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', minHeight: '38px', justifyContent: 'space-between', paddingRight: '2.25rem' }}
+          style={{ 
+            cursor: props.disabled ? 'not-allowed' : 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            minHeight: '38px', 
+            justifyContent: 'space-between', 
+            paddingRight: '2.25rem',
+            backgroundColor: props.disabled ? '#e9ecef' : '',
+            color: props.disabled ? '#6c757d' : ''
+          }}
         >
           <span style={{ 
-            color: (props.modelValue && normalizedOptions().some(o => String(o.value) === String(props.modelValue))) ? 'inherit' : 'var(--ui-text-muted)', 
+            color: props.disabled ? '#6c757d' : ((props.modelValue && normalizedOptions().some(o => String(o.value) === String(props.modelValue))) ? 'inherit' : 'var(--ui-text-muted)'), 
             fontWeight: (props.modelValue && normalizedOptions().some(o => String(o.value) === String(props.modelValue))) ? 'inherit' : '400',
             overflow: 'hidden', 
             textOverflow: 'ellipsis', 

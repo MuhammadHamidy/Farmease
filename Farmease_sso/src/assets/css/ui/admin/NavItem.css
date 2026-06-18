@@ -1,0 +1,22 @@
+.nav-item-box {
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.nav-item-box.active {
+  background-color: var(--color-secondary, #a78d78);
+  color: var(--color-on-secondary, #fff);
+}
+
+.nav-item-box.inactive {
+  background-color: var(--color-surface-container, #ede8e0);
+  color: var(--color-on-surface-variant, #4a423a);
+}
+
+.nav-item-box:hover.inactive {
+  background-color: var(--color-surface-container-high, #e5ddd5);
+  color: var(--color-primary, #3d2f24);
+}

@@ -14,6 +14,33 @@ type routineScheduleRepository struct {
 }
 
 func NewRoutineScheduleRepository(db *pgxpool.Pool) domain.RoutineScheduleRepository {
+	// Clean up duplicate schedules and tasks on startup
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, _ = db.Exec(ctx, `
+		DELETE FROM operations.tasks
+		WHERE schedule_id IN (
+			SELECT id FROM operations.routine_schedules
+			WHERE id NOT IN (
+				SELECT DISTINCT ON (title, category, frequency, COALESCE(start_time::TEXT, ''), COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''))
+					id
+				FROM operations.routine_schedules
+				ORDER BY title, category, frequency, COALESCE(start_time::TEXT, ''), COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''), created_at ASC
+			)
+		);
+	`)
+
+	_, _ = db.Exec(ctx, `
+		DELETE FROM operations.routine_schedules
+		WHERE id NOT IN (
+			SELECT DISTINCT ON (title, category, frequency, COALESCE(start_time::TEXT, ''), COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''))
+				id
+			FROM operations.routine_schedules
+			ORDER BY title, category, frequency, COALESCE(start_time::TEXT, ''), COALESCE(id_cage::TEXT, ''), COALESCE(id_account::TEXT, ''), created_at ASC
+		);
+	`)
+
 	return &routineScheduleRepository{db: db}
 }
 

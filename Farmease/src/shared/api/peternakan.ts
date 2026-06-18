@@ -41,6 +41,7 @@ export interface Sheep {
   id_cage: string | number
   id_type: string | number
   type_name?: string
+  photo_url?: string
   id_father?: string | number
   id_mother?: string | number
   created_by: string | number
@@ -69,6 +70,22 @@ export const sheepApi = {
   },
   getSilsilah: async (id: string | number): Promise<any> => {
     return await apiClient.get(`/api/sheep/${id}/silsilah`)
+  },
+  registerExternalDonor: async (name: string, origin: string): Promise<Sheep> => {
+    return await apiClient.post('/api/sheep/external-donor', { name, origin })
+  },
+}
+
+export const uploadApi = {
+  uploadPhoto: async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append('photo', file)
+    const response = await apiClient.post('/api/upload/photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.photo_url || response.data?.photo_url || ''
   },
 }
 
@@ -195,6 +212,9 @@ export const feedsApi = {
   getRecommendation: async (sheepId: string | number): Promise<any> => {
     return await apiClient.get(`/api/sheep/${sheepId}/feed-recommendation`)
   },
+  getRecommendationByCage: async (cageId: string | number): Promise<any> => {
+    return await apiClient.get(`/api/pakan/rekomendasi/kandang/${cageId}`)
+  },
   getFeedingHistory: async (sheepId: string | number): Promise<any[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/feedings`)
   },
@@ -250,14 +270,14 @@ export interface Breeding {
 export const breedingApi = {
   checkInbreeding: async (maleId: string | number, femaleId: string | number): Promise<any> => {
     return await apiClient.post('/api/matings/check-inbreeding', {
-      id_male_sheep: maleId,
-      id_female_sheep: femaleId,
+      id_sheep_male: maleId,
+      id_sheep_female: femaleId,
     })
   },
   cekInbreeding: async (maleId: string | number, femaleId: string | number): Promise<any> => {
     return await apiClient.post('/api/perkawinan/cek-inbreeding', {
-      id_male_sheep: maleId,
-      id_female_sheep: femaleId,
+      id_sheep_male: maleId,
+      id_sheep_female: femaleId,
     })
   },
   getMatingList: async (filters?: any): Promise<Breeding[]> => {
@@ -295,6 +315,9 @@ export const pregnancyApi = {
   },
   updateStatus: async (pregnancyId: string | number, status: string): Promise<Pregnancy> => {
     return await apiClient.patch(`/api/pregnancies/${pregnancyId}/status`, { status })
+  },
+  checkPregnancy: async (payload: any): Promise<any> => {
+    return await apiClient.post('/api/pregnancies/check', payload)
   },
 }
 
@@ -421,6 +444,43 @@ export const routineSchedulesApi = {
   },
 }
 
+// ============ Submissions ============
+export interface ApiSubmission {
+  id: string
+  type: string
+  typeLabel: string
+  operatorCode: string
+  operatorName: string
+  cageCode: string
+  scope: string
+  summary: string
+  payload: any
+  submittedAt: number | string
+  approvalStatus: string
+  reviewedAt?: number | string
+  reviewedBy?: string
+  reviewNote?: string
+  taskId?: string
+}
+
+export const submissionsApi = {
+  getList: async (filters?: { status?: string; type?: string }): Promise<ApiSubmission[]> => {
+    return await apiClient.get('/api/submissions', { params: filters })
+  },
+  getById: async (id: string): Promise<ApiSubmission> => {
+    return await apiClient.get(`/api/submissions/${id}`)
+  },
+  create: async (payload: Partial<ApiSubmission>): Promise<ApiSubmission> => {
+    return await apiClient.post('/api/submissions', payload)
+  },
+  update: async (id: string, payload: Partial<ApiSubmission>): Promise<any> => {
+    return await apiClient.put(`/api/submissions/${id}`, payload)
+  },
+  delete: async (id: string): Promise<void> => {
+    return await apiClient.delete(`/api/submissions/${id}`)
+  },
+}
+
 export default {
   farms: farmsApi,
   sheep: sheepApi,
@@ -435,4 +495,5 @@ export default {
   tasks: tasksApi,
   notifications: notificationsApi,
   routineSchedules: routineSchedulesApi,
+  submissions: submissionsApi,
 }

@@ -1,0 +1,22 @@
+{
+  "app_name": "farmease-perkebunan",
+  "port": 8082,
+  "read_wait_timeout": "30s",
+  "write_wait_timeout": "30s",
+  "body_limit": 4194304,
+  "cors_allowed_origins": "*",
+  "enable_compress": true,
+  "postgres_url": "postgres://user:pass@localhost:5435/farmease_kebun?sslmode=disable",
+  "redis_address": "localhost:6381",
+  "redis_password": "",
+  "redis_db": 0,
+  "ssoApiUrl": "http://localhost:8080",
+  "redirectUrl": "http://localhost:3000/callback",
+  "jwtSecret": "farmease-secret-key-123",
+  "log_level": "debug",
+  "log_format": "console",
+  "service_name": "farmease",
+  "exporter": "stdout",
+  "endpoint": "localhost:4317",
+  "insecure": true
+}

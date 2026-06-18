@@ -35,6 +35,19 @@ export default defineComponent({
       Sakit: 'danger',
     };
 
+    const SHEEP_TYPES: Record<string, string> = {
+      '22222222-2222-2222-2222-222222222201': 'Garut',
+      '22222222-2222-2222-2222-222222222202': 'Texel',
+      '22222222-2222-2222-2222-222222222203': 'Dorper',
+      '22222222-2222-2222-2222-222222222204': 'Merino',
+      '22222222-2222-2222-2222-222222222205': 'F2 Dorper',
+      '22222222-2222-2222-2222-222222222206': 'F2 Garut',
+    };
+
+    const getSheepTypeName = (typeId: string) => {
+      return SHEEP_TYPES[typeId] || typeId || '—';
+    };
+
     return () => (
       <div class="bg-white rounded-5 border shadow-sm p-4 p-md-5">
         <div class="mb-4">
@@ -94,18 +107,25 @@ export default defineComponent({
               <div class="col-12 col-md-6 col-xl-3" key={t.id}>
                 <div class="peternakan-item-card h-100 flex-column align-items-stretch" style={{ cursor: 'pointer' }} onClick={() => router.push({ name: 'ternak-detail', params: { id: t.id } })}>
                   <div class="d-flex align-items-center gap-3">
-                    <div class="peternakan-item-icon-box position-relative">
-                      <img src="/icon/domba.png" style={{ width: '30px', height: '30px', objectFit: 'contain' }} alt="Domba" />
+                    <div class="peternakan-item-icon-box position-relative" style={{ width: '48px', height: '48px', flexShrink: 0, overflow: 'hidden', borderRadius: '50%', background: 'var(--bs-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {t.photo_url ? (
+                        <img src={`http://localhost:8081${t.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                      ) : (
+                        <img src="/icon/domba.png" style={{ width: '30px', height: '30px', objectFit: 'contain' }} alt="Domba" />
+                      )}
                     </div>
                     <div class="peternakan-item-main">
-                      <span class="peternakan-item-headline">{t.name}</span>
-                      <span class="peternakan-item-subline">{t.code} • Kandang {t.cage_code}</span>
+                      <span class="peternakan-item-headline d-block mb-1">{t.name}</span>
+                      <div class="d-flex flex-wrap gap-1 mt-1">
+                        <span class="badge bg-light text-secondary border border-light-subtle rounded-pill" style={{ fontSize: '0.65rem', fontWeight: 600 }}>ID: {t.code}</span>
+                        <span class="badge bg-light text-secondary border border-light-subtle rounded-pill" style={{ fontSize: '0.65rem', fontWeight: 600 }}>Kandang {t.cage_code}</span>
+                      </div>
                     </div>
                   </div>
 
                   <div class="d-flex flex-wrap gap-2 mt-3 mb-3">
                     <Badge variant={(statusColor[t.status] || 'success') as any} className="px-2">{t.status}</Badge>
-                    <Badge variant="secondary" className="px-2">{t.type}</Badge>
+                    <Badge variant="secondary" className="px-2">{getSheepTypeName(t.type)}</Badge>
                     <Badge variant="secondary" className="px-2">{t.gender}</Badge>
                   </div>
 

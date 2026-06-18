@@ -18,8 +18,12 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@sso': fileURLToPath(new URL('./src/modules/sso', import.meta.url)),
       '@ternak': fileURLToPath(new URL('./src/modules/ternak', import.meta.url)),
-      '@kebun': fileURLToPath(new URL('./src/modules/kebun', import.meta.url)),
       '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
+    },
+  },
+  server: {
+    watch: {
+      usePolling: true,
     },
   },
 })

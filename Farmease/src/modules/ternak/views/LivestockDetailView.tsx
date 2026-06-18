@@ -4,6 +4,7 @@ import { cagesList } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import BackButton from '@/shared/ui/BackButton';
+import { pregnancyApi } from '@/shared/api';
 import { 
   currentSheepDetail, currentSilsilah, currentHealthRecords, currentWeightRecords, currentMatingRecords,
   fetchSheepById, fetchSilsilah, fetchHealthForSheep, fetchWeightForSheep, fetchMatingForSheep, sheep, detailLoading
@@ -78,32 +79,30 @@ export default defineComponent({
       () => selectedTernakId.value,
       async (id) => {
         if (!id) return;
-        const numId = Number(id);
-        if (isNaN(numId)) return;
         await Promise.all([
-          fetchSheepById(numId),
-          fetchSilsilah(numId),
-          fetchHealthForSheep(numId),
-          fetchWeightForSheep(numId),
-          fetchMatingForSheep(numId),
+          fetchSheepById(id),
+          fetchSilsilah(id),
+          fetchHealthForSheep(id),
+          fetchWeightForSheep(id),
+          fetchMatingForSheep(id),
         ]);
       },
       { immediate: true },
     );
     
     const refreshData = async () => {
-      const numId = Number(selectedTernakId.value);
-      if (!isNaN(numId)) {
+      const id = selectedTernakId.value;
+      if (id) {
         await Promise.all([
-          fetchSheepById(numId),
-          fetchSilsilah(numId),
-          fetchHealthForSheep(numId),
-          fetchWeightForSheep(numId),
-          fetchMatingForSheep(numId),
+          fetchSheepById(id),
+          fetchSilsilah(id),
+          fetchHealthForSheep(id),
+          fetchWeightForSheep(id),
+          fetchMatingForSheep(id),
         ]);
       }
     };
-
+    
     const t = computed(() => {
       if (currentSheepDetail.value) {
         const d = currentSheepDetail.value as any;
@@ -147,6 +146,7 @@ export default defineComponent({
           tgl_lahir: birthDate,
           kandang: kandangStr,
           asal: (d as any).origin || '—',
+          photo_url: d.photo_url || null,
         };
       }
       if (sheepFromList.value) {
@@ -188,6 +188,7 @@ export default defineComponent({
             : '—',
           kandang: kandangStr,
           asal: s.origin || '—',
+          photo_url: s.photo_url || null,
         };
       }
       return null;
@@ -242,6 +243,30 @@ export default defineComponent({
       return null;
     });
 
+    const handleReportMiscarriage = async () => {
+      if (!confirm('Apakah Anda yakin ingin melaporkan keguguran untuk domba ini? Status kehamilan akan dibatalkan.')) return;
+      
+      try {
+        const pregnancies = await pregnancyApi.getList();
+        const activePregnancy = pregnancies.find((p: any) => 
+          (String(p.mother_sheep?.id_sheep) === String(selectedTernakId.value) || 
+           String(p.dam_sheep?.id_sheep) === String(selectedTernakId.value)) && 
+          p.pregnancy_status === 'dikandung'
+        );
+        
+        if (activePregnancy) {
+          await pregnancyApi.updateStatus(activePregnancy.id_pregnancy, 'keguguran');
+          alert('Berhasil melaporkan keguguran.');
+          await refreshData();
+        } else {
+          alert('Data kehamilan aktif untuk domba ini tidak ditemukan.');
+        }
+      } catch (e) {
+        console.error('Failed to report miscarriage:', e);
+        alert('Gagal melaporkan keguguran.');
+      }
+    };
+
     return () => {
       if (detailLoading.value && !t.value) {
         return (
@@ -271,8 +296,12 @@ export default defineComponent({
 
           {/* Detail Header */}
           <div class="detail-header-card d-flex flex-column flex-md-row gap-4 align-items-start" style={{ background: 'var(--color-primary)', border: 'none', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(61, 47, 36, 0.15)' }}>
-            <div class="detail-avatar-box d-flex align-items-center justify-content-center" style={{ background: 'var(--color-surface)', border: '2px solid var(--color-surface-container-high)', borderRadius: '16px', padding: '1.25rem', flexShrink: 0 }}>
-              <img src="/icon/domba.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} alt="Domba" />
+            <div class="detail-avatar-box d-flex align-items-center justify-content-center" style={{ background: 'var(--color-surface)', border: '2px solid var(--color-surface-container-high)', borderRadius: '16px', padding: ternak.photo_url ? '0' : '1.25rem', flexShrink: 0, overflow: 'hidden', width: '120px', height: '120px' }}>
+              {ternak.photo_url ? (
+                <img src={`http://localhost:8081${ternak.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+              ) : (
+                <img src="/icon/domba.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} alt="Domba" />
+              )}
             </div>
             <div class="grow w-100">
               <div class="d-flex align-items-center justify-content-between mb-1">
@@ -288,9 +317,8 @@ export default defineComponent({
                 </div>
 
                 <button 
-                  class="btn btn-outline-light rounded-pill d-flex align-items-center gap-2 fw-bold ms-auto"
+                  class="btn rounded-pill d-flex align-items-center gap-2 fw-bold ms-auto btn-edit-profile"
                   onClick={() => showEditProfileModal.value = true}
-                  style={{ fontSize: '0.85rem', color: 'var(--color-surface)', borderColor: 'var(--color-surface)' }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
@@ -344,6 +372,25 @@ export default defineComponent({
               </div>
             </div>
           </div>
+
+          {String(ternak.status).toLowerCase() === 'hamil' && (
+            <div class="alert alert-warning d-flex align-items-center justify-content-between p-3 rounded-4 mb-4" style={{ border: '1.5px solid #ffc107', background: '#fffbeb' }}>
+              <div class="d-flex align-items-center gap-3">
+                <span style={{ fontSize: '1.5rem' }}>🤰</span>
+                <div class="text-start">
+                  <Typography variant="p" className="m-0 fw-bold text-dark" size="text-sm">Domba ini sedang dalam masa kehamilan.</Typography>
+                  <Typography variant="p" className="m-0 text-muted d-block" size="text-xs">Laporkan keguguran jika domba mengalami keguguran sebelum masa kelahiran.</Typography>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                class="btn btn-danger btn-sm rounded-pill px-3 fw-bold shadow-sm"
+                onClick={handleReportMiscarriage}
+              >
+                Lapor Keguguran
+              </button>
+            </div>
+          )}
 
           {/* Riwayat Kesehatan & Pertumbuhan */}
           <div class="row g-4">

@@ -128,7 +128,7 @@ export default defineComponent({
                           <SummaryItem label="Tanggal" value={item.tanggal} />
                           <SummaryItem label="Tindakan" value={item.tindakan} />
                           <SummaryItem label="Obat/Vitamin" value={item.obat} />
-                          <SummaryItem label="Dosis Vitamin" value={item.vitaminAmount ? `${item.vitaminAmount} unit` : '-'} />
+                          <SummaryItem label="Dosis Vitamin" value={item.vitaminAmount ? `${item.vitaminAmount} ml` : '-'} />
                         </>
                       )}
 
@@ -136,20 +136,55 @@ export default defineComponent({
                         <>
                           <SummaryItem label="Jumlah Hasil" value={`${item.qty} ${item.unit || 'kg'}`} />
                           <SummaryItem label="Kondisi" value={item.kotoranState} />
+                          {item.name === 'Fermentasi' && (
+                            <SummaryItem label="Pemanfaatan" value={item.pemanfaatan} />
+                          )}
                         </>
                       )}
 
                       {type.value === 'perkawinan' && (
                         <>
-                          <SummaryItem label="ID Pejantan" value={item.idPejantan} />
-                          <SummaryItem label="Metoda" value={item.metoda} />
+                          {item.name === 'Kontrol Kebuntingan' ? (
+                            <>
+                              <SummaryItem label="ID Perkawinan" value={item.idMating} />
+                              <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan} />
+                              <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
+                            </>
+                          ) : (
+                            <>
+                              {!( (item.metoda === 'ib' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && item.sumberPejantan === 'eksternal' ) && (
+                                <SummaryItem label="ID Pejantan" value={item.idPejantan} />
+                              )}
+                              {(item.metoda === 'ib' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && (
+                                <>
+                                  <SummaryItem label="Sumber Pejantan" value={item.sumberPejantan === 'eksternal' ? 'Donor Eksternal' : 'Internal'} />
+                                  <SummaryItem label="Kode Batch / Nomor Straw Semen" value={item.asalSemen} />
+                                  <SummaryItem label="Nama Inseminator" value={item.namaInseminator} />
+                                  <SummaryItem label="Waktu IB" value={item.waktuIB} />
+                                  {item.sumberPejantan === 'eksternal' && (
+                                    <>
+                                      <SummaryItem label="Nama / ID Pejantan Donor" value={item.donorName} />
+                                      <SummaryItem label="Instansi / Balai Asal Pejantan Donor" value={item.donorOrigin} />
+                                    </>
+                                  )}
+                                </>
+                              )}
+                              {!(item.name === 'IB' || item.name === 'Inseminasi Buatan' || item.name === 'Kawin Alam' || item.name === 'Kawin Alami') && (
+                                <SummaryItem label="Metode Kawin" value={item.metoda} />
+                              )}
+                            </>
+                          )}
                           <SummaryItem label="Tanggal" value={item.tanggal} />
                         </>
                       )}
 
                       {type.value === 'kelahiran' && (
                         <>
+                          <SummaryItem label="ID Pejantan" value={item.idPejantan} />
                           <SummaryItem label="Jumlah Anak" value={item.jumlahAnak} />
+                          <SummaryItem label="Nama Anak" value={item.namaAnak} />
+                          <SummaryItem label="Kandang Anak" value={item.kandangAnak} />
+                          <SummaryItem label="Berat Lahir" value={item.beratLahir ? `${item.beratLahir} kg` : '-'} />
                           <SummaryItem label="Kondisi Induk" value={item.kondisiInduk} />
                           <SummaryItem label="Kondisi Anak" value={item.kondisiAnak} />
                           <SummaryItem label="Tanggal" value={item.tanggal} />

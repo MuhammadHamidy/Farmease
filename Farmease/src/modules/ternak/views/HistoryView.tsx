@@ -7,7 +7,7 @@ import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/admin/Select';
 import Button from '@/shared/ui/Button';
 import { cageSession } from '@/store/navigation';
-import { pencatatanSubmissions, type PencatatanSubmission } from '@/modules/ternak/store/operatorAdmin';
+import { pencatatanSubmissions, fetchSubmissions, type PencatatanSubmission } from '@/modules/ternak/store/operatorAdmin';
 
 type RiwayatCategory = 'Semua' | 'Pakan' | 'Perkawinan' | 'Kelahiran' | 'Kesehatan' | 'Kotoran' | 'Berat Badan';
 
@@ -73,7 +73,10 @@ export default defineComponent({
       loading.value = false;
     }
 
-    onMounted(loadRecords);
+    onMounted(async () => {
+      await fetchSubmissions();
+      loadRecords();
+    });
     watch(() => pencatatanSubmissions.value, () => { loadRecords(); }, { deep: true });
 
     const filteredRecords = computed(() => listRecords.value.filter(rec => {

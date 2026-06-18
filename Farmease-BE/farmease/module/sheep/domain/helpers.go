@@ -8,6 +8,7 @@ import (
 // CalculateAge calculates the age in days and months from date of birth
 func (s *Sheep) CalculateAge() {
 	if s.DateOfBirth == nil {
+		s.AgeString = "—"
 		return
 	}
 
@@ -17,14 +18,42 @@ func (s *Sheep) CalculateAge() {
 	// Calculate days
 	s.AgeDays = int(duration.Hours() / 24)
 	
-	// Calculate months (average 30.44 days per month)
-	s.AgeMonths = float64(s.AgeDays) / 30.44
+	// Calculate months (average 30.43 days per month to match FE)
+	s.AgeMonths = float64(s.AgeDays) / 30.43
 
 	months := int(s.AgeMonths)
-	if months >= 12 {
-		s.AgeString = fmt.Sprintf("%d thn", months/12)
+	if s.AgeDays < 30 {
+		s.AgeString = fmt.Sprintf("%d hari", s.AgeDays)
+	} else if months < 12 {
+		s.AgeString = fmt.Sprintf("%d bulan", months)
 	} else {
-		s.AgeString = fmt.Sprintf("%d bln", months)
+		years := months / 12
+		remainingMonths := months % 12
+		if remainingMonths == 0 {
+			s.AgeString = fmt.Sprintf("%d tahun", years)
+		} else {
+			s.AgeString = fmt.Sprintf("%d tahun %d bulan", years, remainingMonths)
+		}
+	}
+
+	// Calculate Mating Status
+	if s.Gender == "betina" {
+		if s.Status == "Sehat" && months >= 8 {
+			s.IsReadyToMate = true
+			s.MatingStatus = "Ya (Siap Kawin / Birahi)"
+		} else if s.Status == "Hamil" {
+			s.IsReadyToMate = false
+			s.MatingStatus = "Tidak (Sedang Hamil)"
+		} else if months < 8 {
+			s.IsReadyToMate = false
+			s.MatingStatus = "Tidak (Belum Cukup Umur)"
+		} else {
+			s.IsReadyToMate = false
+			s.MatingStatus = "Tidak (Belum Siap / Sedang Pemulihan)"
+		}
+	} else {
+		s.IsReadyToMate = false
+		s.MatingStatus = "Tidak Berlaku (Jantan)"
 	}
 }
 
