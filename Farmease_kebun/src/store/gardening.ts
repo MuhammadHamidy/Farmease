@@ -126,8 +126,8 @@ function mapPanen(row: ApiPanen): Panen {
 function mapNotifikasi(row: ApiNotifikasi): Notifikasi {
   return {
     id: String(row.id),
-    type: row.judul,
-    message: row.pesan,
+    type: row.title,
+    message: row.message,
     date: row.created_at,
     read: row.is_read,
   }

@@ -30,6 +30,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/tasks"
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
 	"github.com/farmease/farmease-be/farmease/module/notifications"
+	"github.com/farmease/farmease-be/farmease/module/notifikasi"
 	"github.com/farmease/farmease-be/farmease/module/submissions"
 )
 
@@ -37,13 +38,13 @@ import (
 // @version         1.0
 // @description     API Documentation for Farmease Backend Service
 // @termsOfService  http://swagger.io/terms/
-
+// 
 // @contact.name    API Support
 // @contact.email   support@farmease.id
-
+// 
 // @license.name    Apache 2.0
 // @license.url     http://www.apache.org/licenses/LICENSE-2.0.html
-
+// 
 // @host            localhost:8080
 // @BasePath        /
 // @schemes         http
@@ -114,6 +115,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		tasks.Module,
 		routine_schedules.Module,
 		notifications.Module,
+		notifikasi.Module,
 		submissions.Module,
 
 		fx.Provide(

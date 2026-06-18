@@ -10,6 +10,7 @@ import PencatatanModeToggle from '../components/pencatatan/PencatatanModeToggle'
 import PencatatanFormContainer from '../components/pencatatan/PencatatanFormContainer'
 import TreeSelectionGrid, { type TreeItem } from '../components/pencatatan/TreeSelectionGrid'
 import RincianBottomSheet from '../components/pencatatan/RincianBottomSheet'
+import JenisBottomSheet from '../components/pencatatan/JenisBottomSheet'
 import PencatatanPrimaryButton from '../components/pencatatan/PencatatanPrimaryButton'
 import { manureApi, pohonApi } from '@/shared/api'
 import '@/modules/kebun/assets/css/PerkebunanDetailPages.css'
@@ -56,6 +57,12 @@ const panduanTeknisByRincian: Record<string, string> = {
   'Aplikasi Pestisida': 'Gunakan pestisida terdaftar sesuai dosis. Pakai APD lengkap. Catat waktu dan jenis aplikasi.',
 }
 
+const ALL_JENIS = [
+  'Panen', 'Pemangkasan', 'Pembersihan', 'Pembuahan',
+  'Pemberian Obat', 'Pemupukan', 'Penanaman', 'Penyiraman',
+  'Stok Obat', 'Stok Pupuk',
+]
+
 const rincianByJenis: Record<string, string[]> = {
   'Penanaman': ['Bibit Baru', 'Penggantian Bibit'],
   'Pembuahan': ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
@@ -67,6 +74,7 @@ const rincianByJenis: Record<string, string[]> = {
   'Pengendalian Hama': ['Insektisida', 'Fungisida', 'Pestisida'],
   'Pemberian Obat': ['Insektisida', 'Fungisida', 'Pestisida'],
   'Stok Obat': ['Tambah Obat'],
+  'Stok Pupuk': ['Stok Masuk', 'Stok Keluar'],
 }
 
 export default defineComponent({
@@ -104,6 +112,28 @@ export default defineComponent({
 
     const panduanTeknis = computed(() => panduanTeknisByRincian[selectedRincian.value] || '')
 
+    // ── Jenis modal ─────────────────────────────────────────
+    const showJenisModal = ref(false)
+    const jenisSearch = ref('')
+    const draftJenis = ref('')
+
+    const openJenisModal = () => {
+      draftJenis.value = selectedJenis.value
+      jenisSearch.value = ''
+      showJenisModal.value = true
+    }
+
+    const saveJenis = () => {
+      if (draftJenis.value && draftJenis.value !== 'Jenis Pencatatan') {
+        selectedJenis.value = draftJenis.value
+        // Reset rincian when jenis changes
+        selectedRincian.value = 'Rincian Pencatatan'
+        draftRincian.value = ''
+      }
+      showJenisModal.value = false
+    }
+
+    // ── Rincian modal ───────────────────────────────────────
     const showRincianModal = ref(false)
     const rincianSearch = ref('')
     const draftRincian = ref('')
@@ -155,6 +185,16 @@ export default defineComponent({
       jumlahBuahDibuang: '', sisaBuahPerTandan: '',
       bahanPembungkus: 'Bahan Pembungkus', jumlahBuahDibungkus: '',
       kondisiPanen: 'Kondisi Panen', caraPanen: 'Cara Panen', satuanBerat: 'Satuan Berat',
+      jenisBibit: '',
+      namaOPT: '',
+      volumeObat: '',
+      satuanVolumeObat: 'Satuan Volume',
+      teknikPemberianObat: 'Teknik Pemberian',
+      volumeLarutan: '',
+      satuanVolumeLarutan: 'Satuan Volume',
+      satuanVolumeAir: 'Satuan Volume',
+      tanggalKadaluarsa: '',
+      jumlahLubangBiopori: '',
     })
 
     const selectedVarietas = ref('Semua Varietas')
@@ -175,6 +215,26 @@ export default defineComponent({
         result = result.filter(t => t.fase === formState.value.fasePohon)
       }
       return result
+    })
+
+    const obatStocks = computed(() => {
+      const r = (selectedRincian.value || '').toLowerCase()
+      if (r.includes('fungisida')) {
+        return [
+          { name: 'Mankozeb', qty: '500 Gram (g)', expiry: '02 - 12 - 2026' },
+          { name: 'Fungisida Tembaga', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026' }
+        ]
+      } else if (r.includes('insektisida')) {
+        return [
+          { name: 'Sipermetrin 50EC', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026' },
+          { name: 'Imidakloprid', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026' }
+        ]
+      } else {
+        return [
+          { name: 'Ekstrak Nimba', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026' },
+          { name: 'Ekstrak Bawang Putih', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026' }
+        ]
+      }
     })
 
     watch(selectedTrees, (codes) => {
@@ -224,6 +284,7 @@ export default defineComponent({
               ...formState.value,
               selectedRincian: selectedRincian.value,
               kategoriPencatatan: activeMode.value,
+              selectedVarietas: selectedVarietas.value,
             }],
           },
         },
@@ -295,6 +356,9 @@ export default defineComponent({
                 icon="/icon/jenis_kebun.png"
                 label="Pilih jenis pencatatan"
                 value={selectedJenis.value}
+                clickable
+                showChevron
+                onClick={openJenisModal}
               />
               <PencatatanSelectionField
                 icon="/icon/rincian_kebun.png"
@@ -308,6 +372,21 @@ export default defineComponent({
           </div>
 
           {panduanTeknis.value && <PanduanTeknisBanner text={panduanTeknis.value} />}
+
+          {(selectedJenis.value === 'Pemberian Obat' || selectedJenis.value === 'Stok Obat') && (
+            <div style="margin-bottom:0.85rem;">
+              <h3 style="font-size:1rem; font-weight:800; color:#111827; margin:0 0 0.5rem;">Informasi Stok Obat</h3>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:0.75rem;">
+                {obatStocks.value.map(stock => (
+                  <div key={stock.name} style="border:1.5px solid #dce1d0; border-radius:0.65rem; background:#fff; padding:1rem 0.85rem; text-align:left;">
+                    <strong style="display:block; font-size:1rem; font-weight:800; color:#111827;">{stock.name}</strong>
+                    <span style="display:block; font-size:0.85rem; color:#111827; font-weight:700; margin:0.25rem 0;">{stock.qty}</span>
+                    <span style="font-size:0.72rem; color:#6b7280; font-weight:600;">Kadaluarsa: {stock.expiry}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {selectedJenis.value === 'Pemupukan' && selectedRincian.value === 'Pupuk Organik' && (
             <div style="margin-bottom:0.85rem;">
@@ -325,13 +404,15 @@ export default defineComponent({
             </div>
           )}
 
-          <PencatatanModeToggle
-            modelValue={activeMode.value}
-            onUpdate:modelValue={(val: 'pohon' | 'lahan') => { activeMode.value = val }}
-          />
+          {selectedJenis.value !== 'Stok Obat' && selectedJenis.value !== 'Stok Pupuk' && (
+            <PencatatanModeToggle
+              modelValue={activeMode.value}
+              onUpdate:modelValue={(val: 'pohon' | 'lahan') => { activeMode.value = val }}
+            />
+          )}
 
           <PencatatanFormContainer>
-            {activeMode.value === 'pohon' && (
+            {activeMode.value === 'pohon' && selectedJenis.value !== 'Stok Obat' && (
               <TreeSelectionGrid
                 trees={filteredTrees.value}
                 selectedCodes={selectedTrees.value}
@@ -359,6 +440,17 @@ export default defineComponent({
             <PencatatanPrimaryButton loading={isSaving.value} onClick={saveRecording} />
           </PencatatanFormContainer>
         </div>
+
+        <JenisBottomSheet
+          show={showJenisModal.value}
+          options={ALL_JENIS}
+          selected={draftJenis.value}
+          search={jenisSearch.value}
+          onClose={() => { showJenisModal.value = false }}
+          onSave={saveJenis}
+          onUpdate:selected={(val: string) => { draftJenis.value = val }}
+          onUpdate:search={(val: string) => { jenisSearch.value = val }}
+        />
 
         <RincianBottomSheet
           show={showRincianModal.value}

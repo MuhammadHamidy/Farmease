@@ -743,7 +743,8 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
     panenApi, 
     perawatanApi, 
     aktivitasApi,
-    feedsApi
+    feedsApi,
+    pohonApi
   } = await import('@/shared/api');
   const items = (input.payload as any)?.data?.items ?? [];
 
@@ -808,6 +809,46 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
                 }
               } catch (err) {
                 console.error('Failed to update feed stock for circular ecosystem:', err);
+              }
+            })()
+          );
+        }
+      } else if (typeLower === 'penanaman') {
+        promises.push(
+          aktivitasApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penanaman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Bibit Baru',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+
+        if (item.selectedRincian === 'Bibit Baru') {
+          promises.push(
+            pohonApi.create({
+              kode_pohon: item.kodePohonManual || 'P-' + Date.now().toString().slice(-4),
+              jenis: item.selectedVarietas || 'Alpukat',
+              status: 'Vegetatif',
+              id_lahan: landId,
+            })
+          );
+        } else if (item.selectedRincian === 'Penggantian Bibit') {
+          promises.push(
+            (async () => {
+              try {
+                const trees = await pohonApi.getList();
+                const targetCode = item.kodePohonManual || item.kodePohon;
+                const foundTree = trees.find(t => String(t.kode_pohon).toUpperCase() === String(targetCode).toUpperCase());
+                if (foundTree) {
+                  await pohonApi.update(foundTree.id, {
+                    ...foundTree,
+                    created_at: new Date().toISOString().split('T')[0],
+                    status: 'Vegetatif'
+                  });
+                }
+              } catch (err) {
+                console.error('Failed to update replaced tree:', err);
               }
             })()
           );

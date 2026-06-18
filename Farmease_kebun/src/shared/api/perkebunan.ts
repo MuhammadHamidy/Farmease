@@ -548,7 +548,7 @@ export interface PencatatanSubmission {
   operatorCode: string;
   operatorName: string;
   cageCode: string;
-  scope: 'domba' | 'kandang';
+  scope: 'domba' | 'kandang' | 'pohon' | 'lahan';
   summary: string;
   payload: Record<string, unknown>;
   submittedAt: number;
