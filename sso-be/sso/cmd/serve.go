@@ -64,7 +64,19 @@ func serveE(cmd *cobra.Command, args []string) error {
 				Target: config.WithSources(
 					config.FileSource("config/config.json"),
 					config.EnvSource("APP_", func(key string) (string, bool) {
-						return strings.ToLower(key), true
+						k := strings.ToLower(key)
+						switch k {
+						case "ssoapiurl":
+							return "ssoApiUrl", true
+						case "redirecturl":
+							return "redirectUrl", true
+						case "jwtsecret":
+							return "jwtSecret", true
+						case "livestockapiurl":
+							return "livestockApiUrl", true
+						default:
+							return k, true
+						}
 					}),
 				),
 			},

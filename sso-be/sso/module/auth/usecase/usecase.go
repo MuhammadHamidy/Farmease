@@ -113,6 +113,11 @@ func (u *useCase) Introspect(ctx context.Context, tokenString string) (*domain.I
 				username = parts[1]
 			}
 		}
+		if username == "kebun" {
+			username = "operator_kebun"
+		} else if username == "peternak" {
+			username = "operator_kandang"
+		}
 		account, err := u.repo.FindByUsername(ctx, username)
 		if err == nil {
 			return &domain.IntrospectResponse{
