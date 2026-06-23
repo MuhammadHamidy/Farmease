@@ -247,20 +247,20 @@ function mapBackendPerawatanToFrontend(backend: any): Perawatan {
   }
 }
 
-function mapFrontendPerawatanToBackend(frontend: Partial<Perawatan>): any {
+function mapFrontendPerawatanToBackend(frontend: any): any {
   return {
-    id_perawatan: frontend.id,
-    Aktivitas_id_aktivitas: '',
-    jenis_bahan: frontend.jenis_perawatan || '',
-    fase_pohon: frontend.status || '',
-    dosis: 0,
-    satuan: '',
-    bagian_pohon: '',
-    teknik_perawatan: '',
-    nama_obat: '',
+    id_perawatan: frontend.id || frontend.id_perawatan,
+    Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
+    jenis_bahan: frontend.jenis_bahan || frontend.jenis_perawatan || '',
+    fase_pohon: frontend.fase_pohon || frontend.status || '',
+    dosis: frontend.dosis !== undefined ? frontend.dosis : 0,
+    satuan: frontend.satuan || '',
+    bagian_pohon: frontend.bagian_pohon || '',
+    teknik_perawatan: frontend.teknik_perawatan || '',
+    nama_obat: frontend.nama_obat || '',
     deskripsi: frontend.deskripsi || '',
-    detail_pohon: String(frontend.id_pohon || ''),
-    Lahan_id_lahan: frontend.id_pohon || '',
+    detail_pohon: String(frontend.detail_pohon || frontend.id_pohon || ''),
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_pohon || '',
   }
 }
 
@@ -285,6 +285,12 @@ export const perawatanApi = {
   },
   delete: async (id: string | number): Promise<void> => {
     return await apiClient.delete(`/api/v1/perawatan/${id}`)
+  },
+  getRekomendasi: async (varietas: string, fase: string, obat: string): Promise<string> => {
+    const res = await apiClient.get<any>('/api/v1/perawatan/rekomendasi', {
+      params: { varietas, fase, obat }
+    })
+    return res?.rekomendasi || ''
   },
 }
 

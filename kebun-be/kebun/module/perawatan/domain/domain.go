@@ -73,4 +73,5 @@ type PerawatanUsecase interface {
 	Create(ctx context.Context, perawatan *Perawatan) error
 	Update(ctx context.Context, perawatan *Perawatan) error
 	Delete(ctx context.Context, id string) error
+	GetRekomendasiObat(ctx context.Context, varietas, fase, obat string) (string, error)
 }

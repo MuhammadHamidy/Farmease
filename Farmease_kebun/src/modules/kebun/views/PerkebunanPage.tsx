@@ -74,7 +74,7 @@ export default defineComponent({
             rincian = tag;
             if (tag.toLowerCase() === 'pemangkasan') rincian = 'Ranting dan Daun'
             if (tag.toLowerCase() === 'panen') rincian = 'Panen Buah'
-            if (tag.toLowerCase() === 'pemupukan') rincian = 'Pupuk Organik'
+            if (tag.toLowerCase() === 'pemupukan') rincian = 'Pupuk Organik Padat'
           }
           
           return {

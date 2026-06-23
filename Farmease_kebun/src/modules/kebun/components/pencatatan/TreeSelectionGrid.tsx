@@ -15,10 +15,11 @@ export default defineComponent({
     selectedCodes: { type: Array as PropType<string[]>, required: true },
     varietasOptions: { type: Array as PropType<string[]>, default: () => ['Semua Varietas'] },
     selectedVarietas: { type: String, default: 'Semua Varietas' },
+    fasePohon: { type: String, default: 'Fase Pohon' },
     treeIcon: { type: String, default: '/icon/alpukat.png' },
     maxSelection: { type: Number, default: 0 },
   },
-  emits: ['update:selectedCodes', 'update:selectedVarietas'],
+  emits: ['update:selectedCodes', 'update:selectedVarietas', 'update:fasePohon'],
   setup(props, { emit }) {
     const toggleTree = (code: string) => {
       if (props.maxSelection === 1) {
@@ -42,6 +43,17 @@ export default defineComponent({
             onUpdate:modelValue={(val: string) => emit('update:selectedVarietas', val)}
           />
         </div>
+
+        <div class="form-group">
+          <label class="pencatatan-form-label">Pilih Fase Pohon</label>
+          <PerkebunanFormSelect
+            modelValue={props.fasePohon}
+            options={['Fase Pohon', 'Vegetatif', 'Generatif']}
+            placeholder="Fase Pohon"
+            onUpdate:modelValue={(val: string) => emit('update:fasePohon', val)}
+          />
+        </div>
+
         <div class="form-group">
           <label class="pencatatan-form-label">
             {props.maxSelection === 1 ? 'Pilih Pohon (maksimal 1)' : 'Pilih Pohon'}

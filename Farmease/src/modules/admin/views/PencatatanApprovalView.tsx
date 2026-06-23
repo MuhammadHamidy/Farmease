@@ -265,7 +265,7 @@ export default defineComponent({
       if (jenisFilter.value !== 'Semua Jenis Pencatatan') {
         const isPerkebunanTarget = jenisFilter.value === 'Pencatatan Perkebunan';
         list = list.filter((s) => {
-          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((s.type || '').toLowerCase());
+          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman', 'stok obat', 'stok pupuk', 'stok_obat', 'stok_pupuk'].includes((s.type || '').toLowerCase());
           return isPerkebunan === isPerkebunanTarget;
         });
       }
@@ -803,9 +803,17 @@ export default defineComponent({
                           {Object.entries(item).map(([key, val]) => {
                             if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode') return null;
                             if (!shouldShowKey(selected.value?.type || '', key, item)) return null;
-                                              const formName = item.name || '';
+                            const formName = item.name || '';
                             let displayLabel = labelMappings[key] || camelToTitle(key);
                             if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
+                            const subType = (selected.value?.type || '').toLowerCase();
+                            if (subType === 'stok pupuk' || subType === 'stok_pupuk') {
+                              if (key === 'jenisObat') displayLabel = 'Jenis Pupuk';
+                              else if (key === 'namaObat') displayLabel = 'Nama Pupuk';
+                              else if (key === 'volumeObat') displayLabel = 'Jumlah Stok Pupuk';
+                              else if (key === 'satuanVolumeObat') displayLabel = 'Satuan Volume Pupuk';
+                              else if (key === 'teknikPemberianObat') displayLabel = 'Teknik Pemupukan';
+                            }
                             if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') {
                               if (key === 'tindakan') displayLabel = 'Pakan Tambahan (Energi)';
                               else if (key === 'pemanfaatan') displayLabel = 'Pakan Tambahan (Protein)';

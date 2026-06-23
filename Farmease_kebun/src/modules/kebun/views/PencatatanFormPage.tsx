@@ -52,12 +52,11 @@ const panduanTeknisByRincian: Record<string, string> = {
   'Penjarangan Buah': 'Lakukan saat buah diameter ±2 cm. Sisakan 2-3 buah per tandan. Buang buah kecil, cacat, atau terserang OPT.',
   'Pembungkusan Buah': 'Bungkus setelah penjarangan. Tujuan: cegah lalat buah, penggerek, trips, dan kutu putih.',
   'Merangsang Pembungaan': 'Aplikasikan perangsang bunga pada fase vegetatif akhir. Pastikan kelembapan tanah cukup sebelum aplikasi.',
-  'Pemangkasan Ranting': 'Pangkas ranting yang mati, sakit, atau terlalu rimbun. Gunakan alat steril. Olesi bekas pangkas dengan fungisida.',
-  'Pemangkasan Bentuk': 'Bentuk tajuk agar cahaya merata. Lakukan saat tanaman tidak berbunga.',
-  'Pemangkasan Peremajaan': 'Potong cabang tua hingga 30-50%. Lakukan bertahap agar tidak stres.',
+  'Pemangkasan Pemeliharaan': 'Pangkas ranting yang mati, sakit, atau terlalu rimbun, bentuk tajuk agar cahaya merata, dan potong cabang tua bertahap.',
   'Panen Buah': 'Panen saat buah mencapai ukuran dan warna matang. Gunakan gunting panen steril.',
-  'Pemupukan Organik': 'Aplikasikan pupuk organik sesuai dosis anjuran. Letakkan di sekitar proyeksi tajuk.',
-  'Pemupukan Anorganik': 'Gunakan pupuk sesuai rekomendasi uji tanah. Hindari aplikasi saat hujan deras.',
+  'Pupuk Organik Cair': 'Aplikasikan pupuk organik cair sesuai dosis anjuran. Semprotkan secara merata pada daun atau siram ke tanah.',
+  'Pupuk Organik Padat': 'Gunakan pupuk organik padat matang (kompos/pupuk kandang). Benamkan di sekitar proyeksi tajuk.',
+  'Pupuk Kimia': 'Gunakan pupuk kimia (makro/mikro) sesuai rekomendasi uji tanah. Aplikasikan dengan teknik pemupukan melingkar/tebar.',
   'Penyiraman Rutin': 'Siram pagi atau sore hari. Pastikan drainase baik agar tidak terjadi genangan.',
   'Pembersihan Gulma': 'Bersihkan gulma secara rutin. Gunakan mulsa untuk menekan pertumbuhan kembali.',
   'Aplikasi Pestisida': 'Gunakan pestisida terdaftar sesuai dosis. Pakai APD lengkap. Catat waktu dan jenis aplikasi.',
@@ -171,7 +170,7 @@ export default defineComponent({
       namaOPT: '',
       volumeObat: '',
       satuanVolumeObat: 'Satuan Volume',
-      teknikPemberianObat: 'Jenis Obat',
+      teknikPemberianObat: 'Teknik Pemberian Obat',
       volumeLarutan: '',
       satuanVolumeLarutan: 'Satuan Volume',
       satuanVolumeAir: 'Satuan Volume',
@@ -199,7 +198,7 @@ export default defineComponent({
       if (selectedVarietas.value !== 'Semua Varietas') {
         result = result.filter(t => t.varietas === selectedVarietas.value)
       }
-      if ((kindTitle.value === 'Pemupukan' || kindTitle.value === 'Pemangkasan') && formState.value.fasePohon && formState.value.fasePohon !== 'Fase Pohon') {
+      if (formState.value.fasePohon && formState.value.fasePohon !== 'Fase Pohon') {
         result = result.filter(t => t.fase === formState.value.fasePohon)
       }
       return result
@@ -254,7 +253,7 @@ export default defineComponent({
         return pool.filter(p => p.form === 'padat')
       } else if (r.includes('organik')) {
         return pool.filter(p => p.type === 'organik')
-      } else if (r.includes('anorganik')) {
+      } else if (r.includes('kimia') || r.includes('anorganik')) {
         return pool.filter(p => p.type === 'anorganik')
       }
       return pool
@@ -268,7 +267,9 @@ export default defineComponent({
       }
       if (j === 'Pemupukan' || j === 'Stok Pupuk') {
         if (r.includes('cair')) return 'Informasi Stok Pupuk Cair'
+        if (r.includes('padat')) return 'Informasi Stok Pupuk Padat'
         if (r.includes('organik')) return 'Informasi Stok Pupuk Organik'
+        if (r.includes('kimia')) return 'Informasi Stok Pupuk Kimia'
         if (r.includes('anorganik')) return 'Informasi Stok Pupuk Anorganik'
         return 'Informasi Stok Pupuk'
       }
@@ -444,10 +445,12 @@ export default defineComponent({
                 selectedCodes={selectedTrees.value}
                 varietasOptions={varietasOptions.value}
                 selectedVarietas={selectedVarietas.value}
+                fasePohon={formState.value.fasePohon}
                 treeIcon={getLahanIcon(landSession.value?.name ?? 'alpukat')}
                 maxSelection={selectedRincian.value.toLowerCase().includes('penggantian') ? 1 : 0}
                 onUpdate:selectedCodes={(codes: string[]) => { selectedTrees.value = codes }}
                 onUpdate:selectedVarietas={(val: string) => { selectedVarietas.value = val }}
+                onUpdate:fasePohon={(val: string) => { formState.value.fasePohon = val }}
               />
             )}
 
@@ -460,6 +463,8 @@ export default defineComponent({
               selectedTreesCount={selectedTrees.value.length}
               varietasOptions={varietasOptions.value}
               selectedVarietas={selectedVarietas.value}
+              selectedTrees={selectedTrees.value}
+              allTrees={allTrees.value}
               onUpdate:selectedVarietas={(val: string) => { selectedVarietas.value = val }}
             />
 

@@ -117,7 +117,7 @@ export default defineComponent({
       pembuahan: ['Perangsang'],
       penanaman: ['Bibit Baru'],
       'pengendalian hama': ['Pestisida', 'Fungisida'],
-      pemupukan: ['Pupuk Cair', 'Pupuk Organik', 'Pupuk Padat'],
+      pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
       penyiraman: ['Penyiraman Rutin'],
       umum: ['Lainnya']
     };

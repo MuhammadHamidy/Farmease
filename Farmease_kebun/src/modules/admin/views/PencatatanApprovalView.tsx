@@ -1,3 +1,17 @@
+import { defineComponent, ref, computed, watch, onMounted, Teleport } from 'vue';
+import Typography from '@/shared/ui/admin/Typography';
+import Select from '@/shared/ui/admin/Select';
+import {
+  pencatatanSubmissions,
+  pendingApprovalCount,
+  approveSubmission,
+  rejectSubmission,
+  fetchSubmissions,
+  type PencatatanSubmission,
+  type ApprovalStatus,
+} from '@/store/operatorAdmin';
+import { userSession } from '@/store/navigation';
+
 const labelMappings: Record<string, string> = {
   targetId: 'ID Domba/Target',
   qty: 'Jumlah/Volume',
@@ -186,7 +200,7 @@ export default defineComponent({
       if (jenisFilter.value !== 'Semua Jenis Pencatatan') {
         const isPerkebunanTarget = jenisFilter.value === 'Pencatatan Perkebunan';
         list = list.filter((s) => {
-          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((s.type || '').toLowerCase());
+          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman', 'stok obat', 'stok pupuk', 'stok_obat', 'stok_pupuk'].includes((s.type || '').toLowerCase());
           return isPerkebunan === isPerkebunanTarget;
         });
       }
@@ -311,6 +325,15 @@ export default defineComponent({
               }}
             />
           </div>
+          <div class="admin-role-filter" style={{ minWidth: '250px' }}>
+            <Select
+              options={['Semua Jenis Pencatatan', 'Pencatatan Peternakan', 'Pencatatan Perkebunan']}
+              modelValue={jenisFilter.value}
+              onUpdate:modelValue={(v: string) => {
+                jenisFilter.value = v;
+              }}
+            />
+          </div>
         </div>
 
         <div class="row g-4">
@@ -350,7 +373,7 @@ export default defineComponent({
                         }
                       } else {
                         paginatedItems.value.forEach((sub) => {
-                          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
+                          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman', 'stok obat', 'stok pupuk', 'stok_obat', 'stok_pupuk'].includes((sub.type || '').toLowerCase());
                           const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
 
                           rows.push(
@@ -433,7 +456,10 @@ export default defineComponent({
                                       <button
                                         type="button"
                                         class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
-                                        onClick={() => handleApproveAction(sub.id, 'Disetujui kembali')}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleApproveAction(sub.id, 'Disetujui kembali');
+                                        }}
                                       >
                                         Setujui
                                       </button>
@@ -473,7 +499,7 @@ export default defineComponent({
               <div class="d-block d-md-none p-3">
                 <div class="mobile-card-list">
                   {paginatedItems.value.map((sub) => {
-                    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
+                    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman', 'stok obat', 'stok pupuk', 'stok_obat', 'stok_pupuk'].includes((sub.type || '').toLowerCase());
                     const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
 
                     return (
@@ -616,7 +642,7 @@ export default defineComponent({
                         onClick={() => currentPage.value = page}
                         style={{
                           backgroundColor: currentPage.value === page ? '#3d2f24' : '#ffffff',
-                          color: currentPage.value === page ? '#3d2f24' : '#3d2f24',
+                          color: currentPage.value === page ? '#ffffff' : '#3d2f24',
                           borderColor: currentPage.value === page ? '#3d2f24' : '#ccc0b4',
                           minWidth: '32px',
                           fontSize: '0.8rem',
@@ -711,6 +737,20 @@ export default defineComponent({
                             
                             let displayLabel = labelMappings[key] || camelToTitle(key);
                             if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
+                            const subType = (selected.value?.type || '').toLowerCase();
+                            if (subType === 'stok pupuk' || subType === 'stok_pupuk') {
+                              if (key === 'jenisObat') displayLabel = 'Jenis Pupuk';
+                              else if (key === 'namaObat') displayLabel = 'Nama Pupuk';
+                              else if (key === 'volumeObat') displayLabel = 'Jumlah Stok Pupuk';
+                              else if (key === 'satuanVolumeObat') displayLabel = 'Satuan Volume Pupuk';
+                              else if (key === 'teknikPemberianObat') displayLabel = 'Teknik Pemupukan';
+                            } else if (subType === 'stok obat' || subType === 'stok_obat') {
+                              if (key === 'jenisObat') displayLabel = 'Jenis Obat';
+                              else if (key === 'namaObat') displayLabel = 'Nama Obat';
+                              else if (key === 'volumeObat') displayLabel = 'Jumlah Stok Obat';
+                              else if (key === 'satuanVolumeObat') displayLabel = 'Satuan Volume Obat';
+                              else if (key === 'teknikPemberianObat') displayLabel = 'Teknik Pemberian';
+                            }
                             
                             return (
                               <div key={key} class="col-6 col-sm-4">

@@ -43,7 +43,7 @@ type ManureResponse struct {
 
 func (u *perawatanUsecase) Create(ctx context.Context, p *domain.Perawatan) error {
 	// If technique is Pemupukan (Fertilization), integrate manure from external Livestock Web API
-	if p.NamaRincianAktivitas == "Pemupukan" {
+	if p.NamaJenisAktivitas == "Pemupukan" {
 		u.fetchManureFromLivestock()
 	}
 
@@ -51,7 +51,7 @@ func (u *perawatanUsecase) Create(ctx context.Context, p *domain.Perawatan) erro
 }
 
 func (u *perawatanUsecase) Update(ctx context.Context, p *domain.Perawatan) error {
-	if p.NamaRincianAktivitas == "Pemupukan" {
+	if p.NamaJenisAktivitas == "Pemupukan" {
 		u.fetchManureFromLivestock()
 	}
 	return u.repo.Update(ctx, p)
@@ -59,6 +59,19 @@ func (u *perawatanUsecase) Update(ctx context.Context, p *domain.Perawatan) erro
 
 func (u *perawatanUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
+}
+
+func (u *perawatanUsecase) GetRekomendasiObat(ctx context.Context, varietas, fase, obat string) (string, error) {
+	if varietas == "" {
+		varietas = "Alpukat Aligator"
+	}
+	if fase == "" || fase == "Fase Pohon" {
+		fase = "Vegetatif"
+	}
+	if obat == "" {
+		obat = "Ekstrak Nimba"
+	}
+	return fmt.Sprintf("Varietas <strong>%s</strong> dengan fase <strong>%s</strong> menggunakan <strong>%s</strong> dengan dosesi sebanyak <strong>2-3 mL/Liter air</strong>.", varietas, fase, obat), nil
 }
 
 func (u *perawatanUsecase) fetchManureFromLivestock() {

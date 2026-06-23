@@ -16,6 +16,7 @@ func NewPerawatanHandler(usecase domain.PerawatanUsecase) *PerawatanHandler {
 
 func (h *PerawatanHandler) RegisterRoutes(app *fiber.App) {
 	api := app.Group("/api/v1/perawatan")
+	api.Get("/rekomendasi", h.GetRekomendasi)
 	api.Get("/", h.FindAll)
 	api.Get("/:id", h.FindByID)
 	api.Post("/", h.Create)
@@ -82,5 +83,20 @@ func (h *PerawatanHandler) Delete(c *fiber.Ctx) error {
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success delete tree care record", nil)
+}
+
+func (h *PerawatanHandler) GetRekomendasi(c *fiber.Ctx) error {
+	varietas := c.Query("varietas")
+	fase := c.Query("fase")
+	obat := c.Query("obat")
+
+	rekomendasi, err := h.usecase.GetRekomendasiObat(c.Context(), varietas, fase, obat)
+	if err != nil {
+		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return apiresponses.Success(c, fiber.StatusOK, "Success get recommendation", fiber.Map{
+		"rekomendasi": rekomendasi,
+	})
 }
 

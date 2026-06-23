@@ -9,11 +9,11 @@ const FALLBACK_JENIS = [
 
 const FALLBACK_RINCIAN_BY_JENIS: Record<string, string[]> = {
   Panen: ['Panen Buah'],
-  Pemangkasan: ['Pemangkasan Ranting', 'Pemangkasan Bentuk', 'Pemangkasan Peremajaan'],
+  Pemangkasan: ['Pemangkasan Pemeliharaan'],
   Pembersihan: ['Penyiangan Gulma', 'Pembumbunan Tanah', 'Sanitasi Serasah & Ranting'],
   Pembuahan: ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
   'Pemberian Obat': ['Insektisida', 'Fungisida', 'Pestisida'],
-  Pemupukan: ['Pemupukan Organik', 'Pemupukan Anorganik'],
+  Pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
   Penanaman: ['Bibit Baru', 'Penggantian Bibit'],
   Penyiraman: ['Siram Manual', 'Irigrasi Drip / Pipanisasi', 'Biopori'],
   'Stok Obat': ['Tambah Obat'],
@@ -72,20 +72,35 @@ export async function fetchPencatatanTypesCatalog(force = false): Promise<void> 
   return fetchPromise
 }
 
-export const jenisPencatatanList = computed(() =>
-  (catalog.value?.jenis ?? []).map((item) => item.nama),
-)
+export const jenisPencatatanList = computed(() => {
+  const list = (catalog.value?.jenis ?? []).map((item) => item.nama);
+  if (catalog.value && !list.includes('Stok Obat')) {
+    list.push('Stok Obat');
+  }
+  if (catalog.value && !list.includes('Stok Pupuk')) {
+    list.push('Stok Pupuk');
+  }
+  return list;
+});
 
 export const rincianPencatatanByJenis = computed(() => {
-  const map: Record<string, string[]> = {}
-  const source = catalog.value?.rincian_by_jenis ?? FALLBACK_RINCIAN_BY_JENIS
+  const map: Record<string, string[]> = {};
+  const source = catalog.value?.rincian_by_jenis ?? FALLBACK_RINCIAN_BY_JENIS;
   for (const [jenis, items] of Object.entries(source)) {
     map[jenis] = Array.isArray(items)
       ? items.map((item) => (typeof item === 'string' ? item : item.nama))
-      : []
+      : [];
   }
-  return map
-})
+  if (catalog.value) {
+    if (!map['Stok Obat']) {
+      map['Stok Obat'] = ['Tambah Obat'];
+    }
+    if (!map['Stok Pupuk']) {
+      map['Stok Pupuk'] = ['Tambah Pupuk'];
+    }
+  }
+  return map;
+});
 
 export function getRincianForJenis(jenis: string): string[] {
   return rincianPencatatanByJenis.value[jenis] ?? []

@@ -432,25 +432,25 @@ export default defineComponent({
     const selectedBaseSheepId = ref('');
 
     const checkIsSheepBirahi = (s: any) => {
-      if (s.gender !== 'betina') return false;
-
-      // Check if she is currently in an active mating (status: proses)
-      const hasActiveMating = activeMatings.value.some(
-        m => String(m.id_sheep_female) === String(s.id)
-      );
-      if (hasActiveMating) return false;
-
-      // Check if there is an approved or pending "Kawin Alam" or "IB" submission for this sheep
-      const hasPendingMatingSubmission = pencatatanSubmissions.value.some(sub => {
-        if (sub.approvalStatus === 'rejected') return false;
-        const dataObj: any = (sub.payload as any)?.data || sub.payload;
-        const items = dataObj?.items || [];
-        return items.some((item: any) => 
-          (item.name === 'Kawin Alam' || item.name === 'Kawin Alami' || item.name === 'IB' || item.name === 'Inseminasi Buatan') &&
-          (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))
+      if (s.gender === 'betina') {
+        // Check if she is currently in an active mating (status: proses)
+        const hasActiveMating = activeMatings.value.some(
+          m => String(m.id_sheep_female) === String(s.id)
         );
-      });
-      if (hasPendingMatingSubmission) return false;
+        if (hasActiveMating) return false;
+
+        // Check if there is an approved or pending "Kawin Alam" or "IB" submission for this sheep
+        const hasPendingMatingSubmission = pencatatanSubmissions.value.some(sub => {
+          if (sub.approvalStatus === 'rejected') return false;
+          const dataObj: any = (sub.payload as any)?.data || sub.payload;
+          const items = dataObj?.items || [];
+          return items.some((item: any) => 
+            (item.name === 'Kawin Alam' || item.name === 'Kawin Alami' || item.name === 'IB' || item.name === 'Inseminasi Buatan') &&
+            (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))
+          );
+        });
+        if (hasPendingMatingSubmission) return false;
+      }
 
       // Find the latest Cek Birahi checkup for this sheep
       let latestEstrusCheck: { hasil: string; time: number } | null = null;
@@ -475,7 +475,11 @@ export default defineComponent({
       }
 
       // Otherwise, fallback to backend mating status
-      return String(s.mating_status || '').startsWith('Ya');
+      if (s.gender === 'betina') {
+        return String(s.mating_status || '').startsWith('Ya');
+      } else {
+        return s.status === 'Sehat' || s.status === 'aktif';
+      }
     };
 
     const baseSheepOptions = computed(() => {
@@ -525,7 +529,7 @@ export default defineComponent({
 
         if (formName === 'Cek Birahi') {
           return list
-            .filter(s => s.gender === 'betina' && s.status !== 'Hamil')
+            .filter(s => s.status !== 'Hamil')
             .map(s => ({
               value: s.id,
               label: `${s.code} ${s.name}`
@@ -667,6 +671,9 @@ export default defineComponent({
       if (!s) return '—';
       if (checkIsSheepBirahi(s)) {
         return 'Ya (Siap Kawin / Birahi)';
+      }
+      if (s.gender === 'jantan') {
+        return 'Tidak Birahi';
       }
       if (s.status === 'Hamil' || s.status === 'hamil') {
         return 'Tidak (Sedang Hamil)';

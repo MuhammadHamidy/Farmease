@@ -15,9 +15,7 @@ INSERT INTO gardening.aktivitas (nama_jenis_aktivitas, nama_rincian_aktivitas)
 SELECT v.jenis, v.rincian
 FROM (VALUES
     ('Panen', 'Panen Buah'),
-    ('Pemangkasan', 'Pemangkasan Ranting'),
-    ('Pemangkasan', 'Pemangkasan Bentuk'),
-    ('Pemangkasan', 'Pemangkasan Peremajaan'),
+    ('Pemangkasan', 'Pemangkasan Pemeliharaan'),
     ('Pembersihan', 'Penyiangan Gulma'),
     ('Pembersihan', 'Pembumbunan Tanah'),
     ('Pembersihan', 'Sanitasi Serasah & Ranting'),
@@ -27,8 +25,9 @@ FROM (VALUES
     ('Pemberian Obat', 'Insektisida'),
     ('Pemberian Obat', 'Fungisida'),
     ('Pemberian Obat', 'Pestisida'),
-    ('Pemupukan', 'Pemupukan Organik'),
-    ('Pemupukan', 'Pemupukan Anorganik'),
+    ('Pemupukan', 'Pupuk Organik Cair'),
+    ('Pemupukan', 'Pupuk Organik Padat'),
+    ('Pemupukan', 'Pupuk Kimia'),
     ('Penanaman', 'Bibit Baru'),
     ('Penanaman', 'Penggantian Bibit'),
     ('Penyiraman', 'Siram Manual'),

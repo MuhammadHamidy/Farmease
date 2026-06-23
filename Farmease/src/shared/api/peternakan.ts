@@ -52,7 +52,7 @@ export interface Sheep {
 
 export const sheepApi = {
   getList: async (): Promise<Sheep[]> => {
-    return await apiClient.get('/api/sheep')
+    return await apiClient.get('/api/sheep?per_page=1000')
   },
   getById: async (id: string | number): Promise<Sheep> => {
     return await apiClient.get(`/api/sheep/${id}`)
@@ -106,7 +106,7 @@ export interface Cage {
 
 export const cagesApi = {
   getList: async (): Promise<Cage[]> => {
-    return await apiClient.get('/api/cages')
+    return await apiClient.get('/api/cages?per_page=1000')
   },
   getById: async (id: string | number): Promise<Cage> => {
     return await apiClient.get(`/api/cages/${id}`)
@@ -147,7 +147,7 @@ export const healthApi = {
     return await apiClient.get(`/api/sheep/${sheepId}/health`)
   },
   getGlobalList: async (): Promise<Health[]> => {
-    return await apiClient.get('/api/healths')
+    return await apiClient.get('/api/healths?per_page=1000')
   },
   getKesehatan: async (sheepId: string | number): Promise<Health[]> => {
     return await apiClient.get(`/api/domba/${sheepId}/kesehatan`)
@@ -173,7 +173,7 @@ export interface Weight {
 
 export const weightApi = {
   getList: async (): Promise<Weight[]> => {
-    return await apiClient.get('/api/weights')
+    return await apiClient.get('/api/weights?per_page=1000')
   },
   getBeratBadan: async (): Promise<Weight[]> => {
     return await apiClient.get('/api/berat-badan')
@@ -199,7 +199,7 @@ export interface Feed {
 
 export const feedsApi = {
   getList: async (): Promise<Feed[]> => {
-    return await apiClient.get('/api/feeds')
+    return await apiClient.get('/api/feeds?per_page=1000')
   },
   create: async (payload: Partial<Feed>): Promise<Feed> => {
     return await apiClient.post('/api/feeds', payload)
@@ -432,7 +432,7 @@ export interface ApiRoutineSchedule {
 
 export const routineSchedulesApi = {
   getList: async (): Promise<ApiRoutineSchedule[]> => {
-    return await apiClient.get('/api/routine-schedules')
+    return await apiClient.get('/api/routine-schedules?per_page=1000')
   },
   getById: async (id: string): Promise<ApiRoutineSchedule> => {
     return await apiClient.get(`/api/routine-schedules/${id}`)
@@ -472,7 +472,7 @@ export interface ApiSubmission {
 
 export const submissionsApi = {
   getList: async (filters?: { status?: string; type?: string }): Promise<ApiSubmission[]> => {
-    return await apiClient.get('/api/submissions', { params: filters })
+    return await apiClient.get('/api/submissions', { params: { per_page: 1000, ...filters } })
   },
   getById: async (id: string): Promise<ApiSubmission> => {
     return await apiClient.get(`/api/submissions/${id}`)

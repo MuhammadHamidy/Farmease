@@ -845,6 +845,15 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
         );
       } else if (typeLower === 'pemupukan') {
         const dosisVal = parseFloat(item.jumlahBeratPupuk || item.qty || item.amount || 0);
+        const rincian = (item.selectedRincian || '').toLowerCase();
+        let calculatedUnit = item.unit || 'kg';
+        if (rincian.includes('cair')) {
+          calculatedUnit = 'Liter';
+        } else if (rincian.includes('padat')) {
+          calculatedUnit = 'kg';
+        } else if (rincian.includes('kimia') || rincian.includes('anorganik')) {
+          calculatedUnit = 'g';
+        }
         promises.push(
           perawatanApi.create({
             Aktivitas_id_aktivitas: '',
@@ -854,7 +863,7 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             jenis_bahan: 'pupuk',
             fase_pohon: item.fasePohon || 'Generatif',
             dosis: isNaN(dosisVal) ? 0 : dosisVal,
-            satuan: item.unit || 'kg',
+            satuan: calculatedUnit,
             bagian_pohon: item.bagianPohon || 'Akar',
             teknik_perawatan: item.teknikPemupukan || 'Tebar',
             nama_obat: item.jenisPupukDetail || item.jenisPupuk || 'Pupuk',
@@ -979,10 +988,52 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             dosis: isNaN(dosisVal) ? 0 : dosisVal,
             satuan: item.satuanDiameter || 'Unit',
             bagian_pohon: 'Buah',
-            teknik_perawatan: item.bahanPembungkus || '',
-            nama_obat: item.jenisPerangsang || '',
-            deskripsi: item.deskripsiPembuahan || 'Pembuahan rutin',
+            teknik_perawatan: item.jenisPerangsang || 'Perangsang',
+            nama_obat: item.bahanPembungkus || '',
+            deskripsi: item.deskripsiPembuahan || '',
             detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'stok obat' || typeLower === 'stok_obat') {
+        const dosisVal = parseFloat(item.volumeObat || item.qty || item.amount || 0);
+        let calculatedUnit = item.satuanVolumeObat || item.unit || 'ml';
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Stok Obat',
+            nama_rincian_aktivitas: item.selectedRincian || 'Tambah Obat',
+            jenis_bahan: 'obat',
+            fase_pohon: 'Vegetatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: calculatedUnit,
+            bagian_pohon: 'Daun',
+            teknik_perawatan: item.teknikPemberianObat || 'Semprot',
+            nama_obat: item.namaObat || 'Obat',
+            deskripsi: item.catatanStok || '',
+            detail_pohon: item.volumeLarutan || '',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'stok pupuk' || typeLower === 'stok_pupuk') {
+        const dosisVal = parseFloat(item.volumeObat || item.qty || item.amount || 0);
+        let calculatedUnit = item.satuanVolumeObat || item.unit || 'kg';
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Stok Pupuk',
+            nama_rincian_aktivitas: item.selectedRincian || 'Tambah Pupuk',
+            jenis_bahan: 'pupuk',
+            fase_pohon: 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: calculatedUnit,
+            bagian_pohon: 'Akar',
+            teknik_perawatan: item.teknikPemberianObat || 'Tebar',
+            nama_obat: item.namaObat || 'Pupuk',
+            deskripsi: item.catatanStok || '',
+            detail_pohon: item.volumeLarutan || '',
             Lahan_id_lahan: landId,
           } as any)
         );
@@ -1121,13 +1172,13 @@ const defaultSubmissions: PencatatanSubmission[] = [
   {
     id: 'SUB-002',
     type: 'pemangkasan',
-    typeLabel: 'Pemangkasan Ranting',
+    typeLabel: 'Pemangkasan Pemeliharaan',
     operatorCode: 'OP002',
     operatorName: 'Siti Aminah',
     cageCode: 'L0002',
     scope: 'kandang',
     summary: 'Pangkas ranting kering pohon Alpukat',
-    payload: { data: { items: [{ name: 'Alpukat', action: 'Pangkas Ranting' }] } },
+    payload: { data: { items: [{ name: 'Alpukat', action: 'Pemangkasan Pemeliharaan' }] } },
     submittedAt: Date.now() - 3600000 * 5,
     approvalStatus: 'pending'
   },
