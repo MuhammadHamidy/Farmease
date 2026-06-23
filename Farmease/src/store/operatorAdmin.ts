@@ -866,6 +866,8 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
       if (typeLower === 'pemangkasan') {
         const weight = parseFloat(item.jumlahPemangkasan || item.qty || item.amount || 0);
         if (!isNaN(weight) && weight > 0) {
+          const rawUnit = item.satuanBerat || '';
+          const mappedUnit = rawUnit.toLowerCase().includes('gram') || rawUnit.toLowerCase() === 'g' ? 'g' : 'kg';
           promises.push(
             pemangkasanApi.create({
               Aktivitas_id_aktivitas: '',
@@ -873,7 +875,7 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
               nama_jenis_aktivitas: 'Pemangkasan',
               nama_rincian_aktivitas: item.selectedRincian || 'Pemangkasan',
               jumlah: String(weight),
-              satuan: 'kg',
+              satuan: mappedUnit,
               keterangan: item.deskripsiPemangkasan || 'Pemangkasan rutin',
               Lahan_id_lahan: landId,
             } as any)

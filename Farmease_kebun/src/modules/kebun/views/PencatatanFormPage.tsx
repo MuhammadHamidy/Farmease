@@ -280,6 +280,20 @@ export default defineComponent({
       formState.value.kodePohon = codes.join(', ')
     }, { deep: true })
 
+    watch(
+      () => [selectedJenis.value, selectedRincian.value],
+      ([jenis, rincian]) => {
+        if (jenis === 'Penanaman') {
+          if (rincian === 'Bibit Baru') {
+            activeMode.value = 'lahan'
+          } else if (rincian.toLowerCase().includes('penggantian') || rincian.toLowerCase().includes('pergantian')) {
+            activeMode.value = 'pohon'
+          }
+        }
+      },
+      { immediate: true }
+    )
+
     const fetchTrees = async () => {
       try {
         const list = await pohonApi.getList()
@@ -431,7 +445,7 @@ export default defineComponent({
             </div>
           )}
 
-          {selectedJenis.value !== 'Stok Obat' && selectedJenis.value !== 'Stok Pupuk' && (
+          {selectedJenis.value !== 'Stok Obat' && selectedJenis.value !== 'Stok Pupuk' && selectedJenis.value !== 'Penanaman' && (
             <PencatatanModeToggle
               modelValue={activeMode.value}
               onUpdate:modelValue={(val: 'pohon' | 'lahan') => { activeMode.value = val }}

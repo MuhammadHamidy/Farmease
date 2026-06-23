@@ -38,3 +38,6 @@ bin/
 
 # Temporary ignore for init
 ./
+
+# Air hot reload build output
+tmp/
