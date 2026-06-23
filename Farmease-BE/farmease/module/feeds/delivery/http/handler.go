@@ -19,6 +19,8 @@ func (h *FeedHandler) RegisterRoutes(app *fiber.App) {
 	// Global master feed endpoints
 	feeds := api.Group("/feeds")
 	h.registerFeedsGroup(feeds)
+	feeds.Post("/mixtures", h.RecordFeedingMixture)
+	feeds.Post("/conversions", h.RecordSilageConversion)
 
 	pakanMaster := api.Group("/pakan/master")
 	h.registerFeedsGroup(pakanMaster)

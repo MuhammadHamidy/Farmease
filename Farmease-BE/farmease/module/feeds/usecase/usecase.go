@@ -265,8 +265,47 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 	return recommendations, totalFreshWeight
 }
 
+func isValidUUID(u string) bool {
+	if len(u) != 36 {
+		return false
+	}
+	for i := 0; i < 36; i++ {
+		c := u[i]
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+		} else {
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (u *useCase) GetFeedRecommendation(ctx context.Context, idSheep string) (*domain.FeedRecommendation, error) {
-	sheep, err := u.sheepRepo.FindByID(ctx, idSheep)
+	var sheep *sheepDomain.Sheep
+	var err error
+
+	if isValidUUID(idSheep) {
+		sheep, err = u.sheepRepo.FindByID(ctx, idSheep)
+		if err != nil {
+			// Fallback to searching by sheep code in case the UUID is actually a code (though unlikely for 36 chars)
+			codeSheep, errCode := u.sheepRepo.FindByCode(ctx, idSheep)
+			if errCode == nil {
+				sheep, err = u.sheepRepo.FindByID(ctx, codeSheep.IDSheep)
+			}
+		}
+	} else {
+		// It's a code, search by code directly
+		codeSheep, errCode := u.sheepRepo.FindByCode(ctx, idSheep)
+		if errCode != nil {
+			return nil, fmt.Errorf("failed to find sheep by code (%s): %w", idSheep, errCode)
+		}
+		sheep, err = u.sheepRepo.FindByID(ctx, codeSheep.IDSheep)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +323,7 @@ func (u *useCase) GetFeedRecommendation(ctx context.Context, idSheep string) (*d
 	recs, totalFreshWeight := calculateSingleRecommendation(weight, availableFeeds)
 
 	return &domain.FeedRecommendation{
-		IDSheep:            idSheep,
+		IDSheep:            sheep.IDSheep, // Return the actual UUID of the sheep
 		SheepName:          sheep.SheepName,
 		WeightKg:           weight,
 		Status:             sheep.Status,
@@ -350,3 +389,25 @@ func (u *useCase) GetFeedingHistory(ctx context.Context, idSheep string) ([]*dom
 func (u *useCase) GetFeedingList(ctx context.Context, filter domain.FeedingFilter) ([]*domain.Feeding, int, error) {
 	return u.repo.FindAllFeedings(ctx, filter)
 }
+
+func (u *useCase) RecordFeedingMixture(ctx context.Context, fm *domain.FeedingMixture) error {
+	for _, d := range fm.Details {
+		if err := u.UpdateFeedStock(ctx, d.IDFeed, d.Amount, "kurang"); err != nil {
+			return fmt.Errorf("gagal memotong stok pakan %s: %w", d.IDFeed, err)
+		}
+	}
+	return u.repo.StoreFeedingMixture(ctx, fm)
+}
+
+func (u *useCase) RecordSilageConversion(ctx context.Context, sc *domain.SilageConversion) error {
+	for _, d := range sc.Details {
+		if err := u.UpdateFeedStock(ctx, d.IDFeed, d.Amount, "kurang"); err != nil {
+			return fmt.Errorf("gagal memotong stok bahan baku %s: %w", d.IDFeed, err)
+		}
+	}
+	if err := u.repo.UpdateStock(ctx, sc.IDTargetFeed, sc.TargetAmount, "tambah"); err != nil {
+		return fmt.Errorf("gagal menambahkan stok silase target: %w", err)
+	}
+	return u.repo.StoreSilageConversion(ctx, sc)
+}
+

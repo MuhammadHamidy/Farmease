@@ -170,7 +170,7 @@ export default defineComponent({
             {/* Header Banner matching image 5 */}
             <header style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1.5px solid #f0f0eb; flex-shrink: 0; width: 100%; box-sizing: border-box;">
               <div style="font-size: 1.45rem; font-weight: 800; color: #111827; letter-spacing: -0.02em;">
-                Sah Hi Agro Farm
+                Say Hi Agro Farm
               </div>
               <div style="display: flex; align-items: center; gap: 1rem;">
                 <button class="action-bell-btn" style="background: none; border: none; cursor: pointer; padding: 0;">

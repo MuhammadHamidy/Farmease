@@ -2,7 +2,7 @@ import { defineComponent, ref, computed, onMounted, watch, type PropType } from 
 import { useRouter } from 'vue-router';
 import Typography from '@/shared/ui/Typography';
 import { userSession, cageSession, cagesList, fetchCagesList, prefilledPencatatanType, prefilledPencatatanRincian, prefilledPencatatanTaskId } from '@/store/navigation';
-import { sheep, fetchSheep, fetchWeightRecords } from '@/store/livestock';
+import { sheep, weightRecords, fetchSheep, fetchWeightRecords } from '@/store/livestock';
 import { fetchTasks, operatorTasks, tasksLoading, completeTask, mapApiTaskToLocal, fetchAccountsList } from '@/store/operatorAdmin';
 import { pregnancyApi, tasksApi, cagesApi } from '@/shared/api';
 
@@ -28,26 +28,107 @@ export default defineComponent({
     
     const birthAlerts = ref<BirthAlert[]>([]);
 
+    const selectedCageCode = ref<string>('all');
 
-    const activeCageCode = computed(() => cageSession.value?.code || '');
-
-    const cageStats = ref<{ total_animals: number; healthy: number; attention_needed: number } | null>(null);
-    const cageWeightStats = ref<{ current_average: number; growth_kg: number; growth_percentage: number; monthly_trend: any[] } | null>(null);
-
-    const cageInfo = computed(() => {
-      return cagesList.value.find(cageItem => cageItem.code === activeCageCode.value) || null;
+    const filteredSheep = computed(() => {
+      const activeOnly = sheep.value.filter(s => !['Mati', 'Terjual', 'Disembelih'].includes(s.status));
+      if (selectedCageCode.value === 'all') {
+        return activeOnly;
+      }
+      return activeOnly.filter(s => s.cage_code === selectedCageCode.value);
     });
 
-    watch(cageInfo, async (newCage) => {
-      if (newCage?.id) {
-        try {
-          cageStats.value = await cagesApi.getStats(newCage.id);
-          cageWeightStats.value = await cagesApi.getWeightStats(newCage.id);
-        } catch (e) {
-          console.error('Failed to fetch cage stats', e);
+    const activeCageCode = computed(() => {
+      return selectedCageCode.value === 'all' ? '' : selectedCageCode.value;
+    });
+
+    const cageInfo = computed(() => {
+      if (selectedCageCode.value === 'all') return null;
+      return cagesList.value.find(cageItem => cageItem.code === selectedCageCode.value) || null;
+    });
+
+    const activeCageName = computed(() => {
+      if (selectedCageCode.value === 'all') return 'Semua Kandang';
+      const cage = cagesList.value.find(c => c.code === selectedCageCode.value);
+      return cage ? cage.name : `Kandang ${selectedCageCode.value}`;
+    });
+
+    const totalAnimals = computed(() => filteredSheep.value.length);
+    const healthyAnimals = computed(() => filteredSheep.value.filter(s => s.status === 'Sehat').length);
+    const attentionAnimals = computed(() => filteredSheep.value.filter(s => s.status === 'Hamil' || s.status === 'Sakit').length);
+
+    const cageStats = computed(() => ({
+      total_animals: totalAnimals.value,
+      healthy: healthyAnimals.value,
+      attention_needed: attentionAnimals.value
+    }));
+
+    const cageWeightStats = computed(() => {
+      const sheepIds = new Set(filteredSheep.value.map(s => String(s.id)));
+      if (sheepIds.size === 0) {
+        return {
+          current_average: 0,
+          growth_kg: 0,
+          growth_percentage: 0,
+          monthly_trend: []
+        };
+      }
+
+      const records = weightRecords.value.filter(r => sheepIds.has(String(r.sheep_id)));
+
+      const groupedByMonth: Record<string, { totalWeight: number; count: number }> = {};
+      records.forEach(r => {
+        if (!r.date || !r.weight) return;
+        const dateObj = new Date(r.date);
+        if (isNaN(dateObj.getTime())) return;
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const monthKey = `${year}-${month}-01`;
+
+        if (!groupedByMonth[monthKey]) {
+          groupedByMonth[monthKey] = { totalWeight: 0, count: 0 };
+        }
+        groupedByMonth[monthKey].totalWeight += Number(r.weight);
+        groupedByMonth[monthKey].count += 1;
+      });
+
+      const monthlyTrend = Object.entries(groupedByMonth)
+        .map(([month_date, data]) => ({
+          month: month_date,
+          weight: data.totalWeight / data.count,
+        }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      const recentTrend = monthlyTrend.slice(-5);
+
+      let currentAverage = 0;
+      if (recentTrend.length > 0) {
+        currentAverage = recentTrend[recentTrend.length - 1].weight;
+      } else {
+        const weights = filteredSheep.value
+          .map(s => parseFloat(s.weight))
+          .filter(w => !isNaN(w) && w > 0);
+        if (weights.length > 0) {
+          currentAverage = weights.reduce((sum, w) => sum + w, 0) / weights.length;
         }
       }
-    }, { immediate: true });
+
+      let growthKg = 0;
+      let growthPercentage = 0;
+      if (recentTrend.length >= 2) {
+        const firstWeight = recentTrend[0].weight;
+        const lastWeight = recentTrend[recentTrend.length - 1].weight;
+        growthKg = lastWeight - firstWeight;
+        growthPercentage = firstWeight > 0 ? (growthKg / firstWeight) * 100 : 0;
+      }
+
+      return {
+        current_average: currentAverage,
+        growth_kg: growthKg,
+        growth_percentage: growthPercentage,
+        monthly_trend: recentTrend
+      };
+    });
 
     const fetchDashboardData = async () => {
       await fetchAccountsList();
@@ -94,16 +175,17 @@ export default defineComponent({
 
     onMounted(fetchDashboardData);
 
-    const cageInventory = computed(() =>
-      sheep.value.filter(sheepItem => sheepItem.cage_code === activeCageCode.value),
-    );
+    const cageInventory = computed(() => filteredSheep.value);
 
     const selectedTask = computed(() =>
       operatorTasks.value.find(task => task.id === selectedTaskId.value) || null,
     );
 
     const activeCageCapacity = computed(() => {
-      const cage = cagesList.value.find(c => c.code === activeCageCode.value);
+      if (selectedCageCode.value === 'all') {
+        return cagesList.value.reduce((sum, c) => sum + (c.capacity || 0), 0);
+      }
+      const cage = cagesList.value.find(c => c.code === selectedCageCode.value);
       return cage?.capacity || 0;
     });
 
@@ -152,9 +234,6 @@ export default defineComponent({
       return `${diff > 0 ? '+' : ''}${diff.toFixed(1)} kg (${pct.toFixed(0)}%)`;
     });
 
-    const totalAnimals = computed(() => cageStats.value?.total_animals || 0);
-    const healthyAnimals = computed(() => cageStats.value?.healthy || 0);
-    const attentionAnimals = computed(() => cageStats.value?.attention_needed || 0);
     const peternakanTasks = computed(() => {
       const activeCode = (activeCageCode.value || '').trim().toUpperCase();
       return operatorTasks.value.filter(t => {
@@ -189,10 +268,7 @@ export default defineComponent({
 
     const onAddLivestockSuccess = async () => {
       await fetchSheep();
-      if (cageInfo.value?.id) {
-        cageStats.value = await cagesApi.getStats(cageInfo.value.id);
-        cageWeightStats.value = await cagesApi.getWeightStats(cageInfo.value.id);
-      }
+      await fetchWeightRecords();
     };
 
     return () => {
@@ -205,14 +281,13 @@ export default defineComponent({
               <div>
                 <div class="d-flex align-items-center gap-3 mb-1">
                   <Typography variant="h3" weight="extrabold" className="m-0 text-white">
-                    Dashboard {cageInfo.value?.name || `Kandang ${activeCageCode.value || '—'}`}
+                    Dashboard {activeCageName.value}
                   </Typography>
                 </div>
                 <Typography variant="p" className="m-0 text-white opacity-80" size="text-sm">
-                  Memantau populasi ternak, kesehatan, serta penyelesaian tugas harian di kandang aktif.
+                  Memantau populasi ternak, kesehatan, serta penyelesaian tugas harian di {selectedCageCode.value === 'all' ? 'seluruh kandang' : `kandang ${selectedCageCode.value}`}.
                 </Typography>
               </div>
-
 
             </div>
           </div>
@@ -255,6 +330,8 @@ export default defineComponent({
             cageInventory={cageInventory.value}
             activeCageCode={activeCageCode.value}
             isLoading={isLoading.value}
+            selectedCageCode={selectedCageCode.value}
+            onCageChange={(val: string) => selectedCageCode.value = val}
             onOpenAddModal={() => isAddModalOpen.value = true}
           />
 

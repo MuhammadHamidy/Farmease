@@ -5,4 +5,3 @@ CREATE TABLE IF NOT EXISTS gardening.status_aktivitas (
     tanggal TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     keterangan TEXT NOT NULL DEFAULT ''
 );
-

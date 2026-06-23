@@ -25,12 +25,10 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/pemangkasan"
 	"github.com/farmease/farmease-be/farmease/module/perawatan"
 	"github.com/farmease/farmease-be/farmease/module/pohon"
-	"github.com/farmease/farmease-be/farmease/module/status_aktivitas"
 	"github.com/farmease/farmease-be/farmease/module/fertilizers"
 	"github.com/farmease/farmease-be/farmease/module/tasks"
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
 	"github.com/farmease/farmease-be/farmease/module/notifications"
-	"github.com/farmease/farmease-be/farmease/module/notifikasi"
 	"github.com/farmease/farmease-be/farmease/module/submissions"
 	"github.com/farmease/farmease-be/farmease/module/pencatatan_types"
 )
@@ -111,12 +109,10 @@ func serveE(cmd *cobra.Command, args []string) error {
 		pemangkasan.Module,
 		panen.Module,
 		akun_lahan.Module,
-		status_aktivitas.Module,
 		fertilizers.Module,
 		tasks.Module,
 		routine_schedules.Module,
 		notifications.Module,
-		notifikasi.Module,
 		submissions.Module,
 		pencatatan_types.Module,
 

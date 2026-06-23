@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS gardening.jadwal_rutin (
     Lahan_id_lahan UUID REFERENCES gardening.lahan(id_lahan) ON DELETE CASCADE,
     Aktivitas_id_aktivitas UUID REFERENCES gardening.aktivitas(id_aktivitas) ON DELETE CASCADE
 );
-

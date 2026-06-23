@@ -90,7 +90,7 @@ export default defineComponent({
                 <img src="/icon/logo_farmease.png" alt="FARMease" style={{ height: '44px', objectFit: 'contain' }} />
               </div>
               <div class="header-divider d-none d-sm-block"></div>
-              <h1 class="peternakan-header-title d-none d-sm-block">Sah Hi Agro Farm</h1>
+              <h1 class="peternakan-header-title d-none d-sm-block">Say Hi Agro Farm</h1>
             </div>
 
             <div class="header-right-group position-relative">
@@ -150,11 +150,10 @@ export default defineComponent({
                 )}
               </div>
 
-              {/* Logout Button */}
               <button 
                 class="header-logout-btn" 
-                onClick={() => { cageSession.value = null; router.push({ name: 'ternak-pilih-kandang' }) }}
-                title="Keluar ke Pilih Kandang"
+                onClick={goBackToLogin}
+                title="Keluar / Logout"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

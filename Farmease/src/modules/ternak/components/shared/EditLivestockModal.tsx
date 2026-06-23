@@ -48,6 +48,7 @@ export default defineComponent({
       id_mother: '',
       photo_url: '',
       id_cage: '',
+      owner: '',
     });
     const selectedFile = ref<File | null>(null);
     const previewUrl = ref<string | null>(null);
@@ -55,8 +56,9 @@ export default defineComponent({
     const onFileChange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
-        selectedFile.value = target.files[0];
-        previewUrl.value = URL.createObjectURL(selectedFile.value);
+        const file = target.files[0];
+        selectedFile.value = file;
+        previewUrl.value = URL.createObjectURL(file);
       }
     };
 
@@ -69,8 +71,9 @@ export default defineComponent({
           '22222222-2222-2222-2222-222222222202': 'Texel',
           '22222222-2222-2222-2222-222222222203': 'Dorper',
           '22222222-2222-2222-2222-222222222204': 'Merino',
-          '22222222-2222-2222-2222-222222222205': 'F2 Dorper',
-          '22222222-2222-2222-2222-222222222206': 'F2 Garut'
+          '22222222-2222-2222-2222-222222222205': 'Dorper F2',
+          '22222222-2222-2222-2222-222222222206': 'F2 Garut',
+          '22222222-2222-2222-2222-222222222207': 'Cross Dorper'
         };
         const resolvedType = sheepData.jenis || sheepData.sheep_type || sheepData.type || typeMapReverse[String(sheepData.id_type)] || '';
         
@@ -104,6 +107,7 @@ export default defineComponent({
           id_mother: sheepData.id_mother || '',
           photo_url: sheepData.photo_url || '',
           id_cage: sheepData.id_cage || '',
+          owner: sheepData.owner || '',
         };
         selectedFile.value = null;
         previewUrl.value = sheepData.photo_url ? `http://localhost:8081${sheepData.photo_url}` : null;
@@ -129,7 +133,9 @@ export default defineComponent({
           'Dorper': '22222222-2222-2222-2222-222222222203',
           'Merino': '22222222-2222-2222-2222-222222222204',
           'F2 Dorper': '22222222-2222-2222-2222-222222222205',
-          'F2 Garut': '22222222-2222-2222-2222-222222222206'
+          'Dorper F2': '22222222-2222-2222-2222-222222222205',
+          'F2 Garut': '22222222-2222-2222-2222-222222222206',
+          'Cross Dorper': '22222222-2222-2222-2222-222222222207'
         };
         const resolvedIdType = typeMap[editDomba.value.type] || '22222222-2222-2222-2222-222222222201';
 
@@ -146,6 +152,7 @@ export default defineComponent({
           id_mother: editDomba.value.id_mother ? String(editDomba.value.id_mother) : null,
           photo_url: editDomba.value.photo_url,
           id_cage: editDomba.value.id_cage || '',
+          owner: editDomba.value.owner,
         };
 
         if (selectedFile.value) {
@@ -212,7 +219,7 @@ export default defineComponent({
                   <label class="form-label text-secondary small fw-bold mb-2">Ras/Jenis <span class="text-danger">*</span></label>
                   <CustomSelect
                     placeholder="Pilih Ras/Jenis"
-                    options={['Garut', 'Texel', 'Dorper', 'Merino', 'F2 Dorper', 'F2 Garut']}
+                    options={['Garut', 'Texel', 'Dorper', 'Merino', 'Dorper F2', 'F2 Garut', 'Cross Dorper']}
                     modelValue={editDomba.value.type}
                     onUpdate:modelValue={(v: string) => editDomba.value.type = v}
                     disabled={true}
@@ -322,6 +329,16 @@ export default defineComponent({
                     modelValue={editDomba.value.origin}
                     onUpdate:modelValue={(v: string) => editDomba.value.origin = v}
                     disabled={true}
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label text-secondary small fw-bold mb-2">Pemilik</label>
+                  <CustomSelect
+                    placeholder="Pilih Pemilik"
+                    options={['SHAF', 'Ilona', 'Sylvia/Ropi', 'Maria/Chris', 'SHAF/MC', 'SHAF/SR', 'Sundari']}
+                    modelValue={editDomba.value.owner}
+                    onUpdate:modelValue={(v: string) => editDomba.value.owner = v}
                   />
                 </div>
 

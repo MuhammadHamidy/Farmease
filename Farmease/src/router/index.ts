@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { adminRoutes } from '@/modules/admin/router';
 import { ternakRoutes } from '@/modules/ternak/router';
+import { pemilikTernakRoutes } from '@/modules/pemilik/router';
 import { userSession } from '@/store/navigation';
 import { authApi } from '@/shared/api';
 
@@ -9,6 +10,7 @@ const router = createRouter({
   routes: [
     ...adminRoutes,
     ...ternakRoutes,
+    ...pemilikTernakRoutes,
     {
       path: '/:pathMatch(.*)*',
       redirect: '/ternak',
@@ -53,6 +55,12 @@ router.beforeEach((to, from) => {
     delete query.role;
     delete query.username;
     delete query.code;
+
+    // Redirect Owner/Pemilik ke halaman pemilik tersendiri
+    const isOwner = role === 'Owner' || role === 'Pemilik';
+    if (isOwner && to.path !== '/pemilik') {
+      return { path: '/pemilik', query };
+    }
     
     return { path: to.path, query };
   }
@@ -75,6 +83,15 @@ router.beforeEach((to, from) => {
   if (!authApi.getToken() && !publicPaths.includes(to.path)) {
     window.location.href = 'http://localhost:3000/';
     return false;
+  }
+
+  // Enforce Owner/Pemilik always lands on /pemilik and non-owners cannot enter /pemilik
+  const isOwner = userSession.value?.role === 'Owner' || userSession.value?.role === 'Pemilik';
+  if (isOwner && to.path !== '/pemilik' && !publicPaths.includes(to.path)) {
+    return '/pemilik';
+  }
+  if (!isOwner && to.path === '/pemilik') {
+    return userSession.value?.role === 'Admin' ? '/admin' : '/ternak';
   }
 
   return true;

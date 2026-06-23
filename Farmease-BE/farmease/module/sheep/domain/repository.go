@@ -32,6 +32,7 @@ type Sheep struct {
 	ADG             *int       `json:"adg,omitempty"`
 	ADGLabel        string     `json:"adg_label,omitempty"`
 	PhotoURL        string     `json:"photo_url,omitempty" db:"photo_url"`
+	Owner           string     `json:"owner" db:"owner"`
 	Father          *Parent    `json:"father,omitempty"`
 	Mother          *Parent    `json:"mother,omitempty"`
 	CreatedBy       *string    `json:"created_by,omitempty" db:"created_by"`

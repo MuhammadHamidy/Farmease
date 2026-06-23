@@ -44,6 +44,7 @@ export interface Sheep {
   photo_url?: string
   id_father?: string | number
   id_mother?: string | number
+  owner?: string
   created_by: string | number
   created_at: string
   updated_at: string
@@ -226,6 +227,12 @@ export const feedsApi = {
   },
   recordPemberianPakan: async (sheepId: string | number, payload: any): Promise<any> => {
     return await apiClient.post(`/api/sheep/${sheepId}/pemberian-pakan`, payload)
+  },
+  recordFeedingMixture: async (payload: any): Promise<any> => {
+    return await apiClient.post('/api/feeds/mixtures', payload)
+  },
+  recordSilageConversion: async (payload: any): Promise<any> => {
+    return await apiClient.post('/api/feeds/conversions', payload)
   },
 }
 

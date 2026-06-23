@@ -12,6 +12,109 @@ import {
   type ApprovalStatus,
 } from '@/store/operatorAdmin';
 import { userSession } from '@/store/navigation';
+import { sheep } from '@/store/livestock';
+
+const labelMappings: Record<string, string> = {
+  targetId: 'ID Domba/Target',
+  qty: 'Jumlah/Volume',
+  unit: 'Satuan',
+  note: 'Catatan',
+  tindakan: 'Tindakan/Diagnosa',
+  obat: 'Obat/Pakan/Vitamin',
+  vitaminAmount: 'Jumlah Vitamin Masuk',
+  idPejantan: 'ID Pejantan',
+  metoda: 'Metode Kawin',
+  kotoranState: 'Jenis/Kondisi Kotoran',
+  jumlahAnak: 'Jumlah Anak',
+  kondisiInduk: 'Kondisi Induk',
+  kondisiAnak: 'Kondisi Anak',
+  tanggal: 'Tanggal',
+  kandangAnak: 'Kandang Anak',
+  namaAnak: 'Nama Anak',
+  beratLahir: 'Berat Lahir',
+  pemanfaatan: 'Pemanfaatan (Kotoran)',
+  waktuIB: 'Waktu Inseminasi Buatan (IB)',
+  sumberPejantan: 'Sumber Pejantan',
+  asalSemen: 'Kode Batch/ Straw Semen',
+  namaInseminator: 'Nama Inseminator',
+  donorName: 'Nama/ID Pejantan Donor',
+  donorOrigin: 'Instansi/Balai Asal Pejantan Donor',
+  idMating: 'ID Perkawinan',
+  metodePemeriksaan: 'Metode Pemeriksaan',
+  hasilPemeriksaan: 'Hasil Pemeriksaan',
+
+  // Perkebunan Mappings
+  alatPembersihan: 'Alat Pembersihan',
+  bagianPembersihan: 'Bagian Pembersihan',
+  deskripsiPembersihan: 'Deskripsi Pembersihan',
+  beratGulma: 'Berat Gulma',
+  beratBahanPembumbun: 'Berat Bahan Pembumbun',
+  beratLimbah: 'Berat Limbah',
+  satuanBerat: 'Satuan Berat',
+  jenisGulma: 'Jenis Gulma',
+  bahanPembumbun: 'Bahan Pembumbun',
+  tujuanPemanfaatan: 'Tujuan Pemanfaatan',
+  teknikPenyiraman: 'Teknik Penyiraman',
+  sesiPenyiraman: 'Sesi Penyiraman',
+  deskripsiPenyiraman: 'Deskripsi Penyiraman',
+  volumeAir: 'Volume Air',
+  satuanVolumeAir: 'Satuan Volume Air',
+  jumlahLubangBiopori: 'Jumlah Lubang Biopori',
+  jenisBibit: 'Jenis Bibit',
+  alasanPenanaman: 'Alasan Penanaman',
+  deskripsiPenanaman: 'Deskripsi Penanaman',
+  jenisPerangsang: 'Jenis Perangsang',
+  dosisPerangsang: 'Dosis Perangsang',
+  deskripsiPembuahan: 'Deskripsi Pembuahan',
+  diameterBuah: 'Diameter Buah',
+  satuanDiameter: 'Satuan Diameter',
+  jumlahBuahDibuang: 'Jumlah Buah Dibuang',
+  sisaBuahPerTandan: 'Sisa Buah per Tandan',
+  bahanPembungkus: 'Bahan Pembungkus',
+  jumlahBuahDibungkus: 'Jumlah Buah Dibungkus',
+  jumlahPemangkasan: 'Jumlah Pemangkasan',
+  deskripsiPemangkasan: 'Deskripsi Pemangkasan',
+  metodePemangkasan: 'Metode Pemangkasan',
+  jumlahPanen: 'Jumlah Panen',
+  beratPanen: 'Berat Panen',
+  deskripsiPanen: 'Deskripsi Panen',
+  kondisiPanen: 'Kondisi Panen',
+  caraPanen: 'Cara Panen',
+  jenisObat: 'Jenis Obat',
+  kodePohonPerawatan: 'Kode Pohon Perawatan',
+  bagianPohon: 'Bagian Pohon',
+  teknikPemberian: 'Teknik Pemberian',
+  namaObat: 'Nama Obat/Bahan',
+  dosisObat: 'Dosis Obat',
+  deskripsiPerawatan: 'Deskripsi Perawatan',
+  teknikPengendalian: 'Teknik Pengendalian',
+  namaPestisida: 'Nama Pestisida',
+  dosisPestisida: 'Dosis Pestisida',
+  volumeLarutan: 'Volume Larutan',
+  satuanVolumeLarutan: 'Satuan Volume Larutan',
+  volumeObat: 'Volume Obat',
+  satuanVolumeObat: 'Satuan Volume Obat',
+  namaOPT: 'Nama OPT (Organisme Pengganggu)',
+  targetHama: 'Target Hama',
+  namaGejala: 'Nama Gejala',
+  jenisPupuk: 'Jenis Pupuk',
+  kodePohonPemupukan: 'Kode Pohon Pemupukan',
+  jumlahBeratPupuk: 'Jumlah Berat Pupuk',
+  deskripsiPemupukan: 'Deskripsi Pemupukan',
+  jenisPupukDetail: 'Detail Jenis Pupuk',
+  teknikPemupukan: 'Teknik Pemupukan',
+  jumlahStokMasuk: 'Jumlah Stok Masuk',
+  jumlahStokKeluar: 'Jumlah Stok Keluar',
+  catatanStok: 'Catatan Stok',
+  selectedRincian: 'Rincian Aktivitas',
+  kategoriPencatatan: 'Kategori Pencatatan',
+  selectedVarietas: 'Varietas Tanaman'
+};
+
+const camelToTitle = (text: string) => {
+  const result = text.replace(/([A-Z])/g, " $1");
+  return result.charAt(0).toUpperCase() + result.slice(1);
+};
 
 const shouldShowKey = (type: string, key: string, item: any): boolean => {
   const t = (type || '').toLowerCase();
@@ -20,6 +123,9 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
   if (t === 'perkawinan') {
     if (formName === 'Kontrol Kebuntingan') {
       return ['targetId', 'idMating', 'metodePemeriksaan', 'hasilPemeriksaan', 'tanggal', 'note'].includes(key);
+    }
+    if (formName === 'Cek Birahi') {
+      return ['targetId', 'hasilPemeriksaan', 'tanggal', 'note'].includes(key);
     }
     const baseKeys = ['targetId', 'idPejantan', 'metoda', 'tanggal', 'note'];
     if (baseKeys.includes(key)) {
@@ -59,7 +165,7 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
   
   if (t === 'stok_pakan') {
     if (formName === 'Konversi Pakan') {
-      return ['obat', 'qty', 'idPejantan', 'vitaminAmount', 'tanggal', 'note'].includes(key);
+      return ['obat', 'qty', 'idPejantan', 'vitaminAmount', 'tanggal', 'note', 'tindakan', 'pemanfaatan', 'kandangAnak', 'namaAnak'].includes(key);
     }
     return ['obat', 'qty', 'unit', 'tanggal', 'note'].includes(key);
   }
@@ -209,15 +315,21 @@ export default defineComponent({
       }
     };
 
-    const handleRejectAction = (id: string, note: string) => {
-      const res = rejectSubmission(id, reviewerName(), note);
-      if (res) {
-        alertModal.value = {
-          isOpen: true,
-          title: 'Berhasil Ditolak',
-          message: res.message,
-          type: 'success'
-        };
+    const handleRejectAction = async (id: string, note: string) => {
+      if (isSubmitting.value) return;
+      isSubmitting.value = true;
+      try {
+        const res = await rejectSubmission(id, reviewerName(), note);
+        if (res) {
+          alertModal.value = {
+            isOpen: true,
+            title: res.success ? 'Berhasil Ditolak' : 'Gagal Menolak',
+            message: res.message,
+            type: res.success ? 'success' : 'error'
+          };
+        }
+      } finally {
+        isSubmitting.value = false;
       }
     };
 
@@ -691,58 +803,66 @@ export default defineComponent({
                           {Object.entries(item).map(([key, val]) => {
                             if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode') return null;
                             if (!shouldShowKey(selected.value?.type || '', key, item)) return null;
-                            
-                            const formName = item.name || '';
-                            let displayLabel = key;
+                                              const formName = item.name || '';
+                            let displayLabel = labelMappings[key] || camelToTitle(key);
                             if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
+                            if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') {
+                              if (key === 'tindakan') displayLabel = 'Pakan Tambahan (Energi)';
+                              else if (key === 'pemanfaatan') displayLabel = 'Pakan Tambahan (Protein)';
+                              else if (key === 'kandangAnak') displayLabel = 'Pakan Tambahan (Mineral)';
+                              else if (key === 'namaAnak') displayLabel = 'Pakan Tambahan (Vitamin)';
+                            }
                             if (key === 'qty') {
                                if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Jumlah Diolah';
                                else if (selected.value?.type === 'kotoran') displayLabel = 'Jumlah Produksi';
                                else if (selected.value?.type === 'berat_badan' || selected.value?.type === 'weighing') displayLabel = 'Berat Badan';
-                               else displayLabel = 'Jumlah/Volume';
+                               else displayLabel = labelMappings['qty'] || 'Jumlah/Volume';
                              }
-                             if (key === 'unit') displayLabel = 'Satuan';
-                             if (key === 'note') displayLabel = 'Catatan';
-                             if (key === 'tindakan') displayLabel = 'Tindakan/Diagnosa';
                              if (key === 'obat') {
                                if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Pakan Mentah Asal';
                                else if (selected.value?.type === 'stok_pakan' && formName === 'Tambah Stok') displayLabel = 'Nama Pakan/Sumber';
                                else if (selected.value?.type === 'pakan') displayLabel = 'Jenis Pakan';
-                               else displayLabel = 'Obat/Pakan/Vitamin';
+                               else displayLabel = labelMappings['obat'] || 'Obat/Pakan/Vitamin';
                              }
                              if (key === 'vitaminAmount') {
                                if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Jumlah Hasil Jadi';
                                else if (selected.value?.type === 'kesehatan') displayLabel = 'Jumlah Vitamin/Dosis';
-                               else displayLabel = 'Jumlah/Dosis';
+                               else displayLabel = labelMappings['vitaminAmount'] || 'Jumlah/Dosis';
                              }
                              if (key === 'idPejantan') {
                                if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Hasil Cacah Jadi';
-                               else displayLabel = 'ID Pejantan';
+                               else displayLabel = labelMappings['idPejantan'] || 'ID Pejantan';
                              }
-                             if (key === 'metoda') displayLabel = 'Metode Kawin';
-                             if (key === 'kotoranState') displayLabel = 'Jenis/Kondisi Kotoran';
-                             if (key === 'jumlahAnak') displayLabel = 'Jumlah Anak';
-                             if (key === 'kondisiInduk') displayLabel = 'Kondisi Induk';
-                             if (key === 'kondisiAnak') displayLabel = 'Kondisi Anak';
-                             if (key === 'tanggal') displayLabel = 'Tanggal';
-                             if (key === 'kandangAnak') displayLabel = 'Kandang Anak';
-                             if (key === 'namaAnak') displayLabel = 'Nama Anak';
-                             if (key === 'beratLahir') displayLabel = 'Berat Lahir';
-                             if (key === 'pemanfaatan') displayLabel = 'Pemanfaatan (Kotoran)';
-                             if (key === 'waktuIB') displayLabel = 'Waktu IB';
-                             if (key === 'sumberPejantan') displayLabel = 'Sumber Pejantan';
-                             if (key === 'asalSemen') displayLabel = 'Kode Batch / Nomor Straw Semen';
-                             if (key === 'namaInseminator') displayLabel = 'Nama Inseminator';
-                             if (key === 'donorName') displayLabel = 'Nama / ID Pejantan Donor';
-                             if (key === 'donorOrigin') displayLabel = 'Instansi / Balai Asal Pejantan Donor';
-                             if (key === 'idMating') displayLabel = 'ID Perkawinan';
-                             if (key === 'metodePemeriksaan') displayLabel = 'Metode Pemeriksaan';
-                             if (key === 'hasilPemeriksaan') displayLabel = 'Hasil Pemeriksaan';
+                             if (key === 'hasilPemeriksaan') {
+                                 if (formName === 'Cek Birahi') displayLabel = 'Hasil Cek Birahi';
+                                 else displayLabel = labelMappings['hasilPemeriksaan'] || 'Hasil Pemeriksaan';
+                               }
+                             
+                             let displayValue = String(val);
+                             if (key === 'hasilPemeriksaan') {
+                               if (formName === 'Cek Birahi') {
+                                 displayValue = val === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi';
+                               } else {
+                                 displayValue = val === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' :
+                                                val === 'masih_menunggu' ? 'Masih Menunggu' :
+                                                val === 'gagal' ? 'Gagal' :
+                                                val === 'keguguran' ? 'Keguguran' : String(val);
+                               }
+                             } else if (key === 'targetId') {
+                               const s = sheep.value.find(x => String(x.id) === String(val) || String(x.code) === String(val));
+                               if (s) displayValue = `[${s.code}] ${s.name}`;
+                             } else if (key === 'idPejantan') {
+                               const s = sheep.value.find(x => String(x.id) === String(val) || String(x.code) === String(val));
+                               if (s) displayValue = `[${s.code}] ${s.name}`;
+                             } else if (key === 'metoda') {
+                               displayValue = val === 'ib' ? 'Inseminasi Buatan (IB)' :
+                                              val === 'alami' ? 'Alami' : String(val);
+                             }
                             
                             return (
                               <div key={key} class="col-6 col-sm-4">
                                 <span class="d-block text-muted mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{displayLabel}</span>
-                                <span class="d-block fw-bold text-dark text-truncate" style={{ fontSize: '0.9rem' }} title={String(val)}>{String(val)}</span>
+                                <span class="d-block fw-bold text-dark text-truncate" style={{ fontSize: '0.9rem' }} title={displayValue}>{displayValue}</span>
                               </div>
                             );
                           })}

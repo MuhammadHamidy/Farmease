@@ -1,10 +1,10 @@
 import { defineComponent, ref, computed, watch, onMounted } from 'vue';
 import '@/modules/ternak/assets/css/modules/RecordForm.css';
-import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession, cagesList } from '@/store/navigation';
+import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession, cagesList, fetchCagesList } from '@/store/navigation';
 import { operatorTasks, submitPencatatanSubmission } from '@/store/operatorAdmin';
-import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin';
+import { pencatatanSubmissions, fetchSubmissions } from '@/modules/ternak/store/operatorAdmin';
 import { stocks, fetchStocks } from '@/modules/ternak/store/peternakan';
-import { sheep } from '@/store/livestock';
+import { sheep, fetchSheep } from '@/store/livestock';
 import { feedsApi, breedingApi } from '@/shared/api';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
@@ -54,7 +54,7 @@ export default defineComponent({
         vitaminAmount: '',
         kotoranState: 'campur',
         idPejantan: '',
-        metoda: (item.name === 'IB' || item.name === 'Inseminasi Buatan') ? 'ib' : 'alami',
+        metoda: activePencatatanForm.value?.jenis?.id === 'pakan' ? 'dadakan' : (((item.name === 'IB' || item.name === 'Inseminasi Buatan') ? 'ib' : 'alami')),
         jumlahAnak: '',
         kondisiInduk: 'Sehat',
         kondisiAnak: 'sehat',
@@ -72,6 +72,10 @@ export default defineComponent({
         idMating: activePencatatanForm.value?.idMating || '',
         metodePemeriksaan: 'manual',
         hasilPemeriksaan: 'masih_menunggu',
+        hijauan: '',
+        energi: '',
+        protein: '',
+        mineral: '',
       }));
 
       forms.value.forEach((f) => {
@@ -110,6 +114,7 @@ export default defineComponent({
           fetchStocks();
           if (jenisId === 'perkawinan') {
             fetchActiveMatings();
+            fetchSubmissions();
           }
         }
       },
@@ -119,6 +124,12 @@ export default defineComponent({
     onMounted(() => {
       if (!activePencatatanForm.value) {
         router.push({ name: 'ternak-pencatatan' });
+      }
+      if (cagesList.value.length === 0) {
+        fetchCagesList();
+      }
+      if (sheep.value.length === 0) {
+        fetchSheep();
       }
     });
 
@@ -155,7 +166,7 @@ export default defineComponent({
         payload: recapPayload.value,
         operatorCode: userSession.value?.code,
         operatorName: userSession.value?.name,
-        cageCode: cageSession.value?.code,
+        cageCode: cageSession.value?.code || displayCageCode.value,
         taskId: activePencatatanForm.value?.taskId,
       });
 
@@ -168,7 +179,7 @@ export default defineComponent({
           typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
           operatorCode: userSession.value?.code || 'OP001',
           operatorName: userSession.value?.name || 'Operator Ternak',
-          cageCode: cageSession.value?.code || 'A',
+          cageCode: cageSession.value?.code || displayCageCode.value || 'A',
           scope: selectedScope.value,
           summary: recapPayload.value.data.summary,
           payload: recapPayload.value,
@@ -214,14 +225,43 @@ export default defineComponent({
         let insufficientMessage = '';
 
         for (const f of forms.value) {
-          const feedName = f.obat; // dropdown value for Jenis Pakan
           const requestedQty = parseFloat(f.qty) || 0;
-          if (feedName && requestedQty > 0) {
-            const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === feedName.toLowerCase());
-            if (!stockItem || stockItem.qty < requestedQty) {
-              isStockInsufficient = true;
-              insufficientMessage = `Stok pakan "${feedName}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty : 0} kg\nDibutuhkan: ${requestedQty} kg.`;
-              break;
+          if (requestedQty <= 0) continue;
+
+          if (f.metoda !== 'silase') {
+            // Pakan Dadakan (Validate four feeds)
+            const feedsToCheck = [
+              { name: f.energi, pct: 0.018 / 0.104, label: 'Energi' },
+              { name: f.protein, pct: 0.0108 / 0.104, label: 'Protein' },
+              { name: f.mineral, pct: 0.0024 / 0.104, label: 'Mineral' },
+              { name: f.hijauan, pct: 0.0728 / 0.104, label: 'Hijauan' }
+            ];
+
+            for (const item of feedsToCheck) {
+              if (!item.name) {
+                isStockInsufficient = true;
+                insufficientMessage = `Semua kategori pakan dadakan (Energi, Protein, Mineral, Hijauan) wajib diisi.`;
+                break;
+              }
+              const reqAmount = requestedQty * item.pct;
+              const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
+              if (!stockItem || stockItem.qty < reqAmount) {
+                isStockInsufficient = true;
+                insufficientMessage = `Stok pakan ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty.toFixed(2) : 0} kg\nDibutuhkan (proporsional): ${reqAmount.toFixed(2)} kg.`;
+                break;
+              }
+            }
+            if (isStockInsufficient) break;
+          } else {
+            // Pakan Silase / Stok
+            const feedName = f.obat;
+            if (feedName) {
+              const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === feedName.toLowerCase());
+              if (!stockItem || stockItem.qty < requestedQty) {
+                isStockInsufficient = true;
+                insufficientMessage = `Stok pakan "${feedName}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty : 0} kg\nDibutuhkan: ${requestedQty} kg.`;
+                break;
+              }
             }
           }
         }
@@ -231,6 +271,55 @@ export default defineComponent({
             isOpen: true,
             title: 'Stok Tidak Mencukupi',
             message: `${insufficientMessage}\n\nMohon catat penambahan stok pakan terlebih dahulu sebelum melakukan pencatatan pemberian pakan ini.`,
+            type: 'error'
+          };
+          return;
+        }
+      }
+
+      if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
+        let isStockInsufficient = false;
+        let insufficientMessage = '';
+
+        for (const f of forms.value) {
+          if (f.name === 'Konversi Pakan') {
+            const rawFeed = f.hijauan;
+            const energyFeed = f.energi;
+            const proteinFeed = f.protein;
+            const mineralFeed = f.mineral;
+            const targetQty = parseFloat(f.qty) || 0;
+
+            if (rawFeed && energyFeed && proteinFeed && mineralFeed && targetQty > 0) {
+              const reqRaw = targetQty * 0.7;
+              const reqEnergy = targetQty * 0.3 * (0.0180 / 0.0312);
+              const reqProtein = targetQty * 0.3 * (0.0108 / 0.0312);
+              const reqMineral = targetQty * 0.3 * (0.0024 / 0.0312);
+
+              const checkItems = [
+                { name: rawFeed, req: reqRaw, label: 'Pakan Mentah', pct: '70%' },
+                { name: energyFeed, req: reqEnergy, label: 'Pakan Energi (Additive)', pct: '17.3%' },
+                { name: proteinFeed, req: reqProtein, label: 'Pakan Protein', pct: '10.4%' },
+                { name: mineralFeed, req: reqMineral, label: 'Pakan Mineral', pct: '2.3%' }
+              ];
+
+              for (const item of checkItems) {
+                const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
+                if (!stockItem || stockItem.qty < item.req) {
+                  isStockInsufficient = true;
+                  insufficientMessage = `Stok ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty.toFixed(2) : 0} kg\nDibutuhkan (${item.pct}): ${item.req.toFixed(2)} kg.`;
+                  break;
+                }
+              }
+              if (isStockInsufficient) break;
+            }
+          }
+        }
+
+        if (isStockInsufficient) {
+          alertModal.value = {
+            isOpen: true,
+            title: 'Stok Tidak Mencukupi',
+            message: `${insufficientMessage}\n\nMohon sesuaikan target atau tambahkan stok terlebih dahulu.`,
             type: 'error'
           };
           return;
@@ -263,11 +352,23 @@ export default defineComponent({
           }
         }
         
-        if (categoryId === 'pakan' && (!formItem.obat || !formItem.qty)) return showError('Jenis pakan dan jumlah pakan wajib diisi.');
+        if (categoryId === 'pakan') {
+          if (formItem.metoda !== 'silase') {
+            if (!formItem.hijauan || !formItem.energi || !formItem.protein || !formItem.mineral || !formItem.qty) {
+              return showError('Semua kategori pakan dadakan (Energi, Protein, Mineral, Hijauan) dan total jumlah pakan wajib diisi.');
+            }
+          } else {
+            if (!formItem.obat || !formItem.qty) {
+              return showError('Jenis pakan dan jumlah pakan wajib diisi.');
+            }
+          }
+        }
         if (categoryId === 'stok_pakan') {
           const isConversion = formItem.name === 'Konversi Pakan';
           if (!isConversion && (!formItem.obat || !formItem.qty)) return showError('Nama pakan sumber dan jumlah masuk wajib diisi.');
-          if (isConversion && (!formItem.obat || !formItem.qty || !formItem.idPejantan || !formItem.vitaminAmount)) return showError('Semua field konversi pakan wajib diisi.');
+          if (isConversion && (!formItem.hijauan || !formItem.energi || !formItem.protein || !formItem.mineral || !formItem.qty)) {
+            return showError('Semua field konversi pakan (Pakan Mentah dan ketiga Pakan Tambahan) wajib diisi.');
+          }
         }
         if (categoryId === 'kesehatan' && (!formItem.tindakan || !formItem.obat)) return showError('Tindakan/Diagnosa dan Obat/Vitamin wajib diisi.');
         if (categoryId === 'kotoran' && !formItem.qty) return showError('Jumlah produksi kotoran wajib diisi.');
@@ -276,6 +377,8 @@ export default defineComponent({
             if (!formItem.idMating) return showError('Data Perkawinan wajib dipilih.');
             if (!formItem.metodePemeriksaan) return showError('Metode Pemeriksaan wajib dipilih.');
             if (!formItem.hasilPemeriksaan) return showError('Hasil Pemeriksaan wajib dipilih.');
+          } else if (formItem.name === 'Cek Birahi') {
+            if (!formItem.hasilPemeriksaan) return showError('Hasil Cek Birahi wajib dipilih.');
           } else {
             const isExternalIB = formItem.metoda === 'ib' && formItem.sumberPejantan === 'eksternal';
             if (!isExternalIB && !formItem.idPejantan) return showError('ID Pejantan wajib diisi.');
@@ -297,7 +400,7 @@ export default defineComponent({
         let inbreedingMessage = '';
 
         for (const formEntry of forms.value) {
-          if (formEntry.name === 'Kontrol Kebuntingan') continue;
+          if (formEntry.name === 'Kontrol Kebuntingan' || formEntry.name === 'Cek Birahi') continue;
           const id1Str = String(formEntry.targetId || '').trim().toUpperCase();
           const id2Str = String(formEntry.idPejantan || '').trim().toUpperCase();
           
@@ -363,18 +466,49 @@ export default defineComponent({
 
     const matchedStocks = computed(() => {
       const type = activePencatatanForm.value?.jenis?.id || '';
-      return stocks.value.filter(
-        (s) =>
-          ((type === 'pakan' || type === 'stok_pakan') && (s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery')) ||
-          (type === 'kesehatan' && s.category === 'vitamin') ||
-          (type === 'kotoran' && s.category === 'kotoran'),
-      );
+      return stocks.value
+        .filter(
+          (s) =>
+            (type === 'pakan' && (s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet')) ||
+            (type === 'stok_pakan' && (s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery')) ||
+            (type === 'kesehatan' && s.category === 'vitamin') ||
+            (type === 'kotoran' && s.category === 'kotoran'),
+        )
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name));
     });
 
     const getCageName = (code: string) => {
       const cage = cagesList.value.find(c => c.code === code);
       return cage ? cage.name : `Kandang ${code}`;
     };
+
+    const displayCageCode = computed(() => {
+      if (cageSession.value?.code) return cageSession.value.code;
+      if (forms.value.length > 0) {
+        const firstForm = forms.value[0];
+        if (firstForm.mode === 'kelompok' && firstForm.targetId) {
+          return firstForm.targetId;
+        } else if (firstForm.targetId) {
+          const targetClean = firstForm.targetId.trim().toUpperCase();
+          const sheepObj = sheep.value.find(s => s.code.toUpperCase() === targetClean || String(s.id) === targetClean);
+          if (sheepObj && sheepObj.cage_code) {
+            return sheepObj.cage_code;
+          }
+        }
+      }
+      return undefined;
+    });
+
+    const displayCageName = computed(() => {
+      if (cageSession.value?.name) return cageSession.value.name;
+      if (cageSession.value?.code) return getCageName(cageSession.value.code);
+      const codeFallback = displayCageCode.value;
+      if (codeFallback) {
+        return getCageName(codeFallback);
+      }
+      return '—';
+    });
 
     const siapKawinBetina = computed(() => {
       return sheep.value.filter((s) => {
@@ -469,7 +603,7 @@ export default defineComponent({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                     <span style={{ color: '#6C757D' }}>Kandang</span>
-                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{cageSession.value?.name || cageSession.value?.code || '—'}</span>
+                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{displayCageName.value}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                     <span style={{ color: '#6C757D' }}>Waktu</span>
@@ -522,7 +656,13 @@ export default defineComponent({
                       {item.targetId && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>{targetLabel}</span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.targetId}</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                            : {(() => {
+                              if (item.mode === 'kelompok') return item.targetId;
+                              const s = sheep.value.find(x => String(x.id) === String(item.targetId) || String(x.code) === String(item.targetId));
+                              return s ? `[${s.code}] ${s.name}` : item.targetId;
+                            })()}
+                          </span>
                         </div>
                       )}
                       {item.qty && (
@@ -531,19 +671,65 @@ export default defineComponent({
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.qty} {item.unit || ''}</span>
                         </div>
                       )}
-                      {item.tindakan && (
-                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tindakan</span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tindakan}</span>
-                        </div>
-                      )}
-                      {item.obat && (
-                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>
-                            {jenis.id === 'pakan' ? 'Jenis Pakan' : 'Obat / Vitamin'}
-                          </span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
-                        </div>
+                      {jenis.id === 'pakan' && item.metoda !== 'silase' ? (
+                        <>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hijauan</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.hijauan}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Energi</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.energi}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Protein</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.protein}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pemberian Mineral</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.mineral}</span>
+                          </div>
+                        </>
+                      ) : item.name === 'Konversi Pakan' ? (
+                        <>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Mentah Asal</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.hijauan}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Tambahan (Energi)</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.energi}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Tambahan (Protein)</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.protein}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Tambahan (Mineral)</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.mineral}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hasil Konversi Jadi</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {item.tindakan && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tindakan</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tindakan}</span>
+                            </div>
+                          )}
+                          {item.obat && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>
+                                {jenis.id === 'pakan' ? 'Jenis Pakan' : 'Obat / Vitamin'}
+                              </span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                       {item.vitaminAmount && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
@@ -563,17 +749,35 @@ export default defineComponent({
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.pemanfaatan}</span>
                         </div>
                       )}
-                      {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && (
+                      {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>ID Pejantan</span>
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.idPejantan}</span>
                         </div>
                       )}
-                      {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && (
+                      {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Metode Kawin</span>
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">: {item.metoda === 'ib' ? 'Inseminasi Buatan (IB)' : item.metoda}</span>
                         </div>
+                      )}
+                      {item.name === 'Cek Birahi' && (
+                        <>
+                          {item.hasilPemeriksaan && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hasil Cek Birahi</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">
+                                : {item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'}
+                              </span>
+                            </div>
+                          )}
+                          {item.tanggal && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tgl Periksa</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tanggal}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                       {item.metoda === 'ib' && item.asalSemen && item.name !== 'Kontrol Kebuntingan' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>

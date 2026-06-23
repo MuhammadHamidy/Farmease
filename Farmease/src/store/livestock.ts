@@ -40,6 +40,8 @@ export interface Sheep {
   adg?: number
   adg_label?: string
   photo_url?: string
+  mating_status?: string
+  owner?: string
 }
 
 export interface Cage {
@@ -106,6 +108,8 @@ function mapSheep(row: ApiSheep): Sheep {
     adg: (row as any).adg,
     adg_label: (row as any).adg_label,
     photo_url: row.photo_url || '',
+    mating_status: (row as any).mating_status || '',
+    owner: row.owner || '',
   }
 }
 

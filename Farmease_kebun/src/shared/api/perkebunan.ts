@@ -579,33 +579,6 @@ export const submissionsApi = {
   },
 }
 
-// ============ Status Aktivitas (Activity Status) ============
-export interface StatusAktivitas {
-  id: string | number
-  nama_status: string
-  deskripsi?: string
-  urutan: number
-  created_at: string
-  updated_at: string
-}
-
-export const statusAktivitasApi = {
-  getList: async (): Promise<StatusAktivitas[]> => {
-    return await apiClient.get('/api/v1/status-aktivitas')
-  },
-  getById: async (id: string | number): Promise<StatusAktivitas> => {
-    return await apiClient.get(`/api/v1/status-aktivitas/${id}`)
-  },
-  create: async (payload: Partial<StatusAktivitas>): Promise<StatusAktivitas> => {
-    return await apiClient.post('/api/v1/status-aktivitas', payload)
-  },
-  update: async (id: string | number, payload: Partial<StatusAktivitas>): Promise<StatusAktivitas> => {
-    return await apiClient.put(`/api/v1/status-aktivitas/${id}`, payload)
-  },
-  delete: async (id: string | number): Promise<void> => {
-    return await apiClient.delete(`/api/v1/status-aktivitas/${id}`)
-  },
-}
 
 // ============ Pencatatan Types (Jenis & Rincian) ============
 export interface JenisPencatatanItem {
@@ -656,6 +629,5 @@ export default {
   notifications: notificationsApi,
   routineSchedules: routineSchedulesApi,
   submissions: submissionsApi,
-  statusAktivitas: statusAktivitasApi,
   pencatatanTypes: pencatatanTypesApi,
 }

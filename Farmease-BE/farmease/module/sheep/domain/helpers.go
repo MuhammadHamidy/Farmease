@@ -38,10 +38,10 @@ func (s *Sheep) CalculateAge() {
 
 	// Calculate Mating Status
 	if s.Gender == "betina" {
-		if s.Status == "Sehat" && months >= 8 {
+		if (s.Status == "Sehat" || s.Status == "aktif") && months >= 8 {
 			s.IsReadyToMate = true
 			s.MatingStatus = "Ya (Siap Kawin / Birahi)"
-		} else if s.Status == "Hamil" {
+		} else if s.Status == "Hamil" || s.Status == "hamil" {
 			s.IsReadyToMate = false
 			s.MatingStatus = "Tidak (Sedang Hamil)"
 		} else if months < 8 {

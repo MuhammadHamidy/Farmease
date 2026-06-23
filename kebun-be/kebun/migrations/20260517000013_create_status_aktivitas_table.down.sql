@@ -1,2 +1,1 @@
-DROP TABLE IF EXISTS gardening.status_aktivitas;
-
+DROP TABLE IF EXISTS gardening.status_aktivitas CASCADE;

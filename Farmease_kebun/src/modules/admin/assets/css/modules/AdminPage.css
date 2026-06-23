@@ -1355,3 +1355,192 @@ code {
   width: 48px !important;
   height: 48px !important;
 }
+
+/* ── Pemilik Perkebunan Dashboard ─────────────────────── */
+.pemilik-kebun-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pemilik-kebun-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(48, 54, 14, 0.07);
+}
+
+/* Header dark green banner */
+.pks-header {
+  background: linear-gradient(135deg, #2d3a0e 0%, #3d500f 50%, #30360E 100%);
+  color: #ffffff;
+  padding: 1.25rem 1.5rem 1rem;
+}
+
+.pks-header-inner { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.pks-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.pks-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.pks-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 0.75rem;
+}
+
+.pks-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.pks-info-card {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pks-info-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pks-info-icon svg { stroke: #ffffff; }
+
+.pks-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pks-info-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pks-info-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.65);
+}
+
+/* Stat Cards row */
+.pks-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.pks-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.25rem 0.75rem;
+  border-right: 1px solid #f3f4f6;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.pks-stat-card:last-child { border-right: none; }
+.pks-stat-card:hover { background: #fafdf5; }
+
+.pks-stat-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #1a2e05;
+  line-height: 1.1;
+}
+
+.pks-stat-unit {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #606C38;
+}
+
+.pks-stat-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Charts row */
+.pks-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.pks-chart-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pks-chart-card:first-child {
+  border-right: 1px solid #f3f4f6;
+}
+
+.pks-chart-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a2e05;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pks-chart-sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .pks-info-row { grid-template-columns: 1fr; }
+  .pks-charts-row { grid-template-columns: 1fr; }
+  .pks-chart-card:first-child { border-right: none; border-bottom: 1px solid #f3f4f6; }
+  .pks-stats-row { grid-template-columns: 1fr; }
+  .pks-stat-card { border-right: none; border-bottom: 1px solid #f3f4f6; }
+  .pks-stat-card:last-child { border-bottom: none; }
+  .pks-stat-value { font-size: 1.25rem; }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .pks-charts-row { grid-template-columns: 1fr; }
+  .pks-chart-card:first-child { border-right: none; border-bottom: 1px solid #f3f4f6; }
+}
+

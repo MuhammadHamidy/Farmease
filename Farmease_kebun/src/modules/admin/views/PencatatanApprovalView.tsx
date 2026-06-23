@@ -1,17 +1,104 @@
-import { defineComponent, ref, computed, watch, Teleport, onMounted } from 'vue';
-import Typography from '@/shared/ui/admin/Typography';
-import Button from '@/shared/ui/admin/Button';
-import Select from '@/shared/ui/admin/Select';
-import {
-  pencatatanSubmissions,
-  pendingApprovalCount,
-  approveSubmission,
-  rejectSubmission,
-  fetchSubmissions,
-  type PencatatanSubmission,
-  type ApprovalStatus,
-} from '@/store/operatorAdmin';
-import { userSession } from '@/store/navigation';
+const labelMappings: Record<string, string> = {
+  targetId: 'ID Domba/Target',
+  qty: 'Jumlah/Volume',
+  unit: 'Satuan',
+  note: 'Catatan',
+  tindakan: 'Tindakan/Diagnosa',
+  obat: 'Obat/Pakan/Vitamin',
+  vitaminAmount: 'Jumlah Vitamin Masuk',
+  idPejantan: 'ID Pejantan',
+  metoda: 'Metode Kawin',
+  kotoranState: 'Jenis Kotoran',
+  jumlahAnak: 'Jumlah Anak',
+  kondisiInduk: 'Kondisi Induk',
+  kondisiAnak: 'Kondisi Anak',
+  tanggal: 'Tanggal',
+  kandangAnak: 'Kandang Anak',
+  namaAnak: 'Nama Anak',
+  beratLahir: 'Berat Lahir',
+  pemanfaatan: 'Pemanfaatan (Kotoran)',
+  waktuIB: 'Waktu Inseminasi Buatan (IB)',
+  sumberPejantan: 'Sumber Pejantan',
+  asalSemen: 'Kode Batch/ Straw Semen',
+  namaInseminator: 'Nama Inseminator',
+  donorName: 'Nama/ID Pejantan Donor',
+  donorOrigin: 'Instansi/Balai Asal Pejantan Donor',
+  idMating: 'ID Perkawinan',
+  metodePemeriksaan: 'Metode Pemeriksaan',
+  hasilPemeriksaan: 'Hasil Pemeriksaan',
+
+  // Perkebunan Mappings
+  alatPembersihan: 'Alat Pembersihan',
+  bagianPembersihan: 'Bagian Pembersihan',
+  deskripsiPembersihan: 'Deskripsi Pembersihan',
+  beratGulma: 'Berat Gulma',
+  beratBahanPembumbun: 'Berat Bahan Pembumbun',
+  beratLimbah: 'Berat Limbah',
+  satuanBerat: 'Satuan Berat',
+  jenisGulma: 'Jenis Gulma',
+  bahanPembumbun: 'Bahan Pembumbun',
+  tujuanPemanfaatan: 'Tujuan Pemanfaatan',
+  teknikPenyiraman: 'Teknik Penyiraman',
+  sesiPenyiraman: 'Sesi Penyiraman',
+  deskripsiPenyiraman: 'Deskripsi Penyiraman',
+  volumeAir: 'Volume Air',
+  satuanVolumeAir: 'Satuan Volume Air',
+  jumlahLubangBiopori: 'Jumlah Lubang Biopori',
+  jenisBibit: 'Jenis Bibit',
+  alasanPenanaman: 'Alasan Penanaman',
+  deskripsiPenanaman: 'Deskripsi Penanaman',
+  jenisPerangsang: 'Jenis Perangsang',
+  dosisPerangsang: 'Dosis Perangsang',
+  deskripsiPembuahan: 'Deskripsi Pembuahan',
+  diameterBuah: 'Diameter Buah',
+  satuanDiameter: 'Satuan Diameter',
+  jumlahBuahDibuang: 'Jumlah Buah Dibuang',
+  sisaBuahPerTandan: 'Sisa Buah per Tandan',
+  bahanPembungkus: 'Bahan Pembungkus',
+  jumlahBuahDibungkus: 'Jumlah Buah Dibungkus',
+  jumlahPemangkasan: 'Jumlah Pemangkasan',
+  deskripsiPemangkasan: 'Deskripsi Pemangkasan',
+  metodePemangkasan: 'Metode Pemangkasan',
+  jumlahPanen: 'Jumlah Panen',
+  beratPanen: 'Berat Panen',
+  deskripsiPanen: 'Deskripsi Panen',
+  kondisiPanen: 'Kondisi Panen',
+  caraPanen: 'Cara Panen',
+  jenisObat: 'Jenis Obat',
+  kodePohonPerawatan: 'Kode Pohon Perawatan',
+  bagianPohon: 'Bagian Pohon',
+  teknikPemberian: 'Teknik Pemberian',
+  namaObat: 'Nama Obat/Bahan',
+  dosisObat: 'Dosis Obat',
+  deskripsiPerawatan: 'Deskripsi Perawatan',
+  teknikPengendalian: 'Teknik Pengendalian',
+  namaPestisida: 'Nama Pestisida',
+  dosisPestisida: 'Dosis Pestisida',
+  volumeLarutan: 'Volume Larutan',
+  satuanVolumeLarutan: 'Satuan Volume Larutan',
+  volumeObat: 'Volume Obat',
+  satuanVolumeObat: 'Satuan Volume Obat',
+  namaOPT: 'Nama OPT (Organisme Pengganggu)',
+  targetHama: 'Target Hama',
+  namaGejala: 'Nama Gejala',
+  jenisPupuk: 'Jenis Pupuk',
+  kodePohonPemupukan: 'Kode Pohon Pemupukan',
+  jumlahBeratPupuk: 'Jumlah Berat Pupuk',
+  deskripsiPemupukan: 'Deskripsi Pemupukan',
+  jenisPupukDetail: 'Detail Jenis Pupuk',
+  teknikPemupukan: 'Teknik Pemupukan',
+  jumlahStokMasuk: 'Jumlah Stok Masuk',
+  jumlahStokKeluar: 'Jumlah Stok Keluar',
+  catatanStok: 'Catatan Stok',
+  selectedRincian: 'Rincian Aktivitas',
+  kategoriPencatatan: 'Kategori Pencatatan',
+  selectedVarietas: 'Varietas Tanaman'
+};
+
+const camelToTitle = (text: string) => {
+  const result = text.replace(/([A-Z])/g, " $1");
+  return result.charAt(0).toUpperCase() + result.slice(1);
+};
 
 export default defineComponent({
   name: 'PencatatanApprovalView',
@@ -529,7 +616,7 @@ export default defineComponent({
                         onClick={() => currentPage.value = page}
                         style={{
                           backgroundColor: currentPage.value === page ? '#3d2f24' : '#ffffff',
-                          color: currentPage.value === page ? '#ffffff' : '#3d2f24',
+                          color: currentPage.value === page ? '#3d2f24' : '#3d2f24',
                           borderColor: currentPage.value === page ? '#3d2f24' : '#ccc0b4',
                           minWidth: '32px',
                           fontSize: '0.8rem',
@@ -622,25 +709,8 @@ export default defineComponent({
                           {Object.entries(item).map(([key, val]) => {
                             if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode') return null;
                             
-                            let displayLabel = key;
+                            let displayLabel = labelMappings[key] || camelToTitle(key);
                             if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
-                            if (key === 'qty') displayLabel = 'Jumlah/Volume';
-                            if (key === 'unit') displayLabel = 'Satuan';
-                            if (key === 'note') displayLabel = 'Catatan';
-                            if (key === 'tindakan') displayLabel = 'Tindakan/Diagnosa';
-                            if (key === 'obat') displayLabel = 'Obat/Pakan/Vitamin';
-                            if (key === 'vitaminAmount') displayLabel = 'Jumlah Vitamin Masuk';
-                            if (key === 'idPejantan') displayLabel = 'ID Pejantan';
-                            if (key === 'metoda') displayLabel = 'Metode Kawin';
-                            if (key === 'kotoranState') displayLabel = 'Jenis Kotoran';
-                            if (key === 'jumlahAnak') displayLabel = 'Jumlah Anak';
-                            if (key === 'kondisiInduk') displayLabel = 'Kondisi Induk';
-                            if (key === 'kondisiAnak') displayLabel = 'Kondisi Anak';
-                            if (key === 'tanggal') displayLabel = 'Tanggal';
-                            if (key === 'kandangAnak') displayLabel = 'Kandang Anak';
-                            if (key === 'namaAnak') displayLabel = 'Nama Anak';
-                            if (key === 'beratLahir') displayLabel = 'Berat Lahir';
-                            if (key === 'pemanfaatan') displayLabel = 'Pemanfaatan (Kotoran)';
                             
                             return (
                               <div key={key} class="col-6 col-sm-4">

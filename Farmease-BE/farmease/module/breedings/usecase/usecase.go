@@ -106,8 +106,7 @@ func (u *useCase) CheckInbreeding(ctx context.Context, req domain.InbreedingChec
 		res.RiskLevel = "safe"
 		res.Recommendation = "Sangat aman. Hubungan kekerabatan jauh atau tidak ada."
 	}
-
-	// InbreedingFlag is true if it's Ambang Batas or worse (>= 6.25%)
+	
 	res.InbreedingFlag = coi >= 0.0625
 
 	return res, nil

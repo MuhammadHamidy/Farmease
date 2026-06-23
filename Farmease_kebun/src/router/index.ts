@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { adminRoutes } from '@/modules/admin/router';
 import { kebunRoutes } from '@/modules/kebun/router';
+import { pemilikKebunRoutes } from '@/modules/pemilik/router';
 import { userSession } from '@/store/navigation';
 import { authApi } from '@/shared/api';
 
@@ -9,6 +10,7 @@ const router = createRouter({
   routes: [
     ...adminRoutes,
     ...kebunRoutes,
+    ...pemilikKebunRoutes,
     {
       path: '/:pathMatch(.*)*',
       redirect: '/kebun',
@@ -53,6 +55,12 @@ router.beforeEach((to, from, next) => {
     delete query.role;
     delete query.username;
     delete query.code;
+
+    // Redirect Owner/Pemilik to dedicated pemilik page
+    const isOwner = role === 'Owner' || role === 'Pemilik';
+    if (isOwner && to.path !== '/pemilik') {
+      return next({ path: '/pemilik', query });
+    }
     
     return next({ path: to.path, query });
   }
@@ -75,6 +83,15 @@ router.beforeEach((to, from, next) => {
   if (!authApi.getToken() && !publicPaths.includes(to.path)) {
     window.location.href = 'http://localhost:3000/?service=kebun';
     return;
+  }
+
+  // Enforce Owner/Pemilik always lands on /pemilik and non-owners cannot enter /pemilik
+  const isOwner = userSession.value?.role === 'Owner' || userSession.value?.role === 'Pemilik';
+  if (isOwner && to.path !== '/pemilik' && !publicPaths.includes(to.path)) {
+    return next('/pemilik');
+  }
+  if (!isOwner && to.path === '/pemilik') {
+    return next(userSession.value?.role === 'Admin' ? '/admin' : '/kebun');
   }
 
   next();

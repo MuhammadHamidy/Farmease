@@ -8,8 +8,9 @@ export default defineComponent({
   name: 'SsoHeroLogin',
   setup() {
     const router = useRouter();
-    const username = ref('');
-    const password = ref('');
+    const rememberMe = ref(localStorage.getItem('sso_remember_me') === 'true');
+    const username = ref(rememberMe.value ? localStorage.getItem('sso_username') || '' : '');
+    const password = ref(rememberMe.value ? localStorage.getItem('sso_password') || '' : '');
     const showPassword = ref(false);
     const error = ref('');
     const loading = ref(false);
@@ -90,6 +91,18 @@ export default defineComponent({
       window.location.href = `http://localhost:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
     };
 
+    const saveRememberMe = (user: string, pass: string) => {
+      if (rememberMe.value) {
+        localStorage.setItem('sso_remember_me', 'true');
+        localStorage.setItem('sso_username', user);
+        localStorage.setItem('sso_password', pass);
+      } else {
+        localStorage.removeItem('sso_remember_me');
+        localStorage.removeItem('sso_username');
+        localStorage.removeItem('sso_password');
+      }
+    };
+
     const handleLogin = async () => {
       error.value = '';
       const user = username.value.trim();
@@ -105,6 +118,7 @@ export default defineComponent({
       try {
         const response = await authApi.login({ username: user, password: pass } as any);
         if (response && response.token) {
+          saveRememberMe(user, pass);
           authApi.setAuth(response.token, response.user);
           loggedInInfo.value = {
             token: response.token,
@@ -159,6 +173,7 @@ export default defineComponent({
         id: account.session.role === 'Admin' ? '11111111-1111-1111-1111-111111111101' : '11111111-1111-1111-1111-111111111103'
       };
 
+      saveRememberMe(user, pass);
       loggedInInfo.value = {
         token: `mock-token-development:${mockUser.username}`,
         user: mockUser,
@@ -236,7 +251,7 @@ export default defineComponent({
                 
                 {/* Left Side: Brand Pane */}
                 <div class="sso-hero__brand-pane">
-                  <h1 class="sso-hero__farm-title">Sah Hi Agro Farm</h1>
+                  <h1 class="sso-hero__farm-title">Say Hi Agro Farm</h1>
                   <p class="sso-hero__strap-text">bersama</p>
                   <div class="sso-hero__brand-logo">
                     <img src="/icon/logo_farmease.png" alt="FARMease" />
@@ -296,6 +311,20 @@ export default defineComponent({
                         />
                       </button>
                     </div>
+                  </div>
+
+                  <div class="sso-remember-me">
+                    <label class="sso-remember-me__label" for="sso-remember">
+                      <input
+                        id="sso-remember"
+                        type="checkbox"
+                        checked={rememberMe.value}
+                        onChange={(e) => {
+                          rememberMe.value = (e.target as HTMLInputElement).checked;
+                        }}
+                      />
+                      <span>Ingatkan Sandi</span>
+                    </label>
                   </div>
 
                   {error.value && <div class="sso-login-error">{error.value}</div>}

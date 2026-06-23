@@ -413,6 +413,41 @@
   cursor: not-allowed;
 }
 
+.sso-remember-me {
+  display: flex;
+  align-items: center;
+  margin-top: -0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.sso-remember-me__label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sso-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.sso-remember-me__label:hover {
+  color: var(--sso-primary);
+}
+
+.sso-remember-me__label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--sso-border);
+  border-radius: 4px;
+  cursor: pointer;
+  accent-color: var(--sso-btn);
+  margin: 0;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
 .sso-login-hint {
   margin-top: 1.25rem;
   padding: 0.75rem 1rem;

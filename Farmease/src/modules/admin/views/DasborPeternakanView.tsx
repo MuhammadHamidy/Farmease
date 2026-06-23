@@ -79,10 +79,7 @@ export default defineComponent({
               sub="Seluruh domba aktif"
               color="primary"
               icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                </svg>
+                <img src="/icon/domba.png" alt="Total Populasi" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
               )}
             />
           </div>
@@ -93,9 +90,7 @@ export default defineComponent({
               sub="Kandang terdaftar"
               color="light"
               icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                </svg>
+                <img src="/icon/kandang.png" alt="Jumlah Kandang" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
               )}
             />
           </div>
@@ -106,10 +101,7 @@ export default defineComponent({
               sub={`${healthyPct.value}% dari total populasi`}
               color="primary"
               icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
+                <img src="/icon/medical-shield.png" alt="Status Sehat" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
               )}
             />
           </div>
@@ -120,11 +112,7 @@ export default defineComponent({
               sub="Perlu persetujuan admin"
               color="accent"
               icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
+                <img src="/icon/warning.png" alt="Menunggu Review" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
               )}
             />
           </div>

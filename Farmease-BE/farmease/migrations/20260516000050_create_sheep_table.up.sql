@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS livestock.sheep (
     id_father UUID REFERENCES livestock.sheep(id_sheep),
     id_mother UUID REFERENCES livestock.sheep(id_sheep),
     photo_url VARCHAR(255),
+    owner VARCHAR(100) DEFAULT '',
     created_by UUID,
     updated_by UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

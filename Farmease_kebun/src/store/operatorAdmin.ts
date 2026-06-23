@@ -907,22 +907,32 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
           } as any)
         );
       } else if (typeLower === 'pembersihan') {
+        const weightVal = parseFloat(item.beratGulma || item.beratBahanPembumbun || item.beratLimbah || item.qty || item.amount || 0);
         promises.push(
-          aktivitasApi.create({
+          perawatanApi.create({
             Aktivitas_id_aktivitas: '',
             tanggal_aktivitas: new Date().toISOString().split('T')[0],
             nama_jenis_aktivitas: 'Pembersihan',
             nama_rincian_aktivitas: item.selectedRincian || 'Pembersihan',
+            jenis_bahan: 'pembersihan',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(weightVal) ? 0 : weightVal,
+            satuan: item.satuanBerat || 'kg',
+            bagian_pohon: item.bagianPembersihan || 'Lahan',
+            teknik_perawatan: item.alatPembersihan || 'Manual',
+            nama_obat: item.jenisGulma || item.bahanPembumbun || '',
+            deskripsi: item.deskripsiPembersihan || 'Pembersihan rutin',
+            detail_pohon: item.kodePohon || 'LA001',
             Lahan_id_lahan: landId,
           } as any)
         );
 
-        let weightVal = parseFloat(item.beratGulma || item.beratBahanPembumbun || item.beratLimbah || 0);
-        if (!isNaN(weightVal) && weightVal > 0 && item.tujuanPemanfaatan === 'Pakan Ternak') {
+        let circularWeight = weightVal;
+        if (!isNaN(circularWeight) && circularWeight > 0 && item.tujuanPemanfaatan === 'Pakan Ternak') {
           // Normalize to kg if unit is gram
           const unitLower = (item.satuanBerat || '').toLowerCase();
           if (unitLower.includes('gram') || unitLower === 'g') {
-            weightVal = weightVal / 1000;
+            circularWeight = circularWeight / 1000;
           }
 
           let feedName = 'Gulma / Rumput Liar (Mentah)';
@@ -934,6 +944,7 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
               feedName = 'Daun Alpukat (Mentah)';
             }
           }
+
           promises.push(
             (async () => {
               try {
@@ -941,16 +952,16 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
                 const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
                 if (existingFeed) {
                   try {
-                    await feedsApi.updateStock(existingFeed.id, weightVal, 'tambah');
+                    await feedsApi.updateStock(existingFeed.id, circularWeight, 'tambah');
                   } catch {
-                    await feedsApi.updateStok(existingFeed.id, weightVal, 'tambah');
+                    await feedsApi.updateStok(existingFeed.id, circularWeight, 'tambah');
                   }
                 } else {
                   await feedsApi.create({
                     feed_name: feedName,
                     feed_type: 'Hijauan',
                     unit: 'kg',
-                    stock: weightVal
+                    stock: circularWeight
                   } as any);
                 }
               } catch (err) {
@@ -959,13 +970,81 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             })()
           );
         }
+      } else if (typeLower === 'penyiraman') {
+        const volumeVal = parseFloat(item.volumeAir || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penyiraman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Penyiraman',
+            jenis_bahan: 'air',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(volumeVal) ? 0 : volumeVal,
+            satuan: item.satuanVolumeAir || 'Liter',
+            bagian_pohon: 'Akar',
+            teknik_perawatan: item.teknikPenyiraman || 'Siram Manual',
+            nama_obat: item.sesiPenyiraman || '',
+            deskripsi: item.deskripsiPenyiraman || 'Penyiraman rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'penanaman') {
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penanaman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Penanaman',
+            jenis_bahan: 'bibit',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: 1,
+            satuan: 'pohon',
+            bagian_pohon: 'Tanah',
+            teknik_perawatan: item.alasanPenanaman || 'Bibit Baru',
+            nama_obat: item.jenisBibit || 'Bibit',
+            deskripsi: item.deskripsiPenanaman || 'Penanaman bibit baru',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'pembuahan') {
+        const dosisVal = parseFloat(item.dosisPerangsang || item.jumlahBuahDibuang || item.jumlahBuahDibungkus || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pembuahan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pembuahan',
+            jenis_bahan: 'hormon',
+            fase_pohon: item.fasePohon || 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: item.satuanDiameter || 'Unit',
+            bagian_pohon: 'Buah',
+            teknik_perawatan: item.bahanPembungkus || '',
+            nama_obat: item.jenisPerangsang || '',
+            deskripsi: item.deskripsiPembuahan || 'Pembuahan rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
       } else {
         promises.push(
-          aktivitasApi.create({
+          perawatanApi.create({
             Aktivitas_id_aktivitas: '',
             tanggal_aktivitas: new Date().toISOString().split('T')[0],
             nama_jenis_aktivitas: input.type.charAt(0).toUpperCase() + input.type.slice(1),
             nama_rincian_aktivitas: item.selectedRincian || 'Aktivitas rutin',
+            jenis_bahan: 'umum',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: 0,
+            satuan: 'unit',
+            bagian_pohon: 'Umum',
+            teknik_perawatan: 'Umum',
+            nama_obat: '',
+            deskripsi: item.deskripsi || item.note || 'Aktivitas rutin',
+            detail_pohon: item.kodePohon || 'LA001',
             Lahan_id_lahan: landId,
           } as any)
         );

@@ -20,7 +20,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]*domain.Sheep, int, error) {
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
-		       d.id_father, d.id_mother, t.type_name, d.photo_url,
+		       d.id_father, d.id_mother, t.type_name, d.photo_url, d.owner,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight,
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight_date,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
@@ -70,11 +70,11 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 		var sheepName, origin, typeName *string
 		var idCage, idType *string
 
-		var photoURL *string
+		var photoURL, owner *string
 
 		err := rows.Scan(
 			&s.IDSheep, &s.SheepCode, &sheepName, &s.Gender, &s.DateOfBirth, &s.Status, &origin, &idCage, &idType,
-			&s.IDFather, &s.IDMother, &typeName, &photoURL, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
+			&s.IDFather, &s.IDMother, &typeName, &photoURL, &owner, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -86,6 +86,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 		if idCage != nil { s.IDCage = *idCage }
 		if idType != nil { s.IDType = *idType }
 		if photoURL != nil { s.PhotoURL = *photoURL }
+		if owner != nil { s.Owner = *owner }
 
 		if weight != nil {
 			s.LastWeight = *weight
@@ -134,7 +135,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, error) {
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
-		       d.id_father, d.id_mother, t.type_name, d.photo_url,
+		       d.id_father, d.id_mother, t.type_name, d.photo_url, d.owner,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight,
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date DESC LIMIT 1) as last_weight_date,
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
@@ -153,11 +154,11 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, er
 	var sheepName, origin, typeName *string
 	var idCage, idType *string
 
-	var photoURL *string
+	var photoURL, owner *string
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&s.IDSheep, &s.SheepCode, &sheepName, &s.Gender, &s.DateOfBirth, &s.Status, &origin, &idCage, &idType,
-		&s.IDFather, &s.IDMother, &typeName, &photoURL, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &fatherName, &motherName,
+		&s.IDFather, &s.IDMother, &typeName, &photoURL, &owner, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &fatherName, &motherName,
 	)
 	if err != nil {
 		return nil, err
@@ -169,6 +170,7 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, er
 	if idCage != nil { s.IDCage = *idCage }
 	if idType != nil { s.IDType = *idType }
 	if photoURL != nil { s.PhotoURL = *photoURL }
+	if owner != nil { s.Owner = *owner }
 	if weight != nil {
 		s.LastWeight = *weight
 	}
@@ -214,8 +216,8 @@ func (r *Repository) FindExternalDonor(ctx context.Context, name, origin string)
 
 func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 	query := `
-		INSERT INTO livestock.sheep (sheep_code, sheep_name, gender, date_of_birth, status, origin, id_cage, id_type, id_father, id_mother, photo_url)
-		VALUES ($1, $2, $3, $4::DATE, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO livestock.sheep (sheep_code, sheep_name, gender, date_of_birth, status, origin, id_cage, id_type, id_father, id_mother, photo_url, owner)
+		VALUES ($1, $2, $3, $4::DATE, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id_sheep, created_at, updated_at`
 	
 	var idCage, idType *string
@@ -226,14 +228,14 @@ func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 		idType = &s.IDType
 	}
 
-	return r.db.QueryRow(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, idCage, idType, s.IDFather, s.IDMother, s.PhotoURL).Scan(&s.IDSheep, &s.CreatedAt, &s.UpdatedAt)
+	return r.db.QueryRow(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, idCage, idType, s.IDFather, s.IDMother, s.PhotoURL, s.Owner).Scan(&s.IDSheep, &s.CreatedAt, &s.UpdatedAt)
 }
 
 func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 	query := `
 		UPDATE livestock.sheep
-		SET sheep_code = $1, sheep_name = $2, gender = $3, date_of_birth = $4::DATE, status = $5, origin = $6, id_cage = $7, id_type = $8, id_father = $9, id_mother = $10, photo_url = COALESCE(NULLIF($11, ''), photo_url), updated_at = CURRENT_TIMESTAMP
-		WHERE id_sheep = $12`
+		SET sheep_code = $1, sheep_name = $2, gender = $3, date_of_birth = $4::DATE, status = $5, origin = $6, id_cage = $7, id_type = $8, id_father = $9, id_mother = $10, photo_url = COALESCE(NULLIF($11, ''), photo_url), owner = $12, updated_at = CURRENT_TIMESTAMP
+		WHERE id_sheep = $13`
 	
 	var idCage, idType *string
 	if s.IDCage != "" {
@@ -243,7 +245,7 @@ func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 		idType = &s.IDType
 	}
 
-	_, err := r.db.Exec(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, idCage, idType, s.IDFather, s.IDMother, s.PhotoURL, s.IDSheep)
+	_, err := r.db.Exec(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, idCage, idType, s.IDFather, s.IDMother, s.PhotoURL, s.Owner, s.IDSheep)
 	return err
 }
 

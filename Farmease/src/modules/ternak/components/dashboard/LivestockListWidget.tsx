@@ -2,6 +2,7 @@ import { defineComponent, ref, computed, type PropType } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import { useRouter } from 'vue-router';
+import { cagesList } from '@/store/navigation';
 
 export default defineComponent({
   name: 'LivestockListWidget',
@@ -9,6 +10,8 @@ export default defineComponent({
     cageInventory: { type: Array as PropType<any[]>, required: true },
     activeCageCode: { type: String, required: true },
     isLoading: { type: Boolean, required: true },
+    selectedCageCode: { type: String, required: true },
+    onCageChange: { type: Function as PropType<(val: string) => void>, required: true },
     onOpenAddModal: { type: Function as PropType<() => void>, required: true },
   },
   setup(props) {
@@ -24,7 +27,16 @@ export default defineComponent({
           t.code.toLowerCase().includes(q) ||
           t.type.toLowerCase().includes(q) ||
           t.status.toLowerCase().includes(q);
-        const matchStatus = !filterStatus.value || t.status === filterStatus.value;
+        
+        let matchStatus = true;
+        if (filterStatus.value) {
+          if (filterStatus.value === 'Tidak Hamil') {
+            matchStatus = t.status !== 'Hamil';
+          } else {
+            matchStatus = t.status === filterStatus.value;
+          }
+        }
+        
         return matchSearch && matchStatus;
       });
     });
@@ -40,8 +52,9 @@ export default defineComponent({
       '22222222-2222-2222-2222-222222222202': 'Texel',
       '22222222-2222-2222-2222-222222222203': 'Dorper',
       '22222222-2222-2222-2222-222222222204': 'Merino',
-      '22222222-2222-2222-2222-222222222205': 'F2 Dorper',
+      '22222222-2222-2222-2222-222222222205': 'Dorper F2',
       '22222222-2222-2222-2222-222222222206': 'F2 Garut',
+      '22222222-2222-2222-2222-222222222207': 'Cross Dorper',
     };
 
     const getSheepTypeName = (typeId: string) => {
@@ -68,30 +81,66 @@ export default defineComponent({
             </button>
           </div>
 
-          <div class="peternakan-search-bar mb-3">
-            <span class="peternakan-search-icon">
-              <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-            </span>
-            <input
-              type="text"
-              class="peternakan-search-input"
-              placeholder="Cari ID, jenis, status..."
-              value={search.value}
-              onInput={(e) => search.value = (e.target as HTMLInputElement).value}
-            />
-          </div>
-
-          <div class="d-flex flex-wrap gap-2">
-            {['', 'Sehat', 'Hamil', 'Sakit'].map(status => (
-              <button
-                type="button"
-                key={status || 'Semua'}
-                class={['btn btn-sm rounded-pill px-3 py-2 fw-bold', filterStatus.value === status ? 'btn-primary-custom shadow-sm' : 'btn-light border text-secondary']}
-                onClick={() => filterStatus.value = status}
-              >
-                {status || 'Semua'}
-              </button>
-            ))}
+          <div class="d-flex flex-column flex-md-row gap-3 mb-4">
+            <div class="peternakan-search-bar flex-grow-1 mb-0">
+              <span class="peternakan-search-icon">
+                <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+              </span>
+              <input
+                type="text"
+                class="peternakan-search-input"
+                placeholder="Cari ID, jenis, status..."
+                value={search.value}
+                onInput={(e) => search.value = (e.target as HTMLInputElement).value}
+              />
+            </div>
+            <select
+              value={filterStatus.value}
+              onChange={(e: any) => filterStatus.value = e.target.value}
+              class="form-select border shadow-sm"
+              style={{
+                width: '100%',
+                maxWidth: '220px',
+                borderRadius: '50rem',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 'bold',
+                color: 'var(--color-primary)',
+                borderColor: 'var(--color-outline-variant)',
+                cursor: 'pointer',
+                backgroundColor: '#fff'
+              }}
+            >
+              <option value="">Semua Kondisi</option>
+              <option value="Sehat">Sehat</option>
+              <option value="Hamil">Hamil</option>
+              <option value="Tidak Hamil">Tidak Hamil</option>
+              <option value="Sakit">Sakit</option>
+            </select>
+            <select
+              value={props.selectedCageCode}
+              onChange={(e: any) => props.onCageChange(e.target.value)}
+              class="form-select border shadow-sm"
+              style={{
+                width: '100%',
+                maxWidth: '220px',
+                borderRadius: '50rem',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 'bold',
+                color: 'var(--color-primary)',
+                borderColor: 'var(--color-outline-variant)',
+                cursor: 'pointer',
+                backgroundColor: '#fff'
+              }}
+            >
+              <option value="all">Semua Kandang</option>
+              {cagesList.value.map((c) => (
+                <option value={c.code} key={c.id}>
+                  {c.name} ({c.code})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

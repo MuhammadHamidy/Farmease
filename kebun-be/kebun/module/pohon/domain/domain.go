@@ -4,6 +4,18 @@ import (
 	"context"
 )
 
+// FasePohon adalah nilai valid untuk kolom fase_pohon (ENUM di database).
+// Shared dengan tabel perawatan.
+type FasePohon = string
+
+const (
+	FasePohonPembibitan     FasePohon = "Pembibitan"
+	FasePohonVegetatif      FasePohon = "Vegetatif"
+	FasePohonGeneratif      FasePohon = "Generatif"
+	FasePohonPanen          FasePohon = "Panen"
+	FasePohonTidakProduktif FasePohon = "Tidak Produktif"
+)
+
 type Pohon struct {
 	IDPohon      string `json:"id_pohon" db:"id_pohon"`
 	KodePohon    string `json:"kode_pohon" db:"kode_pohon"`

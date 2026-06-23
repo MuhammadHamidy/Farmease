@@ -60,6 +60,44 @@ type FeedingFilter struct {
 	PerPage int
 }
 
+type FeedingMixture struct {
+	IDFeedingMixture string                 `json:"id_feeding_mixture" db:"id_feeding_mixture"`
+	IDSheep          string                 `json:"id_sheep" db:"id_sheep"`
+	FeedingDate      time.Time              `json:"feeding_date" db:"feeding_date"`
+	TotalAmount      float64                `json:"total_amount" db:"total_amount"`
+	Unit             string                 `json:"unit" db:"unit"`
+	Notes            string                 `json:"notes" db:"notes"`
+	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
+	Details          []FeedingMixtureDetail `json:"details"`
+}
+
+type FeedingMixtureDetail struct {
+	IDDetail         string  `json:"id_detail" db:"id_detail"`
+	IDFeedingMixture string  `json:"id_feeding_mixture" db:"id_feeding_mixture"`
+	IDFeed           string  `json:"id_feed" db:"id_feed"`
+	Amount           float64 `json:"amount" db:"amount"`
+	FeedName         string  `json:"feed_name,omitempty"`
+}
+
+type SilageConversion struct {
+	IDConversion   string                   `json:"id_conversion" db:"id_conversion"`
+	IDTargetFeed   string                   `json:"id_target_feed" db:"id_target_feed"`
+	ConversionDate time.Time                `json:"conversion_date" db:"conversion_date"`
+	TargetAmount   float64                  `json:"target_amount" db:"target_amount"`
+	Unit           string                   `json:"unit" db:"unit"`
+	Notes          string                   `json:"notes" db:"notes"`
+	CreatedAt      time.Time                `json:"created_at" db:"created_at"`
+	Details        []SilageConversionDetail `json:"details"`
+}
+
+type SilageConversionDetail struct {
+	IDDetail     string  `json:"id_detail" db:"id_detail"`
+	IDConversion string  `json:"id_conversion" db:"id_conversion"`
+	IDFeed       string  `json:"id_feed" db:"id_feed"`
+	Amount       float64 `json:"amount" db:"amount"`
+	FeedName     string  `json:"feed_name,omitempty"`
+}
+
 type FeedRepository interface {
 	FindAllMaster(ctx context.Context) ([]*Feed, error)
 	FindMasterByID(ctx context.Context, id string) (*Feed, error)
@@ -68,6 +106,8 @@ type FeedRepository interface {
 	StoreFeeding(ctx context.Context, f *Feeding) error
 	FindFeedingHistory(ctx context.Context, idSheep string) ([]*Feeding, error)
 	FindAllFeedings(ctx context.Context, filter FeedingFilter) ([]*Feeding, int, error)
+	StoreFeedingMixture(ctx context.Context, fm *FeedingMixture) error
+	StoreSilageConversion(ctx context.Context, sc *SilageConversion) error
 }
 
 type UseCase interface {
@@ -79,5 +119,7 @@ type UseCase interface {
 	RecordFeeding(ctx context.Context, f *Feeding) error
 	GetFeedingHistory(ctx context.Context, idSheep string) ([]*Feeding, error)
 	GetFeedingList(ctx context.Context, filter FeedingFilter) ([]*Feeding, int, error)
+	RecordFeedingMixture(ctx context.Context, fm *FeedingMixture) error
+	RecordSilageConversion(ctx context.Context, sc *SilageConversion) error
 }
 

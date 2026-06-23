@@ -2,6 +2,7 @@ import { defineComponent, computed } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import { stocks } from '@/modules/ternak/store/peternakan';
+import { sheep } from '@/store/livestock';
 import '@/modules/ternak/assets/css/modules/RecordForm.css';
 
 export default defineComponent({
@@ -98,7 +99,14 @@ export default defineComponent({
 
                     <div class="summary-items-grid row g-3">
                       {type.value !== 'stok_pakan' && (
-                        <SummaryItem label={item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak'} value={item.targetId} />
+                        <SummaryItem
+                          label={item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak'}
+                          value={(() => {
+                            if (item.mode === 'kelompok') return item.targetId;
+                            const s = sheep.value.find(x => String(x.id) === String(item.targetId) || String(x.code) === String(item.targetId));
+                            return s ? `[${s.code}] ${s.name}` : item.targetId;
+                          })()}
+                        />
                       )}
                       
                       {type.value === 'pakan' && (
@@ -149,6 +157,10 @@ export default defineComponent({
                               <SummaryItem label="ID Perkawinan" value={item.idMating} />
                               <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan} />
                               <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
+                            </>
+                          ) : item.name === 'Cek Birahi' ? (
+                            <>
+                              <SummaryItem label="Hasil Cek Birahi" value={item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'} />
                             </>
                           ) : (
                             <>

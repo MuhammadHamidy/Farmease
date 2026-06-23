@@ -4,6 +4,17 @@ import (
 	"context"
 )
 
+// FaseTanam adalah nilai valid untuk kolom fase_tanam (ENUM di database).
+type FaseTanam = string
+
+const (
+	FaseTanamPembibitan     FaseTanam = "Pembibitan"
+	FaseTanamVegetatif      FaseTanam = "Vegetatif"
+	FaseTanamGeneratif      FaseTanam = "Generatif"
+	FaseTanamPanen          FaseTanam = "Panen"
+	FaseTanamTidakProduktif FaseTanam = "Tidak Produktif"
+)
+
 type Lahan struct {
 	IDLahan           string  `json:"id_lahan" db:"id_lahan"`
 	KodeLahan         string  `json:"kode_lahan" db:"kode_lahan"`

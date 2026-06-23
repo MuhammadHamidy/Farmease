@@ -1,6 +1,7 @@
+import { ref, computed } from 'vue';
 import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, routineSchedulesApi, type ApiRoutineSchedule, type User, type MetadataEnums, type EnumChoice, submissionsApi, type ApiSubmission } from '@/shared/api';
 import { sheep } from '@/store/livestock';
-import { cagesList, landsList, fetchCagesList, fetchLandsList } from '@/store/navigation';
+import { cagesList, landsList, fetchCagesList, fetchLandsList, activePencatatanForm } from '@/store/navigation';
 
 export const accountsList = ref<User[]>([]);
 
@@ -529,53 +530,108 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
     const feedsList = ['pakan', 'stok_pakan'].includes(input.type) ? await feedsApi.getList() : [];
     const pregnancyList = input.type === 'kelahiran' ? await pregnancyApi.getList() : [];
 
+    const resolveFeedId = async (name: string, category: string) => {
+      const itemName = (name || '').trim().toLowerCase();
+      if (!itemName) return null;
+      let matched = feedsList.find(
+        (f: any) => f.feed_name.toLowerCase() === itemName || f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
+      );
+      if (!matched) {
+        try {
+          matched = await feedsApi.create({
+            feed_name: name,
+            feed_type: category,
+            unit: 'kg',
+            stock: 1000
+          } as any);
+          feedsList.push(matched);
+        } catch (err) {
+          console.error('Failed to create missing feed:', err);
+        }
+      }
+      return matched ? String(matched.id) : null;
+    };
+
     for (const item of items) {
       let sheepId: string | null = null;
       if (item.targetId) {
         if (!isNaN(Number(item.targetId))) {
           sheepId = String(item.targetId);
         } else {
-          const found = sheep.value.find((s) => s.code.toUpperCase() === String(item.targetId).toUpperCase());
+          let found = sheep.value.find((s) => s.code.toUpperCase() === String(item.targetId).toUpperCase());
+          if (!found) {
+            found = sheep.value.find((s) => String(s.id) === String(item.targetId));
+          }
           if (found) sheepId = String(found.id);
         }
       }
 
       if (input.type === 'pakan') {
-        // Catat pemberian pakan per domba (requires resolving id_feed from feed name)
         if (sheepId) {
-          const itemName = (item.obat || item.name || '').toLowerCase();
-          const matchedFeed = feedsList.find(
-            (f) => f.feed_name.toLowerCase() === itemName || f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
-          );
-          
-          let feedId = matchedFeed ? matchedFeed.id : null;
+          const totalQty = Number(item.qty) || 0;
+          if (item.metoda !== 'silase') {
+            // Pakan Dadakan - mixtures API
+            const energyAmt = totalQty * (0.018 / 0.104);
+            const proteinAmt = totalQty * (0.0108 / 0.104);
+            const mineralAmt = totalQty * (0.0024 / 0.104);
+            const hijauanAmt = totalQty * (0.0728 / 0.104);
 
-          if (!feedId && itemName) {
-            try {
-              const newFeed = await feedsApi.create({
-                feed_name: item.obat || item.name || 'Pakan Baru',
-                feed_type: 'Hijauan',
-                unit: item.unit || 'kg',
-                stock: 1000 // Beri stok default agar tidak insufficient stock
-              } as any);
-              feedId = newFeed.id;
-              feedsList.push(newFeed);
-            } catch (err) {
-              console.error('Failed to create missing feed:', err);
-              continue; // Skip if feed creation fails to avoid 422 invalid UUID
-            }
-          }
+            const energyId = await resolveFeedId(item.energi, 'Konsentrat');
+            const proteinId = await resolveFeedId(item.protein, 'Konsentrat');
+            const mineralId = await resolveFeedId(item.mineral, 'Konsentrat');
+            const hijauanId = await resolveFeedId(item.hijauan, 'Hijauan');
 
-          if (feedId) {
+            const details = [];
+            if (energyId && energyAmt > 0) details.push({ id_feed: energyId, amount: Number(energyAmt.toFixed(2)) });
+            if (proteinId && proteinAmt > 0) details.push({ id_feed: proteinId, amount: Number(proteinAmt.toFixed(2)) });
+            if (mineralId && mineralAmt > 0) details.push({ id_feed: mineralId, amount: Number(mineralAmt.toFixed(2)) });
+            if (hijauanId && hijauanAmt > 0) details.push({ id_feed: hijauanId, amount: Number(hijauanAmt.toFixed(2)) });
+
             promises.push(
-              feedsApi.recordPemberianPakan(sheepId, {
-                id_feed: String(feedId),
-                amount: Number(item.qty) || 0,
+              feedsApi.recordFeedingMixture({
+                id_sheep: sheepId,
+                feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                total_amount: totalQty,
                 unit: item.unit || 'kg',
                 notes: item.note || '',
-                feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
-              }),
+                details: details
+              })
             );
+          } else {
+            // Pakan Silase / Stok
+            const itemName = (item.obat || item.name || '').toLowerCase();
+            const matchedFeed = feedsList.find(
+              (f) => f.feed_name.toLowerCase() === itemName || f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
+            );
+            
+            let feedId = matchedFeed ? matchedFeed.id : null;
+
+            if (!feedId && itemName) {
+              try {
+                const newFeed = await feedsApi.create({
+                  feed_name: item.obat || item.name || 'Pakan Baru',
+                  feed_type: 'Hijauan',
+                  unit: item.unit || 'kg',
+                  stock: 1000
+                } as any);
+                feedId = newFeed.id;
+                feedsList.push(newFeed);
+              } catch (err) {
+                console.error('Failed to create missing feed:', err);
+              }
+            }
+
+            if (feedId) {
+              promises.push(
+                feedsApi.recordPemberianPakan(sheepId, {
+                  id_feed: String(feedId),
+                  amount: totalQty,
+                  unit: item.unit || 'kg',
+                  notes: `Pakan Silase. ${item.note || ''}`,
+                  feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                }),
+              );
+            }
           }
         }
       } else if (input.type === 'kesehatan') {
@@ -630,6 +686,14 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
             notes: notesStr,
           };
 
+          let maleId = item.idPejantan || '';
+          if (maleId) {
+            const foundMale = sheep.value.find((s) => s.code.toUpperCase() === String(maleId).toUpperCase() || String(s.id) === String(maleId));
+            if (foundMale) {
+              maleId = String(foundMale.id);
+            }
+          }
+
           if (isIB) {
             matingPayload.straw_code = item.asalSemen || '';
             matingPayload.inseminator = item.namaInseminator || '';
@@ -639,10 +703,10 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
                 origin: item.donorOrigin || '',
               };
             } else {
-              matingPayload.id_sheep_male = item.idPejantan || '';
+              matingPayload.id_sheep_male = maleId;
             }
           } else {
-            matingPayload.id_sheep_male = item.idPejantan || '';
+            matingPayload.id_sheep_male = maleId;
           }
 
           promises.push(breedingApi.recordMating(matingPayload));
@@ -690,36 +754,41 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         }
       } else if (input.type === 'stok_pakan') {
         if (item.name === 'Konversi Pakan') {
-          const rawName = item.obat;
-          const rawQty = parseFloat(item.qty) || 0;
-          const targetName = item.idPejantan;
-          const targetQty = parseFloat(item.vitaminAmount) || 0;
+          const rawName = item.hijauan;
+          const energyName = item.energi;
+          const proteinName = item.protein;
+          const mineralName = item.mineral;
+          const targetName = item.obat;
+          const targetQty = parseFloat(item.qty) || 0;
 
-          if (rawQty > 0) {
-            const existingRaw = feedsList.find(f => f.feed_name.toLowerCase() === rawName.toLowerCase());
-            if (existingRaw) {
-              promises.push(
-                feedsApi.updateStock(existingRaw.id, rawQty, 'kurang').catch(() => feedsApi.updateStok(existingRaw.id, rawQty, 'kurang'))
-              );
-            }
-          }
+          const rawQty = targetQty * 0.7;
+          const energyQty = targetQty * 0.3 * (0.0180 / 0.0312);
+          const proteinQty = targetQty * 0.3 * (0.0108 / 0.0312);
+          const mineralQty = targetQty * 0.3 * (0.0024 / 0.0312);
 
-          if (targetQty > 0) {
-            const existingTarget = feedsList.find(f => f.feed_name.toLowerCase() === targetName.toLowerCase());
-            if (existingTarget) {
-              promises.push(
-                feedsApi.updateStock(existingTarget.id, targetQty, 'tambah').catch(() => feedsApi.updateStok(existingTarget.id, targetQty, 'tambah'))
-              );
-            } else {
-              promises.push(
-                feedsApi.create({
-                  feed_name: targetName,
-                  feed_type: 'Hijauan',
-                  unit: 'kg',
-                  stock: targetQty
-                } as any)
-              );
-            }
+          const targetId = await resolveFeedId(targetName, 'Hijauan');
+          const rawId = await resolveFeedId(rawName, 'Hijauan');
+          const energyId = await resolveFeedId(energyName, 'Konsentrat');
+          const proteinId = await resolveFeedId(proteinName, 'Konsentrat');
+          const mineralId = await resolveFeedId(mineralName, 'Konsentrat');
+
+          const conversionDetails = [];
+          if (rawId && rawQty > 0) conversionDetails.push({ id_feed: rawId, amount: Number(rawQty.toFixed(2)) });
+          if (energyId && energyQty > 0) conversionDetails.push({ id_feed: energyId, amount: Number(energyQty.toFixed(2)) });
+          if (proteinId && proteinQty > 0) conversionDetails.push({ id_feed: proteinId, amount: Number(proteinQty.toFixed(2)) });
+          if (mineralId && mineralQty > 0) conversionDetails.push({ id_feed: mineralId, amount: Number(mineralQty.toFixed(2)) });
+
+          if (targetId) {
+            promises.push(
+              feedsApi.recordSilageConversion({
+                id_target_feed: targetId,
+                conversion_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                target_amount: targetQty,
+                unit: item.unit || 'kg',
+                notes: item.note || '',
+                details: conversionDetails
+              })
+            );
           }
         } else {
           // Tambah Stok
@@ -898,13 +967,145 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             Lahan_id_lahan: landId,
           } as any)
         );
+      } else if (typeLower === 'pembersihan') {
+        const weightVal = parseFloat(item.beratGulma || item.beratBahanPembumbun || item.beratLimbah || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pembersihan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pembersihan',
+            jenis_bahan: 'pembersihan',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(weightVal) ? 0 : weightVal,
+            satuan: item.satuanBerat || 'kg',
+            bagian_pohon: item.bagianPembersihan || 'Lahan',
+            teknik_perawatan: item.alatPembersihan || 'Manual',
+            nama_obat: item.jenisGulma || item.bahanPembumbun || '',
+            deskripsi: item.deskripsiPembersihan || 'Pembersihan rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+
+        let circularWeight = weightVal;
+        if (!isNaN(circularWeight) && circularWeight > 0 && item.tujuanPemanfaatan === 'Pakan Ternak') {
+          // Normalize to kg if unit is gram
+          const unitLower = (item.satuanBerat || '').toLowerCase();
+          if (unitLower.includes('gram') || unitLower === 'g') {
+            circularWeight = circularWeight / 1000;
+          }
+
+          let feedName = 'Gulma / Rumput Liar (Mentah)';
+          if (item.selectedRincian === 'Sanitasi Serasah & Ranting') {
+            const landName = (foundLand?.name || '').toLowerCase();
+            if (landName.includes('kelengkeng')) {
+              feedName = 'Daun Kelengkeng (Mentah)';
+            } else {
+              feedName = 'Daun Alpukat (Mentah)';
+            }
+          }
+
+          promises.push(
+            (async () => {
+              try {
+                const feedsList = await feedsApi.getList();
+                const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
+                if (existingFeed) {
+                  try {
+                    await feedsApi.updateStock(existingFeed.id, circularWeight, 'tambah');
+                  } catch {
+                    await feedsApi.updateStok(existingFeed.id, circularWeight, 'tambah');
+                  }
+                } else {
+                  await feedsApi.create({
+                    feed_name: feedName,
+                    feed_type: 'Hijauan',
+                    unit: 'kg',
+                    stock: circularWeight
+                  } as any);
+                }
+              } catch (err) {
+                console.error('Failed to update feed stock for circular ecosystem from pembersihan:', err);
+              }
+            })()
+          );
+        }
+      } else if (typeLower === 'penyiraman') {
+        const volumeVal = parseFloat(item.volumeAir || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penyiraman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Penyiraman',
+            jenis_bahan: 'air',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(volumeVal) ? 0 : volumeVal,
+            satuan: item.satuanVolumeAir || 'Liter',
+            bagian_pohon: 'Akar',
+            teknik_perawatan: item.teknikPenyiraman || 'Siram Manual',
+            nama_obat: item.sesiPenyiraman || '',
+            deskripsi: item.deskripsiPenyiraman || 'Penyiraman rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'penanaman') {
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penanaman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Penanaman',
+            jenis_bahan: 'bibit',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: 1,
+            satuan: 'pohon',
+            bagian_pohon: 'Tanah',
+            teknik_perawatan: item.alasanPenanaman || 'Bibit Baru',
+            nama_obat: item.jenisBibit || 'Bibit',
+            deskripsi: item.deskripsiPenanaman || 'Penanaman bibit baru',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'pembuahan') {
+        const dosisVal = parseFloat(item.dosisPerangsang || item.jumlahBuahDibuang || item.jumlahBuahDibungkus || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pembuahan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pembuahan',
+            jenis_bahan: 'hormon',
+            fase_pohon: item.fasePohon || 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: item.satuanDiameter || 'Unit',
+            bagian_pohon: 'Buah',
+            teknik_perawatan: item.bahanPembungkus || '',
+            nama_obat: item.jenisPerangsang || '',
+            deskripsi: item.deskripsiPembuahan || 'Pembuahan rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
       } else {
         promises.push(
-          aktivitasApi.create({
+          perawatanApi.create({
             Aktivitas_id_aktivitas: '',
             tanggal_aktivitas: new Date().toISOString().split('T')[0],
             nama_jenis_aktivitas: input.type.charAt(0).toUpperCase() + input.type.slice(1),
             nama_rincian_aktivitas: item.selectedRincian || 'Aktivitas rutin',
+            jenis_bahan: 'umum',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: 0,
+            satuan: 'unit',
+            bagian_pohon: 'Umum',
+            teknik_perawatan: 'Umum',
+            nama_obat: '',
+            deskripsi: item.deskripsi || item.note || 'Aktivitas rutin',
+            detail_pohon: item.kodePohon || 'LA001',
             Lahan_id_lahan: landId,
           } as any)
         );

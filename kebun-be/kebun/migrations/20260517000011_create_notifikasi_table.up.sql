@@ -7,4 +7,3 @@ CREATE TABLE IF NOT EXISTS gardening.notifikasi (
     status_notifikasi VARCHAR(50) NOT NULL,
     tanggal TIMESTAMP NOT NULL
 );
-

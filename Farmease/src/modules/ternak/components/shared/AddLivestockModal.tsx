@@ -82,15 +82,26 @@ export default defineComponent({
       id_father: '',
       id_mother: '',
       photo_url: '',
+      owner: '',
     });
+    const selectedCageId = ref(props.cageId || (cagesList.value.length > 0 ? String(cagesList.value[0]?.id ?? '') : ''));
     const selectedFile = ref<File | null>(null);
     const previewUrl = ref<string | null>(null);
+
+    watch([() => props.cageId, () => cagesList.value], ([newId, list]) => {
+      if (newId) {
+        selectedCageId.value = String(newId);
+      } else if (!selectedCageId.value && list && list.length > 0) {
+        selectedCageId.value = String(list[0]?.id ?? '');
+      }
+    }, { immediate: true });
 
     const onFileChange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
-        selectedFile.value = target.files[0];
-        previewUrl.value = URL.createObjectURL(selectedFile.value);
+        const file = target.files[0];
+        selectedFile.value = file;
+        previewUrl.value = URL.createObjectURL(file);
       }
     };
 
@@ -103,7 +114,7 @@ export default defineComponent({
     const handleAddDomba = async () => {
       const sheepData = newDomba.value;
       // Validasi dari DashboardView
-      if (!sheepData.code || !sheepData.name || !sheepData.type || !sheepData.gender || (!sheepData.birth_date && umurMethod.value === 'tanggal') || (!selectedPoel.value && umurMethod.value === 'poel') || !sheepData.status || !sheepData.origin) {
+      if (!sheepData.code || !sheepData.name || !sheepData.type || !sheepData.gender || (!sheepData.birth_date && umurMethod.value === 'tanggal') || (!selectedPoel.value && umurMethod.value === 'poel') || !sheepData.status || !sheepData.origin || !selectedCageId.value) {
         alert('Gagal: Mohon lengkapi semua kolom yang bertanda bintang (*) sebelum menyimpan.');
         return;
       }
@@ -118,7 +129,9 @@ export default defineComponent({
           'Dorper': '22222222-2222-2222-2222-222222222203',
           'Merino': '22222222-2222-2222-2222-222222222204',
           'F2 Dorper': '22222222-2222-2222-2222-222222222205',
-          'F2 Garut': '22222222-2222-2222-2222-222222222206'
+          'Dorper F2': '22222222-2222-2222-2222-222222222205',
+          'F2 Garut': '22222222-2222-2222-2222-222222222206',
+          'Cross Dorper': '22222222-2222-2222-2222-222222222207'
         };
         const resolvedIdType = typeMap[newDomba.value.type] || '22222222-2222-2222-2222-222222222201';
 
@@ -133,11 +146,12 @@ export default defineComponent({
           poel_level: umurMethod.value === 'poel' ? selectedPoel.value : undefined,
           status: newDomba.value.status,
           origin: newDomba.value.origin,
-          id_cage: props.cageId || (cagesList.value.length > 0 ? String(cagesList.value[0]?.id ?? '') : ''),
+          id_cage: selectedCageId.value,
           id_type: String(resolvedIdType),
           id_father: newDomba.value.id_father ? String(newDomba.value.id_father) : null,
           id_mother: newDomba.value.id_mother ? String(newDomba.value.id_mother) : null,
           photo_url: '',
+          owner: newDomba.value.owner,
         };
 
         if (selectedFile.value) {
@@ -150,7 +164,7 @@ export default defineComponent({
 
         await addSheep(payload);
         
-        newDomba.value = { code: '', name: '', type: '', birth_date: '', gender: '', status: '', origin: '', id_father: '', id_mother: '', photo_url: '' };
+        newDomba.value = { code: '', name: '', type: '', birth_date: '', gender: '', status: '', origin: '', id_father: '', id_mother: '', photo_url: '', owner: '' };
         selectedFile.value = null;
         previewUrl.value = null;
         selectedPoel.value = '';
@@ -201,7 +215,7 @@ export default defineComponent({
                   <label class="form-label text-secondary small fw-bold mb-2">Ras/Jenis <span class="text-danger">*</span></label>
                   <CustomSelect 
                     placeholder="Pilih Ras/Jenis"
-                    options={['Garut', 'Texel', 'Dorper', 'Merino', 'F2 Dorper', 'F2 Garut']}
+                    options={['Garut', 'Texel', 'Dorper', 'Merino', 'Dorper F2', 'F2 Garut', 'Cross Dorper']}
                     modelValue={newDomba.value.type}
                     onUpdate:modelValue={(val: string) => newDomba.value.type = val}
                   />
@@ -216,14 +230,40 @@ export default defineComponent({
                   />
                 </div>
                 <div class="col-12">
+                  <label class="form-label text-secondary small fw-bold mb-2">Kandang <span class="text-danger">*</span></label>
+                  <CustomSelect 
+                    placeholder="Pilih Kandang"
+                    options={cagesList.value.map(cage => `${cage.code} — ${cage.name}`)}
+                    modelValue={selectedCageId.value ? (cagesList.value.find(cage => String(cage.id) === String(selectedCageId.value))?.code + ' — ' + cagesList.value.find(cage => String(cage.id) === String(selectedCageId.value))?.name) : ''}
+                    onUpdate:modelValue={(val: string) => {
+                      const found = cagesList.value.find(cage => `${cage.code} — ${cage.name}` === val);
+                      selectedCageId.value = found ? String(found.id) : '';
+                    }}
+                  />
+                </div>
+                <div class="col-12">
                   <label class="form-label text-secondary small fw-bold mb-2 d-block" style={{ marginBottom: '0.5rem' }}>Metode Penentuan Umur <span class="text-danger">*</span></label>
                   <div class="d-flex gap-4 mb-3">
                     <label class="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
-                      <input type="radio" value="tanggal" v-model={umurMethod.value} />
+                      <input 
+                        type="radio" 
+                        name="umur_method_add" 
+                        value="tanggal" 
+                        checked={umurMethod.value === 'tanggal'}
+                        onChange={() => umurMethod.value = 'tanggal'}
+                        style={{ accentColor: 'var(--color-primary)' }}
+                      />
                       <span style={{ fontSize: '0.9rem', color: 'var(--color-gray-800)' }}>Tanggal Lahir Pasti</span>
                     </label>
                     <label class="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
-                      <input type="radio" value="poel" v-model={umurMethod.value} />
+                      <input 
+                        type="radio" 
+                        name="umur_method_add" 
+                        value="poel" 
+                        checked={umurMethod.value === 'poel'}
+                        onChange={() => umurMethod.value = 'poel'}
+                        style={{ accentColor: 'var(--color-primary)' }}
+                      />
                       <span style={{ fontSize: '0.9rem', color: 'var(--color-gray-800)' }}>Perkiraan dari Poel</span>
                     </label>
                   </div>
@@ -273,6 +313,15 @@ export default defineComponent({
                     options={['Ternak Sendiri', 'Pembelian', 'Hibah', 'Kelahiran di Kandang']}
                     modelValue={newDomba.value.origin}
                     onUpdate:modelValue={(val: string) => newDomba.value.origin = val}
+                  />
+                </div>
+                <div class="col-12">
+                  <label class="form-label text-secondary small fw-bold mb-2">Pemilik</label>
+                  <CustomSelect 
+                    placeholder="Pilih Pemilik"
+                    options={['SHAF', 'Ilona', 'Sylvia/Ropi', 'Maria/Chris', 'SHAF/MC', 'SHAF/SR', 'Sundari']}
+                    modelValue={newDomba.value.owner}
+                    onUpdate:modelValue={(val: string) => newDomba.value.owner = val}
                   />
                 </div>
                 <div class="col-12">
