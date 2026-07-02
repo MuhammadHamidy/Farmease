@@ -7,7 +7,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE livestock.sheep_status_enum AS ENUM ('aktif', 'hamil', 'dijual', 'mati', 'disembelih', 'eksternal');
+    CREATE TYPE livestock.sheep_status_enum AS ENUM ('aktif', 'hamil', 'dijual', 'mati', 'disembelih', 'eksternal', 'produktif', 'sakit');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

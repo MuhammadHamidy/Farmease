@@ -1,26 +1,152 @@
 package http
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/farmease/farmease-be/farmease/module/pohon/domain"
 	"github.com/farmease/farmease-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PohonHandler struct {
 	usecase domain.PohonUsecase
+	db      *pgxpool.Pool
 }
 
-func NewPohonHandler(usecase domain.PohonUsecase) *PohonHandler {
-	return &PohonHandler{usecase: usecase}
+func NewPohonHandler(usecase domain.PohonUsecase, db *pgxpool.Pool) *PohonHandler {
+	return &PohonHandler{usecase: usecase, db: db}
 }
 
 func (h *PohonHandler) RegisterRoutes(app *fiber.App) {
 	api := app.Group("/api/v1/pohon")
+	api.Get("/sync", h.SyncDatabase) // MUST be before /:id
 	api.Get("/", h.FindAll)
 	api.Get("/:id", h.FindByID)
 	api.Post("/", h.Create)
 	api.Put("/:id", h.Update)
 	api.Delete("/:id", h.Delete)
+}
+
+func (h *PohonHandler) SyncDatabase(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// Terminate other active sessions to prevent lock contention
+	_, _ = h.db.Exec(ctx, `
+		SELECT pg_terminate_backend(pid)
+		FROM pg_stat_activity
+		WHERE datname = current_database() AND pid <> pg_backend_pid();
+	`)
+
+	_, err := h.db.Exec(ctx, "DROP SCHEMA IF EXISTS gardening CASCADE; CREATE SCHEMA gardening;")
+	if err != nil {
+		return c.Status(500).SendString("Error dropping schema: " + err.Error())
+	}
+
+	dir := "migrations"
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return c.Status(500).SendString("Error reading migrations dir: " + err.Error())
+	}
+	var upFiles []string
+	for _, f := range files {
+		if !f.IsDir() && strings.HasSuffix(f.Name(), ".up.sql") {
+			upFiles = append(upFiles, f.Name())
+		}
+	}
+	sort.Strings(upFiles)
+	var logLines []string
+	logLines = append(logLines, "Schema reset success.")
+	for _, fname := range upFiles {
+		fpath := filepath.Join(dir, fname)
+		content, err := os.ReadFile(fpath)
+		if err != nil {
+			return c.Status(500).SendString("Error reading file " + fname + ": " + err.Error())
+		}
+		sqlStr := string(content)
+		// Skip only if there are no actual SQL statements (only comments/whitespace)
+		trimmed := strings.TrimSpace(sqlStr)
+		if trimmed == "" {
+			logLines = append(logLines, fname+" skipped (empty)")
+			continue
+		}
+		// Check if ALL non-empty lines are comments
+		lines := strings.Split(trimmed, "\n")
+		hasSQL := false
+		for _, line := range lines {
+			l := strings.TrimSpace(line)
+			if l != "" && !strings.HasPrefix(l, "--") {
+				hasSQL = true
+				break
+			}
+		}
+		if !hasSQL {
+			logLines = append(logLines, fname+" skipped (comments only)")
+			continue
+		}
+		_, err = h.db.Exec(ctx, sqlStr)
+		if err != nil {
+			return c.Status(500).SendString("Error running migration " + fname + ": " + err.Error())
+		}
+		logLines = append(logLines, fname+" executed successfully.")
+	}
+	seedFile := "seeders/gardening_seeds.sql"
+	seedContent, err := os.ReadFile(seedFile)
+	if err != nil {
+		return c.Status(500).SendString("Error reading seed file: " + err.Error())
+	}
+	_, err = h.db.Exec(ctx, string(seedContent))
+	if err != nil {
+		return c.Status(500).SendString("Error running seeds: " + err.Error())
+	}
+	logLines = append(logLines, "Seeds executed successfully.")
+	
+	// Diagnostic Query
+	var debugMsg string
+	rows, err := h.db.Query(ctx, `SELECT id, type, type_label, operator_code, operator_name, cage_code, scope, summary, payload, submitted_at, approval_status, reviewed_at, reviewed_by, review_note, task_id, created_at, updated_at FROM gardening.pencatatan_submissions`)
+	if err != nil {
+		debugMsg = "Query error: " + err.Error()
+	} else {
+		defer rows.Close()
+		count := 0
+		for rows.Next() {
+			count++
+			var id, typ, type_label, operator_code, operator_name, cage_code, scope, summary, approval_status string
+			var payloadBytes []byte
+			var submitted_at, created_at, updated_at time.Time
+			var reviewed_at *time.Time
+			var reviewed_by, review_note, task_id *string
+			
+			scanErr := rows.Scan(
+				&id, &typ, &type_label, &operator_code, &operator_name,
+				&cage_code, &scope, &summary, &payloadBytes, &submitted_at,
+				&approval_status, &reviewed_at, &reviewed_by, &review_note,
+				&task_id, &created_at, &updated_at,
+			)
+			if scanErr != nil {
+				debugMsg += fmt.Sprintf("Row %d scan error: %s\n", count, scanErr.Error())
+			} else {
+				taskVal := "nil"
+				if task_id != nil {
+					taskVal = *task_id
+				}
+				debugMsg += fmt.Sprintf("Row %d: id=%s, type=%s, task_id=%s\n", count, id, typ, taskVal)
+			}
+		}
+		if debugMsg == "" {
+			debugMsg = fmt.Sprintf("Success, scanned %d rows without error.", count)
+		}
+	}
+	_ = os.WriteFile("submissions_debug.txt", []byte(debugMsg), 0644)
+	
+	return c.JSON(logLines)
 }
 
 func (h *PohonHandler) FindAll(c *fiber.Ctx) error {

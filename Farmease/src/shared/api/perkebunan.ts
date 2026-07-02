@@ -205,19 +205,360 @@ export interface Perawatan {
 
 export const perawatanApi = {
   getList: async (): Promise<Perawatan[]> => {
-    return await apiClient.get('/api/v1/perawatan')
+    const [penyiraman, pembersihan, penanaman, pengobatan, pembuahan] = await Promise.all([
+      apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
+      apiClient.get<any[]>('/api/v1/pembersihan').catch(() => []),
+      apiClient.get<any[]>('/api/v1/penanaman').catch(() => []),
+      apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+      apiClient.get<any[]>('/api/v1/pembuahan').catch(() => [])
+    ])
+
+    const list: Perawatan[] = []
+
+    if (Array.isArray(penyiraman)) {
+      penyiraman.forEach((item: any) => {
+        list.push({
+          id: item.id_penyiraman || '',
+          jenis_perawatan: item.nama_jenis_aktivitas || 'Penyiraman',
+          deskripsi: item.deskripsi || '',
+          tanggal_perawatan: item.tanggal_aktivitas || '',
+          id_pohon: item.Lahan_id_lahan || '',
+          status: 'selesai',
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || ''
+        })
+      })
+    }
+
+    if (Array.isArray(pembersihan)) {
+      pembersihan.forEach((item: any) => {
+        list.push({
+          id: item.id_pembersihan || '',
+          jenis_perawatan: item.nama_jenis_aktivitas || 'Pembersihan',
+          deskripsi: item.deskripsi || '',
+          tanggal_perawatan: item.tanggal_aktivitas || '',
+          id_pohon: item.Lahan_id_lahan || '',
+          status: 'selesai',
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || ''
+        })
+      })
+    }
+
+    if (Array.isArray(penanaman)) {
+      penanaman.forEach((item: any) => {
+        list.push({
+          id: item.id_penanaman || '',
+          jenis_perawatan: item.nama_jenis_aktivitas || 'Penanaman',
+          deskripsi: `${item.varietas || ''}: ${item.deskripsi || ''}`,
+          tanggal_perawatan: item.tanggal_aktivitas || '',
+          id_pohon: item.Lahan_id_lahan || '',
+          status: 'selesai',
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || ''
+        })
+      })
+    }
+
+    if (Array.isArray(pengobatan)) {
+      pengobatan.forEach((item: any) => {
+        const type = item.nama_jenis_aktivitas || 'Pemberian Obat'
+        list.push({
+          id: item.id_pengobatan || '',
+          jenis_perawatan: type,
+          deskripsi: `${item.nama_obat || ''} (${item.dosis || 0} ${item.satuan || ''}) - ${item.deskripsi || ''}`,
+          tanggal_perawatan: item.tanggal_aktivitas || '',
+          id_pohon: item.Lahan_id_lahan || '',
+          status: 'selesai',
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || ''
+        })
+      })
+    }
+
+    if (Array.isArray(pembuahan)) {
+      pembuahan.forEach((item: any) => {
+        list.push({
+          id: item.id_pembuahan || '',
+          jenis_perawatan: item.nama_jenis_aktivitas || 'Pembuahan',
+          deskripsi: item.deskripsi || '',
+          tanggal_perawatan: item.tanggal_aktivitas || '',
+          id_pohon: item.Lahan_id_lahan || '',
+          status: 'selesai',
+          created_at: item.created_at || '',
+          updated_at: item.updated_at || ''
+        })
+      })
+    }
+
+    // Sort by date descending
+    return list.sort((a, b) => new Date(b.tanggal_perawatan).getTime() - new Date(a.tanggal_perawatan).getTime())
   },
+
   getById: async (id: string | number): Promise<Perawatan> => {
-    return await apiClient.get(`/api/v1/perawatan/${id}`)
+    const endpoints = [
+      { url: '/api/v1/penyiraman', type: 'Penyiraman', key: 'id_penyiraman' },
+      { url: '/api/v1/pembersihan', type: 'Pembersihan', key: 'id_pembersihan' },
+      { url: '/api/v1/penanaman', type: 'Penanaman', key: 'id_penanaman' },
+      { url: '/api/v1/pengobatan', type: 'Pemberian Obat', key: 'id_pengobatan' },
+      { url: '/api/v1/pembuahan', type: 'Pembuahan', key: 'id_pembuahan' }
+    ]
+
+    for (const ep of endpoints) {
+      try {
+        const item = await apiClient.get<any>(`${ep.url}/${id}`)
+        if (item && (item.id || item[ep.key])) {
+          return {
+            id: item[ep.key] || item.id,
+            jenis_perawatan: item.nama_jenis_aktivitas || ep.type,
+            deskripsi: ep.type === 'Pemberian Obat' 
+              ? `${item.nama_obat || ''} (${item.dosis || 0} ${item.satuan || ''}) - ${item.deskripsi || ''}` 
+              : (ep.type === 'Penanaman' ? `${item.varietas || ''}: ${item.deskripsi || ''}` : (item.deskripsi || '')),
+            tanggal_perawatan: item.tanggal_aktivitas || '',
+            id_pohon: item.Lahan_id_lahan || '',
+            status: 'selesai',
+            created_at: item.created_at || '',
+            updated_at: item.updated_at || ''
+          }
+        }
+      } catch {
+        // Continue searching
+      }
+    }
+    throw new Error('Record not found in any split modules')
   },
-  create: async (payload: Partial<Perawatan>): Promise<Perawatan> => {
-    return await apiClient.post('/api/v1/perawatan', payload)
+
+  create: async (payload: any): Promise<Perawatan> => {
+    const name = (payload.nama_jenis_aktivitas || '').toLowerCase()
+    const rawJenis = (payload.jenis_bahan || '').toLowerCase()
+    const rincian = (payload.nama_rincian_aktivitas || '').toLowerCase()
+
+    if (name === 'penyiraman' || rawJenis === 'air' || rincian.includes('siram')) {
+      const res = await apiClient.post<any>('/api/v1/penyiraman', {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        teknik_penyiraman: payload.teknik_perawatan || 'Siram Manual',
+        deskripsi: payload.deskripsi || '',
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_penyiraman,
+        jenis_perawatan: 'Penyiraman',
+        deskripsi: res.deskripsi,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+
+    if (name === 'pembersihan' || rawJenis === 'pembersihan' || rincian.includes('siang') || rincian.includes('sanitasi')) {
+      const res = await apiClient.post<any>('/api/v1/pembersihan', {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        teknik_pembersihan: payload.teknik_perawatan || 'Manual',
+        deskripsi: payload.deskripsi || '',
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_pembersihan,
+        jenis_perawatan: 'Pembersihan',
+        deskripsi: res.deskripsi,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+
+    if (name === 'penanaman' || rawJenis === 'bibit' || rincian.includes('bibit') || rincian.includes('tanam')) {
+      const res = await apiClient.post<any>('/api/v1/penanaman', {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        fase_pohon: payload.fase_pohon || 'Vegetatif',
+        varietas: payload.nama_obat || payload.varietas || 'Bibit Baru',
+        deskripsi: payload.deskripsi || '',
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_penanaman,
+        jenis_perawatan: 'Penanaman',
+        deskripsi: res.deskripsi,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+
+    if (name === 'pemberian obat' || rawJenis === 'obat' || rawJenis === 'pupuk' || rincian.includes('pupuk') || rincian.includes('obat') || name.includes('obat') || name.includes('pupuk')) {
+      const isPupuk = rawJenis === 'pupuk' || rincian.includes('pupuk') || name.includes('pupuk')
+      const res = await apiClient.post<any>('/api/v1/pengobatan', {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        nama_obat: payload.nama_obat || (isPupuk ? 'Pupuk' : 'Obat'),
+        dosis: payload.dosis || 0,
+        satuan: payload.satuan || (isPupuk ? 'kg' : 'ml'),
+        bagian_pohon: payload.bagian_pohon || 'Daun',
+        deskripsi: payload.deskripsi || '',
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_pengobatan,
+        jenis_perawatan: isPupuk ? 'Pemupukan' : 'Pemberian Obat',
+        deskripsi: `${res.nama_obat} (${res.dosis} ${res.satuan}) - ${res.deskripsi}`,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+
+    const res = await apiClient.post<any>('/api/v1/pembuahan', {
+      tanggal_aktivitas: payload.tanggal_aktivitas,
+      nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+      fase_pohon: payload.fase_pohon || 'Generatif',
+      teknik_pembuahan: payload.teknik_perawatan || 'Perangsang',
+      deskripsi: payload.deskripsi || '',
+      Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+    })
+    return {
+      id: res.id_pembuahan,
+      jenis_perawatan: 'Pembuahan',
+      deskripsi: res.deskripsi,
+      tanggal_perawatan: res.tanggal_aktivitas,
+      id_pohon: res.Lahan_id_lahan,
+      status: 'selesai',
+      created_at: res.created_at,
+      updated_at: res.updated_at
+    }
   },
-  update: async (id: string | number, payload: Partial<Perawatan>): Promise<Perawatan> => {
-    return await apiClient.put(`/api/v1/perawatan/${id}`, payload)
+
+  update: async (id: string | number, payload: any): Promise<Perawatan> => {
+    const name = (payload.nama_jenis_aktivitas || '').toLowerCase()
+    const rawJenis = (payload.jenis_bahan || '').toLowerCase()
+
+    if (name === 'penyiraman' || rawJenis === 'air') {
+      const res = await apiClient.put<any>(`/api/v1/penyiraman/${id}`, {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        teknik_penyiraman: payload.teknik_perawatan,
+        deskripsi: payload.deskripsi,
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_penyiraman,
+        jenis_perawatan: 'Penyiraman',
+        deskripsi: res.deskripsi,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+    if (name === 'pembersihan' || rawJenis === 'pembersihan') {
+      const res = await apiClient.put<any>(`/api/v1/pembersihan/${id}`, {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        teknik_pembersihan: payload.teknik_perawatan,
+        deskripsi: payload.deskripsi,
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_pembersihan,
+        jenis_perawatan: 'Pembersihan',
+        deskripsi: res.deskripsi,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+    if (name === 'penanaman' || rawJenis === 'bibit') {
+      const res = await apiClient.put<any>(`/api/v1/penanaman/${id}`, {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        fase_pohon: payload.fase_pohon,
+        varietas: payload.nama_obat || payload.varietas,
+        deskripsi: payload.deskripsi,
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_penanaman,
+        jenis_perawatan: 'Penanaman',
+        deskripsi: res.deskripsi,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+    if (name === 'pemberian obat' || rawJenis === 'obat' || rawJenis === 'pupuk') {
+      const isPupuk = rawJenis === 'pupuk'
+      const res = await apiClient.put<any>(`/api/v1/pengobatan/${id}`, {
+        tanggal_aktivitas: payload.tanggal_aktivitas,
+        nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+        nama_obat: payload.nama_obat,
+        dosis: payload.dosis,
+        satuan: payload.satuan,
+        bagian_pohon: payload.bagian_pohon,
+        deskripsi: payload.deskripsi,
+        Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+      })
+      return {
+        id: res.id_pengobatan,
+        jenis_perawatan: isPupuk ? 'Pemupukan' : 'Pemberian Obat',
+        deskripsi: `${res.nama_obat} (${res.dosis} ${res.satuan}) - ${res.deskripsi}`,
+        tanggal_perawatan: res.tanggal_aktivitas,
+        id_pohon: res.Lahan_id_lahan,
+        status: 'selesai',
+        created_at: res.created_at,
+        updated_at: res.updated_at
+      }
+    }
+    const res = await apiClient.put<any>(`/api/v1/pembuahan/${id}`, {
+      tanggal_aktivitas: payload.tanggal_aktivitas,
+      nama_rincian_aktivitas: payload.nama_rincian_aktivitas,
+      fase_pohon: payload.fase_pohon,
+      teknik_pembuahan: payload.teknik_perawatan,
+      deskripsi: payload.deskripsi,
+      Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
+    })
+    return {
+      id: res.id_pembuahan,
+      jenis_perawatan: 'Pembuahan',
+      deskripsi: res.deskripsi,
+      tanggal_perawatan: res.tanggal_aktivitas,
+      id_pohon: res.Lahan_id_lahan,
+      status: 'selesai',
+      created_at: res.created_at,
+      updated_at: res.updated_at
+    }
   },
+
   delete: async (id: string | number): Promise<void> => {
-    return await apiClient.delete(`/api/v1/perawatan/${id}`)
+    const urls = [
+      `/api/v1/penyiraman/${id}`,
+      `/api/v1/pembersihan/${id}`,
+      `/api/v1/penanaman/${id}`,
+      `/api/v1/pengobatan/${id}`,
+      `/api/v1/pembuahan/${id}`
+    ]
+    for (const url of urls) {
+      try {
+        await apiClient.delete(url)
+        return
+      } catch {
+        // Continue
+      }
+    }
   },
 }
 

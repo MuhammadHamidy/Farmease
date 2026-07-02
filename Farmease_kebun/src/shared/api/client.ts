@@ -32,7 +32,8 @@ class ApiClient {
       if (url.startsWith('/api/auth') || url.startsWith('/api/accounts') || url.startsWith('/api/metadata')) {
         config.baseURL = import.meta.env.VITE_SSO_API_BASE_URL || 'http://localhost:8080'
       } else {
-        config.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082'
+        config.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8082'
+
       }
 
       const token = localStorage.getItem('authToken')

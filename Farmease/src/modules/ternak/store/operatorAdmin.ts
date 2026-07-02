@@ -71,7 +71,9 @@ export {
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export interface PencatatanSubmission {
-  id: string;
+  id_submission: string;
+  submission_code: string;
+  id: string; // fallback alias
   type: string;
   typeLabel: string;
   operatorCode: string;

@@ -32,12 +32,22 @@ export default defineComponent({
   emits: ['open-detail'],
   setup(props, { emit }) {
     const getIcon = () => {
-      if (props.type === 'perkebunan') {
-        return props.landName.toLowerCase().includes('kelengkeng')
-          ? '/icon/kelengkeng.png'
-          : '/icon/alpukat.png';
+      if (props.type === 'peternakan') {
+        const cat = (props.task.category || '').toLowerCase();
+        switch (cat) {
+          case 'pakan': return '/icon/catat_pakan.png';
+          case 'stok_pakan': return '/icon/inventory.png';
+          case 'kesehatan': return '/icon/catat_sehat.png';
+          case 'kotoran': return '/icon/catat_kotoran.png';
+          case 'perkawinan': return '/icon/catat_kawin.png';
+          case 'kelahiran': return '/icon/catat_lahir.png';
+          case 'berat_badan': return '/icon/statistic.png';
+          default: return '/icon/catat_jenis.png';
+        }
       }
-      return '/icon/pohon.png';
+      return props.landName.toLowerCase().includes('kelengkeng')
+        ? '/icon/kelengkeng.png'
+        : '/icon/alpukat.png';
     };
 
     const getStatusStyle = (status: string) => {
@@ -175,7 +185,7 @@ export default defineComponent({
 
             {/* Row 3: Category title + subtitle */}
             <div style={{ fontSize: '1rem', fontWeight: '800', color: '#1a1a1a', marginBottom: '0.1rem' }} class="text-capitalize">
-              {task.category}
+              {task.category === 'berat_badan' ? 'Berat Badan' : task.category === 'stok_pakan' ? 'Stok Pakan' : task.category}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#6C757D', marginBottom: '0.75rem' }}>
               {task.rincian ? `${task.rincian} (Kandang ${task.cageCode})` : `Tugas rutin (Kandang ${task.cageCode})`}
@@ -187,7 +197,9 @@ export default defineComponent({
             <div style={{ fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.75rem', flexGrow: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#6C757D' }}>Jenis Tugas</span>
-                <span style={{ color: '#1a1a1a', fontWeight: '600' }} class="text-capitalize">{task.category}</span>
+                <span style={{ color: '#1a1a1a', fontWeight: '600' }} class="text-capitalize">
+                  {task.category === 'berat_badan' ? 'Berat Badan' : task.category === 'stok_pakan' ? 'Stok Pakan' : task.category}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#6C757D' }}>Tanggal</span>

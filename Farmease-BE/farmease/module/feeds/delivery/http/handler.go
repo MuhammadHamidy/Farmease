@@ -21,6 +21,7 @@ func (h *FeedHandler) RegisterRoutes(app *fiber.App) {
 	h.registerFeedsGroup(feeds)
 	feeds.Post("/mixtures", h.RecordFeedingMixture)
 	feeds.Post("/conversions", h.RecordSilageConversion)
+	feeds.Get("/conversions", h.GetSilageConversions)
 
 	pakanMaster := api.Group("/pakan/master")
 	h.registerFeedsGroup(pakanMaster)

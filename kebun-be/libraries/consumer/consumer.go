@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog/log"
@@ -115,7 +116,12 @@ func (c *Consumer) Consume(ctx context.Context, queueName string, handler Handle
 		default:
 			// Attempt to consume
 			if err := c.consume(ctx, queueName, handler, cfg); err != nil {
-				log.Error().Err(err).Str("queue", queueName).Msg("Consumer encountered an error")
+				log.Error().Err(err).Str("queue", queueName).Msg("Consumer encountered an error, retrying in 5 seconds...")
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(5 * time.Second):
+				}
 			}
 		}
 	}

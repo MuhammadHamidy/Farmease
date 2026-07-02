@@ -12,7 +12,7 @@ export default defineComponent({
           <img src="/icon/document.png" alt="Dokumen" style="width: 15px; height: 15px; margin-right: 6px;" />
           Panduan Teknis
         </div>
-        <p class="pencatatan-panduan__text">{props.text}</p>
+        <p class="pencatatan-panduan__text" v-html={props.text}></p>
       </div>
     )
   },

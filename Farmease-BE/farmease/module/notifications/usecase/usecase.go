@@ -1,11 +1,11 @@
 package usecase
 
 import (
-	"context"
-	"time"
-
 	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
 )
+
+
+
 
 type useCase struct {
 	repo domain.NotificationRepository
@@ -13,15 +13,4 @@ type useCase struct {
 
 func NewUseCase(repo domain.NotificationRepository) domain.UseCase {
 	return &useCase{repo: repo}
-}
-
-func (u *useCase) GetMyNotifications(ctx context.Context, idAccount string) ([]*domain.Notification, error) {
-	// Dynamically generate reminders on the fly
-	_ = u.repo.GenerateDynamicReminders(ctx, idAccount, time.Now())
-
-	return u.repo.FindNotificationsByAccount(ctx, idAccount)
-}
-
-func (u *useCase) ReadNotification(ctx context.Context, id string) error {
-	return u.repo.MarkNotificationRead(ctx, id)
 }

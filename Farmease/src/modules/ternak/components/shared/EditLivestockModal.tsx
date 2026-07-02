@@ -4,6 +4,7 @@ import CustomSelect from '@/shared/ui/admin/Select';
 import { updateSheep, updateSheepStatus, sheep } from '@/store/livestock';
 import { metadataEnums } from '@/store/operatorAdmin';
 import { cagesList } from '@/store/navigation';
+import CustomAlertModal, { type AlertModalState } from './CustomAlertModal';
 
 export default defineComponent({
   name: 'EditLivestockModal',
@@ -52,13 +53,21 @@ export default defineComponent({
     });
     const selectedFile = ref<File | null>(null);
     const previewUrl = ref<string | null>(null);
+    const alertModal = ref<AlertModalState>({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'error',
+    });
 
     const onFileChange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         const file = target.files[0];
-        selectedFile.value = file;
-        previewUrl.value = URL.createObjectURL(file);
+        if (file) {
+          selectedFile.value = file;
+          previewUrl.value = URL.createObjectURL(file);
+        }
       }
     };
 
@@ -120,8 +129,35 @@ export default defineComponent({
     const handleEditDomba = async () => {
       const sheepData = editDomba.value;
       if (!sheepData.code || !sheepData.name || !sheepData.type || !sheepData.gender || (!sheepData.birth_date && umurMethod.value === 'tanggal') || (!selectedPoel.value && umurMethod.value === 'poel') || !sheepData.origin) {
-        alert('Gagal: Mohon lengkapi semua kolom yang bertanda bintang (*) sebelum menyimpan.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Validasi Gagal',
+          message: 'Mohon lengkapi semua kolom yang bertanda bintang (*) sebelum menyimpan.',
+          type: 'error',
+        };
         return;
+      }
+
+      // Check cage capacity
+      const targetCage = cagesList.value.find(c => String(c.id) === String(editDomba.value.id_cage));
+      if (targetCage) {
+        const isChangingCage = String(props.sheepData.id_cage) !== String(editDomba.value.id_cage);
+        if (isChangingCage) {
+          const occupancy = sheep.value.filter(s => 
+            s.cage_code === targetCage.code && 
+            !['Mati', 'Terjual', 'Disembelih'].includes(s.status)
+          ).length;
+          
+          if (occupancy >= targetCage.capacity) {
+            alertModal.value = {
+              isOpen: true,
+              title: 'Kandang Penuh',
+              message: `Gagal memindahkan domba. Kandang ${targetCage.name} sudah penuh (Kapasitas: ${targetCage.capacity} ekor).`,
+              type: 'error',
+            };
+            return;
+          }
+        }
       }
 
       try {
@@ -146,6 +182,7 @@ export default defineComponent({
           date_of_birth: umurMethod.value === 'tanggal' 
             ? (editDomba.value.birth_date ? new Date(editDomba.value.birth_date).toISOString() : null)
             : computedPoelDateIso.value,
+          status: editDomba.value.status.toLowerCase() === 'sehat' ? 'aktif' : editDomba.value.status.toLowerCase(),
           origin: editDomba.value.origin,
           id_type: String(resolvedIdType),
           id_father: editDomba.value.id_father ? String(editDomba.value.id_father) : null,
@@ -174,7 +211,19 @@ export default defineComponent({
       } catch (error: any) {
         console.error('Failed to edit sheep:', error);
         const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Terjadi kesalahan tidak diketahui.';
-        alert(`Gagal menyimpan perubahan profil domba.\nDetail: ${errorMsg}`);
+        
+        let friendlyMessage = `Gagal menyimpan perubahan profil domba.\nDetail: ${errorMsg}`;
+        const lowerMsg = errorMsg.toLowerCase();
+        if (lowerMsg.includes('duplicate key') || lowerMsg.includes('unique constraint') || lowerMsg.includes('23505') || lowerMsg.includes('already exists') || lowerMsg.includes('sheep_code_key')) {
+          friendlyMessage = 'Gagal menyimpan. Kode Domba (Ear Tag) sudah terdaftar di sistem. Silakan gunakan Kode Domba yang lain.';
+        }
+
+        alertModal.value = {
+          isOpen: true,
+          title: 'Gagal Menyimpan',
+          message: friendlyMessage,
+          type: 'error',
+        };
       } finally {
         isLoading.value = false;
       }
@@ -299,19 +348,6 @@ export default defineComponent({
                 </div>
 
                 <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Kandang <span class="text-danger">*</span></label>
-                  <CustomSelect
-                    placeholder="Pilih Kandang"
-                    options={cagesList.value.map(cage => `${cage.code} — ${cage.name}`)}
-                    modelValue={editDomba.value.id_cage ? (cagesList.value.find(cage => String(cage.id) === String(editDomba.value.id_cage))?.code + ' — ' + cagesList.value.find(cage => String(cage.id) === String(editDomba.value.id_cage))?.name) : ''}
-                    onUpdate:modelValue={(val: string) => {
-                      const found = cagesList.value.find(cage => `${cage.code} — ${cage.name}` === val);
-                      editDomba.value.id_cage = found ? String(found.id) : '';
-                    }}
-                  />
-                </div>
-
-                <div class="col-12">
                   <label class="form-label text-secondary small fw-bold mb-2">Status Domba <span class="text-danger">*</span></label>
                   <CustomSelect
                     placeholder="Pilih Status"
@@ -378,6 +414,13 @@ export default defineComponent({
               </div>
             </div>
           </div>
+          {/* Custom Alert Modal */}
+          {alertModal.value.isOpen && (
+            <CustomAlertModal
+              alert={alertModal.value}
+              onClose={() => { alertModal.value.isOpen = false; }}
+            />
+          )}
         </div>
       );
     };

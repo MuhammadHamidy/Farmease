@@ -39,5 +39,5 @@ if err := h.useCase.Delete(c.Context(), id, userId); err != nil {
 return h.handleError(c, err)
 }
 
-return c.Status(http.StatusOK).JSON(responses.Success(map[string]interface{}{}, "Farm deleted successfully"))
+return c.Status(http.StatusOK).JSON(responses.Success(map[string]interface{}{"id": id}, "Farm deleted successfully"))
 }

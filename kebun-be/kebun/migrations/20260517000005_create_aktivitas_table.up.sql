@@ -6,11 +6,8 @@ CREATE TABLE IF NOT EXISTS gardening.aktivitas (
     Lahan_id_lahan         UUID REFERENCES gardening.lahan(id_lahan) ON DELETE CASCADE
 );
 
--- Seed initial catalog data into gardening.aktivitas
--- Catatan: Stok Pupuk dan Stok Obat TIDAK disimpan di sini karena
--- memiliki tabel dedikasi masing-masing:
---   - gardening.stok_pupuk (migrasi 20260517000015)
---   - gardening.stok_obat  (migrasi 20260517000016)
+-- Seed catalog jenis & rincian aktivitas kebun
+-- Data seed aktual (lahan, pohon, dll.) ada di seeders/gardening_seeds.sql
 INSERT INTO gardening.aktivitas (nama_jenis_aktivitas, nama_rincian_aktivitas)
 SELECT v.jenis, v.rincian
 FROM (VALUES
@@ -31,8 +28,7 @@ FROM (VALUES
     ('Penanaman', 'Bibit Baru'),
     ('Penanaman', 'Penggantian Bibit'),
     ('Penyiraman', 'Siram Manual'),
-    ('Penyiraman', 'Irigrasi Drip / Pipanisasi'),
-    ('Penyiraman', 'Biopori')
+    ('Penyiraman', 'Irigrasi Drip / Pipanisasi')
 ) AS v(jenis, rincian)
 WHERE NOT EXISTS (
     SELECT 1 FROM gardening.aktivitas a 

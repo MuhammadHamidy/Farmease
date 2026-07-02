@@ -72,7 +72,7 @@ func (r *aktivitasRepository) Update(ctx context.Context, a *domain.Aktivitas) e
 	if err != nil {
 		tTgl = time.Now()
 	}
-	_, err = r.db.Exec(ctx, "UPDATE gardening.aktivitas SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4 WHERE id_aktivitas = $5",
+	_, err = r.db.Exec(ctx, "UPDATE gardening.aktivitas SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4, updated_at = CURRENT_TIMESTAMP WHERE id_aktivitas = $5",
 		tTgl, a.NamaJenisAktivitas, a.NamaRincianAktivitas, a.LahanIDLahan, a.IDAktivitas)
 	if err != nil {
 		return err
@@ -87,14 +87,22 @@ func (r *aktivitasRepository) Delete(ctx context.Context, id string) error {
 }
 
 func parseTime(val string) (time.Time, error) {
-	if t, err := time.Parse("2006-01-02 15:04:05", val); err == nil {
-		return t, nil
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02T15:04:05.999Z07:00",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02",
+		"02-01-2006",
+		"02/01/2006",
+		"2006/01/02",
+		time.RFC3339,
 	}
-	if t, err := time.Parse("2006-01-02T15:04:05Z", val); err == nil {
-		return t, nil
-	}
-	if t, err := time.Parse("2006-01-02", val); err == nil {
-		return t, nil
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, val); err == nil {
+			return t, nil
+		}
 	}
 	return time.Time{}, errors.New("invalid time format")
 }

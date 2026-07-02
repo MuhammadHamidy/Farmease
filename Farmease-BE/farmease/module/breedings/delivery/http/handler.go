@@ -1,12 +1,10 @@
 package http
 
 import (
-	"net/http"
-
 	"github.com/farmease/farmease-be/farmease/module/breedings/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
+
 
 type BreedingHandler struct {
 	useCase domain.UseCase
@@ -33,7 +31,6 @@ func (h *BreedingHandler) registerGroup(group fiber.Router) {
 	group.Patch("/:id/status", h.UpdateMatingStatus)
 }
 
-
 // CheckInbreeding godoc
 // @Summary      Check inbreeding risk
 // @Description  Calculate CoI and common ancestors between a pair of sheep
@@ -46,19 +43,6 @@ func (h *BreedingHandler) registerGroup(group fiber.Router) {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/matings/check-inbreeding [post]
-func (h *BreedingHandler) CheckInbreeding(c *fiber.Ctx) error {
-	var req domain.InbreedingCheckRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	res, err := h.useCase.CheckInbreeding(c.Context(), req)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // GetMatingList godoc
 // @Summary      Get list of matings
@@ -72,21 +56,6 @@ func (h *BreedingHandler) CheckInbreeding(c *fiber.Ctx) error {
 // @Success      200              {array}   domain.Mating
 // @Failure      500              {object}  responses.Response[any]
 // @Router       /api/matings [get]
-func (h *BreedingHandler) GetMatingList(c *fiber.Ctx) error {
-	status := c.Query("status")
-	var inbreedingFlag *bool
-	if fs := c.Query("inbreeding_flag"); fs != "" {
-		val := fs == "true"
-		inbreedingFlag = &val
-	}
-
-	res, err := h.useCase.GetMatingList(c.Context(), status, inbreedingFlag)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // RecordMating godoc
 // @Summary      Record a mating
@@ -100,19 +69,6 @@ func (h *BreedingHandler) GetMatingList(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/matings [post]
-func (h *BreedingHandler) RecordMating(c *fiber.Ctx) error {
-	var p domain.Mating
-	if err := c.BodyParser(&p); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	err := h.useCase.RecordMating(c.Context(), &p)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusCreated).JSON(p)
-}
 
 // GetMatingDetail godoc
 // @Summary      Get mating details
@@ -126,14 +82,6 @@ func (h *BreedingHandler) RecordMating(c *fiber.Ctx) error {
 // @Failure      404  {object}  responses.Response[any]
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/matings/{id} [get]
-func (h *BreedingHandler) GetMatingDetail(c *fiber.Ctx) error {
-	id := c.Params("id")
-	res, err := h.useCase.GetMatingDetail(c.Context(), id)
-	if err != nil {
-		return c.Status(http.StatusNotFound).JSON(responses.Fail("NOT_FOUND", "Mating record not found"))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // UpdateMatingStatus godoc
 // @Summary      Update mating status
@@ -148,20 +96,3 @@ func (h *BreedingHandler) GetMatingDetail(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/matings/{id}/status [patch]
-func (h *BreedingHandler) UpdateMatingStatus(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var req struct {
-		Status string `json:"status"`
-		Notes  string `json:"notes"`
-	}
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	err := h.useCase.UpdateMatingStatus(c.Context(), id, req.Status, req.Notes)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
-}

@@ -4,10 +4,13 @@ import Badge from '@/shared/ui/Badge';
 
 export const CATEGORY_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
+  stok_pakan: '/icon/inventory.png',
   kesehatan: '/icon/catat_sehat.png',
   kotoran: '/icon/catat_kotoran.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
+  berat_badan: '/icon/statistic.png',
+  weighing: '/icon/statistic.png',
   umum: '/icon/catat_jenis.png',
 };
 
@@ -40,7 +43,7 @@ export default defineComponent({
                       <div class="d-flex align-items-center justify-content-center rounded-circle" style={{ width: '36px', height: '36px', backgroundColor: 'var(--color-surface-container-high)' }}>
                         <img src={CATEGORY_ICONS[(task.category || task.jenis || 'umum').toLowerCase()] || '/icon/catat_jenis.png'} style={{ width: '18px', height: '18px', objectFit: 'contain' }} alt="" />
                       </div>
-                      <Typography variant="span" size="text-xs" weight="bold" className="text-secondary text-uppercase m-0">{task.category || task.jenis || 'Umum'}</Typography>
+                      <Typography variant="span" size="text-xs" weight="bold" className="text-secondary text-uppercase m-0">{task.category === 'weighing' || task.category === 'berat_badan' ? 'Berat Badan' : task.category === 'stok_pakan' ? 'Stok Pakan' : (task.category || task.jenis || 'Umum')}</Typography>
                     </div>
                     <Badge 
                       variant={task.priority === 'tinggi' ? 'danger' : task.priority === 'rendah' ? 'secondary' : 'warning'} 

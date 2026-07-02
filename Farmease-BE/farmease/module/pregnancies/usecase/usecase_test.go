@@ -115,6 +115,10 @@ func (m *mockSheepRepo) UpdateType(ctx context.Context, id string, t *sheepDomai
 	return nil
 }
 
+func (m *mockSheepRepo) GetMatingStatusData(ctx context.Context) (activeMatingFemales map[string]bool, pendingMatingSheeps map[string]bool, latestEstrusChecks map[string]string, err error) {
+	return make(map[string]bool), make(map[string]bool), make(map[string]string), nil
+}
+
 type mockMatingRepo struct {
 	matingStore map[string]*breedingDomain.Mating
 }

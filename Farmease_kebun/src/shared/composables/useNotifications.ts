@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { notificationsApi, type Notification } from '@/shared/api';
+import { notificationsApi, type Notification } from '@/shared/api/perkebunan';
 
 const notifications = ref<Notification[]>([]);
 const loading = ref(false);

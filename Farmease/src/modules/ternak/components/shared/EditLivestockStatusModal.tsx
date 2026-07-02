@@ -1,6 +1,7 @@
 import { defineComponent, ref, watch, type PropType } from 'vue';
 import CustomSelect from '@/shared/ui/admin/Select';
 import { updateSheepStatus } from '@/store/livestock';
+import CustomAlertModal, { type AlertModalState } from './CustomAlertModal';
 
 export default defineComponent({
   name: 'EditLivestockStatusModal',
@@ -13,6 +14,12 @@ export default defineComponent({
   setup(props) {
     const isLoading = ref(false);
     const selectedStatus = ref('');
+    const alertModal = ref<AlertModalState>({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'error',
+    });
 
     const statusOptions = ['Sehat', 'Sakit', 'Hamil', 'Melahirkan', 'Dijual', 'Mati'];
 
@@ -24,7 +31,12 @@ export default defineComponent({
 
     const handleUpdateStatus = async () => {
       if (!selectedStatus.value) {
-        alert('Mohon pilih status terlebih dahulu.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Validasi Gagal',
+          message: 'Mohon pilih status terlebih dahulu.',
+          type: 'error',
+        };
         return;
       }
 
@@ -38,7 +50,12 @@ export default defineComponent({
       } catch (error: any) {
         console.error('Failed to edit sheep status:', error);
         const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Terjadi kesalahan tidak diketahui.';
-        alert(`Gagal menyimpan perubahan status.\nDetail: ${errorMsg}`);
+        alertModal.value = {
+          isOpen: true,
+          title: 'Gagal',
+          message: `Gagal menyimpan perubahan status.\nDetail: ${errorMsg}`,
+          type: 'error',
+        };
       } finally {
         isLoading.value = false;
       }
@@ -80,6 +97,13 @@ export default defineComponent({
               </div>
             </div>
           </div>
+          {/* Custom Alert Modal */}
+          {alertModal.value.isOpen && (
+            <CustomAlertModal
+              alert={alertModal.value}
+              onClose={() => { alertModal.value.isOpen = false; }}
+            />
+          )}
         </div>
       );
     };

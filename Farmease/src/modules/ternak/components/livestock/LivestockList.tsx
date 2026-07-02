@@ -1,12 +1,16 @@
-import { defineComponent, ref, computed, type PropType } from 'vue';
+import { defineComponent, ref, computed, watch, type PropType } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge, { type BadgeVariant } from '@/shared/ui/Badge';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import CustomSelect from '@/shared/ui/admin/Select';
+import CustomInput from '@/shared/ui/Input';
 
 const statusColor: Record<string, BadgeVariant> = {
   Sehat: 'success',
+  Produktif: 'info',
   Hamil: 'warning',
   Sakit: 'danger',
+  Birahi: 'primary',
   'Siap Jual': 'primary',
   Mati: 'secondary',
   Terjual: 'secondary',
@@ -22,12 +26,19 @@ export default defineComponent({
     isLoading: { type: Boolean, required: true },
     onOpenAddModal: { type: Function as PropType<() => void>, required: true },
     onOpenUpdateStatusModal: { type: Function as PropType<(id: string, currentStatus: string) => void>, required: true },
+    cagesList: { type: Array as PropType<any[]>, required: true },
   },
   setup(props) {
     const router = useRouter();
+    const route = useRoute();
     const search = ref('');
-    const filterStatus = ref('');
+    const filterStatus = ref((route.query.status as string) || '');
+    const selectedCage = ref('all');
     const activeTab = ref<'aktif' | 'mutasi'>('aktif');
+
+    watch(() => route.query.status, (newStatus) => {
+      filterStatus.value = (newStatus as string) || '';
+    });
 
     const filtered = computed(() => {
       return props.sheepList.filter(sheepItem => {
@@ -36,8 +47,18 @@ export default defineComponent({
           sheepItem.name.toLowerCase().includes(query) || 
           sheepItem.code.toLowerCase().includes(query) || 
           sheepItem.type.toLowerCase().includes(query);
-        const matchStatus = !filterStatus.value || sheepItem.status === filterStatus.value;
-        return matchSearch && matchStatus;
+        
+        const matchCage = selectedCage.value === 'all' || sheepItem.cage_code === selectedCage.value;
+
+        const matchStatus = (() => {
+          if (!filterStatus.value) return true;
+          if (filterStatus.value === 'Birahi') {
+            return !!sheepItem.is_ready_to_mate || (sheepItem.mating_status && (sheepItem.mating_status.includes('Birahi') || sheepItem.mating_status.includes('Siap')));
+          }
+          return sheepItem.status === filterStatus.value;
+        })();
+
+        return matchSearch && matchCage && matchStatus;
       });
     });
 
@@ -45,16 +66,44 @@ export default defineComponent({
       return props.sheepList.filter(s => !['Mati','Terjual','Disembelih'].includes(s.status)).length;
     });
 
+    const currentPage = ref(1);
+    const itemsPerPage = 9;
+
+    watch([search, filterStatus, selectedCage, activeTab], () => {
+      currentPage.value = 1;
+    });
+
+    const paginatedActive = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage;
+      return filtered.value.slice(start, start + itemsPerPage);
+    });
+
+    const paginatedMutasi = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage;
+      return props.mutationHistory.slice(start, start + itemsPerPage);
+    });
+
+    const totalPages = computed(() => {
+      const totalItems = activeTab.value === 'aktif' ? filtered.value.length : props.mutationHistory.length;
+      return Math.ceil(totalItems / itemsPerPage) || 1;
+    });
+
     return () => (
       <div class="bg-white rounded-5 border shadow-sm p-4 p-md-5 mb-4">
         <div class="mb-4">
           <div class="d-flex align-items-center justify-content-between mb-3 gap-3">
-            <div class="flex-grow-1">
+            <div class="flex-grow-1 text-start">
               <Typography variant="h4" weight="extrabold" className="m-0">
-                Daftar Ternak Kandang {props.activeCageCode} ({filtered.value.length})
+                {selectedCage.value === 'all' 
+                  ? `Daftar Semua Ternak` 
+                  : `Daftar Ternak Kandang ${selectedCage.value}`
+                }
               </Typography>
               <Typography variant="p" size="text-xs" color="secondary" className="m-0">
-                Cari ternak pada kandang aktif, lalu buka detail atau tambah data baru
+                {selectedCage.value === 'all'
+                  ? 'Cari dan pantau seluruh ternak aktif pada semua kandang'
+                  : `Cari ternak pada Kandang ${selectedCage.value}, lalu buka detail atau tambah data baru`
+                }
               </Typography>
             </div>
             <button class="peternakan-primary-btn mb-0" style={{ whiteSpace: 'nowrap', flexShrink: 0 }} onClick={props.onOpenAddModal} disabled={props.isLoading}>
@@ -68,20 +117,42 @@ export default defineComponent({
         </div>
 
         <div class="mb-4">
-          <div class="peternakan-search-bar mb-3">
-            <span class="peternakan-search-icon">
-              <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-            </span>
-            <input
-              type="text"
-              class="peternakan-search-input"
-              placeholder="Cari ID, jenis, status..."
-              value={search.value}
-              onInput={(e) => search.value = (e.target as HTMLInputElement).value}
-            />
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+              <CustomInput
+                modelValue={search.value}
+                onUpdate:modelValue={(val: string) => search.value = val}
+                placeholder="Cari ID, jenis, status..."
+                icon={() => (
+                  <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                )}
+              />
+            </div>
+            <div class="col-12 col-md-3 text-start">
+              <CustomSelect
+                options={[
+                  { value: 'all', label: 'Semua Kandang' },
+                  ...props.cagesList.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))
+                ]}
+                modelValue={selectedCage.value}
+                onUpdate:modelValue={(val: string) => selectedCage.value = val}
+                theme="peternakan"
+              />
+            </div>
+            <div class="col-12 col-md-3 text-start">
+              <CustomSelect
+                options={[
+                  { value: '', label: 'Semua Kondisi / Status' },
+                  ...['Sehat', 'Produktif', 'Hamil', 'Birahi', 'Sakit', 'Siap Jual'].map(status => ({ value: status, label: status }))
+                ]}
+                modelValue={filterStatus.value}
+                onUpdate:modelValue={(val: string) => filterStatus.value = val}
+                theme="peternakan"
+              />
+            </div>
           </div>
 
-          <div class="d-flex gap-2 mb-3">
+          <div class="d-flex gap-2 mb-1">
             {(['aktif', 'mutasi'] as const).map(tab => (
               <button
                 type="button"
@@ -93,21 +164,6 @@ export default defineComponent({
               </button>
             ))}
           </div>
-
-          {activeTab.value === 'aktif' && (
-            <div class="d-flex flex-wrap gap-2">
-              {['', 'Sehat', 'Hamil', 'Sakit', 'Siap Jual'].map(status => (
-                <button
-                  type="button"
-                  key={status || 'Semua'}
-                  class={['btn btn-sm rounded-pill px-3 py-2 fw-bold', filterStatus.value === status ? 'btn-primary-custom shadow-sm' : 'btn-light border text-secondary']}
-                  onClick={() => filterStatus.value = status}
-                >
-                  {status || 'Semua'}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div class="row g-3">
@@ -121,7 +177,7 @@ export default defineComponent({
                 <p>Belum ada riwayat mutasi keluar.</p>
               </div>
             ) : (
-              props.mutationHistory.map((sheepItem) => (
+              paginatedMutasi.value.map((sheepItem) => (
                 <div class="col-12 col-md-6 col-xl-4" key={sheepItem.id}>
                   <div class="peternakan-item-card h-100 flex-column align-items-stretch" style={{ opacity: 0.75 }}>
                     <div class="d-flex align-items-center gap-3">
@@ -157,7 +213,7 @@ export default defineComponent({
               <p>Tidak ada data ditemukan pada Kandang {props.activeCageCode}.</p>
             </div>
           ) : (
-            filtered.value.map((sheepItem) => (
+            paginatedActive.value.map((sheepItem) => (
               <div class="col-12 col-md-6 col-xl-4" key={sheepItem.id}>
                 <div class="peternakan-item-card h-100 flex-column align-items-stretch">
                   <div class="d-flex align-items-center gap-3">
@@ -185,13 +241,7 @@ export default defineComponent({
                   </div>
 
                   <div class="d-flex align-items-center justify-content-end gap-2 mt-3 pt-3 border-top">
-                    {activeTab.value === 'aktif' && (
-                      <button class="peternakan-action-btn-outline d-flex align-items-center gap-2"
-                      onClick={() => props.onOpenUpdateStatusModal(sheepItem.id, sheepItem.status)}
-                      >
-                        Ubah Status
-                      </button>
-                    )}
+
                     <button class="peternakan-action-btn" onClick={() => router.push({ name: 'ternak-detail', params: { id: sheepItem.id } })}>Detail</button>
                   </div>
                 </div>
@@ -199,6 +249,44 @@ export default defineComponent({
             ))
           )}
         </div>
+
+        {totalPages.value > 1 && (
+          <div class="d-flex justify-content-center align-items-center gap-2 mt-5 pt-4 border-top">
+            <button
+              type="button"
+              class="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-bold d-flex align-items-center gap-1 text-secondary"
+              disabled={currentPage.value === 1}
+              onClick={() => currentPage.value--}
+              style={{ transition: 'all 0.2s', fontSize: '0.8rem' }}
+            >
+              &larr; Sebelumnya
+            </button>
+            
+            <div class="d-flex align-items-center gap-1">
+              {Array.from({ length: totalPages.value }, (_, i) => i + 1).map(page => (
+                <button
+                  type="button"
+                  key={page}
+                  class={['btn btn-sm rounded-circle fw-bold d-flex align-items-center justify-content-center', currentPage.value === page ? 'btn-primary-custom shadow-sm text-white' : 'btn-light border text-secondary']}
+                  style={{ width: '34px', height: '34px', fontSize: '0.8rem', padding: 0 }}
+                  onClick={() => currentPage.value = page}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-bold d-flex align-items-center gap-1 text-secondary"
+              disabled={currentPage.value === totalPages.value}
+              onClick={() => currentPage.value++}
+              style={{ transition: 'all 0.2s', fontSize: '0.8rem' }}
+            >
+              Selanjutnya &rarr;
+            </button>
+          </div>
+        )}
       </div>
     );
   }

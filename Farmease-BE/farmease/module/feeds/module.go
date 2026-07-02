@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/feeds/repository/postgresql"
 	"github.com/farmease/farmease-be/farmease/module/feeds/usecase"
 	sheepDomain "github.com/farmease/farmease-be/farmease/module/sheep/domain"
+	tasksDomain "github.com/farmease/farmease-be/farmease/module/tasks/domain"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
 )
@@ -16,8 +17,8 @@ var Module = fx.Options(
 			postgresql.NewRepository,
 			fx.As(new(domain.FeedRepository)),
 		),
-		func(repo domain.FeedRepository, sheepRepo sheepDomain.SheepRepository) domain.UseCase {
-			return usecase.NewUseCase(repo, sheepRepo)
+		func(repo domain.FeedRepository, sheepRepo sheepDomain.SheepRepository, taskRepo tasksDomain.TaskRepository) domain.UseCase {
+			return usecase.NewUseCase(repo, sheepRepo, taskRepo)
 		},
 		http.NewFeedHandler,
 	),

@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS gardening.perawatan (
     -- Keterangan bebas / catatan
     deskripsi              TEXT          NOT NULL DEFAULT '',
 
-    -- Referensi ke katalog obat (opsional, hanya jika menggunakan obat)
-    JenisObat_id_jenis_obat UUID REFERENCES gardening.jenis_obat(id_jenis_obat) ON DELETE SET NULL,
+    -- Nama obat (digunakan saat jenis_bahan = 'obat')
+    nama_obat              VARCHAR(100)  NOT NULL DEFAULT '',
 
     -- Relasi wajib ke lahan dan aktivitas
     Lahan_id_lahan         UUID NOT NULL REFERENCES gardening.lahan(id_lahan)     ON DELETE CASCADE,

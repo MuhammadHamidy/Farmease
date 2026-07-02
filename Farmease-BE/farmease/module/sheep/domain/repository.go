@@ -2,14 +2,17 @@ package domain
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 )
 
 type Sheep struct {
 	IDSheep         string     `json:"id_sheep" db:"id_sheep"`
-	SheepCode       string     `json:"sheep_code" db:"sheep_code"`
-	SheepName       string     `json:"sheep_name" db:"sheep_name"`
-	Gender          string     `json:"gender" db:"gender"`
+	SheepCode       string     `json:"sheep_code" db:"sheep_code" validate:"required"`
+	SheepName       string     `json:"sheep_name" db:"sheep_name" validate:"required"`
+	Gender          string     `json:"gender" db:"gender" validate:"required,oneof=jantan betina"`
 	DateOfBirth     *time.Time `json:"date_of_birth" db:"date_of_birth"`
 	UmurMethod      string     `json:"umur_method,omitempty" db:"-"`
 	PoelLevel       string     `json:"poel_level,omitempty" db:"-"`
@@ -18,10 +21,10 @@ type Sheep struct {
 	AgeString       string     `json:"age_string,omitempty"`
 	IsReadyToMate   bool       `json:"is_ready_to_mate,omitempty" db:"-"`
 	MatingStatus    string     `json:"mating_status,omitempty" db:"-"`
-	Status          string     `json:"status" db:"status"`
-	Origin          string     `json:"origin" db:"origin"`
-	IDCage          string     `json:"id_cage" db:"id_cage"`
-	IDType          string     `json:"id_type" db:"id_type"`
+	Status          string     `json:"status" db:"status" validate:"required"`
+	Origin          string     `json:"origin" db:"origin" validate:"required"`
+	IDCage          string     `json:"id_cage" db:"id_cage" validate:"required"`
+	IDType          string     `json:"id_type" db:"id_type" validate:"required"`
 	IDFather        *string    `json:"id_father" db:"id_father"`
 	IDMother        *string    `json:"id_mother" db:"id_mother"`
 	FirstWeight     float64    `json:"-" db:"first_weight"`
@@ -39,6 +42,49 @@ type Sheep struct {
 	UpdatedBy       *string    `json:"updated_by,omitempty" db:"updated_by"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+func (s *Sheep) UnmarshalJSON(data []byte) error {
+	type Alias Sheep
+	aux := &struct {
+		DateOfBirth *string `json:"date_of_birth"`
+		Alias
+	}{
+		Alias: Alias(*s),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*s = Sheep(aux.Alias)
+
+	if aux.DateOfBirth != nil && *aux.DateOfBirth != "" && *aux.DateOfBirth != "null" {
+		strVal := strings.TrimSpace(*aux.DateOfBirth)
+		layouts := []string{
+			"2006-01-02T15:04:05Z07:00",
+			"2006-01-02T15:04:05.999Z",
+			"2006-01-02T15:04:05.999Z07:00",
+			"2006-01-02",
+			"02-01-2006",
+			"02/01/2006",
+			"2006/01/02",
+			time.RFC3339,
+		}
+		var parsedTime time.Time
+		var err error
+		success := false
+		for _, layout := range layouts {
+			parsedTime, err = time.Parse(layout, strVal)
+			if err == nil {
+				s.DateOfBirth = &parsedTime
+				success = true
+				break
+			}
+		}
+		if !success {
+			return fmt.Errorf("failed to parse date_of_birth %q: %v", strVal, err)
+		}
+	}
+	return nil
 }
 
 type Parent struct {
@@ -84,6 +130,7 @@ type SheepRepository interface {
 	FindAllTypes(ctx context.Context) ([]*SheepType, error)
 	StoreType(ctx context.Context, t *SheepType) error
 	UpdateType(ctx context.Context, id string, t *SheepType) error
+	GetMatingStatusData(ctx context.Context) (activeMatingFemales map[string]bool, pendingMatingSheeps map[string]bool, latestEstrusChecks map[string]string, err error)
 }
 
 type UseCase interface {

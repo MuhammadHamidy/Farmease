@@ -144,9 +144,6 @@ export default defineComponent({
                         <>
                           <SummaryItem label="Jumlah Hasil" value={`${item.qty} ${item.unit || 'kg'}`} />
                           <SummaryItem label="Kondisi" value={item.kotoranState} />
-                          {item.name === 'Fermentasi' && (
-                            <SummaryItem label="Pemanfaatan" value={item.pemanfaatan} />
-                          )}
                         </>
                       )}
 
@@ -154,13 +151,13 @@ export default defineComponent({
                         <>
                           {item.name === 'Kontrol Kebuntingan' ? (
                             <>
-                              <SummaryItem label="ID Perkawinan" value={item.idMating} />
-                              <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan} />
-                              <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
+                               <SummaryItem label="ID Perkawinan" value={item.idMating} />
+                               <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan === 'usg' ? 'Cek USG' : item.metodePemeriksaan === 'palpasi' ? 'Palpasi' : item.metodePemeriksaan === 'testpack' ? 'Testpack' : item.metodePemeriksaan} />
+                               <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
                             </>
-                          ) : item.name === 'Cek Birahi' ? (
+                          ) : (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi') ? (
                             <>
-                              <SummaryItem label="Hasil Cek Birahi" value={item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'} />
+                              <SummaryItem label="Hasil Pencatatan Birahi" value={item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'} />
                             </>
                           ) : (
                             <>
@@ -193,8 +190,10 @@ export default defineComponent({
                       {type.value === 'kelahiran' && (
                         <>
                           <SummaryItem label="ID Pejantan" value={item.idPejantan} />
-                          <SummaryItem label="Jumlah Anak" value={item.jumlahAnak} />
+                          <SummaryItem label="Ear Tag Anak" value={item.sheepCode} />
                           <SummaryItem label="Nama Anak" value={item.namaAnak} />
+                          <SummaryItem label="Jenis Kelamin Anak" value={item.genderAnak === 'jantan' ? 'Jantan' : 'Betina'} />
+                          <SummaryItem label="Jumlah Anak" value={item.jumlahAnak} />
                           <SummaryItem label="Kandang Anak" value={item.kandangAnak} />
                           <SummaryItem label="Berat Lahir" value={item.beratLahir ? `${item.beratLahir} kg` : '-'} />
                           <SummaryItem label="Kondisi Induk" value={item.kondisiInduk} />

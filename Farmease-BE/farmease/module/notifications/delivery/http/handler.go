@@ -1,15 +1,15 @@
 package http
 
 import (
-	"net/http"
 	"strings"
-
 	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
 	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+
+
 
 type NotificationHandler struct {
 	useCase domain.UseCase
@@ -69,14 +69,6 @@ func (h *NotificationHandler) RegisterRoutes(app *fiber.App) {
 // @Success      200  {array}   domain.Notification
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/notifications [get]
-func (h *NotificationHandler) GetMyNotifications(c *fiber.Ctx) error {
-	idAccount := extractAccountID(c)
-	res, err := h.useCase.GetMyNotifications(c.Context(), idAccount)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // ReadNotification godoc
 // @Summary      Read notification
@@ -89,11 +81,3 @@ func (h *NotificationHandler) GetMyNotifications(c *fiber.Ctx) error {
 // @Success      200  {object}  object
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/notifications/{id}/read [patch]
-func (h *NotificationHandler) ReadNotification(c *fiber.Ctx) error {
-	id := c.Params("id")
-	err := h.useCase.ReadNotification(c.Context(), id)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
-}

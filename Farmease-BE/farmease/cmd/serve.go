@@ -38,6 +38,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/weights"
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
 	"github.com/farmease/farmease-be/farmease/module/submissions"
+	"github.com/farmease/farmease-be/farmease/module/fermentations"
 )
 
 // @title           Farmease API
@@ -124,6 +125,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		notifications.Module,
 		upload.Module,
 		submissions.Module,
+		fermentations.Module,
 
 		fx.Provide(
 			fx.Annotate(
@@ -147,6 +149,12 @@ func serveE(cmd *cobra.Command, args []string) error {
 						bgCtx := context.Background()
 						log.Println("DB_UPGRADE: starting database enums and table updates in background")
 						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'eksternal'"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'produktif'"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'sakit'"); err != nil {
 							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
 						}
 						if _, err := db.Exec(bgCtx, "ALTER TYPE operations.task_rincian_enum ADD VALUE IF NOT EXISTS 'Kontrol Kebuntingan'"); err != nil {

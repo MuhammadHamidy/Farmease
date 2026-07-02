@@ -26,10 +26,10 @@ const detailOptions: Record<string, string[]> = {
   pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Pemberian Mineral'],
   stok_pakan: ['Tambah Stok', 'Konversi Pakan'],
   kesehatan: ['Pemeriksaan Rutin', 'Vitamin', 'Vaksin', 'Obat Cacing'],
-  perkawinan: ['Kawin Alam', 'IB', 'Cek Birahi', 'Kontrol Kebuntingan'],
-  kelahiran: ['Lahir Normal', 'Kembar', 'Lahir Cesar'],
-  kotoran: ['Sanitasi Harian', 'Panen Kotoran', 'Pembersihan Lantai', 'Fermentasi'],
-  berat_badan: ['Timbang Rutin', 'Timbang Harian', 'Timbang Bulanan', 'Timbang Mandiri'],
+  perkawinan: ['Kawin Alam', 'Inseminasi Buatan', 'Pencatatan Birahi', 'Kontrol Kebuntingan'],
+  kelahiran: ['Lahir Normal', 'Kembar', 'Lahir Cesar', 'Keguguran'],
+  kotoran: ['Panen Kotoran', 'Pembersihan Lantai'],
+  berat_badan: ['Timbang Rutin'],
 };
 
 const categoryIcons: Record<string, string> = {
@@ -72,11 +72,19 @@ export default defineComponent({
       }, 1000);
 
       if (prefilledPencatatanType.value) {
-        selectedType.value = prefilledPencatatanType.value;
+        let typeVal = prefilledPencatatanType.value;
+        const rincianVal = prefilledPencatatanRincian.value;
+        if (typeVal === 'weighing') {
+          typeVal = 'berat_badan';
+        } else if (typeVal === 'pakan' && (rincianVal === 'Tambah Stok' || rincianVal === 'Konversi Pakan')) {
+          typeVal = 'stok_pakan';
+        }
+        
+        selectedType.value = typeVal;
         prefilledPencatatanType.value = null; // Clear after applying
         
-        if (prefilledPencatatanRincian.value) {
-          selectedDetail.value = prefilledPencatatanRincian.value;
+        if (rincianVal) {
+          selectedDetail.value = rincianVal;
           prefilledPencatatanRincian.value = null;
         } else {
           selectedDetail.value = detailOptions[selectedType.value]?.[0] || 'Rincian';

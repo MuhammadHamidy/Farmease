@@ -1,10 +1,12 @@
 -- Tabel pemangkasan — mencatat aktivitas pemangkasan pohon
 -- Jenis: Pemangkasan Ranting, Pemangkasan Bentuk, Pemangkasan Peremajaan
+-- Tabel pemangkasan — mencatat aktivitas pemangkasan pohon
+-- Jenis: Pemangkasan Ranting, Pemangkasan Bentuk, Pemangkasan Peremajaan
 CREATE TABLE IF NOT EXISTS gardening.pemangkasan (
     id_pemangkasan         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Hasil pemangkasan (berat/volume ranting yang dipotong)
-    jumlah_hasil           NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    jumlah                 NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     satuan                 VARCHAR(50)   NOT NULL DEFAULT 'kg',
     -- Contoh: 'kg', 'ikat', 'batang'
 

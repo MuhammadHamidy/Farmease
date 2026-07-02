@@ -20,10 +20,11 @@ func NewPanenRepository(db *pgxpool.Pool) domain.PanenRepository {
 
 func (r *panenRepository) FindAll(ctx context.Context) ([]domain.Panen, error) {
 	query := `
-		SELECT id_panen, tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas,
-		       jumlah, satuan, Lahan_id_lahan
-		FROM gardening.panen
-		ORDER BY tanggal_aktivitas DESC
+		SELECT p.id_panen, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
+		       p.jumlah, p.satuan, p.Lahan_id_lahan
+		FROM gardening.panen p
+		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
+		ORDER BY a.tanggal_aktivitas DESC
 	`
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
@@ -49,10 +50,11 @@ func (r *panenRepository) FindByID(ctx context.Context, id string) (*domain.Pane
 	var p domain.Panen
 	var tTgl time.Time
 	query := `
-		SELECT id_panen, tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas,
-		       jumlah, satuan, Lahan_id_lahan
-		FROM gardening.panen
-		WHERE id_panen = $1
+		SELECT p.id_panen, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
+		       p.jumlah, p.satuan, p.Lahan_id_lahan
+		FROM gardening.panen p
+		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
+		WHERE p.id_panen = $1
 	`
 	err := r.db.QueryRow(ctx, query, id).
 		Scan(&p.IDPanen, &tTgl, &p.NamaJenisAktivitas, &p.NamaRincianAktivitas,
@@ -69,11 +71,12 @@ func (r *panenRepository) FindByID(ctx context.Context, id string) (*domain.Pane
 
 func (r *panenRepository) FindRekap(ctx context.Context) ([]domain.PanenRekap, error) {
 	query := `
-		SELECT EXTRACT(YEAR FROM tanggal_aktivitas)::INT AS tahun,
-		       SUM(jumlah)::INT AS total_jumlah,
-		       satuan
-		FROM gardening.panen
-		GROUP BY tahun, satuan
+		SELECT EXTRACT(YEAR FROM a.tanggal_aktivitas)::INT AS tahun,
+		       SUM(p.jumlah)::INT AS total_jumlah,
+		       p.satuan
+		FROM gardening.panen p
+		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
+		GROUP BY tahun, p.satuan
 		ORDER BY tahun DESC
 	`
 	rows, err := r.db.Query(ctx, query)
@@ -94,39 +97,111 @@ func (r *panenRepository) FindRekap(ctx context.Context) ([]domain.PanenRekap, e
 }
 
 func (r *panenRepository) Store(ctx context.Context, p *domain.Panen) error {
-	tTgl, err := time.Parse("2006-01-02", p.TanggalAktivitas)
+	tTgl, err := parseTime(p.TanggalAktivitas)
 	if err != nil {
 		tTgl = time.Now()
 	}
 
-	return r.db.QueryRow(ctx,
-		`INSERT INTO gardening.panen
-		 (tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, jumlah, satuan, Lahan_id_lahan)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var aktivitasID string
+	err = tx.QueryRow(ctx,
+		`INSERT INTO gardening.aktivitas (tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan)
+		 VALUES ($1, $2, $3, $4)
+		 RETURNING id_aktivitas`,
+		tTgl, "Panen", p.NamaRincianAktivitas, p.LahanIDLahan,
+	).Scan(&aktivitasID)
+	if err != nil {
+		return err
+	}
+
+	err = tx.QueryRow(ctx,
+		`INSERT INTO gardening.panen (jumlah, satuan, Lahan_id_lahan, Aktivitas_id_aktivitas)
+		 VALUES ($1, $2, $3, $4)
 		 RETURNING id_panen`,
-		tTgl, "Panen", p.NamaRincianAktivitas,
-		p.Jumlah, p.Satuan, p.LahanIDLahan,
+		p.Jumlah, p.Satuan, p.LahanIDLahan, aktivitasID,
 	).Scan(&p.IDPanen)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *panenRepository) Update(ctx context.Context, p *domain.Panen) error {
-	tTgl, err := time.Parse("2006-01-02", p.TanggalAktivitas)
+	tTgl, err := parseTime(p.TanggalAktivitas)
 	if err != nil {
 		tTgl = time.Now()
 	}
 
-	_, err = r.db.Exec(ctx,
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var aktivitasID string
+	err = tx.QueryRow(ctx,
+		`SELECT Aktivitas_id_aktivitas FROM gardening.panen WHERE id_panen = $1`,
+		p.IDPanen,
+	).Scan(&aktivitasID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx,
+		`UPDATE gardening.aktivitas
+		 SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4, updated_at = CURRENT_TIMESTAMP
+		 WHERE id_aktivitas = $5`,
+		tTgl, "Panen", p.NamaRincianAktivitas, p.LahanIDLahan, aktivitasID,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx,
 		`UPDATE gardening.panen
-		 SET tanggal_aktivitas = $1, nama_rincian_aktivitas = $2,
-		     jumlah = $3, satuan = $4, Lahan_id_lahan = $5
-		 WHERE id_panen = $6`,
-		tTgl, p.NamaRincianAktivitas,
+		 SET jumlah = $1, satuan = $2, Lahan_id_lahan = $3, updated_at = CURRENT_TIMESTAMP
+		 WHERE id_panen = $4`,
 		p.Jumlah, p.Satuan, p.LahanIDLahan, p.IDPanen,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (r *panenRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.db.Exec(ctx,
+		`DELETE FROM gardening.aktivitas
+		 WHERE id_aktivitas = (SELECT Aktivitas_id_aktivitas FROM gardening.panen WHERE id_panen = $1)`,
+		id,
 	)
 	return err
 }
 
-func (r *panenRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.db.Exec(ctx, "DELETE FROM gardening.panen WHERE id_panen = $1", id)
-	return err
+func parseTime(val string) (time.Time, error) {
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02T15:04:05.999Z07:00",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02",
+		"02-01-2006",
+		"02/01/2006",
+		"2006/01/02",
+		time.RFC3339,
+	}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, val); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, errors.New("invalid time format")
 }

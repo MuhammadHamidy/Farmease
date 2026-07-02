@@ -305,21 +305,27 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
   let category: PencatatanCategory = 'umum';
   const titleLower = (t.title || '').toLowerCase();
   
-  if (assigneeCode === 'OP001') {
-    // Ternak Tasks
-    if (titleLower.includes('pakan') || titleLower.includes('makan')) category = 'pakan';
-    else if (titleLower.includes('sehat') || titleLower.includes('sakit') || titleLower.includes('obat') || titleLower.includes('vitamin') || titleLower.includes('kesehatan')) category = 'kesehatan';
-    else if (titleLower.includes('kotoran') || titleLower.includes('kohe')) category = 'kotoran';
-    else if (titleLower.includes('kawin') || titleLower.includes('breeding')) category = 'perkawinan';
-    else if (titleLower.includes('lahir') || titleLower.includes('anak')) category = 'kelahiran';
-    else if (titleLower.includes('panen')) category = 'panen' as any;
-  } else if (assigneeCode === 'OP002') {
-    // Kebun Tasks
-    if (titleLower.includes('siram') || titleLower.includes('air') || titleLower.includes('penyiraman')) category = 'penyiraman' as any;
-    else if (titleLower.includes('pupuk') || titleLower.includes('pemupukan')) category = 'pemupukan' as any;
-    else if (titleLower.includes('bersih') || titleLower.includes('gulma')) category = 'pembersihan' as any;
-    else if (titleLower.includes('panen') || titleLower.includes('buah')) category = 'panen' as any;
-    else if (titleLower.includes('pangkas') || titleLower.includes('ranting')) category = 'pemangkasan' as any;
+  if (t.category) {
+    const rawCategory = t.category as string;
+    category = rawCategory as any;
+  } else {
+    if (assigneeCode === 'OP001') {
+      // Ternak Tasks
+      if (titleLower.includes('pakan') || titleLower.includes('makan')) category = 'pakan';
+      else if (titleLower.includes('sehat') || titleLower.includes('sakit') || titleLower.includes('obat') || titleLower.includes('vitamin') || titleLower.includes('kesehatan')) category = 'kesehatan';
+      else if (titleLower.includes('kotoran') || titleLower.includes('kohe')) category = 'kotoran';
+      else if (titleLower.includes('kawin') || titleLower.includes('breeding')) category = 'perkawinan';
+      else if (titleLower.includes('lahir') || titleLower.includes('anak')) category = 'kelahiran';
+      else if (titleLower.includes('panen')) category = 'panen' as any;
+    } else if (assigneeCode === 'OP002') {
+      // Kebun Tasks
+      if (titleLower.includes('siram') || titleLower.includes('air') || titleLower.includes('penyiraman')) category = 'penyiraman' as any;
+      else if (titleLower.includes('olah pupuk') || titleLower.includes('pengolahan pupuk') || titleLower.includes('kompos') || titleLower.includes('pupuk kandang')) category = 'pengolahan_pupuk' as any;
+      else if (titleLower.includes('pupuk') || titleLower.includes('pemupukan')) category = 'pemupukan' as any;
+      else if (titleLower.includes('bersih') || titleLower.includes('gulma')) category = 'pembersihan' as any;
+      else if (titleLower.includes('panen') || titleLower.includes('buah')) category = 'panen' as any;
+      else if (titleLower.includes('pangkas') || titleLower.includes('ranting')) category = 'pemangkasan' as any;
+    }
   }
 
   // Resolve cage code from id_cage UUID using cagesList and landsList

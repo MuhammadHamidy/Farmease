@@ -19,7 +19,7 @@ export default defineComponent({
     return () => (
       <section class="informasi-lain-section" style="margin-top: 1.5rem;">
         <h4 style="font-weight: 700; color: #111827; font-size: 1.15rem; margin-bottom: 0.85rem;">Informasi Lain</h4>
-        <div class="quick-links-bar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
+        <div class="quick-links-bar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem;">
           {props.links.map((link) => {
             // Extract the label/value for mockup 5 structure
             let label = 'Informasi'

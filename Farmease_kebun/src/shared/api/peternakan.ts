@@ -1,4 +1,25 @@
 import apiClient from './client'
+import axios from 'axios'
+
+// Direct client to Peternakan backend (port 8081) — bypasses the shared apiClient
+// which always routes non-auth requests to Kebun backend (port 8082).
+const PETERNAKAN_API_URL = import.meta.env.VITE_PETERNAKAN_API_URL || 'http://127.0.0.1:8081'
+
+const peternakanDirectClient = {
+  async get<T = any>(url: string): Promise<T> {
+    const token = localStorage.getItem('authToken')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await axios.get<any>(`${PETERNAKAN_API_URL}${url}`, { headers })
+    const d = response.data
+    // Handle wrapped response formats: { data: [...] } or { value: [...] }
+    if (d && typeof d === 'object') {
+      if ('data' in d && ('success' in d || 'status' in d)) return d.data
+      if ('value' in d && Array.isArray(d.value)) return d.value as T
+    }
+    return d
+  }
+}
 
 // ============ Farms ============
 export interface Farm {
@@ -211,21 +232,26 @@ export const feedsApi = {
 
 // ============ Manure ============
 export interface Manure {
-  id: string | number
-  id_sheep: string | number
-  quantity: number
-  date_recorded: string
+  id?: string | number
+  id_manure?: string | number
+  id_sheep?: string | number
+  activity_type?: string
+  amount?: number
+  quantity?: number
+  unit?: string
+  destination_type?: string
+  date_recorded?: string
   notes?: string
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
 }
 
 export const manureApi = {
   getList: async (): Promise<Manure[]> => {
-    return await apiClient.get('/api/manures')
+    return await peternakanDirectClient.get('/api/manures')
   },
   getKotoran: async (): Promise<Manure[]> => {
-    return await apiClient.get('/api/kotoran')
+    return await peternakanDirectClient.get('/api/kotoran')
   },
   getSheepHistory: async (sheepId: string | number): Promise<Manure[]> => {
     return await apiClient.get(`/api/sheep/${sheepId}/manure`)
@@ -234,6 +260,7 @@ export const manureApi = {
     return await apiClient.post(`/api/sheep/${sheepId}/manure`, payload)
   },
 }
+
 
 // ============ Breeding ============
 export interface Breeding {

@@ -5,6 +5,7 @@ export interface BirthAlert {
   code: string;
   daysLeft: number;
   estimatedDate: string;
+  id?: string;
 }
 
 export default defineComponent({
@@ -31,7 +32,7 @@ export default defineComponent({
                 border: `1.5px solid ${alert.daysLeft <= 3 ? 'var(--color-warning)' : 'var(--color-success)'}`,
               }}
             >
-              <span style={{ fontSize: '1.3rem' }}>🐑</span>
+              <img src="/icon/domba.png" alt="Domba" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
               <div class="flex-grow-1">
                 <strong style={{ fontSize: '0.85rem' }}>
                   {alert.daysLeft === 0 ? 'Hari Ini' : `${alert.daysLeft} hari lagi`}

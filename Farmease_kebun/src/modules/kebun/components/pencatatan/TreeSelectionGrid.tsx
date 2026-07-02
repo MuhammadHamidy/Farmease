@@ -35,7 +35,7 @@ export default defineComponent({
     return () => (
       <div style="display:flex; flex-direction:column; gap:0.85rem;">
         <div class="form-group">
-          <label class="pencatatan-form-label">Pilih Varietas</label>
+          <label class="pencatatan-form-label">Varietas</label>
           <PerkebunanFormSelect
             modelValue={props.selectedVarietas}
             options={props.varietasOptions}
@@ -45,10 +45,10 @@ export default defineComponent({
         </div>
 
         <div class="form-group">
-          <label class="pencatatan-form-label">Pilih Fase Pohon</label>
+          <label class="pencatatan-form-label">Fase Pohon</label>
           <PerkebunanFormSelect
             modelValue={props.fasePohon}
-            options={['Fase Pohon', 'Vegetatif', 'Generatif']}
+            options={['Fase Pohon', 'Belum Produktif (0-3 tahun)', 'Produktif (>4 tahun)', 'Vegetatif', 'Generatif']}
             placeholder="Fase Pohon"
             onUpdate:modelValue={(val: string) => emit('update:fasePohon', val)}
           />

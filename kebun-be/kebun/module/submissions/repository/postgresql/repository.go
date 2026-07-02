@@ -51,18 +51,38 @@ func (r *Repository) FindAll(ctx context.Context, status, submissionType string)
 
 	var list []*domain.Submission
 	for rows.Next() {
-		var s domain.Submission
+		var id, typ, typeLabel, operatorCode, operatorName, cageCode, scope, summary, approvalStatus *string
 		var payloadBytes []byte
+		var submittedAt, reviewedAt, createdAt, updatedAt *time.Time
+		var reviewedBy, reviewNote, taskID *string
 
 		err := rows.Scan(
-			&s.ID, &s.Type, &s.TypeLabel, &s.OperatorCode, &s.OperatorName,
-			&s.CageCode, &s.Scope, &s.Summary, &payloadBytes, &s.SubmittedAt,
-			&s.ApprovalStatus, &s.ReviewedAt, &s.ReviewedBy, &s.ReviewNote,
-			&s.TaskID, &s.CreatedAt, &s.UpdatedAt,
+			&id, &typ, &typeLabel, &operatorCode, &operatorName,
+			&cageCode, &scope, &summary, &payloadBytes, &submittedAt,
+			&approvalStatus, &reviewedAt, &reviewedBy, &reviewNote,
+			&taskID, &createdAt, &updatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		var s domain.Submission
+		if id != nil { s.ID = *id }
+		if typ != nil { s.Type = *typ }
+		if typeLabel != nil { s.TypeLabel = *typeLabel }
+		if operatorCode != nil { s.OperatorCode = *operatorCode }
+		if operatorName != nil { s.OperatorName = *operatorName }
+		if cageCode != nil { s.CageCode = *cageCode }
+		if scope != nil { s.Scope = *scope }
+		if summary != nil { s.Summary = *summary }
+		if approvalStatus != nil { s.ApprovalStatus = *approvalStatus }
+		if submittedAt != nil { s.SubmittedAt = *submittedAt }
+		s.ReviewedAt = reviewedAt
+		s.ReviewedBy = reviewedBy
+		s.ReviewNote = reviewNote
+		s.TaskID = taskID
+		if createdAt != nil { s.CreatedAt = *createdAt }
+		if updatedAt != nil { s.UpdatedAt = *updatedAt }
 
 		if len(payloadBytes) > 0 {
 			_ = json.Unmarshal(payloadBytes, &s.Payload)
@@ -79,14 +99,16 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Submissio
 	FROM gardening.pencatatan_submissions 
 	WHERE id = $1`
 
-	var s domain.Submission
+	var idVal, typ, typeLabel, operatorCode, operatorName, cageCode, scope, summary, approvalStatus *string
 	var payloadBytes []byte
+	var submittedAt, reviewedAt, createdAt, updatedAt *time.Time
+	var reviewedBy, reviewNote, taskID *string
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&s.ID, &s.Type, &s.TypeLabel, &s.OperatorCode, &s.OperatorName,
-		&s.CageCode, &s.Scope, &s.Summary, &payloadBytes, &s.SubmittedAt,
-		&s.ApprovalStatus, &s.ReviewedAt, &s.ReviewedBy, &s.ReviewNote,
-		&s.TaskID, &s.CreatedAt, &s.UpdatedAt,
+		&idVal, &typ, &typeLabel, &operatorCode, &operatorName,
+		&cageCode, &scope, &summary, &payloadBytes, &submittedAt,
+		&approvalStatus, &reviewedAt, &reviewedBy, &reviewNote,
+		&taskID, &createdAt, &updatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -94,6 +116,24 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Submissio
 		}
 		return nil, err
 	}
+
+	var s domain.Submission
+	if idVal != nil { s.ID = *idVal }
+	if typ != nil { s.Type = *typ }
+	if typeLabel != nil { s.TypeLabel = *typeLabel }
+	if operatorCode != nil { s.OperatorCode = *operatorCode }
+	if operatorName != nil { s.OperatorName = *operatorName }
+	if cageCode != nil { s.CageCode = *cageCode }
+	if scope != nil { s.Scope = *scope }
+	if summary != nil { s.Summary = *summary }
+	if approvalStatus != nil { s.ApprovalStatus = *approvalStatus }
+	if submittedAt != nil { s.SubmittedAt = *submittedAt }
+	s.ReviewedAt = reviewedAt
+	s.ReviewedBy = reviewedBy
+	s.ReviewNote = reviewNote
+	s.TaskID = taskID
+	if createdAt != nil { s.CreatedAt = *createdAt }
+	if updatedAt != nil { s.UpdatedAt = *updatedAt }
 
 	if len(payloadBytes) > 0 {
 		_ = json.Unmarshal(payloadBytes, &s.Payload)

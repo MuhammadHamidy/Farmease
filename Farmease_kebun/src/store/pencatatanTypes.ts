@@ -4,7 +4,7 @@ import { pencatatanTypesApi, type PencatatanTypesCatalog, type RincianPencatatan
 const FALLBACK_JENIS = [
   'Panen', 'Pemangkasan', 'Pembersihan', 'Pembuahan',
   'Pemberian Obat', 'Pemupukan', 'Penanaman', 'Penyiraman',
-  'Stok Obat', 'Stok Pupuk',
+  'Stok Obat', 'Stok Pupuk', 'Pengolahan Pupuk',
 ]
 
 const FALLBACK_RINCIAN_BY_JENIS: Record<string, string[]> = {
@@ -15,9 +15,14 @@ const FALLBACK_RINCIAN_BY_JENIS: Record<string, string[]> = {
   'Pemberian Obat': ['Insektisida', 'Fungisida', 'Pestisida'],
   Pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
   Penanaman: ['Bibit Baru', 'Penggantian Bibit'],
-  Penyiraman: ['Siram Manual', 'Irigrasi Drip / Pipanisasi', 'Biopori'],
-  'Stok Obat': ['Tambah Obat'],
-  'Stok Pupuk': ['Tambah Pupuk'],
+  Penyiraman: ['Siram Manual', 'Irigrasi Drip / Pipanisasi'],
+  'Stok Obat': ['Pendaftaran Obat Baru', 'Tambah Stok Obat (Exp Lama)'],
+  'Stok Pupuk': [
+    'Pendaftaran Pupuk/Bahan Baru',
+    'Tambah Stok Pupuk (Exp Lama)',
+    'Tambah Stok Bahan'
+  ],
+  'Pengolahan Pupuk': ['Fermentasi Pupuk', 'Cek Fermentasi'],
 }
 
 const catalog = ref<PencatatanTypesCatalog | null>(null)
@@ -73,14 +78,21 @@ export async function fetchPencatatanTypesCatalog(force = false): Promise<void> 
 }
 
 export const jenisPencatatanList = computed(() => {
-  const list = (catalog.value?.jenis ?? []).map((item) => item.nama);
-  if (catalog.value && !list.includes('Stok Obat')) {
-    list.push('Stok Obat');
-  }
-  if (catalog.value && !list.includes('Stok Pupuk')) {
-    list.push('Stok Pupuk');
-  }
-  return list;
+  const rawList = (catalog.value?.jenis ?? []).map((item) => item.nama);
+  const set = new Set<string>();
+  
+  rawList.forEach(name => {
+    let standardized = name;
+    if (standardized.toLowerCase() === 'stok pupuk') standardized = 'Stok Pupuk';
+    if (standardized.toLowerCase() === 'stok obat') standardized = 'Stok Obat';
+    set.add(standardized);
+  });
+
+  if (!set.has('Stok Obat')) set.add('Stok Obat');
+  if (!set.has('Stok Pupuk')) set.add('Stok Pupuk');
+  if (!set.has('Pengolahan Pupuk')) set.add('Pengolahan Pupuk');
+
+  return Array.from(set);
 });
 
 export const rincianPencatatanByJenis = computed(() => {
@@ -91,12 +103,17 @@ export const rincianPencatatanByJenis = computed(() => {
       ? items.map((item) => (typeof item === 'string' ? item : item.nama))
       : [];
   }
+  // Always enforce custom options for Stok Pupuk and Stok Obat
+  map['Stok Obat'] = ['Pendaftaran Obat Baru', 'Tambah Stok Obat (Exp Lama)'];
+  map['Stok Pupuk'] = [
+    'Pendaftaran Pupuk/Bahan Baru',
+    'Tambah Stok Pupuk (Exp Lama)',
+    'Tambah Stok Bahan'
+  ];
+
   if (catalog.value) {
-    if (!map['Stok Obat']) {
-      map['Stok Obat'] = ['Tambah Obat'];
-    }
-    if (!map['Stok Pupuk']) {
-      map['Stok Pupuk'] = ['Tambah Pupuk'];
+    if (!map['Pengolahan Pupuk'] || map['Pengolahan Pupuk'].length === 0) {
+      map['Pengolahan Pupuk'] = ['Fermentasi Pupuk', 'Cek Fermentasi', 'Pupuk Kandang', 'Pupuk Kompos'];
     }
   }
   return map;

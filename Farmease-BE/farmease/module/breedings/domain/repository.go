@@ -8,10 +8,10 @@ import (
 type Mating struct {
 	IDMating                string      `json:"id_mating" db:"id_mating"`
 	IDSheepMale             string      `json:"id_sheep_male" db:"id_sheep_male"`
-	IDSheepFemale           string      `json:"id_sheep_female" db:"id_sheep_female"`
+	IDSheepFemale           string      `json:"id_sheep_female" db:"id_sheep_female" validate:"required"`
 	MatingDate              time.Time   `json:"mating_date" db:"mating_date"`
-	MatingMethod            string      `json:"mating_method" db:"mating_method"`
-	Status                  string      `json:"status" db:"status"`
+	MatingMethod            string      `json:"mating_method" db:"mating_method" validate:"required,oneof=alami ib"`
+	Status                  string      `json:"status" db:"status" validate:"required,oneof=proses sukses gagal"`
 	InbreedingFlag          bool        `json:"inbreeding_flag" db:"inbreeding_flag"`
 	CoefficientOfInbreeding float64     `json:"coefficient_of_inbreeding" db:"coefficient_of_inbreeding"`
 	Notes                   string      `json:"notes" db:"notes"`
@@ -36,8 +36,8 @@ type SheepShort struct {
 }
 
 type InbreedingCheckRequest struct {
-	IDSheepMale   string `json:"id_sheep_male"`
-	IDSheepFemale string `json:"id_sheep_female"`
+	IDSheepMale   string `json:"id_sheep_male" validate:"required"`
+	IDSheepFemale string `json:"id_sheep_female" validate:"required"`
 }
 
 type InbreedingCheckResponse struct {

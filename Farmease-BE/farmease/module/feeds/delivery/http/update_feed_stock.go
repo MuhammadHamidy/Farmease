@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/farmease-be/libraries/validation"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -23,15 +24,27 @@ import (
 func (h *FeedHandler) UpdateFeedStock(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var req struct {
-		Amount float64 `json:"amount"`
-		Type   string  `json:"type"`
+		Amount float64 `json:"amount" validate:"required,gt=0"`
+		Type   string  `json:"type" validate:"required,oneof=tambah kurang add subtract add_stock use_stock reduce_stock"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
-	err := h.useCase.UpdateFeedStock(c.Context(), id, req.Amount, req.Type)
+
+	if appErr := validation.ValidateStruct(&req); appErr != nil {
+		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
+	}
+
+	actionType := req.Type
+	if actionType == "add" || actionType == "add_stock" || actionType == "tambah" {
+		actionType = "tambah"
+	} else if actionType == "subtract" || actionType == "use_stock" || actionType == "reduce_stock" || actionType == "kurang" {
+		actionType = "kurang"
+	}
+
+	updated, err := h.useCase.UpdateFeedStock(c.Context(), id, req.Amount, actionType)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(responses.Fail("UNPROCESSABLE_ENTITY", err.Error()))
 	}
-	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
+	return c.Status(http.StatusOK).JSON(updated)
 }

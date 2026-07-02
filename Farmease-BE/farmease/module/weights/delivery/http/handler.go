@@ -1,13 +1,12 @@
 package http
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/farmease/farmease-be/farmease/module/weights/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
+
+
+
 
 type WeightHandler struct {
 	useCase domain.UseCase
@@ -49,20 +48,6 @@ func (h *WeightHandler) registerSheepGroup(group fiber.Router) {
 // @Success      200            {array}   domain.Weight
 // @Failure      500            {object}  responses.Response[any]
 // @Router       /api/weights [get]
-func (h *WeightHandler) GetWeightList(c *fiber.Ctx) error {
-	filter := domain.WeightFilter{
-		IDSheep: c.Query("id_sheep"),
-		Page:    c.QueryInt("page", 1),
-		PerPage: c.QueryInt("per_page", 20),
-	}
-
-	res, _, err := h.useCase.GetWeightList(c.Context(), filter)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // GetWeightHistory godoc
 // @Summary      Get sheep weight history
@@ -75,14 +60,6 @@ func (h *WeightHandler) GetWeightList(c *fiber.Ctx) error {
 // @Success      200  {array}   domain.Weight
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/weight [get]
-func (h *WeightHandler) GetWeightHistory(c *fiber.Ctx) error {
-	id := c.Params("id")
-	res, err := h.useCase.GetWeightHistory(c.Context(), id)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // RecordWeight godoc
 // @Summary      Record new weight
@@ -97,41 +74,3 @@ func (h *WeightHandler) GetWeightHistory(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/weight [post]
-func (h *WeightHandler) RecordWeight(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var req struct {
-		WeightKg     float64   `json:"weight_kg"`
-		Weight       float64   `json:"weight"` // fallback for FE
-		WeighingDate time.Time `json:"weighing_date"`
-		DateRecorded time.Time `json:"date_recorded"` // fallback for FE
-		Notes        string    `json:"notes"`
-	}
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	weightData := domain.Weight{
-		IDSheep: id,
-		Notes:   req.Notes,
-	}
-
-	if req.WeightKg != 0 {
-		weightData.WeightKg = req.WeightKg
-	} else {
-		weightData.WeightKg = req.Weight
-	}
-
-	if !req.WeighingDate.IsZero() {
-		weightData.WeighingDate = req.WeighingDate
-	} else if !req.DateRecorded.IsZero() {
-		weightData.WeighingDate = req.DateRecorded
-	} else {
-		weightData.WeighingDate = time.Now()
-	}
-
-	err := h.useCase.RecordWeight(c.Context(), &weightData)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusCreated).JSON(weightData)
-}

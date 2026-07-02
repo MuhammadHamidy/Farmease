@@ -9,6 +9,7 @@ type ScheduleItem = {
   progress: string
   description?: string
   time?: string
+  recurrence?: string
 }
 
 export default defineComponent({
@@ -46,18 +47,9 @@ export default defineComponent({
     return () => (
       <section class="pengingat-jadwal-section" style="margin-top: 1.5rem;">
         <h4 style="font-weight: 700; color: #111827; font-size: 1.15rem; margin-bottom: 0.85rem;">Jadwal Rutin</h4>
-        <div class="reminder-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.75rem;">
+        <div class="reminder-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem;">
           {props.items.map((item, index) => {
             const key = `${item.name}-${index}`
-
-            let displayDetail = item.detail
-            if (item.tag.toLowerCase().includes('perawatan') || item.tag.toLowerCase().includes('pemangkasan')) {
-              displayDetail = 'Gulma • 3 x sehari'
-            } else if (item.detail.includes('•')) {
-              // Just use last two segments for cleaner display
-              const segs = item.detail.split('•').map(s => s.trim())
-              displayDetail = segs.slice(-2).join(' • ')
-            }
 
             return (
               <div
@@ -83,12 +75,10 @@ export default defineComponent({
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <img src={getCropIcon(item.name)} alt={item.name} style="width: 3.2rem; height: 3.2rem; object-fit: contain;" />
-                    <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
-                      <div style={getStatusStyle(item.progress)}>
-                        {getStatusLabel(item.progress)}
-                      </div>
-                      <strong style="font-size: 1.05rem; color: #4a4a4a; font-weight: 700; line-height: 1.2;">{item.tag}</strong>
-                      <span style="font-size: 0.9rem; color: #4a4a4a; font-weight: 600;">{item.detail || 'L001'}</span>
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem; align-items: flex-start; text-align: left;">
+                      <strong style="font-size: 1rem; color: #111827; font-weight: 800; line-height: 1.2;">{item.tag}</strong>
+                      <span style="font-size: 0.78rem; color: #4b5563; font-weight: 600;">{item.recurrence || 'Harian'}</span>
+                      <span style="font-size: 0.78rem; color: #4b5563; font-weight: 600;">{item.detail || 'L001'}</span>
                     </div>
                   </div>
 
@@ -96,7 +86,7 @@ export default defineComponent({
                     onClick={() => emit('open-detail', item)}
                     style="background: #2d3a1a; color: #ffffff; padding: 0.55rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 700; border: none; cursor: pointer; white-space: nowrap;"
                   >
-                    Lihat Tugas
+                    Lihat Jadwal
                   </button>
                 </div>
               </div>

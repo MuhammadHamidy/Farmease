@@ -7,7 +7,8 @@ import PerkebunanRecordingCard from '../components/PerkebunanRecordingCard'
 import PerkebunanScheduleList from '../components/PerkebunanScheduleList'
 import PerkebunanSelectionModal from '../components/PerkebunanSelectionModal'
 import PerkebunanScheduleDetailModal from '../components/PerkebunanScheduleDetailModal'
-import { landSession, userSession, fetchLandsList } from '@/store/navigation'
+import PerkebunanConfirmModal from '../components/shared/PerkebunanConfirmModal'
+import { landSession, userSession, fetchLandsList, landsList } from '@/store/navigation'
 import { operatorTasks, fetchTasks, fetchAccountsList } from '@/store/operatorAdmin'
 import {
   fetchPencatatanTypesCatalog,
@@ -21,6 +22,21 @@ export default defineComponent({
   name: 'PerkebunanPage',
   setup() {
     const router = useRouter()
+    const isLogoutConfirmOpen = ref(false)
+
+    const goBackToLogin = () => {
+      isLogoutConfirmOpen.value = true
+    }
+
+    const confirmLogout = () => {
+      isLogoutConfirmOpen.value = false
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('user')
+      userSession.value = null
+      landSession.value = null
+      window.location.href = 'http://localhost:3000/?logout=true'
+    }
+
     const activeField = ref<null | 'jenis' | 'rincian'>(null)
     const selectedJenis = ref('Jenis Pencatatan')
     const selectedRincian = ref('Rincian Pencatatan')
@@ -47,8 +63,29 @@ export default defineComponent({
     })
 
     const scheduleItems = computed(() => {
+      const activeCode = landSession.value?.code || 'L001';
+      const now = new Date();
+      const localYear = now.getFullYear();
+      const localMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const localDay = String(now.getDate()).padStart(2, '0');
+      const todayStr = `${localYear}-${localMonth}-${localDay}`;
+
       return operatorTasks.value
-        .filter(t => t.assigneeCode === 'OP002' || t.assigneeCode === '3' || t.assigneeName.toLowerCase().includes('kebun') || ['panen', 'pemangkasan', 'pembersihan', 'pembuahan', 'penanaman', 'pengendalian hama', 'pemupukan', 'penyiraman'].some(c => t.category.toLowerCase().includes(c)))
+        .filter(t => {
+          const raw = String(t.rawStatus || '').toLowerCase();
+          const stat = String(t.status || '').toLowerCase();
+          if (raw === 'menunggu' || raw === 'selesai' || raw === 'approved' || stat === 'selesai' || stat === 'menunggu') {
+            return false;
+          }
+          if (String(t.cageCode || '') !== String(activeCode)) {
+            return false;
+          }
+          // Harian: hanya tampilkan tugas yang batas waktunya hari ini atau sebelumnya (jika belum selesai/terlambat)
+          if (t.dueDate > todayStr) {
+            return false;
+          }
+          return t.assigneeCode === 'OP002' || t.assigneeCode === '3' || t.assigneeName.toLowerCase().includes('kebun') || ['panen', 'pemangkasan', 'pembersihan', 'pembuahan', 'penanaman', 'pengendalian hama', 'pemupukan', 'penyiraman'].some(c => t.category.toLowerCase().includes(c));
+        })
         .map(t => {
           let name = 'Lahan'
           const titleLower = t.title.toLowerCase()
@@ -76,17 +113,40 @@ export default defineComponent({
             if (tag.toLowerCase() === 'panen') rincian = 'Panen Buah'
             if (tag.toLowerCase() === 'pemupukan') rincian = 'Pupuk Organik Padat'
           }
+
+          let recurrence = 'Harian'
+          const titleDescLower = (t.title + ' ' + t.description).toLowerCase()
+          if (titleDescLower.includes('mingguan')) {
+            recurrence = 'Mingguan'
+          } else if (titleDescLower.includes('bulanan')) {
+            recurrence = 'Bulanan'
+          } else if (titleDescLower.includes('harian')) {
+            recurrence = 'Harian'
+          } else {
+            const tagLower = tag.toLowerCase()
+            if (tagLower.includes('pupuk') || tagLower.includes('pemupukan')) {
+              recurrence = 'Mingguan'
+            } else if (tagLower.includes('obat') || tagLower.includes('pemberian obat') || tagLower.includes('hama') || tagLower.includes('pesticide')) {
+              recurrence = 'Bulanan'
+            }
+          }
+
+          let cleanTag = tag.charAt(0).toUpperCase() + tag.slice(1)
+          if (cleanTag.toLowerCase() === 'pengendalian hama' || cleanTag.toLowerCase() === 'kesehatan') {
+            cleanTag = 'Pemberian Obat'
+          }
           
           return {
             id: t.id,
             name: name,
-            tag: tag.charAt(0).toUpperCase() + tag.slice(1),
+            tag: cleanTag,
             date: formattedDate,
             time: t.dueTime ? t.dueTime.replace(':', ' : ') + ' WIB' : '08 : 00 WIB',
             detail: t.cageCode || 'L001',
             progress: progress,
             description: t.description,
-            rincian: rincian
+            rincian: rincian,
+            recurrence: recurrence
           }
         })
     })
@@ -185,13 +245,7 @@ export default defineComponent({
             {/* Back Button */}
             <div style="padding: 1rem 1.5rem 0.5rem; display: flex; justify-content: flex-start; flex-shrink: 0; width: 100%; box-sizing: border-box;">
               <button
-                onClick={() => {
-                  localStorage.removeItem('authToken')
-                  localStorage.removeItem('user')
-                  userSession.value = null
-                  landSession.value = null
-                  window.location.href = 'http://localhost:3000/'
-                }}
+                onClick={goBackToLogin}
                 style="
                   background: #38431f;
                   color: #ffffff;
@@ -238,15 +292,16 @@ export default defineComponent({
             </div>
 
             {/* Two Land Cards */}
-            <div style="padding: 0 1.5rem 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; box-sizing: border-box; flex: 1; align-content: flex-start;">
+            <div style="padding: 0 1.5rem 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; width: 100%; box-sizing: border-box; flex: 1; align-content: flex-start;">
               {/* Card 1: Lahan Alpukat */}
               <div
                 onClick={() => {
+                  const alpukatLand = landsList.value.find(l => (l.location || '').toLowerCase().includes('alpukat') || (l.name || '').toLowerCase().includes('alpukat'))
                   landSession.value = {
-                    code: 'L001',
-                    name: 'Lahan Alpukat',
-                    area: '10 Hektar',
-                    status: 'aktif'
+                    code: alpukatLand ? alpukatLand.code : 'L001',
+                    name: alpukatLand ? alpukatLand.name : 'Lahan Alpukat',
+                    area: alpukatLand ? alpukatLand.area : '0 m²',
+                    status: alpukatLand ? alpukatLand.status : 'aktif'
                   }
                 }}
                 style="
@@ -281,11 +336,12 @@ export default defineComponent({
               {/* Card 2: Lahan Kelengkeng */}
               <div
                 onClick={() => {
+                  const kelengkengLand = landsList.value.find(l => (l.location || '').toLowerCase().includes('kelengkeng') || (l.name || '').toLowerCase().includes('kelengkeng'))
                   landSession.value = {
-                    code: 'L0002',
-                    name: 'Lahan Kelengkeng',
-                    area: '8 Hektar',
-                    status: 'aktif'
+                    code: kelengkengLand ? kelengkengLand.code : 'L002',
+                    name: kelengkengLand ? kelengkengLand.name : 'Lahan Kelengkeng',
+                    area: kelengkengLand ? kelengkengLand.area : '0 m²',
+                    status: kelengkengLand ? kelengkengLand.status : 'aktif'
                   }
                 }}
                 style="
@@ -396,6 +452,15 @@ export default defineComponent({
             item={selectedScheduleItem.value}
             onClose={() => { showDetailModal.value = false }}
             onNext={handleModalNext}
+          
+          <PerkebunanConfirmModal
+            isOpen={isLogoutConfirmOpen.value}
+            title="Konfirmasi Keluar"
+            message="Apakah Anda yakin ingin keluar dari halaman perkebunan?"
+            confirmLabel="Keluar"
+            cancelLabel="Batal"
+            onConfirm={confirmLogout}
+            onCancel={() => isLogoutConfirmOpen.value = false}
           />
         </div>
       )

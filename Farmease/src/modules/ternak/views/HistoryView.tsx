@@ -1,4 +1,4 @@
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted, watch, Teleport } from 'vue';
 import '@/modules/ternak/assets/css/modules/RecordForm.css';
 import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
 import Typography from '@/shared/ui/Typography';
@@ -13,6 +13,7 @@ type RiwayatCategory = 'Semua' | 'Pakan' | 'Perkawinan' | 'Kelahiran' | 'Kesehat
 
 interface RiwayatRecord {
   id: string;
+  code?: string;
   date: string;
   time: string;
   category: Exclude<RiwayatCategory, 'Semua'>;
@@ -56,7 +57,8 @@ export default defineComponent({
         else if (t.includes('lahir')) cat = 'Kelahiran';
         else if (t.includes('kotoran')) cat = 'Kotoran';
         return {
-          id: sub.id,
+          id: sub.id_submission || sub.id,
+          code: sub.submission_code,
           date: formatDate(new Date(sub.submittedAt).toISOString()),
           time: formatTime(new Date(sub.submittedAt).toISOString()),
           rawDate: new Date(sub.submittedAt),
@@ -82,7 +84,11 @@ export default defineComponent({
     const filteredRecords = computed(() => listRecords.value.filter(rec => {
       const matchesCategory = filterCategory.value === 'Semua' || rec.category === filterCategory.value;
       const q = searchVal.value.toLowerCase().trim();
-      const matchesSearch = !q || rec.id.toLowerCase().includes(q) || rec.operator.toLowerCase().includes(q) || rec.summary.toLowerCase().includes(q);
+      const matchesSearch = !q || 
+        rec.id.toLowerCase().includes(q) || 
+        (rec.code && rec.code.toLowerCase().includes(q)) || 
+        rec.operator.toLowerCase().includes(q) || 
+        rec.summary.toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     }));
 
@@ -106,15 +112,72 @@ export default defineComponent({
     const closeDetail = () => { selectedRecord.value = null; };
 
     // Extract meaningful data chips from a payload item
-    const getItemChips = (item: any) => {
+    const getItemChips = (item: any, subType: string = '') => {
       const chips: { label: string; value: string }[] = [];
-      if (item.targetId) chips.push({ label: 'ID Ternak/Kandang', value: String(item.targetId) });
-      if (item.qty) chips.push({ label: 'Jumlah', value: `${item.qty}${item.unit ? ' ' + item.unit : ''}` });
+      const isConversion = item.name === 'Konversi Pakan';
+      const sType = (subType || '').toLowerCase();
+      
+      if (item.targetId && sType !== 'stok_pakan') {
+        const label = item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak/Target';
+        chips.push({ label, value: String(item.targetId) });
+      }
+      
+      if (item.hijauan) {
+        const label = sType === 'stok_pakan' ? 'Pakan Mentah Asal (Dari Kebun)' : 'Hijauan';
+        chips.push({ label, value: String(item.hijauan) });
+      }
+      if (item.energi) {
+        const label = sType === 'stok_pakan' ? 'Pakan Tambahan (Sumber Energi)' : 'Sumber Energi';
+        chips.push({ label, value: String(item.energi) });
+      }
+      if (item.protein) {
+        const label = sType === 'stok_pakan' ? 'Pakan Tambahan (Sumber Protein)' : 'Sumber Protein';
+        chips.push({ label, value: String(item.protein) });
+      }
+      if (item.mineral) {
+        const label = sType === 'stok_pakan' ? 'Pakan Tambahan (Pemberian Mineral)' : 'Pemberian Mineral';
+        chips.push({ label, value: String(item.mineral) });
+      }
+      
+      if (item.qty) {
+        let qtyLabel = 'Jumlah';
+        if (sType === 'stok_pakan' && isConversion) qtyLabel = 'Target Hasil Konversi';
+        else if (sType === 'pakan') qtyLabel = 'Jumlah Pemberian';
+        else if (sType === 'kotoran') qtyLabel = 'Jumlah Produksi';
+        else if (sType === 'berat_badan' || sType === 'weighing') qtyLabel = 'Berat Badan';
+        chips.push({ label: qtyLabel, value: `${item.qty}${item.unit ? ' ' + item.unit : ' kg'}` });
+      }
+      
       if (item.tindakan) chips.push({ label: 'Tindakan', value: String(item.tindakan) });
-      if (item.obat) chips.push({ label: 'Obat / Pakan', value: String(item.obat) });
-      if (item.vitaminAmount) chips.push({ label: 'Vitamin', value: String(item.vitaminAmount) });
+      
+      if (item.obat) {
+        let obatLabel = 'Nama Pakan / Obat';
+        if (sType === 'stok_pakan' && isConversion) obatLabel = 'Hasil Konversi Jadi';
+        else if (sType === 'stok_pakan' && !isConversion) obatLabel = 'Nama Pakan / Sumber';
+        else if (sType === 'pakan') obatLabel = 'Nama Pakan';
+        else if (sType === 'kesehatan') obatLabel = 'Obat / Vitamin';
+        chips.push({ label: obatLabel, value: String(item.obat) });
+      }
+      
+      if (item.vitaminAmount) {
+        const label = sType === 'kesehatan' ? 'Jumlah Vitamin/Dosis' : 'Vitamin';
+        chips.push({ label, value: String(item.vitaminAmount) });
+      }
       if (item.idPejantan) chips.push({ label: 'ID Pejantan', value: String(item.idPejantan) });
-      if (item.metoda) chips.push({ label: 'Metoda', value: String(item.metoda) });
+      if (item.metoda && sType !== 'kelahiran') {
+        let label = 'Metoda';
+        let val = String(item.metoda);
+        if (sType === 'pakan') {
+          label = 'Metode Pemberian Pakan';
+          val = val === 'dadakan' ? 'Pakan Dadakan (Racikan Sendiri)' : val === 'silase' ? 'Pakan Silase / Stok' : val;
+        } else {
+          label = 'Metode Kawin';
+          val = val === 'ib' ? 'Inseminasi Buatan (IB)' : val === 'alami' ? 'Alami' : val;
+        }
+        chips.push({ label, value: val });
+      }
+      if (item.sheepCode) chips.push({ label: 'Kode Ear Tag Anak', value: String(item.sheepCode) });
+      if (item.genderAnak) chips.push({ label: 'Jenis Kelamin Anak', value: String(item.genderAnak) === 'jantan' ? 'Jantan' : 'Betina' });
       if (item.jumlahAnak) chips.push({ label: 'Jumlah Anak', value: String(item.jumlahAnak) });
       if (item.namaAnak) chips.push({ label: 'Nama Anak', value: String(item.namaAnak) });
       if (item.kandangAnak) chips.push({ label: 'Kandang Anak', value: String(item.kandangAnak) });
@@ -167,7 +230,14 @@ export default defineComponent({
             <div class="row g-3">
               <div class="col-12">
                 <label class="form-label text-secondary small fw-bold mb-2">Cari Riwayat</label>
-                <CustomInput modelValue={searchVal.value} placeholder="Cari berdasarkan ID, Operator, atau Ringkasan..." onUpdate:modelValue={(val: string) => searchVal.value = val} />
+                <CustomInput
+                  modelValue={searchVal.value}
+                  placeholder="Cari berdasarkan ID, Operator, atau Ringkasan..."
+                  onUpdate:modelValue={(val: string) => searchVal.value = val}
+                  icon={() => (
+                    <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                  )}
+                />
               </div>
               <div class="col-12">
                 <label class="form-label text-secondary small fw-bold mb-2">Saring Kategori</label>
@@ -214,7 +284,7 @@ export default defineComponent({
                             </div>
                           </div>
                         </div>
-                        <Badge variant="secondary" className="px-2 py-1 text-uppercase flex-shrink-0" style={{ fontSize: '0.65rem' }}>{rec.id}</Badge>
+                        <Badge variant="secondary" className="px-2 py-1 text-uppercase flex-shrink-0" style={{ fontSize: '0.65rem' }}>{rec.code || rec.id}</Badge>
                       </div>
 
                       {/* Summary box */}
@@ -274,8 +344,9 @@ export default defineComponent({
 
           {/* ── Detail Modal ── */}
           {modal && (
-            <div class="peternakan-modal-overlay" onClick={closeDetail}>
-              <div class="peternakan-modal-card" onClick={(e: any) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <Teleport to="body">
+              <div class="peternakan-modal-overlay" onClick={closeDetail}>
+                <div class="peternakan-modal-card" onClick={(e: any) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
                 {/* Modal header */}
                 <div class="peternakan-modal-header">
                   <h2 class="peternakan-modal-title">Detail Pencatatan</h2>
@@ -303,10 +374,13 @@ export default defineComponent({
                   {/* Meta info */}
                   <div class="row g-2 mb-4">
                     {[
-                      { label: 'ID Submission', value: modal.id },
+                      { label: 'Kode Pencatatan', value: modal.code || '—' },
+                      { label: 'ID Sistem', value: modal.id },
                       { label: 'Operator', value: modal.operator },
-                      { label: 'Kandang', value: `Kandang ${modal.raw.cageCode || cageSession.value?.code || '—'}` },
-                      { label: 'Lingkup', value: modal.raw.scope === 'kandang' ? 'Kelompok Kandang' : 'Individu Domba' },
+                      ...(modal.raw.type !== 'stok_pakan' ? [
+                        { label: 'Kandang', value: `Kandang ${modal.raw.cageCode || cageSession.value?.code || '—'}` },
+                        { label: 'Lingkup', value: modal.raw.scope === 'kandang' ? 'Kelompok Kandang' : 'Individu Domba' }
+                      ] : [])
                     ].map(({ label, value }) => (
                       <div class="col-6" key={label}>
                         <div class="rounded-4 border p-3 h-100" style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
@@ -341,7 +415,7 @@ export default defineComponent({
                       </div>
                     );
                     return items.map((item: any, idx: number) => {
-                      const chips = getItemChips(item);
+                      const chips = getItemChips(item, modal.raw.type);
                       return (
                         <div key={idx} class="rounded-4 border p-3 mb-3">
                           <div class="text-secondary fw-bold text-uppercase mb-3" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>
@@ -375,6 +449,7 @@ export default defineComponent({
                 </div>
               </div>
             </div>
+          </Teleport>
           )}
         </div>
       );

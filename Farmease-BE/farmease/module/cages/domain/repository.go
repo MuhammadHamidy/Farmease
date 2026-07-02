@@ -8,10 +8,10 @@ import (
 type Cage struct {
 	IDCage    string    `json:"id_cage" db:"id_cage"`
 	FarmID    *string   `json:"farm_id,omitempty" db:"farm_id"`
-	CageCode  string    `json:"cage_code" db:"cage_code"`
-	Capacity  int       `json:"capacity" db:"capacity"`
-	CageType  string    `json:"cage_type" db:"cage_type"`
-	CageName  string    `json:"cage_name" db:"cage_name"`
+	CageCode  string    `json:"cage_code" db:"cage_code" validate:"required"`
+	Capacity  int       `json:"capacity" db:"capacity" validate:"required,min=1"`
+	CageType  string    `json:"cage_type" db:"cage_type" validate:"required"`
+	CageName  string    `json:"cage_name" db:"cage_name" validate:"required"`
 	Occupancy int       `json:"occupancy" db:"occupancy"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`

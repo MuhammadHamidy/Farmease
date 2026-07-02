@@ -4,12 +4,13 @@ import (
 	"net/http"
 
 	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/farmease-be/libraries/validation"
 	"github.com/gofiber/fiber/v2"
 )
 
 type ExternalDonorRequest struct {
-	Name   string `json:"name"`
-	Origin string `json:"origin"`
+	Name   string `json:"name" validate:"required"`
+	Origin string `json:"origin" validate:"required"`
 }
 
 // RegisterExternalDonor godoc
@@ -30,8 +31,8 @@ func (h *SheepHandler) RegisterExternalDonor(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
 
-	if req.Name == "" || req.Origin == "" {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", "Name and origin are required"))
+	if appErr := validation.ValidateStruct(&req); appErr != nil {
+		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
 	donor, err := h.useCase.GetOrCreateExternalDonor(c.Context(), req.Name, req.Origin)

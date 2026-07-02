@@ -6,17 +6,18 @@ import (
 )
 
 type Submission struct {
-	ID             string                 `json:"id" db:"id"`
-	Type           string                 `json:"type" db:"type"`
-	TypeLabel      string                 `json:"typeLabel" db:"type_label"`
-	OperatorCode   string                 `json:"operatorCode" db:"operator_code"`
-	OperatorName   string                 `json:"operatorName" db:"operator_name"`
-	CageCode       string                 `json:"cageCode" db:"cage_code"`
-	Scope          string                 `json:"scope" db:"scope"`
-	Summary        string                 `json:"summary" db:"summary"`
+	ID             string                 `json:"id_submission" db:"id_submission"`
+	SubmissionCode string                 `json:"submission_code" db:"submission_code"`
+	Type           string                 `json:"type" db:"type" validate:"required"`
+	TypeLabel      string                 `json:"typeLabel" db:"type_label" validate:"required"`
+	OperatorCode   string                 `json:"operatorCode" db:"operator_code" validate:"required"`
+	OperatorName   string                 `json:"operatorName" db:"operator_name" validate:"required"`
+	CageCode       string                 `json:"cageCode" db:"cage_code" validate:"required"`
+	Scope          string                 `json:"scope" db:"scope" validate:"required"`
+	Summary        string                 `json:"summary" db:"summary" validate:"required"`
 	Payload        map[string]interface{} `json:"payload" db:"payload"`
 	SubmittedAt    time.Time              `json:"submittedAt" db:"submitted_at"`
-	ApprovalStatus string                 `json:"approvalStatus" db:"approval_status"` // pending, approved, rejected
+	ApprovalStatus string                 `json:"approvalStatus" db:"approval_status" validate:"required,oneof=pending approved rejected"`
 	ReviewedAt     *time.Time             `json:"reviewedAt,omitempty" db:"reviewed_at"`
 	ReviewedBy     *string                `json:"reviewedBy,omitempty" db:"reviewed_by"`
 	ReviewNote     *string                `json:"reviewNote,omitempty" db:"review_note"`

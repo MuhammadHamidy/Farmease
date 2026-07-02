@@ -54,6 +54,7 @@ services:
       APP_ENDPOINT: "localhost:4317"
       APP_INSECURE: "true"
       APP_REDIRECTURL: "http://localhost:3000/callback"
+      APP_SSOAPIURL: "http://host.docker.internal:8080"
     depends_on:
       postgres:
         condition: service_healthy

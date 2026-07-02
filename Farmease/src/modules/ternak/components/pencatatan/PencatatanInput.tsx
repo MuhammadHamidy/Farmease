@@ -26,6 +26,7 @@ export default defineComponent({
         placeholder={props.placeholder}
         modelValue={props.modelValue}
         onUpdate:modelValue={onUpdate}
+        disabled={props.disabled}
         icon={props.iconSrc ? () => <img src={props.iconSrc} style={{width: '16px', opacity: 0.6}} alt="" /> : undefined}
       />
     );

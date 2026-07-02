@@ -81,10 +81,10 @@ export default defineComponent({
           Grafik Perkembangan Berat Badan
         </Typography>
 
-        {props.records.length === 0 ? (
+        {props.records.length < 2 ? (
           <div class="d-flex flex-column align-items-center justify-content-center py-5 text-secondary" style={{ fontSize: '0.85rem' }}>
             <img src="/icon/statistic.png" style={{ width: '40px', opacity: 0.3, marginBottom: '0.75rem' }} alt="" />
-            <p class="m-0 text-center">Belum ada riwayat pencatatan</p>
+            <p class="m-0 text-center fw-bold text-muted">Data timbangan minimal 2 kali untuk melihat tren grafik</p>
           </div>
         ) : (
           <div class="position-relative w-100" style={{ overflowX: 'auto', overflowY: 'hidden' }}>

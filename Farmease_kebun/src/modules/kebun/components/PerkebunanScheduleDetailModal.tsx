@@ -51,9 +51,9 @@ export default defineComponent({
     const getModalButtonStyle = (status: string) => {
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done' || normalized.includes('belum') || normalized.includes('pending')) {
-        return 'width: 100%; background: #6e7a55; color: #ffffff; border: none; border-radius: 0.5rem; padding: 0.75rem; font-weight: 700; font-size: 1.1rem; cursor: not-allowed; margin-top: 0.35rem; text-align: center;'
+        return 'width: 100%; background: #6e7a55; color: #ffffff; border: none; border-radius: 2rem; padding: 0.75rem; font-weight: 700; font-size: 1.1rem; cursor: not-allowed; margin-top: 0.35rem; text-align: center; height: 42px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);'
       }
-      return 'width: 100%; background: #2d3a1a; color: #ffffff; border: none; border-radius: 0.5rem; padding: 0.75rem; font-weight: 700; font-size: 1.1rem; cursor: pointer; margin-top: 0.35rem; text-align: center;'
+      return 'width: 100%; background: #233512; color: #ffffff; border: none; border-radius: 2rem; padding: 0.75rem; font-weight: 700; font-size: 1.1rem; cursor: pointer; margin-top: 0.35rem; text-align: center; height: 42px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);'
     }
 
     const handleButtonClick = () => {
@@ -112,30 +112,46 @@ export default defineComponent({
             "
           >
             {/* ── Header Area ── */}
-            <div style="display: flex; flex-direction: column; gap: 0.65rem; width: 100%;">
+            <div style="display: flex; flex-direction: column; width: 100%;">
               {/* Close Button X */}
-              <button
-                onClick={() => emit('close')}
-                class="detail-modal-close-btn"
-                style="margin-bottom: 0.15rem;"
-              >
-                <img src="/icon/close-cancel/black-24.svg" alt="Tutup" style="width: 24px; height: 24px; object-fit: contain;" />
-              </button>
+              <div style="display: flex; justify-content: flex-start; margin-bottom: 0.5rem; width: 100%;">
+                <button
+                  onClick={() => emit('close')}
+                  style="
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 1.6rem;
+                    font-weight: bold;
+                    color: #000000;
+                    padding: 0.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
+                  "
+                >
+                  ✕
+                </button>
+              </div>
 
               {/* Title Header Bar */}
               <div
                 style="
-                  background: #2d3a1a;
+                  background: #233512;
                   color: #ffffff;
                   text-align: center;
                   padding: 0.65rem 1rem;
                   border-radius: 0.5rem;
-                  font-weight: 700;
+                  font-weight: 800;
                   font-size: 1.15rem;
                   letter-spacing: 0.01em;
+                  margin-bottom: 1rem;
+                  width: 100%;
+                  box-sizing: border-box;
                 "
               >
-                Detail Jadwal Pengingat
+                Jadwal Rutin
               </div>
             </div>
 

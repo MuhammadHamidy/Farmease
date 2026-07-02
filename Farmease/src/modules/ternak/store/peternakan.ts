@@ -7,9 +7,10 @@ export interface StockItem {
   qty: number;
   unit: string;
   category?: string; // e.g., 'hijauan', 'vitamin', 'konsentrat', 'kotoran'
+  notes?: string;
 }
 
-export interface StockEvent {
+interface StockEvent {
   id: string;
   type: string;
   payload: any;
@@ -25,9 +26,10 @@ function mapFeedToStock(feed: Feed): StockItem {
   return {
     id: String((feed as any).id_feed || feed.id),
     name: feed.feed_name,
-    qty: feed.stock !== undefined && feed.stock !== null ? feed.stock : ((feed as any).available_stock || 0),
+    qty: Number(feed.stock !== undefined && feed.stock !== null ? feed.stock : ((feed as any).available_stock || 0)),
     unit: feed.unit,
     category: (feed.feed_type || (feed as any).category || 'umum').toLowerCase(),
+    notes: (feed as any).notes || '',
   };
 }
 
@@ -36,7 +38,7 @@ export async function fetchStocks() {
     stocksLoading.value = true;
     stocksError.value = null;
     const list = await feedsApi.getList();
-    stocks.value = list.map(mapFeedToStock);
+    stocks.value = (list || []).map(mapFeedToStock);
   } catch (err: unknown) {
     stocksError.value = err instanceof Error ? err.message : 'Gagal memuat stok pakan';
     console.error('Error fetching stocks:', err);

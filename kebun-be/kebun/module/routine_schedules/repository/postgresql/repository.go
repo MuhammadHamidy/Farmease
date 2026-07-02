@@ -175,13 +175,18 @@ func (r *routineScheduleRepository) Store(ctx context.Context, rs *domain.Routin
 		idAccount = rs.IDAccount
 	}
 
+	var rincian *string
+	if rs.Rincian != "" {
+		rincian = &rs.Rincian
+	}
+
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO gardening.routine_schedules 
 		(title, description, category, frequency, days_of_week, day_of_month, start_date, end_date, start_time, end_time, priority, id_cage, id_account, rincian, is_active)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::TIME, $10::TIME, $11, $12, $13, $14, $15)
 		RETURNING id, created_at, updated_at
 	`,
-		rs.Title, rs.Description, rs.Category, rs.Frequency, rs.DaysOfWeek, rs.DayOfMonth, rs.StartDate, rs.EndDate, st, et, rs.Priority, idCage, idAccount, rs.Rincian, rs.IsActive,
+		rs.Title, rs.Description, rs.Category, rs.Frequency, rs.DaysOfWeek, rs.DayOfMonth, rs.StartDate, rs.EndDate, st, et, rs.Priority, idCage, idAccount, rincian, rs.IsActive,
 	).Scan(&rs.ID, &rs.CreatedAt, &rs.UpdatedAt)
 
 	return err
@@ -204,12 +209,18 @@ func (r *routineScheduleRepository) Update(ctx context.Context, rs *domain.Routi
 		idAccount = rs.IDAccount
 	}
 
+	var rincian *string
+	if rs.Rincian != "" {
+		rincian = &rs.Rincian
+	}
+
 	_, err := r.db.Exec(ctx, `
-		UPDATE gardening.routine_schedules 
-		SET title = $1, description = $2, category = $3, frequency = $4, days_of_week = $5, day_of_month = $6, start_date = $7, end_date = $8, start_time = $9::TIME, end_time = $10::TIME, priority = $11, id_cage = $12, id_account = $13, rincian = $14, is_active = $15, updated_at = CURRENT_TIMESTAMP
+		UPDATE gardening.routine_schedules SET
+			title = $1, description = $2, category = $3, frequency = $4, days_of_week = $5, day_of_month = $6,
+			start_date = $7, end_date = $8, start_time = $9::TIME, end_time = $10::TIME, priority = $11, id_cage = $12, id_account = $13, rincian = $14, is_active = $15, updated_at = NOW()
 		WHERE id = $16
 	`,
-		rs.Title, rs.Description, rs.Category, rs.Frequency, rs.DaysOfWeek, rs.DayOfMonth, rs.StartDate, rs.EndDate, st, et, rs.Priority, idCage, idAccount, rs.Rincian, rs.IsActive, rs.ID,
+		rs.Title, rs.Description, rs.Category, rs.Frequency, rs.DaysOfWeek, rs.DayOfMonth, rs.StartDate, rs.EndDate, st, et, rs.Priority, idCage, idAccount, rincian, rs.IsActive, rs.ID,
 	)
 
 	return err

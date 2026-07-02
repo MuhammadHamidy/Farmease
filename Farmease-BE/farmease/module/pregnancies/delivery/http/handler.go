@@ -1,12 +1,12 @@
 package http
 
 import (
-	"net/http"
-
 	"github.com/farmease/farmease-be/farmease/module/pregnancies/domain"
-	responses "github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
+
+
+
 
 type PregnancyHandler struct {
 	useCase domain.UseCase
@@ -64,19 +64,6 @@ func (h *PregnancyHandler) registerBirthsGroup(group fiber.Router) {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/pregnancies [post]
-func (h *PregnancyHandler) RecordPregnancy(c *fiber.Ctx) error {
-	var k domain.Pregnancy
-	if err := c.BodyParser(&k); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	err := h.useCase.RecordPregnancy(c.Context(), &k)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusCreated).JSON(k)
-}
 
 // GetPregnancyList godoc
 // @Summary      Get list of pregnancies
@@ -89,14 +76,6 @@ func (h *PregnancyHandler) RecordPregnancy(c *fiber.Ctx) error {
 // @Success      200               {array}   domain.Pregnancy
 // @Failure      500               {object}  responses.Response[any]
 // @Router       /api/pregnancies [get]
-func (h *PregnancyHandler) GetPregnancyList(c *fiber.Ctx) error {
-	status := c.Query("pregnancy_status")
-	res, err := h.useCase.GetPregnancyList(c.Context(), status)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // UpdatePregnancyStatus godoc
 // @Summary      Update pregnancy status
@@ -111,29 +90,6 @@ func (h *PregnancyHandler) GetPregnancyList(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/pregnancies/{id}/status [patch]
-func (h *PregnancyHandler) UpdatePregnancyStatus(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var req struct {
-		PregnancyStatus string `json:"pregnancy_status"`
-		Status          string `json:"status"` // fallback for FE
-		Notes           string `json:"notes"`
-	}
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	status := req.PregnancyStatus
-	if status == "" {
-		status = req.Status
-	}
-
-	err := h.useCase.UpdatePregnancyStatus(c.Context(), id, status, req.Notes)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
-}
 
 // RecordBirth godoc
 // @Summary      Record birth
@@ -147,19 +103,6 @@ func (h *PregnancyHandler) UpdatePregnancyStatus(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/births [post]
-func (h *PregnancyHandler) RecordBirth(c *fiber.Ctx) error {
-	var k domain.Birth
-	if err := c.BodyParser(&k); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	err := h.useCase.RecordBirth(c.Context(), &k)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusCreated).JSON(k)
-}
 
 // GetBirthHistory godoc
 // @Summary      Get birth history
@@ -171,13 +114,6 @@ func (h *PregnancyHandler) RecordBirth(c *fiber.Ctx) error {
 // @Success      200  {array}   domain.Birth
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/births [get]
-func (h *PregnancyHandler) GetBirthHistory(c *fiber.Ctx) error {
-	res, err := h.useCase.GetBirthHistory(c.Context(), nil, nil)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // CheckPregnancy godoc
 // @Summary      Submit pregnancy check result
@@ -191,16 +127,3 @@ func (h *PregnancyHandler) GetBirthHistory(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/pregnancies/check [post]
-func (h *PregnancyHandler) CheckPregnancy(c *fiber.Ctx) error {
-	var req domain.PregnancyCheckRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-
-	err := h.useCase.CheckPregnancy(c.Context(), req)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
-}

@@ -3,6 +3,7 @@ import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import { useRouter } from 'vue-router';
 import { cagesList } from '@/store/navigation';
+import CustomInput from '@/shared/ui/Input';
 
 export default defineComponent({
   name: 'LivestockListWidget',
@@ -43,6 +44,7 @@ export default defineComponent({
 
     const statusColor: Record<string, string> = {
       Sehat: 'success',
+      Produktif: 'info',
       Hamil: 'warning',
       Sakit: 'danger',
     };
@@ -81,17 +83,15 @@ export default defineComponent({
             </button>
           </div>
 
-          <div class="d-flex flex-column flex-md-row gap-3 mb-4">
-            <div class="peternakan-search-bar flex-grow-1 mb-0">
-              <span class="peternakan-search-icon">
-                <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-              </span>
-              <input
-                type="text"
-                class="peternakan-search-input"
+          <div class="d-flex flex-column flex-md-row gap-3 mb-4 align-items-center">
+            <div class="flex-grow-1 w-100">
+              <CustomInput
+                modelValue={search.value}
+                onUpdate:modelValue={(val: string) => search.value = val}
                 placeholder="Cari ID, jenis, status..."
-                value={search.value}
-                onInput={(e) => search.value = (e.target as HTMLInputElement).value}
+                icon={() => (
+                  <img src="/icon/search.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                )}
               />
             </div>
             <select
@@ -102,7 +102,7 @@ export default defineComponent({
                 width: '100%',
                 maxWidth: '220px',
                 borderRadius: '50rem',
-                padding: '0.6rem 1.25rem',
+                padding: '0.6rem 2.25rem 0.6rem 1.25rem',
                 fontSize: '0.82rem',
                 fontWeight: 'bold',
                 color: 'var(--color-primary)',
@@ -125,7 +125,7 @@ export default defineComponent({
                 width: '100%',
                 maxWidth: '220px',
                 borderRadius: '50rem',
-                padding: '0.6rem 1.25rem',
+                padding: '0.6rem 2.25rem 0.6rem 1.25rem',
                 fontSize: '0.82rem',
                 fontWeight: 'bold',
                 color: 'var(--color-primary)',

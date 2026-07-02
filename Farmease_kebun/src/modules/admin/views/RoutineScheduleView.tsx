@@ -81,7 +81,7 @@ export default defineComponent({
       const allCats = metadataEnums.value?.task_category || [];
       const filterKeys = props.type === 'peternakan'
         ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'pengolahan_pupuk', 'umum'];
       
       return allCats
         .filter(c => filterKeys.includes(c.value))
@@ -92,7 +92,7 @@ export default defineComponent({
       const allCats = metadataEnums.value?.task_category || [];
       const filterKeys = props.type === 'peternakan'
         ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'pengolahan_pupuk', 'umum'];
       
       return allCats
         .filter(c => filterKeys.includes(c.value))
@@ -100,26 +100,27 @@ export default defineComponent({
     });
 
     const ternakRincianOptions: Record<string, string[]> = {
-      pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Suplementasi'],
-      stok_pakan: ['Tambah Stok', 'Konversi Pakan'],
-      kesehatan: ['Pemeriksaan Rutin', 'Vitamin', 'Vaksin', 'Obat Cacing'],
-      perkawinan: ['Kawin Alam', 'IB', 'Cek Birahi', 'Kontrol Kebuntingan'],
-      kelahiran: ['Lahir Normal', 'Kembar', 'Lahir Cesar'],
-      kotoran: ['Sanitasi Harian', 'Panen Kotoran', 'Pembersihan Lantai', 'Fermentasi'],
-      berat_badan: ['Timbang Rutin', 'Timbang Harian', 'Timbang Bulanan', 'Timbang Mandiri'],
-      umum: ['Lainnya']
+      pakan: ['Pakan Pagi', 'Pakan Sore'],
+      stok_pakan: ['Konversi Pakan'],
+      kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
+      perkawinan: ['Kawin Alami', 'Inseminasi Buatan', 'Kontrol Kebuntingan'],
+      kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
+      kotoran: ['Pembersihan Kandang'],
+      berat_badan: [],
+      umum: []
     };
 
     const kebunRincianOptions: Record<string, string[]> = {
-      panen: ['Panen Buah', 'Hasil Panen'],
-      pemangkasan: ['Ranting dan Daun', 'Rumput Liar (Gulma)'],
+      panen: ['Panen Buah'],
+      pemangkasan: ['Ranting dan Daun'],
       pembersihan: ['Limbah'],
-      pembuahan: ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
-      penanaman: ['Bibit Baru'],
-      'pengendalian hama': ['Pestisida', 'Fungisida'],
-      pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
+      pembuahan: [],
+      penanaman: [],
+      'pengendalian hama': [],
+      pemupukan: ['Pupuk Organik', 'Pupuk Padat', 'Pupuk Cair', 'Pupuk Kandang', 'Pupuk Kompos'],
       penyiraman: ['Penyiraman Rutin'],
-      umum: ['Lainnya']
+      pengolahan_pupuk: ['Pupuk Kandang', 'Pupuk Kompos', 'Fermentasi Pupuk', 'Cek Fermentasi'],
+      umum: []
     };
 
     const locationOptions = computed(() => {
@@ -170,7 +171,7 @@ export default defineComponent({
       const categoryMap: Record<string, string[]> = {
         pakan: ['Pakan Pagi', 'Pakan Sore', 'Konversi Pakan'],
         kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
-        kotoran: ['Pembersihan Kandang', 'Fermentasi Kotoran'],
+        kotoran: ['Pembersihan Kandang'],
         perkawinan: ['Kawin Alami', 'Inseminasi Buatan'],
         kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
       };
@@ -192,8 +193,8 @@ export default defineComponent({
         return land.name.replace(/lahan/gi, '').trim();
       }
       if (cageCode === 'L001' || cageCode === 'A') return 'Alpukat';
-      if (cageCode === 'L0002' || cageCode === 'B') return 'Kelengkeng';
-      if (cageCode === 'L0003' || cageCode === 'C') return 'Alpukat';
+      if (cageCode === 'L002' || cageCode === 'B') return 'Kelengkeng';
+      if (cageCode === 'L003' || cageCode === 'C') return 'Alpukat';
       return cageCode;
     };
 
@@ -210,7 +211,7 @@ export default defineComponent({
 
       if (titleLower.includes('admin report') || task.category === 'umum') {
         if (task.cageCode === 'A' || task.cageCode === 'L001') return 'Panen';
-        if (task.cageCode === 'B' || task.cageCode === 'L0002') return 'Pemangkasan';
+        if (task.cageCode === 'B' || task.cageCode === 'L002') return 'Pemangkasan';
         return 'Pemupukan';
       }
 
@@ -301,7 +302,7 @@ export default defineComponent({
         displayToast('Harap pilih jenis pencatatan / kegiatan!', 'error');
         return;
       }
-      if (!form.rincian) {
+      if (!form.rincian && currentRincianOptions.value.length > 0) {
         displayToast('Harap pilih rincian pencatatan!', 'error');
         return;
       }
@@ -309,9 +310,9 @@ export default defineComponent({
         displayToast(props.type === 'peternakan' ? 'Harap pilih kode kandang!' : 'Harap pilih kode lahan!', 'error');
         return;
       }
+      // Default frequency to 'harian' if not set (frequency field hidden per mockup design)
       if (!form.frequency) {
-        displayToast('Harap pilih frekuensi!', 'error');
-        return;
+        form.frequency = 'harian';
       }
       if (!form.priority) {
         displayToast('Harap pilih prioritas!', 'error');
@@ -432,7 +433,7 @@ export default defineComponent({
     const activeCount = computed(() => filteredSchedules.value.filter((s) => s.active).length);
 
     return () => (
-      <div class="admin-peternakan-page">
+      <div class="animate-fade-in-up" style={{ padding: '0 0.5rem' }}>
         {showToast.value && (
           <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toastType.value === 'success' ? '#4caf50' : '#f44336', color: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInDown 0.3s ease' }}>
             {toastType.value === 'success' ? '✅' : '⚠️'} {toastMessage.value}
@@ -453,9 +454,9 @@ export default defineComponent({
               <Button 
                 variant="solid" 
                 onClick={openAdd}
-                style={{ backgroundColor: '#30360E', color: '#ffffff', borderColor: '#30360E' }}
+                style={{ backgroundColor: '#38431F', color: '#ffffff', borderColor: '#38431F' }}
               >
-                {props.type === 'peternakan' ? '+ Tambah Jadwal Rutin' : '+ Tambah Tugas Baru'}
+                + Tambah Jadwal Rutin
               </Button>
           </div>
         </div>
@@ -464,49 +465,49 @@ export default defineComponent({
         <div class="row g-3 mb-4">
           <div class="col-12 col-sm-6 col-md-3">
             <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Total tugas hari ini</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem' }}>{totalTodayTasks.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>rutin + insidental</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>TOTAL TUGAS HARI INI</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{totalTodayTasks.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>rutin + insidental</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Selesai</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-dark, #198754)', marginBottom: '0.5rem' }}>{completedTasksCount.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>dari {totalTodayTasks.value} tugas</div>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>SELESAI</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{completedTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>dari tugas</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Belum dikerjakan</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning, #f59e0b)', marginBottom: '0.5rem' }}>{pendingTasksCount.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>perlu perhatian</div>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>BELUM DIKERJAKAN</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{pendingTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>perlu perhatian</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Terlambat</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger, #dc3545)', marginBottom: '0.5rem' }}>{lateTasksCount.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>deadline terlewat</div>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>TUGAS TERLAMBAT</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{lateTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>lewat waktu tenggat</div>
             </div>
           </div>
         </div>
 
         {/* Filter Dropdowns Section */}
-        <div class="admin-filter-bar mb-4 rounded-4 p-4" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+        <div class="mb-4 rounded-4 p-4" style={{ backgroundColor: '#F4F1EA', border: '1px solid #E6D9CE' }}>
           <div class="row g-3 w-100 m-0">
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Tanggal</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Tanggal</label>
               <input
                 type="date"
                 class="form-control bg-white"
-                style={{ height: '42px', border: '1px solid #E6D9CE', borderRadius: '8px' }}
+                style={{ height: '42px', border: '1px solid #E6D9CE', borderRadius: '8px', fontWeight: '600', color: '#374151' }}
                 value={dateFilter.value}
                 onInput={(e: any) => { dateFilter.value = e.target.value; }}
               />
             </div>
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Semua Sesi</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Semua Sesi</label>
               <Select
                 options={['Semua Sesi', 'Pagi', 'Siang', 'Sore']}
                 modelValue={sessionFilter.value}
@@ -517,7 +518,7 @@ export default defineComponent({
               />
             </div>
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Semua Status</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Semua Status</label>
               <Select
                 options={['Semua Status', 'Belum Dikerjakan', 'Selesai', 'Terlambat']}
                 modelValue={statusFilter.value}

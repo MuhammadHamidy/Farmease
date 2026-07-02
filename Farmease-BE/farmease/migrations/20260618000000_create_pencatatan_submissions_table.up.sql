@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS operations.pencatatan_submissions (
-    id VARCHAR(100) PRIMARY KEY,
+    id_submission UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    submission_code VARCHAR(50) NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
     type_label VARCHAR(100) NOT NULL,
     operator_code VARCHAR(100) NOT NULL,
@@ -20,3 +21,4 @@ CREATE TABLE IF NOT EXISTS operations.pencatatan_submissions (
 
 CREATE INDEX IF NOT EXISTS idx_pencatatan_submissions_status ON operations.pencatatan_submissions(approval_status);
 CREATE INDEX IF NOT EXISTS idx_pencatatan_submissions_operator ON operations.pencatatan_submissions(operator_code);
+CREATE INDEX IF NOT EXISTS idx_pencatatan_submissions_code ON operations.pencatatan_submissions(submission_code);

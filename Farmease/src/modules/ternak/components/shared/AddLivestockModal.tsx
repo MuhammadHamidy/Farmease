@@ -1,9 +1,10 @@
-import { defineComponent, ref, watch, computed, type PropType } from 'vue';
+import { defineComponent, ref, watch, computed, Teleport, type PropType } from 'vue';
 import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/admin/Select';
 import { sheep, addSheep, fetchSheep } from '@/store/livestock';
 import { cagesList } from '@/store/navigation';
 import { metadataEnums } from '@/store/operatorAdmin';
+import CustomAlertModal, { type AlertModalState } from './CustomAlertModal';
 
 export default defineComponent({
   name: 'AddLivestockModal',
@@ -87,6 +88,13 @@ export default defineComponent({
     const selectedCageId = ref(props.cageId || (cagesList.value.length > 0 ? String(cagesList.value[0]?.id ?? '') : ''));
     const selectedFile = ref<File | null>(null);
     const previewUrl = ref<string | null>(null);
+    const alertModal = ref<AlertModalState>({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'error',
+    });
+    const isSuccessState = ref(false);
 
     watch([() => props.cageId, () => cagesList.value], ([newId, list]) => {
       if (newId) {
@@ -100,8 +108,10 @@ export default defineComponent({
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         const file = target.files[0];
-        selectedFile.value = file;
-        previewUrl.value = URL.createObjectURL(file);
+        if (file) {
+          selectedFile.value = file;
+          previewUrl.value = URL.createObjectURL(file);
+        }
       }
     };
 
@@ -115,8 +125,32 @@ export default defineComponent({
       const sheepData = newDomba.value;
       // Validasi dari DashboardView
       if (!sheepData.code || !sheepData.name || !sheepData.type || !sheepData.gender || (!sheepData.birth_date && umurMethod.value === 'tanggal') || (!selectedPoel.value && umurMethod.value === 'poel') || !sheepData.status || !sheepData.origin || !selectedCageId.value) {
-        alert('Gagal: Mohon lengkapi semua kolom yang bertanda bintang (*) sebelum menyimpan.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Validasi Gagal',
+          message: 'Mohon lengkapi semua kolom yang bertanda bintang (*) sebelum menyimpan.',
+          type: 'error',
+        };
         return;
+      }
+
+      // Check cage capacity
+      const targetCage = cagesList.value.find(c => String(c.id) === String(selectedCageId.value));
+      if (targetCage) {
+        const occupancy = sheep.value.filter(s => 
+          s.cage_code === targetCage.code && 
+          !['Mati', 'Terjual', 'Disembelih'].includes(s.status)
+        ).length;
+        
+        if (occupancy >= targetCage.capacity) {
+          alertModal.value = {
+            isOpen: true,
+            title: 'Kandang Penuh',
+            message: `Gagal menambahkan domba. Kandang ${targetCage.name} sudah penuh (Kapasitas: ${targetCage.capacity} ekor).`,
+            type: 'error',
+          };
+          return;
+        }
       }
 
       try {
@@ -144,7 +178,7 @@ export default defineComponent({
             : computedPoelDateIso.value,
           umur_method: umurMethod.value,
           poel_level: umurMethod.value === 'poel' ? selectedPoel.value : undefined,
-          status: newDomba.value.status,
+          status: newDomba.value.status.toLowerCase(),
           origin: newDomba.value.origin,
           id_cage: selectedCageId.value,
           id_type: String(resolvedIdType),
@@ -164,19 +198,44 @@ export default defineComponent({
 
         await addSheep(payload);
         
+        isSuccessState.value = true;
+        alertModal.value = {
+          isOpen: true,
+          title: 'Berhasil',
+          message: `Domba ${payload.sheep_name || payload.sheep_code} berhasil ditambahkan ke ${targetCage ? targetCage.name : 'kandang'}.`,
+          type: 'success',
+        };
+      } catch (error: any) {
+        console.error('Failed to add sheep:', error);
+        const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Terjadi kesalahan tidak diketahui.';
+        
+        let friendlyMessage = `Gagal menyimpan data domba.\nDetail: ${errorMsg}`;
+        const lowerMsg = errorMsg.toLowerCase();
+        if (lowerMsg.includes('duplicate key') || lowerMsg.includes('unique constraint') || lowerMsg.includes('23505') || lowerMsg.includes('already exists') || lowerMsg.includes('sheep_code_key')) {
+          friendlyMessage = 'Gagal menyimpan. Kode Domba (Ear Tag) sudah terdaftar di sistem. Silakan gunakan Kode Domba yang lain.';
+        }
+
+        alertModal.value = {
+          isOpen: true,
+          title: 'Gagal Menyimpan',
+          message: friendlyMessage,
+          type: 'error',
+        };
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    const handleAlertClose = () => {
+      alertModal.value.isOpen = false;
+      if (isSuccessState.value) {
+        isSuccessState.value = false;
         newDomba.value = { code: '', name: '', type: '', birth_date: '', gender: '', status: '', origin: '', id_father: '', id_mother: '', photo_url: '', owner: '' };
         selectedFile.value = null;
         previewUrl.value = null;
         selectedPoel.value = '';
-        
         props.onSuccess();
         props.onClose();
-      } catch (error: any) {
-        console.error('Failed to add sheep:', error);
-        const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Terjadi kesalahan tidak diketahui.';
-        alert(`Gagal menyimpan data domba.\n\nJika ini masalah duplikasi, pastikan Kode Domba (Ear Tag) belum pernah digunakan.\nDetail: ${errorMsg}`);
-      } finally {
-        isLoading.value = false;
       }
     };
 
@@ -184,63 +243,64 @@ export default defineComponent({
       if (!props.isOpen) return null;
 
       return (
-        <div class="peternakan-modal-overlay" onClick={props.onClose}>
-          <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-            <div class="peternakan-modal-header">
-              <button class="peternakan-modal-close" onClick={props.onClose}>
-                <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-              </button>
-              <div class="peternakan-modal-title">Tambah Populasi Domba</div>
-            </div>
+        <Teleport to="body">
+          <div class="peternakan-modal-overlay" onClick={props.onClose}>
+            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+              <div class="peternakan-modal-header">
+                <button class="peternakan-modal-close" onClick={props.onClose}>
+                  <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                </button>
+                <div class="peternakan-modal-title">Tambah Populasi Domba</div>
+              </div>
 
-            <div class="peternakan-modal-body">
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Kode Domba (Ear Tag) <span class="text-danger">*</span></label>
-                  <CustomInput 
-                    modelValue={newDomba.value.code} 
-                    placeholder="Contoh: D-007" 
-                    onUpdate:modelValue={(val: string) => newDomba.value.code = val} 
-                  />
-                </div>
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Nama Domba <span class="text-danger">*</span></label>
-                  <CustomInput 
-                    modelValue={newDomba.value.name} 
-                    placeholder="Masukkan nama domba" 
-                    onUpdate:modelValue={(val: string) => newDomba.value.name = val} 
-                  />
-                </div>
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Ras/Jenis <span class="text-danger">*</span></label>
-                  <CustomSelect 
-                    placeholder="Pilih Ras/Jenis"
-                    options={['Garut', 'Texel', 'Dorper', 'Merino', 'Dorper F2', 'F2 Garut', 'Cross Dorper']}
-                    modelValue={newDomba.value.type}
-                    onUpdate:modelValue={(val: string) => newDomba.value.type = val}
-                  />
-                </div>
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Jenis Kelamin <span class="text-danger">*</span></label>
-                  <CustomSelect 
-                    placeholder="Pilih Jenis Kelamin"
-                    options={metadataEnums.value.gender}
-                    modelValue={newDomba.value.gender}
-                    onUpdate:modelValue={(val: string) => newDomba.value.gender = val}
-                  />
-                </div>
-                <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Kandang <span class="text-danger">*</span></label>
-                  <CustomSelect 
-                    placeholder="Pilih Kandang"
-                    options={cagesList.value.map(cage => `${cage.code} — ${cage.name}`)}
-                    modelValue={selectedCageId.value ? (cagesList.value.find(cage => String(cage.id) === String(selectedCageId.value))?.code + ' — ' + cagesList.value.find(cage => String(cage.id) === String(selectedCageId.value))?.name) : ''}
-                    onUpdate:modelValue={(val: string) => {
-                      const found = cagesList.value.find(cage => `${cage.code} — ${cage.name}` === val);
-                      selectedCageId.value = found ? String(found.id) : '';
-                    }}
-                  />
-                </div>
+              <div class="peternakan-modal-body">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label text-secondary small fw-bold mb-2">Kode Domba (Ear Tag) <span class="text-danger">*</span></label>
+                    <CustomInput 
+                      modelValue={newDomba.value.code} 
+                      placeholder="Contoh: D-007" 
+                      onUpdate:modelValue={(val: string) => newDomba.value.code = val} 
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label text-secondary small fw-bold mb-2">Nama Domba <span class="text-danger">*</span></label>
+                    <CustomInput 
+                      modelValue={newDomba.value.name} 
+                      placeholder="Masukkan nama domba" 
+                      onUpdate:modelValue={(val: string) => newDomba.value.name = val} 
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label text-secondary small fw-bold mb-2">Ras/Jenis <span class="text-danger">*</span></label>
+                    <CustomSelect 
+                      placeholder="Pilih Ras/Jenis"
+                      options={['Garut', 'Texel', 'Dorper', 'Merino', 'Dorper F2', 'F2 Garut', 'Cross Dorper']}
+                      modelValue={newDomba.value.type}
+                      onUpdate:modelValue={(val: string) => newDomba.value.type = val}
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label text-secondary small fw-bold mb-2">Jenis Kelamin <span class="text-danger">*</span></label>
+                    <CustomSelect 
+                      placeholder="Pilih Jenis Kelamin"
+                      options={['Jantan', 'Betina']}
+                      modelValue={newDomba.value.gender}
+                      onUpdate:modelValue={(val: string) => newDomba.value.gender = val}
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label text-secondary small fw-bold mb-2">Kandang <span class="text-danger">*</span></label>
+                    <CustomSelect 
+                      placeholder="Pilih Kandang"
+                      options={cagesList.value.map(cage => `${cage.code} — ${cage.name}`)}
+                      modelValue={selectedCageId.value ? (cagesList.value.find(cage => String(cage.id) === String(selectedCageId.value))?.code + ' — ' + cagesList.value.find(cage => String(cage.id) === String(selectedCageId.value))?.name) : ''}
+                      onUpdate:modelValue={(val: string) => {
+                        const found = cagesList.value.find(cage => `${cage.code} — ${cage.name}` === val);
+                        selectedCageId.value = found ? String(found.id) : '';
+                      }}
+                    />
+                  </div>
                 <div class="col-12">
                   <label class="form-label text-secondary small fw-bold mb-2 d-block" style={{ marginBottom: '0.5rem' }}>Metode Penentuan Umur <span class="text-danger">*</span></label>
                   <div class="d-flex gap-4 mb-3">
@@ -301,7 +361,7 @@ export default defineComponent({
                   <label class="form-label text-secondary small fw-bold mb-2">Status Awal <span class="text-danger">*</span></label>
                   <CustomSelect 
                     placeholder="Pilih Status Awal"
-                    options={metadataEnums.value.sheep_status}
+                    options={['Aktif', 'Produktif', 'Hamil', 'Sakit']}
                     modelValue={newDomba.value.status}
                     onUpdate:modelValue={(val: string) => newDomba.value.status = val}
                   />
@@ -310,16 +370,15 @@ export default defineComponent({
                   <label class="form-label text-secondary small fw-bold mb-2">Asal Ternak <span class="text-danger">*</span></label>
                   <CustomSelect 
                     placeholder="Pilih Asal Ternak"
-                    options={['Ternak Sendiri', 'Pembelian', 'Hibah', 'Kelahiran di Kandang']}
+                    options={['Pembelian', 'Hibah']}
                     modelValue={newDomba.value.origin}
                     onUpdate:modelValue={(val: string) => newDomba.value.origin = val}
                   />
                 </div>
                 <div class="col-12">
                   <label class="form-label text-secondary small fw-bold mb-2">Pemilik</label>
-                  <CustomSelect 
-                    placeholder="Pilih Pemilik"
-                    options={['SHAF', 'Ilona', 'Sylvia/Ropi', 'Maria/Chris', 'SHAF/MC', 'SHAF/SR', 'Sundari']}
+                  <CustomInput 
+                    placeholder="Masukkan nama pemilik"
                     modelValue={newDomba.value.owner}
                     onUpdate:modelValue={(val: string) => newDomba.value.owner = val}
                   />
@@ -355,7 +414,15 @@ export default defineComponent({
               </div>
             </div>
           </div>
+          {/* Custom Alert Modal */}
+          {alertModal.value.isOpen && (
+            <CustomAlertModal
+              alert={alertModal.value}
+              onClose={handleAlertClose}
+            />
+          )}
         </div>
+      </Teleport>
       );
     };
   }

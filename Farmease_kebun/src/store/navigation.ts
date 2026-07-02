@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { cagesApi, lahanApi, pohonApi } from '@/shared/api'
+import { lahanApi, pohonApi, panenApi } from '@/shared/api'
 
 export interface UserSession {
   code: string;
@@ -25,6 +25,29 @@ export const isLoginOpen = ref(false)
 export const userSession = ref<UserSession | null>(null)
 export const cageSession = ref<CageSession | null>(null)
 export const landSession = ref<LandSession | null>(null)
+
+export interface GlobalAlertState {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  type: 'error' | 'success';
+}
+
+export const globalAlertState = ref<GlobalAlertState>({
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'success',
+})
+
+export function triggerGlobalAlert(title: string, message: string, type: 'error' | 'success' = 'success') {
+  globalAlertState.value = {
+    isOpen: true,
+    title,
+    message,
+    type,
+  }
+}
 
 export const selectedTernakId = ref<string | null>(null)
 export const selectedPencatatanPayload = ref<any | null>(null)
@@ -70,21 +93,8 @@ export const landsLoading = ref(false)
 export const cropsLoading = ref(false)
 
 export async function fetchCagesList() {
-  try {
-    cagesLoading.value = true
-    const list = await cagesApi.getList()
-    cagesList.value = list.map((c) => ({
-      id: c.id_cage,
-      code: c.cage_code,
-      name: c.cage_name || `Kandang ${c.cage_code}`,
-      type: c.cage_type || c.location || 'campuran',
-      capacity: c.capacity,
-    }))
-  } catch (err) {
-    console.error('Failed to fetch cages list:', err)
-  } finally {
-    cagesLoading.value = false
-  }
+  // Perkebunan system does not use cages - return empty to avoid 404 errors
+  cagesLoading.value = false
 }
 
 export async function fetchLandsList() {
@@ -102,8 +112,8 @@ export async function fetchLandsList() {
         location: l.jenis_tanaman || l.lokasi || ''
       }
     })
-  } catch (err) {
-    console.error('Failed to fetch lands list:', err)
+  } catch (err: any) {
+    console.error('Failed to fetch lands list:', err, 'Response Data:', err.response?.data)
   } finally {
     landsLoading.value = false
   }
@@ -131,6 +141,39 @@ export async function fetchCropsList() {
     console.error('Failed to fetch crops list:', err)
   } finally {
     cropsLoading.value = false
+  }
+}
+
+export interface PanenInfo {
+  id?: string | number;
+  tanggal_panen: string;
+  jumlah_panen: number;
+  unit: string;
+  id_pohon: string | number;
+  status: string;
+}
+
+export const panenList = ref<PanenInfo[]>([])
+export const panenLoading = ref(false)
+
+export async function fetchPanenList() {
+  try {
+    panenLoading.value = true
+    const list = await panenApi.getList()
+    panenList.value = list.map((p) => {
+      return {
+        id: p.id,
+        tanggal_panen: p.tanggal_panen,
+        jumlah_panen: p.jumlah_panen,
+        unit: p.unit,
+        id_pohon: p.id_pohon,
+        status: p.status,
+      }
+    })
+  } catch (err) {
+    console.error('Failed to fetch panen list:', err)
+  } finally {
+    panenLoading.value = false
   }
 }
 

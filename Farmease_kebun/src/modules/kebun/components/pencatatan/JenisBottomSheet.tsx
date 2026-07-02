@@ -101,29 +101,6 @@ export default defineComponent({
                 </div>
               </div>
 
-              {/* Simpan button */}
-              <div style="padding:0.85rem 1.25rem 0.5rem; flex-shrink:0; display:flex; justify-content:center; align-items:center; width:100%; box-sizing:border-box; border-top:1px solid #f3f4f6;">
-                <button
-                  type="button"
-                  class="pencatatan-primary-btn"
-                  onClick={() => emit('save')}
-                  style="
-                    width: 75%;
-                    padding: 0.8rem;
-                    border: none;
-                    border-radius: 0.6rem;
-                    background: #2d3a1a;
-                    color: #fff;
-                    font-size: 1.05rem;
-                    font-weight: 700;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    text-align: center;
-                  "
-                >
-                  Simpan
-                </button>
-              </div>
             </div>
           </div>
         </Teleport>

@@ -4,10 +4,13 @@ import Badge from '@/shared/ui/Badge';
 
 export const CATEGORY_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
+  stok_pakan: '/icon/inventory.png',
   kesehatan: '/icon/catat_sehat.png',
   kotoran: '/icon/catat_kotoran.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
+  berat_badan: '/icon/statistic.png',
+  weighing: '/icon/statistic.png',
   umum: '/icon/catat_jenis.png',
 };
 
@@ -17,11 +20,13 @@ export default defineComponent({
     tasksLoading: { type: Boolean, required: true },
     peternakanTasks: { type: Array as PropType<any[]>, required: true },
     onOpenTaskDetail: { type: Function as PropType<(taskId: string) => void>, required: true },
+    taskDone: { type: Number, required: true },
+    totalTasks: { type: Number, required: true },
   },
   setup(props) {
     return () => (
       <div class="bg-white rounded-5 border shadow-sm p-4 p-md-5 h-100">
-        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-4 gap-3">
+        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-4 gap-3">
           <div class="flex-grow-1" style={{ minWidth: 0 }}>
             <div class="d-flex align-items-center gap-2 mb-1">
               <img src="/icon/rutin_task.png" alt="Task" style={{ width: '22px', height: '22px', objectFit: 'contain', flexShrink: 0 }} />
@@ -29,8 +34,11 @@ export default defineComponent({
             </div>
             <Typography variant="p" size="text-xs" color="secondary" className="m-0">Klik kartu tugas untuk melihat detail dan panduan kerja.</Typography>
           </div>
-          <div style={{ flexShrink: 0 }}>
+          <div class="d-flex align-items-center gap-2" style={{ flexShrink: 0 }}>
             <Badge variant="solid-primary" className="px-3 py-1.5 text-nowrap" style={{ fontSize: '0.65rem' }}>Hari Ini</Badge>
+            <div class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fw-bold" style={{ fontSize: '0.72rem' }}>
+              Tugas Harian: {props.taskDone}/{props.totalTasks} Selesai
+            </div>
           </div>
         </div>
 
@@ -69,10 +77,10 @@ export default defineComponent({
                         </div>
                       </div>
                       <Typography variant="p" size="text-md" className="mb-0 text-dark" style={{ lineHeight: '1.3', fontWeight: '500' }}>
-                        {task.rincian || task.description || task.title}
+                        {task.title || task.rincian || task.description}
                       </Typography>
                       <span style={{ fontSize: '0.7rem', color: '#5D4037', fontWeight: '700', letterSpacing: '0.5px' }} class="text-uppercase mt-1">
-                        {task.category}
+                        {task.category === 'weighing' || task.category === 'berat_badan' ? 'Berat Badan' : task.category === 'stok_pakan' ? 'Stok Pakan' : task.category}
                       </span>
                     </div>
                   </div>

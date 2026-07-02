@@ -5,7 +5,7 @@ export const pemilikKebunRoutes: RouteRecordRaw[] = [
   {
     path: '/pemilik',
     name: 'pemilik-kebun',
-    component: () => import('./views/KandangTugasView'),
+    component: () => import('./views/DasborPemilikKebunView'),
     beforeEnter: (to, from, next) => {
       const role = userSession.value?.role;
       if (role === 'Owner' || role === 'Pemilik') return next(true);

@@ -31,7 +31,7 @@ func (h *SheepHandler) GetSheepList(c *fiber.Ctx) error {
 		Status:    c.Query("status"),
 		Search:    c.Query("search"),
 		Page:      c.QueryInt("page", 1),
-		PerPage:   c.QueryInt("per_page", 20),
+		PerPage:   c.QueryInt("per_page", 100),
 	}
 
 	res, _, err := h.useCase.GetSheepList(c.Context(), filter)

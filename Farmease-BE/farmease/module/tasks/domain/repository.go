@@ -7,12 +7,12 @@ import (
 
 type Task struct {
 	IDTask      string    `json:"id_task" db:"id_task"`
-	Title       string    `json:"title" db:"title"`
+	Title       string    `json:"title" db:"title" validate:"required"`
 	Description string    `json:"description" db:"description"`
 	TaskDate    time.Time `json:"task_date" db:"task_date"`
 	EndTime     string    `json:"end_time" db:"end_time"`
-	Status      string    `json:"status" db:"status"` // pending/done
-	Priority    string    `json:"priority" db:"priority"`
+	Status      string    `json:"status" db:"status" validate:"required"` // pending/done
+	Priority    string    `json:"priority" db:"priority" validate:"required"`
 	IDAccount   string    `json:"id_account" db:"id_account"`
 	Category    string    `json:"category" db:"category"`
 	ScheduleID  *string   `json:"schedule_id,omitempty" db:"schedule_id"`
@@ -38,6 +38,6 @@ type UseCase interface {
 	GetMyTasks(ctx context.Context, idAccount, roleName string, date *time.Time) ([]*Task, error)
 	CreateTask(ctx context.Context, t *Task) error
 	UpdateTask(ctx context.Context, id string, t *Task) error
-	CompleteTask(ctx context.Context, id string) error
+	CompleteTask(ctx context.Context, id string) (string, string, error)
 	DeleteTask(ctx context.Context, id string) error
 }

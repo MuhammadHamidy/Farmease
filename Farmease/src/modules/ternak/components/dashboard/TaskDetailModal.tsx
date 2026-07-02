@@ -1,13 +1,17 @@
-import { defineComponent, type PropType } from 'vue';
+import { defineComponent, Teleport, type PropType } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
+import { completeTask } from '@/modules/ternak/store/operatorAdmin';
 
 export const CATEGORY_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
+  stok_pakan: '/icon/inventory.png',
   kesehatan: '/icon/catat_sehat.png',
   kotoran: '/icon/catat_kotoran.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
+  berat_badan: '/icon/statistic.png',
+  weighing: '/icon/statistic.png',
   umum: '/icon/catat_jenis.png',
 };
 
@@ -23,7 +27,8 @@ export default defineComponent({
       if (!props.selectedTask) return null;
 
       return (
-        <div class="peternakan-modal-overlay" onClick={props.onClose}>
+        <Teleport to="body">
+          <div class="peternakan-modal-overlay" onClick={props.onClose}>
           <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '720px' }}>
             <div class="peternakan-modal-header">
               <button class="peternakan-modal-close" onClick={props.onClose}>
@@ -41,7 +46,9 @@ export default defineComponent({
                   <img src={CATEGORY_ICONS[props.selectedTask.category] || '/icon/catat_jenis.png'} alt="Task" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                 </div>
                 <div class="flex-grow-1">
-                  <Typography variant="h4" weight="extrabold" className="m-0 text-capitalize">{props.selectedTask.category}</Typography>
+                  <Typography variant="h4" weight="extrabold" className="m-0 text-capitalize">
+                    {props.selectedTask.category === 'weighing' || props.selectedTask.category === 'berat_badan' ? 'Berat Badan' : props.selectedTask.category === 'stok_pakan' ? 'Stok Pakan' : props.selectedTask.category}
+                  </Typography>
                   <Typography variant="p" size="text-xs" color="secondary" className="m-0">
                     Tugas Rutin Peternakan
                   </Typography>
@@ -67,7 +74,9 @@ export default defineComponent({
                 <div class="d-flex flex-column gap-3">
                   <div>
                     <span class="text-muted d-block small mb-1">Jenis Tugas:</span>
-                    <span class="fw-semibold text-dark text-capitalize">{props.selectedTask.category}</span>
+                    <span class="fw-semibold text-dark text-capitalize">
+                      {props.selectedTask.category === 'weighing' || props.selectedTask.category === 'berat_badan' ? 'Berat Badan' : props.selectedTask.category === 'stok_pakan' ? 'Stok Pakan' : props.selectedTask.category}
+                    </span>
                   </div>
                   <div>
                     <span class="text-muted d-block small mb-1">Rincian Tugas <span class="fw-normal">(Opsional)</span>:</span>
@@ -107,18 +116,22 @@ export default defineComponent({
                     Pencatatan sudah dikirim dan sedang menunggu persetujuan admin.
                   </div>
                 ) : (
-                  <button
-                    class="btn rounded-pill px-4 py-3 fw-bold text-white border-0 w-100"
-                    style={{ backgroundColor: 'var(--color-primary)' }}
-                    onClick={props.onGoToPencatatan}
-                  >
-                    Kerjakan Tugas
-                  </button>
+                  <div class="w-100">
+                    <button
+                      type="button"
+                      class="btn rounded-pill px-4 py-3 fw-bold text-white border-0 w-100"
+                      style={{ backgroundColor: 'var(--color-primary)' }}
+                      onClick={props.onGoToPencatatan}
+                    >
+                      Kerjakan Tugas (Catat Aktivitas)
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
+      </Teleport>
       );
     };
   }

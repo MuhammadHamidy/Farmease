@@ -1,13 +1,15 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import '@/modules/admin/assets/css/modules/AdminPage.css';
-import { userSession, cageSession } from '@/store/navigation';
+import { userSession, cageSession, globalAlertState } from '@/store/navigation';
 import { pendingApprovalCount } from '@/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
 import DasborPeternakanView from './DasborPeternakanView.tsx';
 import RoutineScheduleView from './RoutineScheduleView.tsx';
 import PencatatanApprovalView from './PencatatanApprovalView.tsx';
 import CageManagementView from './CageManagementView.tsx';
+import CustomConfirmModal from '../../ternak/components/shared/CustomConfirmModal';
+import CustomAlertModal from '../../ternak/components/shared/CustomAlertModal';
 
 export default defineComponent({
   name: 'AdminPage',
@@ -16,12 +18,19 @@ export default defineComponent({
     const activeTab = ref<string>('dasbor_ternak');
     const isSidebarOpen = ref(false);
 
+    const isLogoutConfirmOpen = ref(false);
+
     const handleLogout = () => {
+      isLogoutConfirmOpen.value = true;
+    };
+
+    const confirmLogout = () => {
+      isLogoutConfirmOpen.value = false;
       userSession.value = null;
       cageSession.value = null;
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/';
+      window.location.href = 'http://localhost:3000/?logout=true';
     };
 
     return () => {
@@ -152,6 +161,21 @@ export default defineComponent({
               </div>
             </div>
 
+            
+            <CustomConfirmModal
+              isOpen={isLogoutConfirmOpen.value}
+              title="Konfirmasi Keluar"
+              message="Apakah Anda yakin ingin keluar dari panel admin?"
+              confirmLabel="Keluar"
+              cancelLabel="Batal"
+              onConfirm={confirmLogout}
+              onCancel={() => isLogoutConfirmOpen.value = false}
+            />
+
+            <CustomAlertModal
+              alert={globalAlertState.value}
+              onClose={() => { globalAlertState.value.isOpen = false; }}
+            />
           </div>
         </div>
       );

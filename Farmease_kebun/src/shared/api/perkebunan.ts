@@ -187,13 +187,14 @@ function mapBackendAktivitasToFrontend(backend: any): Aktivitas {
   }
 }
 
-function mapFrontendAktivitasToBackend(frontend: Partial<Aktivitas>): any {
+function mapFrontendAktivitasToBackend(frontend: any): any {
+  if (!frontend) return {}
   return {
-    id_aktivitas: frontend.id,
-    nama_jenis_aktivitas: frontend.nama_aktivitas || '',
-    nama_rincian_aktivitas: frontend.deskripsi || '',
-    tanggal_aktivitas: frontend.tanggal_mulai || new Date().toISOString(),
-    Lahan_id_lahan: frontend.id_lahan || '',
+    id_aktivitas: frontend.id || frontend.id_aktivitas || '',
+    nama_jenis_aktivitas: frontend.nama_jenis_aktivitas || frontend.nama_aktivitas || '',
+    nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || frontend.deskripsi || '',
+    tanggal_aktivitas: frontend.tanggal_aktivitas || frontend.tanggal_mulai || new Date().toISOString(),
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_lahan || '',
   }
 }
 
@@ -303,6 +304,8 @@ export interface Pemangkasan {
   status: string
   created_at: string
   updated_at: string
+  jumlah?: number
+  satuan?: string
 }
 
 function mapBackendPemangkasanToFrontend(backend: any): Pemangkasan {
@@ -315,17 +318,20 @@ function mapBackendPemangkasanToFrontend(backend: any): Pemangkasan {
     status: 'Selesai',
     created_at: backend.tanggal_aktivitas || '',
     updated_at: backend.tanggal_aktivitas || '',
+    jumlah: Number(backend.jumlah) || 0,
+    satuan: backend.satuan || 'kg',
   }
 }
 
-function mapFrontendPemangkasanToBackend(frontend: Partial<Pemangkasan>): any {
+function mapFrontendPemangkasanToBackend(frontend: any): any {
+  if (!frontend) return {}
   return {
-    id_pemangkasan: frontend.id,
-    Aktivitas_id_aktivitas: '',
-    jumlah: '0',
-    satuan: 'kg',
-    keterangan: frontend.deskripsi || '',
-    Lahan_id_lahan: frontend.id_pohon || '',
+    id_pemangkasan: frontend.id || frontend.id_pemangkasan || '',
+    Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
+    jumlah: String(frontend.jumlah !== undefined ? frontend.jumlah : (frontend.jumlah_pemangkasan || '0')),
+    satuan: frontend.satuan || 'kg',
+    keterangan: frontend.keterangan || frontend.deskripsi || '',
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_pohon || '',
   }
 }
 
@@ -379,13 +385,14 @@ function mapBackendPanenToFrontend(backend: any): Panen {
   }
 }
 
-function mapFrontendPanenToBackend(frontend: Partial<Panen>): any {
+function mapFrontendPanenToBackend(frontend: any): any {
+  if (!frontend) return {}
   return {
-    id_panen: frontend.id,
-    Aktivitas_id_aktivitas: '',
-    jumlah: frontend.jumlah_panen || 0,
-    satuan: frontend.unit || 'kg',
-    Lahan_id_lahan: frontend.id_pohon || '',
+    id_panen: frontend.id || frontend.id_panen || '',
+    Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
+    jumlah: frontend.jumlah !== undefined ? Number(frontend.jumlah) : (frontend.jumlah_panen || 0),
+    satuan: frontend.satuan || frontend.unit || 'kg',
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_pohon || '',
   }
 }
 

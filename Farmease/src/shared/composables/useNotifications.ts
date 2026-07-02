@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { notificationsApi, type Notification } from '@/shared/api';
+import { notificationsApi, feedsApi, type Notification } from '@/shared/api';
 
 const notifications = ref<Notification[]>([]);
 const loading = ref(false);
@@ -26,6 +26,31 @@ async function fetchNotifications() {
       updated_at: n.updated_at || n.created_at,
     }));
 
+    // Fetch feed stocks to check if there is any critical stock!
+    try {
+      const feeds = await feedsApi.getList();
+      const hasCritical = (feeds || []).some(f => 
+        (f.category || '').toLowerCase() === 'konsentrat' && 
+        (f.qty || 0) < 100
+      );
+      if (hasCritical) {
+        const alreadyExists = mapped.some((n: any) => n.id === 'mock-critical-stock-notification');
+        if (!alreadyExists) {
+          mapped.push({
+            id: 'mock-critical-stock-notification',
+            user_id: 'system',
+            title: '🚨 ALARM: Stok Pakan Kritis!',
+            message: 'Stok pakan kategori Konsentrat berada di bawah ambang batas minimum aman (100 kg). Harap segera lakukan pengisian stok di gudang.',
+            is_read: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch feeds for notification check:', e);
+    }
+
     // Sort by latest first
     notifications.value = mapped.sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -40,7 +65,9 @@ async function fetchNotifications() {
 
 async function markRead(id: string | number) {
   try {
-    await notificationsApi.markAsRead(id);
+    if (id !== 'mock-critical-stock-notification') {
+      await notificationsApi.markAsRead(id);
+    }
     const index = notifications.value.findIndex(n => n.id === id);
     if (index !== -1) {
       notifications.value[index] = {

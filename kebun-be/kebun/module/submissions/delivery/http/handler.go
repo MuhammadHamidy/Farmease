@@ -16,6 +16,12 @@ type SubmissionHandler struct {
 }
 
 func NewSubmissionHandler(useCase domain.UseCase, auth *middleware.AuthorizationMiddleware) *SubmissionHandler {
+	if useCase == nil {
+		panic("useCase is nil in NewSubmissionHandler!!!")
+	}
+	if auth == nil {
+		panic("auth is nil in NewSubmissionHandler!!!")
+	}
 	return &SubmissionHandler{
 		useCase: useCase,
 		auth:    auth,

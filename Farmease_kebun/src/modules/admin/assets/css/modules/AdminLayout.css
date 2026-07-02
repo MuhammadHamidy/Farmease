@@ -39,7 +39,7 @@
   display: block;
   font-weight: 800;
   font-size: 1rem;
-  color: var(--color-primary, #3d2f24);
+  color: #3d2f24;
   line-height: 1.2;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .admin-top-title {
-  color: var(--color-primary);
+  color: #3d2f24;
   font-size: 1.15rem !important;
 }
 
@@ -124,7 +124,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--color-primary-fixed);
+  background: #e1d4c2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,7 +160,7 @@
 .admin-view-title {
   font-size: 1.35rem;
   font-weight: 800;
-  color: var(--color-primary);
+  color: #3d2f24;
   margin: 0;
 }
 

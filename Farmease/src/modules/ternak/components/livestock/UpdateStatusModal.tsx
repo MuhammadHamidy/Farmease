@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch, type PropType } from 'vue';
+import { defineComponent, ref, watch, Teleport, type PropType } from 'vue';
 import CustomSelect from '@/shared/ui/admin/Select';
 import { SHEEP_STATUS_OPTIONS, updateSheepStatus } from '@/store/livestock';
 
@@ -39,29 +39,31 @@ export default defineComponent({
       if (!props.isOpen) return null;
 
       return (
-        <div class="peternakan-modal-overlay" onClick={props.onClose}>
-          <div class="peternakan-modal-card animate-fade-in-up" style={{ maxWidth: '360px' }} onClick={(e) => e.stopPropagation()}>
-            <div class="peternakan-modal-header">
-              <button class="peternakan-modal-close" onClick={props.onClose}>
-                <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-              </button>
-              <div class="peternakan-modal-title">Ubah Status Domba</div>
-            </div>
-            <div class="peternakan-modal-body">
-              <label class="form-label text-secondary small fw-bold mb-2">Status Baru</label>
-              <CustomSelect
-                options={[...SHEEP_STATUS_OPTIONS]}
-                modelValue={newStatusValue.value}
-                onUpdate:modelValue={(val: string) => newStatusValue.value = val}
-              />
-              <div class="mt-4 pt-3 border-top border-light">
-                <button class="peternakan-primary-btn w-100 m-0 justify-content-center" onClick={handleUpdateStatus} disabled={isLoading.value}>
-                  {isLoading.value ? 'Menyimpan...' : 'Simpan'}
+        <Teleport to="body">
+          <div class="peternakan-modal-overlay" onClick={props.onClose}>
+            <div class="peternakan-modal-card animate-fade-in-up" style={{ maxWidth: '360px' }} onClick={(e) => e.stopPropagation()}>
+              <div class="peternakan-modal-header">
+                <button class="peternakan-modal-close" onClick={props.onClose}>
+                  <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                 </button>
+                <div class="peternakan-modal-title">Ubah Status Domba</div>
+              </div>
+              <div class="peternakan-modal-body">
+                <label class="form-label text-secondary small fw-bold mb-2">Status Baru</label>
+                <CustomSelect
+                  options={[...SHEEP_STATUS_OPTIONS]}
+                  modelValue={newStatusValue.value}
+                  onUpdate:modelValue={(val: string) => newStatusValue.value = val}
+                />
+                <div class="mt-4 pt-3 border-top border-light">
+                  <button class="peternakan-primary-btn w-100 m-0 justify-content-center" onClick={handleUpdateStatus} disabled={isLoading.value}>
+                    {isLoading.value ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Teleport>
       );
     };
   }

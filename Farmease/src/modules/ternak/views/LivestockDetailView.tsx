@@ -13,6 +13,7 @@ import {
 import EditLivestockModal from '../components/shared/EditLivestockModal';
 import SheepWeightChart from '../components/shared/SheepWeightChart';
 import CustomSelect from '@/shared/ui/admin/Select';
+import CustomAlertModal, { type AlertModalState } from '../components/shared/CustomAlertModal';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 // calcADG is now handled by the backend
@@ -64,6 +65,12 @@ export default defineComponent({
     const showPindahKandangModal = ref(false);
     const selectedNewCageId = ref('');
     const isPindahLoading = ref(false);
+    const alertModal = ref<AlertModalState>({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'error',
+    });
 
     const selectedTernakId = computed(() => route.params.id as string);
 
@@ -117,9 +124,37 @@ export default defineComponent({
 
     const handlePindahKandang = async () => {
       if (!selectedNewCageId.value) {
-        alert('Silakan pilih kandang baru.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Validasi Gagal',
+          message: 'Silakan pilih kandang baru.',
+          type: 'error',
+        };
         return;
       }
+
+      // Check cage capacity
+      const targetCage = cagesList.value.find(c => String(c.id) === String(selectedNewCageId.value));
+      if (targetCage && currentSheepDetail.value) {
+        const isChangingCage = String(currentSheepDetail.value.id_cage) !== String(selectedNewCageId.value);
+        if (isChangingCage) {
+          const occupancy = sheep.value.filter(s => 
+            s.cage_code === targetCage.code && 
+            !['Mati', 'Terjual', 'Disembelih'].includes(s.status)
+          ).length;
+          
+          if (occupancy >= targetCage.capacity) {
+            alertModal.value = {
+              isOpen: true,
+              title: 'Kandang Penuh',
+              message: `Gagal memindahkan domba. Kandang ${targetCage.name} sudah penuh (Kapasitas: ${targetCage.capacity} ekor).`,
+              type: 'error',
+            };
+            return;
+          }
+        }
+      }
+
       try {
         isPindahLoading.value = true;
         
@@ -131,6 +166,7 @@ export default defineComponent({
           sheep_name: current.sheep_name,
           gender: current.gender.toLowerCase(),
           date_of_birth: current.date_of_birth,
+          status: current.status,
           origin: current.origin,
           id_type: String(current.id_type),
           id_father: current.id_father ? String(current.id_father) : null,
@@ -142,12 +178,22 @@ export default defineComponent({
 
         await updateSheep(selectedTernakId.value, payload);
 
-        alert('Berhasil memindahkan domba ke kandang baru.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Berhasil',
+          message: 'Berhasil memindahkan domba ke kandang baru.',
+          type: 'success',
+        };
         showPindahKandangModal.value = false;
         await refreshData();
       } catch (err: any) {
         console.error('Failed to move cage:', err);
-        alert('Gagal memindahkan kandang.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Gagal',
+          message: 'Gagal memindahkan kandang.',
+          type: 'error',
+        };
       } finally {
         isPindahLoading.value = false;
       }
@@ -320,15 +366,30 @@ export default defineComponent({
         );
         
         if (activePregnancy) {
-          await pregnancyApi.updateStatus(activePregnancy.id_pregnancy, 'keguguran');
-          alert('Berhasil melaporkan keguguran.');
+          await pregnancyApi.updateStatus((activePregnancy as any).id_pregnancy, 'keguguran');
+          alertModal.value = {
+            isOpen: true,
+            title: 'Berhasil',
+            message: 'Berhasil melaporkan keguguran.',
+            type: 'success',
+          };
           await refreshData();
         } else {
-          alert('Data kehamilan aktif untuk domba ini tidak ditemukan.');
+          alertModal.value = {
+            isOpen: true,
+            title: 'Tidak Ditemukan',
+            message: 'Data kehamilan aktif untuk domba ini tidak ditemukan.',
+            type: 'error',
+          };
         }
       } catch (e) {
         console.error('Failed to report miscarriage:', e);
-        alert('Gagal melaporkan keguguran.');
+        alertModal.value = {
+          isOpen: true,
+          title: 'Gagal',
+          message: 'Gagal melaporkan keguguran.',
+          type: 'error',
+        };
       }
     };
 
@@ -382,26 +443,30 @@ export default defineComponent({
                 </div>
 
                 <div class="d-flex align-items-center gap-2 ms-auto">
-                  <button 
-                    class="btn rounded-pill d-flex align-items-center gap-2 fw-bold btn-edit-profile"
-                    onClick={() => showPindahKandangModal.value = true}
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.3)' }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                    Pindah Kandang
-                  </button>
-                  <button 
-                    class="btn rounded-pill d-flex align-items-center gap-2 fw-bold btn-edit-profile"
-                    onClick={() => showEditProfileModal.value = true}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                    </svg>
-                    Ubah Profil
-                  </button>
+                  {!['mati', 'terjual', 'disembelih'].includes(String(ternak.status || '').toLowerCase()) && (
+                    <>
+                      <button 
+                        class="btn rounded-pill d-flex align-items-center gap-2 fw-bold btn-edit-profile"
+                        onClick={() => showPindahKandangModal.value = true}
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.3)' }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Pindah Kandang
+                      </button>
+                      <button 
+                        class="btn rounded-pill d-flex align-items-center gap-2 fw-bold btn-edit-profile"
+                        onClick={() => showEditProfileModal.value = true}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
+                        Ubah Profil
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -484,32 +549,61 @@ export default defineComponent({
                 </div>
 
                 {/* Riwayat Kesehatan */}
-                {healthRecords.value.length > 0 && (
-                  <div>
-                    <Typography variant="span" size="text-xs" weight="bold" className="text-secondary text-uppercase d-block mb-2">Riwayat Kesehatan</Typography>
-                    <div class="d-flex flex-column gap-2">
+                <div class="mb-4">
+                  <Typography variant="span" size="text-xs" weight="bold" className="text-secondary text-uppercase d-block mb-2">Riwayat Kesehatan</Typography>
+                  {healthRecords.value.length > 0 ? (
+                    <div class="d-flex flex-column gap-3">
                       {[...healthRecords.value]
                         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                        .slice(0, 5)
-                        .map(h => (
-                          <div key={h.id} class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light">
-                            <div>
-                              <Typography variant="span" size="text-sm" weight="bold" className="text-secondary d-block">
-                                {new Date(h.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
-                              </Typography>
-                              <Typography variant="span" size="text-sm" className="text-muted">{h.notes}</Typography>
+                        .slice(0, 10)
+                        .map(h => {
+                          const isSehat = String(h.status).toLowerCase() === 'sehat' || String(h.status).toLowerCase() === 'normal';
+                          return (
+                            <div key={h.id} class="p-3 rounded-4 bg-light text-start border shadow-sm" style={{ borderColor: '#ede8e0' }}>
+                              <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom" style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
+                                <div class="d-flex align-items-center gap-2">
+                                  <span style={{ fontSize: '1.1rem' }}>🩺</span>
+                                  <span class="fw-extrabold text-dark" style={{ fontSize: '0.85rem' }}>
+                                    {new Date(h.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                  </span>
+                                </div>
+                                <Badge 
+                                  variant={isSehat ? 'solid-success' : 'solid-danger'} 
+                                  className="px-3 py-1 text-uppercase fw-extrabold"
+                                  style={{ fontSize: '0.65rem' }}
+                                >
+                                  {h.status || 'Diagnosa'}
+                                </Badge>
+                              </div>
+                              
+                              <div class="row g-2" style={{ fontSize: '0.8rem' }}>
+                                <div class="col-6 col-sm-4">
+                                  <span class="text-muted d-block small" style={{ fontSize: '0.7rem' }}>Tindakan:</span>
+                                  <span class="fw-bold text-dark">{h.action || '—'}</span>
+                                </div>
+                                <div class="col-6 col-sm-4">
+                                  <span class="text-muted d-block small" style={{ fontSize: '0.7rem' }}>Obat & Dosis:</span>
+                                  <span class="fw-bold text-dark">{h.medicine_given || '—'}</span>
+                                </div>
+                                <div class="col-6 col-sm-4">
+                                  <span class="text-muted d-block small" style={{ fontSize: '0.7rem' }}>Petugas:</span>
+                                  <span class="fw-bold text-dark">{h.inspector_name || '—'}</span>
+                                </div>
+                                <div class="col-12 mt-1">
+                                  <span class="text-muted d-block small" style={{ fontSize: '0.7rem' }}>Catatan Observasi:</span>
+                                  <span class="text-secondary">{h.notes || '—'}</span>
+                                </div>
+                              </div>
                             </div>
-                            <Badge 
-                              variant={h.status === 'Sehat' ? 'solid-success' : (h.status === 'Sakit' ? 'solid-danger' : 'solid-primary')} 
-                              className="px-3 py-1"
-                            >
-                              {h.status}
-                            </Badge>
-                          </div>
-                        ))}
+                          );
+                        })}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div class="p-3 text-center text-muted rounded-4 bg-light border border-dashed" style={{ fontSize: '0.85rem' }}>
+                      Tidak ada catatan riwayat kesehatan pada domba ini
+                    </div>
+                  )}
+                </div>
 
                 {/* Riwayat Perkawinan */}
                 {matingRecords.value.length > 0 && (
@@ -677,6 +771,14 @@ export default defineComponent({
               </div>
             )}
           </Teleport>
+
+          {/* Custom Alert Modal */}
+          {alertModal.value.isOpen && (
+            <CustomAlertModal
+              alert={alertModal.value}
+              onClose={() => { alertModal.value.isOpen = false; }}
+            />
+          )}
         </div>
       );
     };

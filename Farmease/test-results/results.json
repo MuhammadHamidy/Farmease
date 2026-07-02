@@ -1,0 +1,1159 @@
+{
+  "config": {
+    "configFile": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\playwright.config.ts",
+    "rootDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 6
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "C:/Kuliah/Semester 7/TA/Keperluan/Farmease/Ternak/Farmease/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 6,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "generate-screenshots.spec.ts",
+      "file": "generate-screenshots.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Automated Screenshot Generator for All TA Test Cases",
+          "file": "generate-screenshots.spec.ts",
+          "line": 108,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC-02a & TC-02b: Logout & Middleware Redirect",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 34421,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 21,
+                            "line": 116
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.header-logout-btn').first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 114 |\u001b[39m\n \u001b[90m 115 |\u001b[39m     \u001b[36mconst\u001b[39m logoutBtn \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.header-logout-btn'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 116 |\u001b[39m     \u001b[36mawait\u001b[39m logoutBtn\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 117 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 118 |\u001b[39m\n \u001b[90m 119 |\u001b[39m     \u001b[36mconst\u001b[39m confirmBtn \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Keluar\"), button.peternakan-primary-btn:has-text(\"Keluar\")'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:116:21\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:34:55.082Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-afad6--Logout-Middleware-Redirect-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-afad6--Logout-Middleware-Redirect-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-afad6--Logout-Middleware-Redirect-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-fafe8c75d563496ea99c",
+              "file": "generate-screenshots.spec.ts",
+              "line": 110,
+              "column": 3
+            },
+            {
+              "title": "TC-03a & TC-03b: Register New Tag & Duplicate Validation",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 33535,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 18,
+                            "line": 139
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Tambah Domba\")').first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 137 |\u001b[39m     \n \u001b[90m 138 |\u001b[39m     \u001b[36mconst\u001b[39m addBtn \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Tambah Domba\")'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 139 |\u001b[39m     \u001b[36mawait\u001b[39m addBtn\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 140 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 141 |\u001b[39m     \n \u001b[90m 142 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[placeholder*=\"Kode Domba\"]'\u001b[39m)\u001b[33m.\u001b[39mfill(\u001b[32m'DM-NEW-99'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:139:18\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:34:55.134Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-d1555-ew-Tag-Duplicate-Validation-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-d1555-ew-Tag-Duplicate-Validation-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-d1555-ew-Tag-Duplicate-Validation-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-666c65b511074913eecc",
+              "file": "generate-screenshots.spec.ts",
+              "line": 133,
+              "column": 3
+            },
+            {
+              "title": "TC-04a & TC-04b: Pedigree Tree Display",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "timedOut",
+                      "duration": 32636,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 16,
+                            "line": 186
+                          },
+                          "message": "Error: page.waitForTimeout: Test timeout of 30000ms exceeded.\n\n\u001b[0m \u001b[90m 184 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 185 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[placeholder*=\"Cari\"]'\u001b[39m)\u001b[33m.\u001b[39mfill(\u001b[32m'XD009'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 186 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 187 |\u001b[39m     \u001b[36mconst\u001b[39m detailBtn2 \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Detail\")'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 188 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m detailBtn2\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 189 |\u001b[39m       \u001b[36mawait\u001b[39m detailBtn2\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:186:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:34:55.131Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-c9547-C-04b-Pedigree-Tree-Display-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-c9547-C-04b-Pedigree-Tree-Display-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-c9547-C-04b-Pedigree-Tree-Display-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-bc1768a4a521395878af",
+              "file": "generate-screenshots.spec.ts",
+              "line": 161,
+              "column": 3
+            },
+            {
+              "title": "TC-05b: Weight ADG Calculation (Zero Days)",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "timedOut",
+                      "duration": 35105,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:205:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:34:55.110Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-dd053--ADG-Calculation-Zero-Days--chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-dd053--ADG-Calculation-Zero-Days--chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-dd053--ADG-Calculation-Zero-Days--chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-b42a392b9552538d8121",
+              "file": "generate-screenshots.spec.ts",
+              "line": 200,
+              "column": 3
+            },
+            {
+              "title": "TC-07a & TC-07b: Mutation Status Mati",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "timedOut",
+                      "duration": 35011,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 54,
+                            "line": 241
+                          },
+                          "message": "Error: locator.fill: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[placeholder*=\"Cari\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 239 |\u001b[39m\n \u001b[90m 240 |\u001b[39m     \u001b[90m// Choose detail of DM-NEW-99\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 241 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[placeholder*=\"Cari\"]'\u001b[39m)\u001b[33m.\u001b[39mfill(\u001b[32m'DM-NEW-99'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 242 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 243 |\u001b[39m     \u001b[36mconst\u001b[39m detailBtn \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Detail\")'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 244 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m detailBtn\u001b[33m.\u001b[39misVisible()) {\u001b[0m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:241:54\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:34:55.110Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-66568-TC-07b-Mutation-Status-Mati-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-66568-TC-07b-Mutation-Status-Mati-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-66568-TC-07b-Mutation-Status-Mati-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-ec5eb716aa2671091536",
+              "file": "generate-screenshots.spec.ts",
+              "line": 235,
+              "column": 3
+            },
+            {
+              "title": "TC-08a & TC-08b: Sire and Dam Selection validation",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "failed",
+                      "duration": 29755,
+                      "error": {
+                        "message": "Error: locator.click: Error: strict mode violation: locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select') resolved to 2 elements:\n    1) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan$/ }).nth(1)\n    2) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan Pagi$/ }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n",
+                        "stack": "Error: locator.click: Error: strict mode violation: locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select') resolved to 2 elements:\n    1) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan$/ }).nth(1)\n    2) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan Pagi$/ }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\n    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:267:11",
+                        "location": {
+                          "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                          "column": 19,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Error: strict mode violation: locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select') resolved to 2 elements:\n    1) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan$/ }).nth(1)\n    2) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan Pagi$/ }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:267:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:34:55.150Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-dc4cf-nd-Dam-Selection-validation-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-dc4cf-nd-Dam-Selection-validation-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-dc4cf-nd-Dam-Selection-validation-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                        "column": 19,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-8add5e1d7de4ada06d5a",
+              "file": "generate-screenshots.spec.ts",
+              "line": 262,
+              "column": 3
+            },
+            {
+              "title": "TC-10b: Mating weight validation (Negatif)",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 3,
+                      "status": "timedOut",
+                      "duration": 37604,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:288:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:35:41.213Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-13528--weight-validation-Negatif--chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-13528--weight-validation-Negatif--chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-13528--weight-validation-Negatif--chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-2086883c1a735b001ceb",
+              "file": "generate-screenshots.spec.ts",
+              "line": 283,
+              "column": 3
+            },
+            {
+              "title": "TC-11a & TC-11b: Birth Alerts & Keguguran",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 33738,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-11a-birth-alerts.png\n"
+                        },
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-11b-keguguran.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:35:41.170Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-4b839682ee125e142335",
+              "file": "generate-screenshots.spec.ts",
+              "line": 304,
+              "column": 3
+            },
+            {
+              "title": "TC-12a & TC-12b: Birth data input verification",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 32692,
+                      "error": {
+                        "message": "Error: locator.click: Error: strict mode violation: locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select') resolved to 2 elements:\n    1) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan$/ }).nth(1)\n    2) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan Pagi$/ }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n",
+                        "stack": "Error: locator.click: Error: strict mode violation: locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select') resolved to 2 elements:\n    1) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan$/ }).nth(1)\n    2) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan Pagi$/ }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\n    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:328:11",
+                        "location": {
+                          "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                          "column": 19,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Error: strict mode violation: locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select') resolved to 2 elements:\n    1) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan$/ }).nth(1)\n    2) <div class=\"custom-select\">…</div> aka locator('div').filter({ hasText: /^Pakan Pagi$/ }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:328:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:35:41.069Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-57550-rth-data-input-verification-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-57550-rth-data-input-verification-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-57550-rth-data-input-verification-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                        "column": 19,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-bba5bb84868dcbf736cf",
+              "file": "generate-screenshots.spec.ts",
+              "line": 323,
+              "column": 3
+            },
+            {
+              "title": "TC-13a & TC-13b: Inbreeding Check",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 40940,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:355:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:35:41.114Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1a335-13a-TC-13b-Inbreeding-Check-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1a335-13a-TC-13b-Inbreeding-Check-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1a335-13a-TC-13b-Inbreeding-Check-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-6fb61427f883e6036125",
+              "file": "generate-screenshots.spec.ts",
+              "line": 350,
+              "column": 3
+            },
+            {
+              "title": "TC-14a s.d TC-18b: Feed Management & Logistics Monitoring",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 41098,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:379:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:35:41.121Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1b94e-gement-Logistics-Monitoring-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1b94e-gement-Logistics-Monitoring-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1b94e-gement-Logistics-Monitoring-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-90fb00e26895042112bf",
+              "file": "generate-screenshots.spec.ts",
+              "line": 374,
+              "column": 3
+            },
+            {
+              "title": "TC-20a s.d TC-22b: Health & Routine Tasks Management",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 4,
+                      "status": "timedOut",
+                      "duration": 43509,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 19,
+                            "line": 21
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('div').filter({ has: locator('text=Jenis Pencatatan') }).first().locator('.custom-select')\u001b[22m\n\n\n\u001b[0m \u001b[90m 19 |\u001b[39m   \u001b[90m// Click the custom select wrapper inside this field\u001b[39m\n \u001b[90m 20 |\u001b[39m   \u001b[36mconst\u001b[39m selectBox \u001b[33m=\u001b[39m field\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m   \u001b[36mawait\u001b[39m selectBox\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 23 |\u001b[39m   \u001b[90m// Find and click the option inside the menu\u001b[39m\n \u001b[90m 24 |\u001b[39m   \u001b[36mconst\u001b[39m option \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.custom-select-option'\u001b[39m\u001b[33m,\u001b[39m { hasText\u001b[33m:\u001b[39m optionText })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at selectOption (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:21:19)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:451:11\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-20a-tugas-rutin-selesai.png\n"
+                        },
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-20b-tugas-rutin-bypass.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:35:41.316Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1d253-th-Routine-Tasks-Management-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1d253-th-Routine-Tasks-Management-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1d253-th-Routine-Tasks-Management-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-2bf0f178750aa0199586",
+              "file": "generate-screenshots.spec.ts",
+              "line": 432,
+              "column": 3
+            },
+            {
+              "title": "TC-24a s.d TC-25b: History & Medical Reports Export",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 5,
+                      "status": "timedOut",
+                      "duration": 30796,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 14,
+                            "line": 105
+                          },
+                          "message": "Error: page.waitForTimeout: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 103 |\u001b[39m\n \u001b[90m 104 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[35m/localhost:3001/\u001b[39m\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m.\u001b[39m\u001b[36mcatch\u001b[39m(() \u001b[33m=>\u001b[39m {})\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 105 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m2000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 106 |\u001b[39m }\n \u001b[90m 107 |\u001b[39m\n \u001b[90m 108 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Automated Screenshot Generator for All TA Test Cases'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at loginAsAdmin (C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:105:14)\u001b[22m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:537:5\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:36:16.551Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1a598-tory-Medical-Reports-Export-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1a598-tory-Medical-Reports-Export-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-1a598-tory-Medical-Reports-Export-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-8258899ef395e416ad47",
+              "file": "generate-screenshots.spec.ts",
+              "line": 500,
+              "column": 3
+            },
+            {
+              "title": "TC-27a s.d TC-29b: Admin Panel Cages & Schedules",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 33226,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 72,
+                            "line": 549
+                          },
+                          "message": "Error: locator.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Manajemen Kandang\")').first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 547 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 548 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 549 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Manajemen Kandang\")'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 550 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1500\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 551 |\u001b[39m     \u001b[36mawait\u001b[39m takeScreenshot(page\u001b[33m,\u001b[39m \u001b[32m'tc-27a-kepadatan-kandang'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 552 |\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:549:72\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:36:36.176Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-3ac04-Admin-Panel-Cages-Schedules-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-3ac04-Admin-Panel-Cages-Schedules-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-3ac04-Admin-Panel-Cages-Schedules-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-c4212f53f7506cd2172c",
+              "file": "generate-screenshots.spec.ts",
+              "line": 544,
+              "column": 3
+            },
+            {
+              "title": "TC-31a s.d TC-36b: Dashboard Analytics, Sessions & Growth Charts",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 3,
+                      "status": "timedOut",
+                      "duration": 31742,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts",
+                            "column": 16,
+                            "line": 593
+                          },
+                          "message": "Error: page.waitForTimeout: Test timeout of 30000ms exceeded.\n\n\u001b[0m \u001b[90m 591 |\u001b[39m     \u001b[36mawait\u001b[39m loginAsOperator(page)\u001b[33m;\u001b[39m\n \u001b[90m 592 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'http://localhost:3001/ternak/pencatatan'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 593 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 594 |\u001b[39m     \n \u001b[90m 595 |\u001b[39m     \u001b[36mawait\u001b[39m selectOption(page\u001b[33m,\u001b[39m \u001b[32m'Jenis Pencatatan'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'Berat Badan'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 596 |\u001b[39m     \u001b[36mawait\u001b[39m selectOption(page\u001b[33m,\u001b[39m \u001b[32m'Rincian Pencatatan'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'Timbang Rutin'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\tests\\e2e\\generate-screenshots.spec.ts:593:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-31a-dasbor-admin.png\n"
+                        },
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-31b-dasbor-offline.png\n"
+                        },
+                        {
+                          "text": "Saved screenshot: tests\\e2e\\screenshots\\tc-32b-ekspor-ternak-kosong.png\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T08:36:36.344Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-69cf3-tics-Sessions-Growth-Charts-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-69cf3-tics-Sessions-Growth-Charts-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Kuliah\\Semester 7\\TA\\Keperluan\\Farmease\\Ternak\\Farmease\\test-results\\generate-screenshots-Autom-69cf3-tics-Sessions-Growth-Charts-chromium\\error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff4b332a3c28bb060ae5-f7aea328a92893d4ad7d",
+              "file": "generate-screenshots.spec.ts",
+              "line": 583,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-07-01T08:34:53.039Z",
+    "duration": 137770.038,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 14,
+    "flaky": 0
+  }
+}

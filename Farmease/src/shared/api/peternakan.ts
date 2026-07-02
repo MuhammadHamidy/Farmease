@@ -234,6 +234,9 @@ export const feedsApi = {
   recordSilageConversion: async (payload: any): Promise<any> => {
     return await apiClient.post('/api/feeds/conversions', payload)
   },
+  getSilageConversions: async (): Promise<any[]> => {
+    return await apiClient.get('/api/feeds/conversions')
+  },
 }
 
 // ============ Manure ============
@@ -259,6 +262,12 @@ export const manureApi = {
   },
   record: async (sheepId: string | number, payload: Partial<Manure>): Promise<Manure> => {
     return await apiClient.post(`/api/sheep/${sheepId}/manure`, payload)
+  },
+  recordForCage: async (cageId: string | number, payload: Partial<Manure>): Promise<Manure> => {
+    return await apiClient.post(`/api/cages/${cageId}/manure`, payload)
+  },
+  getCageHistory: async (cageId: string | number): Promise<Manure[]> => {
+    return await apiClient.get(`/api/cages/${cageId}/manure`)
   },
 }
 
@@ -384,7 +393,7 @@ export const tasksApi = {
     return await apiClient.delete(`/api/tasks/${id}`)
   },
   markComplete: async (id: string | number): Promise<Task> => {
-    return await apiClient.patch(`/api/tasks/${id}/complete`, {})
+    return await apiClient.put(`/api/tasks/${id}/complete`, {})
   },
 }
 
@@ -453,7 +462,8 @@ export const routineSchedulesApi = {
 
 // ============ Submissions ============
 export interface ApiSubmission {
-  id: string
+  id_submission: string
+  submission_code: string
   type: string
   typeLabel: string
   operatorCode: string
@@ -488,6 +498,27 @@ export const submissionsApi = {
   },
 }
 
+export interface FermentationLog {
+  id_log: string
+  id_conversion: string
+  check_date: string
+  status: string
+  ph_level: number | null
+  temperature: number | null
+  physical_condition: string | null
+  notes: string | null
+  created_at: string
+}
+
+export const fermentationsApi = {
+  getLogs: async (conversionId: string): Promise<FermentationLog[]> => {
+    return await apiClient.get(`/api/fermentations/conversions/${conversionId}/logs`)
+  },
+  createLog: async (conversionId: string, data: Partial<FermentationLog>): Promise<FermentationLog> => {
+    return await apiClient.post(`/api/fermentations/conversions/${conversionId}/logs`, data)
+  },
+}
+
 export default {
   farms: farmsApi,
   sheep: sheepApi,
@@ -503,4 +534,5 @@ export default {
   notifications: notificationsApi,
   routineSchedules: routineSchedulesApi,
   submissions: submissionsApi,
+  fermentations: fermentationsApi,
 }

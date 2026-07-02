@@ -1,80 +1,25 @@
 package usecase
 
 import (
-	"context"
-	"time"
-
+	notificationsDomain "github.com/farmease/farmease-be/farmease/module/notifications/domain"
+	submissionsDomain "github.com/farmease/farmease-be/farmease/module/submissions/domain"
 	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
 type useCase struct {
-	repo domain.TaskRepository
+	repo             domain.TaskRepository
+	notificationRepo notificationsDomain.NotificationRepository
+	submissionRepo   submissionsDomain.SubmissionRepository
 }
 
-func NewUseCase(repo domain.TaskRepository) domain.UseCase {
-	return &useCase{repo: repo}
-}
-
-func (u *useCase) GetMyTasks(ctx context.Context, idAccount, roleName string, date *time.Time) ([]*domain.Task, error) {
-	return u.repo.FindTasksByAccount(ctx, idAccount, roleName, date)
-}
-
-func (u *useCase) CreateTask(ctx context.Context, t *domain.Task) error {
-	if t.Status == "" {
-		t.Status = "pending"
+func NewUseCase(
+	repo domain.TaskRepository,
+	notificationRepo notificationsDomain.NotificationRepository,
+	submissionRepo submissionsDomain.SubmissionRepository,
+) domain.UseCase {
+	return &useCase{
+		repo:             repo,
+		notificationRepo: notificationRepo,
+		submissionRepo:   submissionRepo,
 	}
-	return u.repo.StoreTask(ctx, t)
-}
-
-func (u *useCase) UpdateTask(ctx context.Context, id string, t *domain.Task) error {
-	existing, err := u.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	t.IDTask = id
-	if t.Title == "" {
-		t.Title = existing.Title
-	}
-	if t.Description == "" {
-		t.Description = existing.Description
-	}
-	if t.TaskDate.IsZero() {
-		t.TaskDate = existing.TaskDate
-	}
-	if t.EndTime == "" {
-		t.EndTime = existing.EndTime
-	}
-	if t.Priority == "" {
-		t.Priority = existing.Priority
-	}
-	if t.Status == "" {
-		t.Status = existing.Status
-	}
-	if t.IDAccount == "" {
-		t.IDAccount = existing.IDAccount
-	}
-	if t.Category == "" {
-		t.Category = existing.Category
-	}
-	if t.ScheduleID == nil {
-		t.ScheduleID = existing.ScheduleID
-	}
-	if t.IDCage == nil {
-		t.IDCage = existing.IDCage
-	}
-	if t.StartTime == "" {
-		t.StartTime = existing.StartTime
-	}
-	if t.Rincian == "" {
-		t.Rincian = existing.Rincian
-	}
-	return u.repo.UpdateTask(ctx, t)
-}
-
-func (u *useCase) CompleteTask(ctx context.Context, id string) error {
-	return u.repo.UpdateTaskStatus(ctx, id, "done")
-}
-
-func (u *useCase) DeleteTask(ctx context.Context, id string) error {
-	return u.repo.DeleteTask(ctx, id)
 }

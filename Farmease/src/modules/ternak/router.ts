@@ -19,6 +19,11 @@ export const ternakRoutes: RouteRecordRaw[] = [
             component: () => import('./views/DashboardView'),
           },
           {
+            path: 'daftar',
+            name: 'ternak-daftar',
+            component: () => import('./views/LivestockView'),
+          },
+          {
             path: 'pencatatan',
             name: 'ternak-pencatatan',
             component: () => import('./views/RecordView'),
@@ -27,6 +32,11 @@ export const ternakRoutes: RouteRecordRaw[] = [
             path: 'riwayat',
             name: 'ternak-riwayat',
             component: () => import('./views/HistoryView'),
+          },
+          {
+            path: 'gudang',
+            name: 'ternak-gudang',
+            component: () => import('./views/WarehouseView'),
           },
           {
             path: 'domba/:id',

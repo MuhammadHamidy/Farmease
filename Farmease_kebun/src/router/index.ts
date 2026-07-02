@@ -66,7 +66,14 @@ router.beforeEach((to, from, next) => {
   }
 
   // Restore session if not loaded but token exists in localStorage
-  if (!userSession.value && authApi.getToken()) {
+  const rawToken = authApi.getToken();
+  const hasToken = rawToken && rawToken !== 'null' && rawToken !== 'undefined' && rawToken.trim() !== '';
+
+  if (!hasToken) {
+    userSession.value = null;
+  }
+
+  if (hasToken && !userSession.value) {
     const user = authApi.getCurrentUser();
     if (user) {
       userSession.value = {
@@ -80,7 +87,8 @@ router.beforeEach((to, from, next) => {
 
   // Redirect to SSO if no token is present in localStorage/session
   const publicPaths = ['/login', '/sso'];
-  if (!authApi.getToken() && !publicPaths.includes(to.path)) {
+  if (!hasToken && !publicPaths.includes(to.path)) {
+    console.warn('[Auth Guard] No valid token found, redirecting to SSO...');
     window.location.href = 'http://localhost:3000/?service=kebun';
     return;
   }

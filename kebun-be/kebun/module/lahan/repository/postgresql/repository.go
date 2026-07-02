@@ -3,7 +3,6 @@ package postgresql
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/farmease/farmease-be/farmease/module/lahan/domain"
 	"github.com/jackc/pgx/v5"
@@ -19,7 +18,7 @@ func NewLahanRepository(db *pgxpool.Pool) domain.LahanRepository {
 }
 
 func (r *lahanRepository) FindAll(ctx context.Context) ([]domain.Lahan, error) {
-	rows, err := r.db.Query(ctx, "SELECT id_lahan, kode_lahan, nama_lahan, status_lahan, varietas, jenis_tanaman, luas_lahan, kapasitas_maksimal, tanggal_tanam, fase_tanam FROM gardening.lahan ORDER BY id_lahan ASC")
+	rows, err := r.db.Query(ctx, "SELECT id_lahan, kode_lahan, nama_lahan, status_lahan, jenis_tanaman, luas_lahan FROM gardening.lahan ORDER BY id_lahan ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -28,11 +27,13 @@ func (r *lahanRepository) FindAll(ctx context.Context) ([]domain.Lahan, error) {
 	var lands []domain.Lahan
 	for rows.Next() {
 		var l domain.Lahan
-		var tTgl time.Time
-		if err := rows.Scan(&l.IDLahan, &l.KodeLahan, &l.NamaLahan, &l.StatusLahan, &l.Varietas, &l.JenisTanaman, &l.LuasLahan, &l.KapasitasMaksimal, &tTgl, &l.FaseTanam); err != nil {
+		if err := rows.Scan(&l.IDLahan, &l.KodeLahan, &l.NamaLahan, &l.StatusLahan, &l.JenisTanaman, &l.LuasLahan); err != nil {
 			return nil, err
 		}
-		l.TanggalTanam = tTgl.Format("2006-01-02")
+		l.Varietas = ""
+		l.KapasitasMaksimal = 50
+		l.TanggalTanam = ""
+		l.FaseTanam = ""
 		lands = append(lands, l)
 	}
 	return lands, nil
@@ -40,36 +41,30 @@ func (r *lahanRepository) FindAll(ctx context.Context) ([]domain.Lahan, error) {
 
 func (r *lahanRepository) FindByID(ctx context.Context, id string) (*domain.Lahan, error) {
 	var l domain.Lahan
-	var tTgl time.Time
-	err := r.db.QueryRow(ctx, "SELECT id_lahan, kode_lahan, nama_lahan, status_lahan, varietas, jenis_tanaman, luas_lahan, kapasitas_maksimal, tanggal_tanam, fase_tanam FROM gardening.lahan WHERE id_lahan = $1", id).
-		Scan(&l.IDLahan, &l.KodeLahan, &l.NamaLahan, &l.StatusLahan, &l.Varietas, &l.JenisTanaman, &l.LuasLahan, &l.KapasitasMaksimal, &tTgl, &l.FaseTanam)
+	err := r.db.QueryRow(ctx, "SELECT id_lahan, kode_lahan, nama_lahan, status_lahan, jenis_tanaman, luas_lahan FROM gardening.lahan WHERE id_lahan = $1", id).
+		Scan(&l.IDLahan, &l.KodeLahan, &l.NamaLahan, &l.StatusLahan, &l.JenisTanaman, &l.LuasLahan)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	l.TanggalTanam = tTgl.Format("2006-01-02")
+	l.Varietas = ""
+	l.KapasitasMaksimal = 50
+	l.TanggalTanam = ""
+	l.FaseTanam = ""
 	return &l, nil
 }
 
 func (r *lahanRepository) Store(ctx context.Context, l *domain.Lahan) error {
-	tTgl, err := time.Parse("2006-01-02", l.TanggalTanam)
-	if err != nil {
-		tTgl = time.Now()
-	}
-	err = r.db.QueryRow(ctx, "INSERT INTO gardening.lahan (kode_lahan, nama_lahan, status_lahan, varietas, jenis_tanaman, luas_lahan, kapasitas_maksimal, tanggal_tanam, fase_tanam) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id_lahan",
-		l.KodeLahan, l.NamaLahan, l.StatusLahan, l.Varietas, l.JenisTanaman, l.LuasLahan, l.KapasitasMaksimal, tTgl, l.FaseTanam).Scan(&l.IDLahan)
+	err := r.db.QueryRow(ctx, "INSERT INTO gardening.lahan (kode_lahan, nama_lahan, status_lahan, jenis_tanaman, luas_lahan) VALUES ($1, $2, $3, $4, $5) RETURNING id_lahan",
+		l.KodeLahan, l.NamaLahan, l.StatusLahan, l.JenisTanaman, l.LuasLahan).Scan(&l.IDLahan)
 	return err
 }
 
 func (r *lahanRepository) Update(ctx context.Context, l *domain.Lahan) error {
-	tTgl, err := time.Parse("2006-01-02", l.TanggalTanam)
-	if err != nil {
-		tTgl = time.Now()
-	}
-	_, err = r.db.Exec(ctx, "UPDATE gardening.lahan SET kode_lahan = $1, nama_lahan = $2, status_lahan = $3, varietas = $4, jenis_tanaman = $5, luas_lahan = $6, kapasitas_maksimal = $7, tanggal_tanam = $8, fase_tanam = $9 WHERE id_lahan = $10",
-		l.KodeLahan, l.NamaLahan, l.StatusLahan, l.Varietas, l.JenisTanaman, l.LuasLahan, l.KapasitasMaksimal, tTgl, l.FaseTanam, l.IDLahan)
+	_, err := r.db.Exec(ctx, "UPDATE gardening.lahan SET kode_lahan = $1, nama_lahan = $2, status_lahan = $3, jenis_tanaman = $4, luas_lahan = $5, updated_at = CURRENT_TIMESTAMP WHERE id_lahan = $6",
+		l.KodeLahan, l.NamaLahan, l.StatusLahan, l.JenisTanaman, l.LuasLahan, l.IDLahan)
 	return err
 }
 
@@ -80,16 +75,16 @@ func (r *lahanRepository) Delete(ctx context.Context, id string) error {
 
 func (r *lahanRepository) FindByKodeLahan(ctx context.Context, kode string) (*domain.Lahan, error) {
 	var l domain.Lahan
-	var tTgl time.Time
-	err := r.db.QueryRow(ctx, "SELECT id_lahan, kode_lahan, nama_lahan, status_lahan, varietas, jenis_tanaman, luas_lahan, kapasitas_maksimal, tanggal_tanam, fase_tanam FROM gardening.lahan WHERE kode_lahan = $1", kode).
-		Scan(&l.IDLahan, &l.KodeLahan, &l.NamaLahan, &l.StatusLahan, &l.Varietas, &l.JenisTanaman, &l.LuasLahan, &l.KapasitasMaksimal, &tTgl, &l.FaseTanam)
+	err := r.db.QueryRow(ctx, "SELECT id_lahan, kode_lahan, nama_lahan, status_lahan, jenis_tanaman, luas_lahan FROM gardening.lahan WHERE kode_lahan = $1", kode).
+		Scan(&l.IDLahan, &l.KodeLahan, &l.NamaLahan, &l.StatusLahan, &l.JenisTanaman, &l.LuasLahan)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	l.TanggalTanam = tTgl.Format("2006-01-02")
+	l.Varietas = ""
+	l.KapasitasMaksimal = 50
+	l.TanggalTanam = ""
 	return &l, nil
 }
-
