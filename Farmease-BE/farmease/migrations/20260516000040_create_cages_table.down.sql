@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS master.cages CASCADE;
+DROP TABLE IF EXISTS livestock.cages CASCADE;

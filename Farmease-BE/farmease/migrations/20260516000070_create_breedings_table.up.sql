@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS breeding;
 
 DO $$ BEGIN
-    CREATE TYPE breeding.mating_method_enum AS ENUM ('alami', 'ib');
+    CREATE TYPE breeding.mating_method_enum AS ENUM ('alami', 'inseminasi buatan');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -44,26 +44,4 @@ CREATE TABLE IF NOT EXISTS breeding.matings (
     inseminator VARCHAR(100) NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS breeding.pregnancies (
-    id_pregnancy UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    id_mating UUID NOT NULL REFERENCES breeding.matings(id_mating) ON DELETE CASCADE,
-    pregnancy_date DATE NOT NULL,
-    pregnancy_status breeding.pregnancy_status_enum NOT NULL DEFAULT 'dikandung',
-    expected_birth_date DATE,
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS breeding.births (
-    id_birth UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    id_pregnancy UUID NOT NULL REFERENCES breeding.pregnancies(id_pregnancy) ON DELETE CASCADE,
-    birth_date DATE NOT NULL,
-    number_of_offspring INT NOT NULL,
-    offspring_gender breeding.offspring_gender_enum,
-    offspring_condition breeding.offspring_condition_enum,
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

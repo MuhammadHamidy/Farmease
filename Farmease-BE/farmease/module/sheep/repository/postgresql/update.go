@@ -9,7 +9,7 @@ import (
 func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 	var resolvedCageID string
 	if s.IDCage != "" {
-		err := r.db.QueryRow(ctx, `SELECT id_cage FROM master.cages WHERE cage_code = $1 OR id_cage::text = $1 LIMIT 1`, s.IDCage).Scan(&resolvedCageID)
+		err := r.db.QueryRow(ctx, `SELECT id_cage FROM livestock.cages WHERE cage_code = $1 OR id_cage::text = $1 LIMIT 1`, s.IDCage).Scan(&resolvedCageID)
 		if err == nil && resolvedCageID != "" {
 			s.IDCage = resolvedCageID
 		}
@@ -17,7 +17,7 @@ func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 
 	var resolvedTypeID string
 	if s.IDType != "" {
-		err := r.db.QueryRow(ctx, `SELECT id_type FROM master.sheep_types WHERE type_name = $1 OR id_type::text = $1 LIMIT 1`, s.IDType).Scan(&resolvedTypeID)
+		err := r.db.QueryRow(ctx, `SELECT id_type FROM livestock.sheep_types WHERE type_name = $1 OR id_type::text = $1 LIMIT 1`, s.IDType).Scan(&resolvedTypeID)
 		if err == nil && resolvedTypeID != "" {
 			s.IDType = resolvedTypeID
 		}
@@ -48,7 +48,7 @@ func (r *Repository) UpdateStatus(ctx context.Context, id string, status string,
 
 func (r *Repository) UpdateType(ctx context.Context, id string, t *domain.SheepType) error {
 	query := `
-		UPDATE master.sheep_types
+		UPDATE livestock.sheep_types
 		SET type_name = $1, type_description = $2, updated_at = CURRENT_TIMESTAMP
 		WHERE id_type = $3`
 	_, err := r.db.Exec(ctx, query, t.TypeName, t.TypeDescription, id)

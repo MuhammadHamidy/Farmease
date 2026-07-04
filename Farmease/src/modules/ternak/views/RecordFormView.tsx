@@ -470,7 +470,7 @@ export default defineComponent({
             if (!formItem.idMating) return showError('Data Perkawinan wajib dipilih.');
             if (!formItem.metodePemeriksaan) return showError('Metode Pemeriksaan wajib dipilih.');
             if (!formItem.hasilPemeriksaan) return showError('Hasil Pemeriksaan wajib dipilih.');
-          } else if (formItem.name === 'Cek Birahi' || formItem.name === 'Pencatatan Birahi') {
+          } else if (formItem.name === 'Cek Birahi' || formItem.name === 'Pencatatan Birahi' || formItem.name === 'Pengecekan Birahi') {
             if (!formItem.hasilPemeriksaan) return showError('Hasil Cek Birahi wajib dipilih.');
           } else {
             const isExternalIB = formItem.metoda === 'ib' && formItem.sumberPejantan === 'eksternal';
@@ -542,7 +542,7 @@ export default defineComponent({
         };
 
         for (const formEntry of forms.value) {
-          if (formEntry.name === 'Kontrol Kebuntingan' || formEntry.name === 'Cek Birahi' || formEntry.name === 'Pencatatan Birahi') continue;
+          if (formEntry.name === 'Kontrol Kebuntingan' || formEntry.name === 'Cek Birahi' || formEntry.name === 'Pencatatan Birahi' || formEntry.name === 'Pengecekan Birahi') continue;
           const id1Str = String(formEntry.targetId || '').trim().toUpperCase();
           const id2Str = String(formEntry.idPejantan || '').trim().toUpperCase();
           
@@ -807,7 +807,7 @@ export default defineComponent({
         const dataObj: any = (sub.payload as any)?.data || sub.payload;
         const items = dataObj?.items || [];
         for (const item of items) {
-          const isEstrusCheck = item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi';
+          const isEstrusCheck = item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi';
           if (isEstrusCheck && (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))) {
             // If there's any birahi submission for this sheep, check the result
             if (item.hasilPemeriksaan === 'birahi') return true;
@@ -1072,19 +1072,19 @@ export default defineComponent({
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.pemanfaatan}</span>
                         </div>
                       )}
-                      {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && (
+                      {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && item.name !== 'Pengecekan Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>ID Pejantan</span>
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.idPejantan}</span>
                         </div>
                       )}
-                      {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && (
+                      {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && item.name !== 'Pengecekan Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Metode Kawin</span>
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">: {item.metoda === 'ib' ? 'Inseminasi Buatan (IB)' : item.metoda}</span>
                         </div>
                       )}
-                      {(item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi') && (
+                      {(item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') && (
                         <>
                           {item.hasilPemeriksaan && (
                             <div style={{ display: 'flex', fontSize: '0.82rem' }}>
@@ -1434,7 +1434,7 @@ export default defineComponent({
                                               {female ? female.name : `Domba #${m.id_sheep_female}`}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                              {female ? female.code : '—'} • {m.mating_method === 'ib' ? 'IB' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
+                                              {female ? female.code : '—'} • {(m.mating_method === 'ib' || m.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.6rem' }} className="text-primary d-block mt-1">
                                               Kawin: {dateStr} ({diffDays} hari lalu)

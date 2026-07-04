@@ -1,4 +1,4 @@
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent, type PropType, computed } from 'vue'
 import PerkebunanFormSelect from '../shared/PerkebunanFormSelect'
 import TreeCard from './TreeCard'
 
@@ -15,11 +15,13 @@ export default defineComponent({
     selectedCodes: { type: Array as PropType<string[]>, required: true },
     varietasOptions: { type: Array as PropType<string[]>, default: () => ['Semua Varietas'] },
     selectedVarietas: { type: String, default: 'Semua Varietas' },
-    fasePohon: { type: String, default: 'Fase Pohon' },
+    fasePohon: { type: String, default: 'Vegetatif' },
+    statusProduktivitas: { type: String, default: 'usia produktif (> 4 tahun)' },
     treeIcon: { type: String, default: '/icon/alpukat.png' },
     maxSelection: { type: Number, default: 0 },
+    kindTitle: { type: String, default: '' },
   },
-  emits: ['update:selectedCodes', 'update:selectedVarietas', 'update:fasePohon'],
+  emits: ['update:selectedCodes', 'update:selectedVarietas', 'update:fasePohon', 'update:statusProduktivitas'],
   setup(props, { emit }) {
     const toggleTree = (code: string) => {
       if (props.maxSelection === 1) {
@@ -31,6 +33,44 @@ export default defineComponent({
         : [...props.selectedCodes, code]
       emit('update:selectedCodes', next)
     }
+
+    const showDropdowns = computed(() => {
+      const k = (props.kindTitle || '').toLowerCase()
+      return !k.includes('stok') && !k.includes('pengolahan')
+    })
+
+    const statusOptions = computed(() => {
+      const k = (props.kindTitle || '').toLowerCase()
+      if (k.includes('panen') || k.includes('pembuahan')) {
+        return ['usia produktif (> 4 tahun)']
+      }
+      if (k.includes('penanaman')) {
+        return ['usia belum produktif (0 - 3 tahun)']
+      }
+      return ['usia belum produktif (0 - 3 tahun)', 'usia produktif (> 4 tahun)']
+    })
+
+    const statusDisabled = computed(() => {
+      const k = (props.kindTitle || '').toLowerCase()
+      return k.includes('panen') || k.includes('pembuahan') || k.includes('penanaman')
+    })
+
+    const showFase = computed(() => {
+      return props.statusProduktivitas === 'usia produktif (> 4 tahun)'
+    })
+
+    const faseOptions = computed(() => {
+      const k = (props.kindTitle || '').toLowerCase()
+      if (k.includes('panen') || k.includes('pembuahan')) {
+        return ['Generatif']
+      }
+      return ['Vegetatif', 'Generatif']
+    })
+
+    const faseDisabled = computed(() => {
+      const k = (props.kindTitle || '').toLowerCase()
+      return k.includes('panen') || k.includes('pembuahan')
+    })
 
     return () => (
       <div style="display:flex; flex-direction:column; gap:0.85rem;">
@@ -44,15 +84,40 @@ export default defineComponent({
           />
         </div>
 
-        <div class="form-group">
-          <label class="pencatatan-form-label">Fase Pohon</label>
-          <PerkebunanFormSelect
-            modelValue={props.fasePohon}
-            options={['Fase Pohon', 'Belum Produktif (0-3 tahun)', 'Produktif (>4 tahun)', 'Vegetatif', 'Generatif']}
-            placeholder="Fase Pohon"
-            onUpdate:modelValue={(val: string) => emit('update:fasePohon', val)}
-          />
-        </div>
+        {showDropdowns.value && (
+          <>
+            <div class="form-group">
+              <label class="pencatatan-form-label">Status Usia Pohon</label>
+              <PerkebunanFormSelect
+                modelValue={props.statusProduktivitas}
+                options={statusOptions.value}
+                placeholder="Pilih Status"
+                disabled={statusDisabled.value}
+                onUpdate:modelValue={(val: string) => {
+                  emit('update:statusProduktivitas', val)
+                  if (val === 'usia belum produktif (0 - 3 tahun)') {
+                    emit('update:fasePohon', 'Belum Produktif')
+                  } else {
+                    emit('update:fasePohon', 'Vegetatif')
+                  }
+                }}
+              />
+            </div>
+
+            {showFase.value && (
+              <div class="form-group">
+                <label class="pencatatan-form-label">Fase Pohon</label>
+                <PerkebunanFormSelect
+                  modelValue={props.fasePohon}
+                  options={faseOptions.value}
+                  placeholder="Pilih Fase"
+                  disabled={faseDisabled.value}
+                  onUpdate:modelValue={(val: string) => emit('update:fasePohon', val)}
+                />
+              </div>
+            )}
+          </>
+        )}
 
         <div class="form-group">
           <label class="pencatatan-form-label">

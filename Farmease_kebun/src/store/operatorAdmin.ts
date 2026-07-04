@@ -757,7 +757,10 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
     aktivitasApi,
     feedsApi,
     pohonApi,
-    submissionsApi
+    submissionsApi,
+    pemupukanApi,
+    stokApi,
+    fermentasiApi
   } = await import('@/shared/api');
   const items = (input.payload as any)?.data?.items ?? [];
 
@@ -913,22 +916,15 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
           calculatedUnit = 'g';
         }
         promises.push(
-          perawatanApi.create({
-            Aktivitas_id_aktivitas: '',
-            tanggal_aktivitas: new Date().toISOString().split('T')[0],
-            nama_jenis_aktivitas: 'Perawatan',
-            nama_rincian_aktivitas: item.selectedRincian || 'Pupuk',
-            jenis_bahan: 'pupuk',
-            fase_pohon: item.fasePohon || 'Generatif',
+          pemupukanApi.create({
+            nama_pupuk: item.jenisPupukDetail || item.jenisPupuk || 'Pupuk',
             dosis: isNaN(dosisVal) ? 0 : dosisVal,
             satuan: calculatedUnit,
-            bagian_pohon: item.bagianPohon || 'Akar',
-            teknik_perawatan: item.teknikPemupukan || 'Tebar',
-            nama_obat: item.jenisPupukDetail || item.jenisPupuk || 'Pupuk',
             deskripsi: item.deskripsiPemupukan || 'Pemupukan rutin',
-            detail_pohon: item.kodePohon || 'LA001',
             Lahan_id_lahan: landId,
-          } as any)
+            manure_id: item.manureId || undefined,
+            id_stok_pupuk: item.idStokPupuk || undefined,
+          })
         );
       } else if (typeLower === 'pembersihan') {
         const weightVal = parseFloat(item.beratGulma || item.beratBahanPembumbun || item.beratLimbah || item.qty || item.amount || 0);
@@ -1057,148 +1053,94 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
         const dosisVal = parseFloat(item.volumeObat || item.qty || item.amount || 0);
         let calculatedUnit = item.satuanVolumeObat || item.unit || 'ml';
         promises.push(
-          perawatanApi.create({
-            Aktivitas_id_aktivitas: '',
-            tanggal_aktivitas: new Date().toISOString().split('T')[0],
-            nama_jenis_aktivitas: 'Stok Obat',
-            nama_rincian_aktivitas: item.selectedRincian || 'Tambah Obat',
-            jenis_bahan: 'obat',
-            fase_pohon: 'Vegetatif',
-            dosis: isNaN(dosisVal) ? 0 : dosisVal,
-            satuan: calculatedUnit,
-            bagian_pohon: 'Daun',
-            teknik_perawatan: item.teknikPemberianObat || 'Semprot',
+          stokApi.createObat({
             nama_obat: item.namaObat || 'Obat',
-            deskripsi: item.catatanStok || '',
-            detail_pohon: item.volumeLarutan || '',
-            Lahan_id_lahan: landId,
-          } as any)
+            stok_tersedia: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: calculatedUnit,
+          })
         );
       } else if (typeLower === 'stok pupuk' || typeLower === 'stok_pupuk') {
         const dosisVal = parseFloat(item.volumeObat || item.qty || item.amount || 0);
         let calculatedUnit = item.satuanVolumeObat || item.unit || 'kg';
         promises.push(
-          perawatanApi.create({
-            Aktivitas_id_aktivitas: '',
-            tanggal_aktivitas: new Date().toISOString().split('T')[0],
-            nama_jenis_aktivitas: 'Stok Pupuk',
-            nama_rincian_aktivitas: item.selectedRincian || 'Tambah Pupuk',
-            jenis_bahan: 'pupuk',
-            fase_pohon: 'Generatif',
-            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+          stokApi.createPupuk({
+            nama_pupuk: item.namaObat || item.namaPupuk || 'Pupuk',
+            kategori: item.kategoriPupuk || 'Organik',
+            stok_tersedia: isNaN(dosisVal) ? 0 : dosisVal,
             satuan: calculatedUnit,
-            bagian_pohon: 'Akar',
-            teknik_perawatan: item.teknikPemberianObat || 'Tebar',
-            nama_obat: item.namaObat || 'Pupuk',
-            deskripsi: item.catatanStok || '',
-            detail_pohon: item.volumeLarutan || '',
-            Lahan_id_lahan: landId,
-          } as any)
+          })
         );
       } else if (typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk') {
-        const dosisVal = parseFloat(item.qty || 0);
-        // 1. Create a Perawatan activity record for the composting activity itself
-        promises.push(
-          perawatanApi.create({
-            Aktivitas_id_aktivitas: '',
-            tanggal_aktivitas: new Date().toISOString().split('T')[0],
-            nama_jenis_aktivitas: 'Pengolahan Pupuk',
-            nama_rincian_aktivitas: item.selectedRincian || 'Pupuk Kandang',
-            jenis_bahan: 'pupuk',
-            fase_pohon: 'Generatif',
-            dosis: isNaN(dosisVal) ? 0 : dosisVal,
-            satuan: item.unit || 'kg',
-            bagian_pohon: 'Umum',
-            teknik_perawatan: 'Fermentasi',
-            nama_obat: item.dekomposer || '',
-            deskripsi: `Molase: ${item.molase || '-'}. Air: ${item.jumlahAir || 0} L. Bahan tambahan: ${item.bahanTambahan || '-'}. Bahan mentah: ${item.bahanMentahId || '-'}`,
-            detail_pohon: '',
-            Lahan_id_lahan: landId,
-          } as any)
-        );
-        // 2. Create a Stok Pupuk record to increase Perkebunan's fertilizer stock
+        const dosisVal = parseFloat(item.qty || item.amount || item.hasilJadiQty || 0);
+        // 1. Create a Fermentasi parent-child record
         if (item.selectedRincian === 'Pupuk Kandang' || item.selectedRincian === 'Pupuk Kompos') {
-          let obatName = '';
-          if (item.selectedRincian === 'Pupuk Kandang') {
-            obatName = 'Pupuk Kandang (Fermentasi)';
-          } else if (item.selectedRincian === 'Pupuk Kompos') {
-            obatName = 'Pupuk Kompos (Fermentasi)';
-          }
-
+          const targetHasil = item.selectedRincian === 'Pupuk Kandang' ? 'Pupuk Kandang (Fermentasi)' : 'Pupuk Kompos (Fermentasi)';
           promises.push(
-            perawatanApi.create({
-              Aktivitas_id_aktivitas: '',
-              tanggal_aktivitas: new Date().toISOString().split('T')[0],
-              nama_jenis_aktivitas: 'Stok Pupuk',
-              nama_rincian_aktivitas: 'Tambah Pupuk',
-              jenis_bahan: 'pupuk',
-              fase_pohon: 'Generatif',
-              dosis: isNaN(dosisVal) ? 0 : dosisVal,
-              satuan: item.unit || 'kg',
-              bagian_pohon: 'Akar',
-              teknik_perawatan: 'Tebar',
-              nama_obat: obatName,
-              deskripsi: `Hasil pengolahan/fermentasi pupuk dari kotoran mentah/hasil pemangkasan.`,
-              detail_pohon: '',
-              Lahan_id_lahan: landId,
-            } as any)
-          );
-        } else if (item.selectedRincian === 'Cek Fermentasi' && (item.siapGuna === true || item.siapGuna === 'siap')) {
-          // If marked as ready to use, look up original Fermentasi Pupuk submission and add to stock
-          promises.push(
-            (async () => {
-              try {
-                const origSub = await submissionsApi.getById(item.batchFermentasiId);
-                const origItem = origSub?.payload?.data?.items?.[0] || {};
-                const origQty = parseFloat(origItem.qty || origItem.jumlahBeratPupuk || 0);
-                const origUnit = origItem.unit || 'kg';
-                const origHasil = origItem.hasilJadi || 'Pupuk Organik Padat Kandang';
-                
-                let baseName = origHasil;
-                if (origHasil === 'Pupuk Organik Padat Kandang') {
-                  baseName = 'Pupuk Kandang (Fermentasi)';
-                } else if (origHasil === 'Pupuk Organik Kompos') {
-                  baseName = 'Pupuk Kompos (Fermentasi)';
-                } else if (origHasil === 'Pupuk Organik Cair') {
-                  baseName = 'Pupuk Organik Cair (Fermentasi)';
-                }
-
-                let finalName = baseName;
-                if (origItem.bahanTambahan && origItem.bahanTambahan.toLowerCase() !== 'tidak ada' && origItem.bahanTambahan.trim() !== '') {
-                  finalName = `${baseName} (+ ${origItem.bahanTambahan})`;
-                }
-
-                await perawatanApi.create({
-                  Aktivitas_id_aktivitas: '',
-                  tanggal_aktivitas: new Date().toISOString().split('T')[0],
-                  nama_jenis_aktivitas: 'Stok Pupuk',
-                  nama_rincian_aktivitas: 'Tambah Pupuk',
-                  jenis_bahan: 'pupuk',
-                  fase_pohon: 'Generatif',
-                  dosis: isNaN(origQty) ? 0 : origQty,
-                  satuan: origUnit,
-                  bagian_pohon: 'Akar',
-                  teknik_perawatan: 'Tebar',
-                  nama_obat: finalName,
-                  deskripsi: `Hasil fermentasi batch ${item.batchFermentasiId} dinyatakan siap digunakan.`,
-                  detail_pohon: '',
-                  Lahan_id_lahan: landId,
-                } as any);
-              } catch (err) {
-                console.error('Failed to update fertilizer stock from Cek Fermentasi:', err);
+            fermentasiApi.create({
+              status: 'proses',
+              notes: `Dekomposer: ${item.dekomposer || '-'}. Molase: ${item.molase || '-'}. Air: ${item.jumlahAir || 0} L. Bahan tambahan: ${item.bahanTambahan || '-'}`,
+              pupuk_details: {
+                target_pupuk_name: targetHasil,
+                target_jumlah: dosisVal,
+                satuan: item.unit || 'kg',
+                id_stok_bahan: item.bahanMentahId || undefined,
               }
-            })()
+            })
           );
-        } else if (item.selectedRincian === 'Cek Fermentasi' && item.siapGuna === 'gagal') {
-          // If marked as failed, delete the original Fermentasi Pupuk submission so it no longer appears in dropdowns
+        } else if (item.selectedRincian === 'Cek Fermentasi') {
+          const isReady = item.siapGuna === true || item.siapGuna === 'siap';
+          const isFailed = item.siapGuna === 'gagal';
+          const statusStr = isReady ? 'siap' : isFailed ? 'gagal' : 'proses';
+
           promises.push(
             (async () => {
               try {
-                if (item.batchFermentasiId) {
-                  await submissionsApi.delete(item.batchFermentasiId);
+                if (!item.batchFermentasiId) return;
+
+                // 1. Update parent status in database
+                await fermentasiApi.updateStatus(item.batchFermentasiId, statusStr, item.catatanCek || '');
+
+                // 2. Add verification check log
+                await fermentasiApi.addLog({
+                  id_fermentasi: item.batchFermentasiId,
+                  suhu: parseFloat(item.suhu) || undefined,
+                  kelembaban: parseFloat(item.kelembaban) || undefined,
+                  kondisi_fisik: item.kondisiFisik || 'Normal',
+                  notes: item.catatanCek || '',
+                  status: statusStr,
+                });
+
+                // 3. If ready, load original batch details to update/increase stock pupuk!
+                if (isReady) {
+                  const origSub = await submissionsApi.getById(item.batchFermentasiId);
+                  const origItem = origSub?.payload?.data?.items?.[0] || {};
+                  const origQty = parseFloat(origItem.qty || origItem.jumlahBeratPupuk || 0);
+                  const origUnit = origItem.unit || 'kg';
+                  const origHasil = origItem.hasilJadi || 'Pupuk Organik Padat Kandang';
+                  
+                  let baseName = origHasil;
+                  if (origHasil === 'Pupuk Organik Padat Kandang') {
+                    baseName = 'Pupuk Kandang (Fermentasi)';
+                  } else if (origHasil === 'Pupuk Organik Kompos') {
+                    baseName = 'Pupuk Kompos (Fermentasi)';
+                  } else if (origHasil === 'Pupuk Organik Cair') {
+                    baseName = 'Pupuk Organik Cair (Fermentasi)';
+                  }
+
+                  let finalName = baseName;
+                  if (origItem.bahanTambahan && origItem.bahanTambahan.toLowerCase() !== 'tidak ada' && origItem.bahanTambahan.trim() !== '') {
+                    finalName = `${baseName} (+ ${origItem.bahanTambahan})`;
+                  }
+
+                  await stokApi.createPupuk({
+                    nama_pupuk: finalName,
+                    kategori: 'Organik',
+                    stok_tersedia: isNaN(origQty) ? 0 : origQty,
+                    satuan: origUnit,
+                  });
                 }
               } catch (err) {
-                console.error('Failed to delete failed fermentation batch:', err);
+                console.error('Failed to process fermentation check submission:', err);
               }
             })()
           );

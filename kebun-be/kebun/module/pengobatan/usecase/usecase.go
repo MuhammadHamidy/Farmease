@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/farmease/farmease-be/farmease/config"
-	"github.com/farmease/farmease-be/farmease/module/pengobatan/domain"
+	"github.com/farmease/kebun-be/kebun/config"
+	"github.com/farmease/kebun-be/kebun/module/pengobatan/domain"
 )
 
 type pengobatanUsecase struct {
@@ -49,3 +49,4 @@ func (u *pengobatanUsecase) GetRekomendasiObat(ctx context.Context, varietas, fa
 	}
 	return fmt.Sprintf("Varietas <strong>%s</strong> dengan fase <strong>%s</strong> menggunakan <strong>%s</strong> dengan dosis sebanyak <strong>2-3 mL/Liter air</strong>.", varietas, fase, obat), nil
 }
+

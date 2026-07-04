@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/pohon/domain"
-	"github.com/farmease/farmease-be/libraries/apiresponses"
+	"github.com/farmease/kebun-be/kebun/module/pohon/domain"
+	"github.com/farmease/kebun-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -27,6 +27,7 @@ func NewPohonHandler(usecase domain.PohonUsecase, db *pgxpool.Pool) *PohonHandle
 func (h *PohonHandler) RegisterRoutes(app *fiber.App) {
 	api := app.Group("/api/v1/pohon")
 	api.Get("/sync", h.SyncDatabase) // MUST be before /:id
+	api.Get("/sync-error", h.SyncError)
 	api.Get("/", h.FindAll)
 	api.Get("/:id", h.FindByID)
 	api.Post("/", h.Create)
@@ -209,3 +210,54 @@ func (h *PohonHandler) Delete(c *fiber.Ctx) error {
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success delete tree", nil)
 }
+
+func (h *PohonHandler) SyncError(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// 1. Drop and recreate gardening schema
+	_, err := h.db.Exec(ctx, "DROP SCHEMA IF EXISTS gardening CASCADE; CREATE SCHEMA gardening;")
+	if err != nil {
+		return c.Status(200).JSON(fiber.Map{"error": "drop_schema: " + err.Error()})
+	}
+
+	// 2. Read migrations
+	dir := "migrations"
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return c.Status(200).JSON(fiber.Map{"error": "read_migrations: " + err.Error()})
+	}
+	var upFiles []string
+	for _, f := range files {
+		if !f.IsDir() && strings.HasSuffix(f.Name(), ".up.sql") {
+			upFiles = append(upFiles, f.Name())
+		}
+	}
+	sort.Strings(upFiles)
+
+	// 3. Run migrations
+	for _, fname := range upFiles {
+		fpath := filepath.Join(dir, fname)
+		content, err := os.ReadFile(fpath)
+		if err != nil {
+			return c.Status(200).JSON(fiber.Map{"error": "read_file_" + fname + ": " + err.Error()})
+		}
+		_, err = h.db.Exec(ctx, string(content))
+		if err != nil {
+			return c.Status(200).JSON(fiber.Map{"error": "migration_" + fname + ": " + err.Error()})
+		}
+	}
+
+	// 4. Seed database
+	seedContent, err := os.ReadFile("seeders/gardening_seeds.sql")
+	if err != nil {
+		return c.Status(200).JSON(fiber.Map{"error": "read_seeder: " + err.Error()})
+	}
+	_, err = h.db.Exec(ctx, string(seedContent))
+	if err != nil {
+		return c.Status(200).JSON(fiber.Map{"error": "run_seeder: " + err.Error()})
+	}
+
+	return c.Status(200).JSON(fiber.Map{"status": "success"})
+}
+

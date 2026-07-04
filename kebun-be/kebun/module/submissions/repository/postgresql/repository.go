@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
+	"github.com/farmease/kebun-be/kebun/module/submissions/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -189,3 +189,4 @@ func (r *Repository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, query, id)
 	return err
 }
+

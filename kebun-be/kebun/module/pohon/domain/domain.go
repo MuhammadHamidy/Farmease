@@ -23,6 +23,7 @@ type Pohon struct {
 	Varietas     string `json:"varietas" db:"varietas"`
 	FasePohon    string `json:"fase_pohon" db:"fase_pohon"`
 	LahanIDLahan string `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
+	StatusPohon  string `json:"status_pohon" db:"status_pohon"`
 }
 
 type PohonDetail struct {

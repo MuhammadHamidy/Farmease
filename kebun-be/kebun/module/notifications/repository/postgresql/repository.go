@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
+	"github.com/farmease/kebun-be/kebun/module/notifications/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -166,3 +166,4 @@ func (r *Repository) GenerateDynamicReminders(ctx context.Context, idAccount str
 
 	return nil
 }
+

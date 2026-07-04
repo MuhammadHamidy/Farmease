@@ -17,7 +17,7 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, er
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight_date,
 		       s.sheep_name as father_name, m.sheep_name as mother_name
 		FROM livestock.sheep d
-		LEFT JOIN master.sheep_types t ON d.id_type = t.id_type
+		LEFT JOIN livestock.sheep_types t ON d.id_type = t.id_type
 		LEFT JOIN livestock.sheep s ON d.id_father = s.id_sheep
 		LEFT JOIN livestock.sheep m ON d.id_mother = m.id_sheep
 		WHERE d.id_sheep = $1`

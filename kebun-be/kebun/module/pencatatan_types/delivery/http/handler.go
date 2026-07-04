@@ -1,8 +1,8 @@
 package http
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/pencatatan_types/domain"
-	"github.com/farmease/farmease-be/libraries/apiresponses"
+	"github.com/farmease/kebun-be/kebun/module/pencatatan_types/domain"
+	"github.com/farmease/kebun-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -68,3 +68,4 @@ func (h *Handler) CreateRincian(c *fiber.Ctx) error {
 	}
 	return apiresponses.Success(c, fiber.StatusCreated, "Success create rincian pencatatan", created)
 }
+

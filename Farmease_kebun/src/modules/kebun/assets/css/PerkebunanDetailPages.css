@@ -492,3 +492,9 @@
 @keyframes pencatatanSpin {
   to { transform: rotate(360deg); }
 }
+
+/* Monitoring Cards Hover Animations */
+.monitoring-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px rgba(56, 67, 31, 0.08) !important;
+}

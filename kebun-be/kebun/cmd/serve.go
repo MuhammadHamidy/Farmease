@@ -7,38 +7,41 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	internalConfig "github.com/farmease/farmease-be/farmease/config"
-	_ "github.com/farmease/farmease-be/farmease/docs"
-	"github.com/farmease/farmease-be/framework/common/logger"
-	"github.com/farmease/farmease-be/framework/config"
-	"github.com/farmease/farmease-be/framework/fiber"
-	"github.com/farmease/farmease-be/framework/otel"
-	"github.com/farmease/farmease-be/framework/postgres"
-	"github.com/farmease/farmease-be/framework/redis"
-	"github.com/farmease/farmease-be/libraries/idp"
-	"github.com/farmease/farmease-be/libraries/middleware"
+	internalConfig "github.com/farmease/kebun-be/kebun/config"
+	_ "github.com/farmease/kebun-be/kebun/docs"
+	"github.com/farmease/kebun-be/framework/common/logger"
+	"github.com/farmease/kebun-be/framework/config"
+	"github.com/farmease/kebun-be/framework/fiber"
+	"github.com/farmease/kebun-be/framework/otel"
+	"github.com/farmease/kebun-be/framework/postgres"
+	"github.com/farmease/kebun-be/framework/redis"
+	"github.com/farmease/kebun-be/libraries/idp"
+	"github.com/farmease/kebun-be/libraries/middleware"
 	gofiber "github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	filterSwagger "github.com/swaggo/fiber-swagger"
 	"go.uber.org/fx"
 
 	// Gardening (Perkebunan)
-	"github.com/farmease/farmease-be/farmease/module/akun_lahan"
-	"github.com/farmease/farmease-be/farmease/module/lahan"
-	"github.com/farmease/farmease-be/farmease/module/panen"
-	"github.com/farmease/farmease-be/farmease/module/pemangkasan"
-	"github.com/farmease/farmease-be/farmease/module/penyiraman"
-	"github.com/farmease/farmease-be/farmease/module/pembersihan"
-	"github.com/farmease/farmease-be/farmease/module/penanaman"
-	"github.com/farmease/farmease-be/farmease/module/pengobatan"
-	"github.com/farmease/farmease-be/farmease/module/pembuahan"
-	"github.com/farmease/farmease-be/farmease/module/pohon"
-	"github.com/farmease/farmease-be/farmease/module/fertilizers"
-	"github.com/farmease/farmease-be/farmease/module/tasks"
-	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
-	"github.com/farmease/farmease-be/farmease/module/notifications"
-	"github.com/farmease/farmease-be/farmease/module/submissions"
-	"github.com/farmease/farmease-be/farmease/module/pencatatan_types"
+	"github.com/farmease/kebun-be/kebun/module/akun_lahan"
+	"github.com/farmease/kebun-be/kebun/module/lahan"
+	"github.com/farmease/kebun-be/kebun/module/panen"
+	"github.com/farmease/kebun-be/kebun/module/pemangkasan"
+	"github.com/farmease/kebun-be/kebun/module/penyiraman"
+	"github.com/farmease/kebun-be/kebun/module/pembersihan"
+	"github.com/farmease/kebun-be/kebun/module/penanaman"
+	"github.com/farmease/kebun-be/kebun/module/pengobatan"
+	"github.com/farmease/kebun-be/kebun/module/pembuahan"
+	"github.com/farmease/kebun-be/kebun/module/pohon"
+	"github.com/farmease/kebun-be/kebun/module/fertilizers"
+	"github.com/farmease/kebun-be/kebun/module/tasks"
+	"github.com/farmease/kebun-be/kebun/module/routine_schedules"
+	"github.com/farmease/kebun-be/kebun/module/notifications"
+	"github.com/farmease/kebun-be/kebun/module/submissions"
+	"github.com/farmease/kebun-be/kebun/module/pencatatan_types"
+	"github.com/farmease/kebun-be/kebun/module/pemupukan"
+	"github.com/farmease/kebun-be/kebun/module/stok"
+	"github.com/farmease/kebun-be/kebun/module/fermentasi"
 )
 
 // @title           Farmease API
@@ -127,6 +130,9 @@ func serveE(cmd *cobra.Command, args []string) error {
 		notifications.Module,
 		submissions.Module,
 		pencatatan_types.Module,
+		pemupukan.Module,
+		stok.Module,
+		fermentasi.Module,
 
 		fx.Provide(
 			fx.Annotate(
@@ -212,3 +218,4 @@ func serveE(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+

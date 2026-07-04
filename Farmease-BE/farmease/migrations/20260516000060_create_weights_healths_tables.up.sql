@@ -6,16 +6,3 @@ CREATE TABLE IF NOT EXISTS livestock.weights (
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE TABLE IF NOT EXISTS livestock.healths (
-    id_health UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    id_sheep UUID NOT NULL REFERENCES livestock.sheep(id_sheep) ON DELETE CASCADE,
-    checkup_date DATE NOT NULL,
-    diagnosis TEXT NOT NULL,
-    action TEXT,
-    medicine_given TEXT,
-    inspector_name VARCHAR(100),
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);

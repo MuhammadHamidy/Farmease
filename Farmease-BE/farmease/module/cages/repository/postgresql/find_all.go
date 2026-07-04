@@ -11,7 +11,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.CageFilter) ([]*
 		SELECT id_cage, cage_code, capacity, cage_type,
 		       (SELECT COUNT(*) FROM livestock.sheep WHERE id_cage = c.id_cage AND status = 'aktif') as occupancy,
 		       created_at, updated_at, farm_id, COALESCE(cage_name, '') as cage_name
-		FROM master.cages c
+		FROM livestock.cages c
 		WHERE 1=1`
 
 	args := []interface{}{}
@@ -49,7 +49,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.CageFilter) ([]*
 	}
 
 	var total int
-	countQuery := "SELECT COUNT(*) FROM master.cages WHERE 1=1"
+	countQuery := "SELECT COUNT(*) FROM livestock.cages WHERE 1=1"
 	if filter.CageType != "" {
 		countQuery += " AND cage_type = $1"
 		err = r.db.QueryRow(ctx, countQuery, filter.CageType).Scan(&total)

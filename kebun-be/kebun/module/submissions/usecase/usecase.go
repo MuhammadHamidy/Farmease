@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	notificationsDomain "github.com/farmease/farmease-be/farmease/module/notifications/domain"
-	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
+	notificationsDomain "github.com/farmease/kebun-be/kebun/module/notifications/domain"
+	"github.com/farmease/kebun-be/kebun/module/submissions/domain"
 )
 
 type useCase struct {
@@ -145,3 +145,4 @@ func (u *useCase) UpdateSubmission(ctx context.Context, id string, patch *domain
 func (u *useCase) DeleteSubmission(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
+

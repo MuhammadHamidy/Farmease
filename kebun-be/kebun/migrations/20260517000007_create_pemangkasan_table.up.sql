@@ -1,7 +1,5 @@
 -- Tabel pemangkasan — mencatat aktivitas pemangkasan pohon
 -- Jenis: Pemangkasan Ranting, Pemangkasan Bentuk, Pemangkasan Peremajaan
--- Tabel pemangkasan — mencatat aktivitas pemangkasan pohon
--- Jenis: Pemangkasan Ranting, Pemangkasan Bentuk, Pemangkasan Peremajaan
 CREATE TABLE IF NOT EXISTS gardening.pemangkasan (
     id_pemangkasan         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -19,5 +17,8 @@ CREATE TABLE IF NOT EXISTS gardening.pemangkasan (
 
     -- Relasi ke lahan dan aktivitas
     Lahan_id_lahan         UUID REFERENCES gardening.lahan(id_lahan)         ON DELETE CASCADE,
-    Aktivitas_id_aktivitas UUID NOT NULL REFERENCES gardening.aktivitas(id_aktivitas) ON DELETE CASCADE
+    Aktivitas_id_aktivitas UUID NOT NULL REFERENCES gardening.aktivitas(id_aktivitas) ON DELETE CASCADE,
+    
+    created_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -76,7 +76,7 @@ func (r *Repository) GetMatingStatusData(ctx context.Context) (activeMatingFemal
 						}
 						
 						name := item.Name
-						if name == "Cek Birahi" || name == "Pencatatan Birahi" {
+						if name == "Cek Birahi" || name == "Pencatatan Birahi" || name == "Pengecekan Birahi" {
 							latestEstrusChecks[target] = item.HasilPemeriksaan
 						} else if name == "Kawin Alam" || name == "Kawin Alami" || name == "IB" || name == "Inseminasi Buatan" {
 							pendingMatingSheeps[target] = true

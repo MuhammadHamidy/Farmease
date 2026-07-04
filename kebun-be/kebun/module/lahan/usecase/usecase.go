@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/lahan/domain"
+	"github.com/farmease/kebun-be/kebun/module/lahan/domain"
 )
 
 type lahanUsecase struct {
@@ -37,3 +37,4 @@ func (u *lahanUsecase) Delete(ctx context.Context, id string) error {
 func (u *lahanUsecase) FindByKodeLahan(ctx context.Context, kode string) (*domain.Lahan, error) {
 	return u.repo.FindByKodeLahan(ctx, kode)
 }
+

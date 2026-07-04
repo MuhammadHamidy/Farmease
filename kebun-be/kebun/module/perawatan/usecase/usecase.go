@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/config"
-	"github.com/farmease/farmease-be/farmease/module/perawatan/domain"
+	"github.com/farmease/kebun-be/kebun/config"
+	"github.com/farmease/kebun-be/kebun/module/perawatan/domain"
 )
 
 type perawatanUsecase struct {
@@ -98,3 +98,4 @@ func (u *perawatanUsecase) fetchManureFromLivestock() {
 
 	fmt.Printf("[Info] Successfully fetched %d manure records from Livestock API\n", len(apiRes.Data))
 }
+

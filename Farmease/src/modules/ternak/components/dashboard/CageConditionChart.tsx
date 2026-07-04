@@ -19,7 +19,7 @@ export default defineComponent({
         const dataObj: any = (sub.payload as any)?.data || sub.payload;
         const items = dataObj?.items || [];
         items.forEach((item: any) => {
-          if ((item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi') && (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))) {
+          if ((item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') && (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))) {
             hasCheckedEstrus = true;
             const time = sub.submittedAt ? new Date(sub.submittedAt).getTime() : Date.now();
             if (time > latestTime) {

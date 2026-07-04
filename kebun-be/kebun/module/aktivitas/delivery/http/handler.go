@@ -1,8 +1,8 @@
 package http
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/aktivitas/domain"
-	"github.com/farmease/farmease-be/libraries/apiresponses"
+	"github.com/farmease/kebun-be/kebun/module/aktivitas/domain"
+	"github.com/farmease/kebun-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -143,4 +143,5 @@ func (h *AktivitasHandler) Delete(c *fiber.Ctx) error {
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success delete activity", nil)
 }
+
 

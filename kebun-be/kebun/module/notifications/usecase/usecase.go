@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
+	"github.com/farmease/kebun-be/kebun/module/notifications/domain"
 )
 
 type useCase struct {
@@ -24,3 +24,4 @@ func (u *useCase) GetMyNotifications(ctx context.Context, idAccount string) ([]*
 func (u *useCase) ReadNotification(ctx context.Context, id string) error {
 	return u.repo.MarkNotificationRead(ctx, id)
 }
+

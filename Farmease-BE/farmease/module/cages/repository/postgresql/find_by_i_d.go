@@ -10,7 +10,7 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Cage, err
 		SELECT id_cage, cage_code, capacity, cage_type,
 		       (SELECT COUNT(*) FROM livestock.sheep WHERE id_cage = c.id_cage AND status = 'aktif') as occupancy,
 		       created_at, updated_at, farm_id, COALESCE(cage_name, '') as cage_name
-		FROM master.cages c
+		FROM livestock.cages c
 		WHERE id_cage = $1`
 
 	var c domain.Cage

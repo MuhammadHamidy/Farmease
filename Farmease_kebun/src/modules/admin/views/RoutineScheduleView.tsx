@@ -8,6 +8,8 @@ import RoutineScheduleCard from '../components/routine/RoutineScheduleCard';
 import RoutineScheduleDetailModal from '../components/routine/RoutineScheduleDetailModal';
 import RoutineScheduleFormModal from '../components/routine/RoutineScheduleFormModal';
 import { landsList, fetchLandsList, cagesList, fetchCagesList } from '@/store/navigation';
+import apiClient from '@/shared/api/client';
+import '@/modules/kebun/assets/css/PerkebunanDetailPages.css';
 import {
   routineSchedules,
   addRoutineSchedule,
@@ -432,6 +434,166 @@ export default defineComponent({
 
     const activeCount = computed(() => filteredSchedules.value.filter((s) => s.active).length);
 
+    const handleExport = async () => {
+      try {
+        const [rawLands, rawTrees, rawPerawatan, rawPanen, rawPemangkasan] = await Promise.all([
+          apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
+          apiClient.get<any[]>('/api/v1/perawatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/panen').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
+        ])
+
+        const lands = Array.isArray(rawLands) ? rawLands : []
+        const trees = Array.isArray(rawTrees) ? rawTrees : []
+        const perawatanList = Array.isArray(rawPerawatan) ? rawPerawatan : []
+        const panenList = Array.isArray(rawPanen) ? rawPanen : []
+        const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const csvRows: string[][] = []
+
+        // CSV Header
+        csvRows.push([
+          'Kategori Data',
+          'Tanggal',
+          'Kode Lahan',
+          'Nama Lahan',
+          'Kode/Detail Pohon',
+          'Nama Item / Aktivitas',
+          'Jumlah / Dosis',
+          'Satuan',
+          'Deskripsi / Catatan'
+        ])
+
+        lands.forEach((landObj: any) => {
+          const landId = landObj.id_lahan || landObj.id
+
+          // Add Land Info
+          csvRows.push([
+            'Lahan',
+            landObj.tanggal_tanam || '-',
+            landObj.kode_lahan || '-',
+            landObj.nama_lahan || '-',
+            '-',
+            landObj.varietas || 'Tanaman',
+            String(landObj.luas_lahan || landObj.luas || 0),
+            'Hektar',
+            `Fase Tanam: ${landObj.fase_tanam || '-'}`
+          ])
+
+          const landTrees = trees.filter((t: any) => 
+            String(t.Lahan_id_lahan || t.id_lahan) === String(landId) ||
+            String(t.lahan_code) === String(landObj.kode_lahan)
+          )
+          const landPerawatan = perawatanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPanen = panenList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPemangkasan = pemangkasanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+
+          // Add Trees
+          landTrees.forEach((t: any) => {
+            let age = t.umur
+            if (!age && t.tanggal_tanam) {
+              const plantedYear = new Date(t.tanggal_tanam).getFullYear()
+              const currentYear = new Date().getFullYear()
+              age = Math.max(1, currentYear - plantedYear)
+            }
+
+            csvRows.push([
+              'Pohon',
+              t.tanggal_tanam ? t.tanggal_tanam.split('T')[0] : (t.created_at ? t.created_at.split('T')[0] : '-'),
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              t.kode_pohon || '-',
+              t.varietas || t.nama_pohon || t.jenis || '-',
+              String(age || 0),
+              'Tahun',
+              `Status: ${t.fase_pohon || t.status || '-'}`
+            ])
+          })
+
+          // Add Pemupukan & Pemberian Obat
+          landPerawatan.forEach((p: any) => {
+            const jenisBahan = (p.jenis_bahan || '').toLowerCase()
+            let kategori = 'Perawatan'
+            if (jenisBahan === 'pupuk') {
+              kategori = 'Pemupukan'
+            } else if (jenisBahan === 'obat') {
+              kategori = 'Pemberian Obat'
+            }
+
+            csvRows.push([
+              kategori,
+              p.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              p.detail_pohon || '-',
+              p.nama_obat || p.jenis_perawatan || '-',
+              String(p.dosis || 0),
+              p.satuan || '-',
+              `Teknik: ${p.teknik_perawatan || '-'}, Bagian: ${p.bagian_pohon || '-'}, Catatan: ${p.deskripsi || '-'}`
+            ])
+          })
+
+          // Add Panen
+          landPanen.forEach((pa: any) => {
+            csvRows.push([
+              'Panen',
+              pa.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              pa.nama_rincian_aktivitas || 'Panen Buah',
+              String(pa.jumlah || 0),
+              pa.satuan || 'kg',
+              'Selesai'
+            ])
+          })
+
+          // Add Pemangkasan
+          landPemangkasan.forEach((pe: any) => {
+            csvRows.push([
+              'Pemangkasan',
+              pe.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              'Pemangkasan Pemeliharaan',
+              String(pe.jumlah || 0),
+              pe.satuan || 'kg',
+              pe.keterangan || '-'
+            ])
+          })
+        })
+
+        const csvContent = csvRows
+          .map((row) =>
+            row
+              .map((val) => {
+                const escaped = String(val).replace(/"/g, '""')
+                return `"${escaped}"`
+              })
+              .join(',')
+          )
+          .join('\n')
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', url)
+        
+        const dateStr = new Date().toISOString().split('T')[0]
+        const filename = `Ekspor_Data_Jadwal_Rutin_${dateStr}.csv`
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (err: any) {
+        console.error('Gagal mengekspor data:', err)
+        alert('Gagal mengekspor data: ' + (err?.message || err || 'Terjadi kesalahan.'))
+      }
+    }
+
     return () => (
       <div class="animate-fade-in-up" style={{ padding: '0 0.5rem' }}>
         {showToast.value && (
@@ -459,6 +621,23 @@ export default defineComponent({
                 + Tambah Jadwal Rutin
               </Button>
           </div>
+        </div>
+
+        {/* Ekspor Data Kebun (Full-width Section) */}
+        <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <strong style={{ fontSize: '0.9rem', color: '#111827', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>Ekspor Data Kebun</strong>
+          <button
+            type="button"
+            class="pencatatan-mode-btn is-active"
+            onClick={handleExport}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download CSV
+          </button>
         </div>
 
         {/* Ringkasan Informasi Cards */}

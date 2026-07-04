@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/kebun-be/libraries/idp/client"
 )
 
 func (i *Idp) GetUserRoles(ctx context.Context, token string, params map[string]string) (*client.GeneralResponse, error) {
@@ -80,3 +80,4 @@ func (i *Idp) RemoveUserRole(ctx context.Context, token, uuid string) (*client.G
 	}
 	return &result, nil
 }
+

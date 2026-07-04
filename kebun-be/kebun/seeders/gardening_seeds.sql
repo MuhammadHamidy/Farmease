@@ -7,7 +7,11 @@ DELETE FROM gardening.tasks;
 DELETE FROM gardening.routine_schedules;
 DELETE FROM gardening.panen;
 DELETE FROM gardening.pemangkasan;
-DELETE FROM gardening.perawatan;
+DELETE FROM gardening.penyiraman;
+DELETE FROM gardening.pembersihan;
+DELETE FROM gardening.penanaman;
+DELETE FROM gardening.pengobatan;
+DELETE FROM gardening.pembuahan;
 DELETE FROM gardening.pohon;
 DELETE FROM gardening.aktivitas;
 DELETE FROM gardening.lahan;
@@ -137,11 +141,13 @@ INSERT INTO gardening.aktivitas (id_aktivitas, tanggal_aktivitas, nama_jenis_akt
 ('a1111111-1111-1111-1111-111111110003', NOW() - INTERVAL '3 hours', 'Penyiraman', 'Siram Manual', '11111111-1111-1111-1111-111111111112'),
 ('a1111111-1111-1111-1111-111111110004', NOW() - INTERVAL '2 hours', 'Pemberian Obat', 'Fungisida', '11111111-1111-1111-1111-111111111112');
 
-INSERT INTO gardening.perawatan (id_perawatan, jenis_bahan, fase_pohon, dosis, satuan, bagian_pohon, teknik_perawatan, detail_pohon, deskripsi, nama_obat, Lahan_id_lahan, Aktivitas_id_aktivitas) VALUES
-('e0000000-0000-0000-0000-000000000001', 'air', 'Vegetatif', 10.00, 'Liter', 'Tanah', 'Penyiraman Melingkar', 'Kondisi lembap baik', 'Penyiraman pagi hari', '', '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111110001'),
-('e0000000-0000-0000-0000-000000000002', 'obat', 'Generatif', 50.00, 'ml', 'Daun', 'Penyemprotan', 'Gejala jamur daun', 'Aplikasi fungisida Mankozeb', 'Mankozeb', '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111110002'),
-('e0000000-0000-0000-0000-000000000003', 'air', 'Vegetatif', 12.00, 'Liter', 'Tanah', 'Penyiraman Melingkar', 'Kondisi lembap baik', 'Penyiraman pagi hari', '', '11111111-1111-1111-1111-111111111112', 'a1111111-1111-1111-1111-111111110003'),
-('e0000000-0000-0000-0000-000000000004', 'obat', 'Generatif', 60.00, 'ml', 'Daun', 'Penyemprotan', 'Gejala jamur daun', 'Aplikasi fungisida Mankozeb', 'Mankozeb', '11111111-1111-1111-1111-111111111112', 'a1111111-1111-1111-1111-111111110004');
+INSERT INTO gardening.penyiraman (id_penyiraman, teknik_penyiraman, deskripsi, "Lahan_id_lahan", "Aktivitas_id_aktivitas") VALUES
+('e0000000-0000-0000-0000-000000000001', 'Penyiraman Melingkar', 'Penyiraman pagi hari (10.00 Liter, Kondisi lembap baik)', '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111110001'),
+('e0000000-0000-0000-0000-000000000003', 'Penyiraman Melingkar', 'Penyiraman pagi hari (12.00 Liter, Kondisi lembap baik)', '11111111-1111-1111-1111-111111111112', 'a1111111-1111-1111-1111-111111110003');
+
+INSERT INTO gardening.pengobatan (id_pengobatan, nama_obat, dosis, satuan, bagian_pohon, deskripsi, "Lahan_id_lahan", "Aktivitas_id_aktivitas") VALUES
+('e0000000-0000-0000-0000-000000000002', 'Mankozeb', 50.00, 'ml', 'Daun', 'Aplikasi fungisida Mankozeb (Gejala jamur daun)', '11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111110002'),
+('e0000000-0000-0000-0000-000000000004', 'Mankozeb', 60.00, 'ml', 'Daun', 'Aplikasi fungisida Mankozeb (Gejala jamur daun)', '11111111-1111-1111-1111-111111111112', 'a1111111-1111-1111-1111-111111110004');
 
 
 -- 5. Seed Pemangkasan (Pruning)

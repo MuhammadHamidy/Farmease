@@ -1,14 +1,14 @@
-module github.com/farmease/farmease-be/farmease
+module github.com/farmease/kebun-be/kebun
 
 go 1.25.5
 
-replace github.com/farmease/farmease-be/framework v1.0.0 => ../framework
+replace github.com/farmease/kebun-be/framework v1.0.0 => ../framework
 
-replace github.com/farmease/farmease-be/libraries v1.0.0 => ../libraries
+replace github.com/farmease/kebun-be/libraries v1.0.0 => ../libraries
 
 require (
-	github.com/farmease/farmease-be/framework v1.0.0
-	github.com/farmease/farmease-be/libraries v1.0.0
+	github.com/farmease/kebun-be/framework v1.0.0
+	github.com/farmease/kebun-be/libraries v1.0.0
 	github.com/gofiber/fiber/v2 v2.52.10
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
@@ -138,3 +138,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+

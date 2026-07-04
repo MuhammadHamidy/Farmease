@@ -587,14 +587,32 @@ export default defineComponent({
                       />
                     </div>
                     <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Fase Pohon</span>
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Status Usia Pohon</span>
                       <PerkebunanFormSelect
-                        modelValue={f().fasePohon}
-                        options={['Fase Pohon', 'Belum Produktif (0-3 tahun)', 'Produktif (>4 tahun)', 'Vegetatif', 'Generatif']}
-                        placeholder="Fase Pohon"
-                        onUpdate:modelValue={(val) => { f().fasePohon = val }}
+                        modelValue={f().statusProduktivitas}
+                        options={['usia belum produktif (0 - 3 tahun)', 'usia produktif (> 4 tahun)']}
+                        placeholder="Pilih Status"
+                        onUpdate:modelValue={(val) => {
+                          f().statusProduktivitas = val
+                          if (val === 'usia belum produktif (0 - 3 tahun)') {
+                            f().fasePohon = 'Belum Produktif'
+                          } else {
+                            f().fasePohon = 'Vegetatif'
+                          }
+                        }}
                       />
                     </div>
+                    {f().statusProduktivitas === 'usia produktif (> 4 tahun)' && (
+                      <div class="form-group">
+                        <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Fase Pohon</span>
+                        <PerkebunanFormSelect
+                          modelValue={f().fasePohon}
+                          options={['Vegetatif', 'Generatif']}
+                          placeholder="Pilih Fase"
+                          onUpdate:modelValue={(val) => { f().fasePohon = val }}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -824,14 +842,32 @@ export default defineComponent({
                       />
                     </div>
                     <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Fase Pohon</span>
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Status Usia Pohon</span>
                       <PerkebunanFormSelect
-                        modelValue={f().fasePohon}
-                        options={['Fase Pohon', 'Belum Produktif (0-3 tahun)', 'Produktif (>4 tahun)', 'Vegetatif', 'Generatif']}
-                        placeholder="Fase Pohon"
-                        onUpdate:modelValue={(val) => { f().fasePohon = val }}
+                        modelValue={f().statusProduktivitas}
+                        options={['usia belum produktif (0 - 3 tahun)', 'usia produktif (> 4 tahun)']}
+                        placeholder="Pilih Status"
+                        onUpdate:modelValue={(val) => {
+                          f().statusProduktivitas = val
+                          if (val === 'usia belum produktif (0 - 3 tahun)') {
+                            f().fasePohon = 'Belum Produktif'
+                          } else {
+                            f().fasePohon = 'Vegetatif'
+                          }
+                        }}
                       />
                     </div>
+                    {f().statusProduktivitas === 'usia produktif (> 4 tahun)' && (
+                      <div class="form-group">
+                        <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Fase Pohon</span>
+                        <PerkebunanFormSelect
+                          modelValue={f().fasePohon}
+                          options={['Vegetatif', 'Generatif']}
+                          placeholder="Pilih Fase"
+                          onUpdate:modelValue={(val) => { f().fasePohon = val }}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
 

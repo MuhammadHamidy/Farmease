@@ -10,7 +10,7 @@ import PencatatanApprovalView from './PencatatanApprovalView.tsx';
 import LandManagementView from './LandManagementView.tsx';
 import CropManagementView from './CropManagementView.tsx';
 import PerkebunanConfirmModal from '../../kebun/components/shared/PerkebunanConfirmModal';
-import CustomAlertModal from '../../../Farmease/src/modules/ternak/components/shared/CustomAlertModal';
+import CustomAlertModal from '../components/shared/CustomAlertModal';
 
 export default defineComponent({
   name: 'AdminPage',

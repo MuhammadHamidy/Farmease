@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/farmease/farmease-be/farmease/module/pohon/domain"
+	"github.com/farmease/kebun-be/kebun/module/pohon/domain"
 )
 
 type pohonUsecase struct {
@@ -48,3 +48,4 @@ func (u *pohonUsecase) Update(ctx context.Context, p *domain.Pohon) error {
 func (u *pohonUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
+

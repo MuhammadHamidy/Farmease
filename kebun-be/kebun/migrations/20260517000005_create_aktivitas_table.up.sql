@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS gardening.aktivitas (
     tanggal_aktivitas      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     nama_jenis_aktivitas   VARCHAR(100) NOT NULL,
     nama_rincian_aktivitas VARCHAR(100) NOT NULL,
-    Lahan_id_lahan         UUID REFERENCES gardening.lahan(id_lahan) ON DELETE CASCADE
+    Lahan_id_lahan         UUID REFERENCES gardening.lahan(id_lahan) ON DELETE CASCADE,
+    created_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Seed catalog jenis & rincian aktivitas kebun
@@ -28,7 +30,9 @@ FROM (VALUES
     ('Penanaman', 'Bibit Baru'),
     ('Penanaman', 'Penggantian Bibit'),
     ('Penyiraman', 'Siram Manual'),
-    ('Penyiraman', 'Irigrasi Drip / Pipanisasi')
+    ('Penyiraman', 'Irigrasi Drip / Pipanisasi'),
+    ('Pengolahan Pupuk', 'Fermentasi Pupuk'),
+    ('Pengolahan Pupuk', 'Cek Fermentasi')
 ) AS v(jenis, rincian)
 WHERE NOT EXISTS (
     SELECT 1 FROM gardening.aktivitas a 

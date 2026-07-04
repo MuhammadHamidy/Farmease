@@ -1,10 +1,10 @@
 package pembersihan
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/pembersihan/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/pembersihan/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/pembersihan/usecase"
-	frameworkFiber "github.com/farmease/farmease-be/framework/fiber"
+	"github.com/farmease/kebun-be/kebun/module/pembersihan/delivery/http"
+	"github.com/farmease/kebun-be/kebun/module/pembersihan/repository/postgresql"
+	"github.com/farmease/kebun-be/kebun/module/pembersihan/usecase"
+	frameworkFiber "github.com/farmease/kebun-be/framework/fiber"
 	"go.uber.org/fx"
 )
 
@@ -22,3 +22,4 @@ var Module = fx.Module("pembersihan",
 		),
 	),
 )
+

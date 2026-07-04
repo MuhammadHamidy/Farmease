@@ -3,8 +3,8 @@ package usecase
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/config"
-	"github.com/farmease/farmease-be/farmease/module/penanaman/domain"
+	"github.com/farmease/kebun-be/kebun/config"
+	"github.com/farmease/kebun-be/kebun/module/penanaman/domain"
 )
 
 type penanamanUsecase struct {
@@ -35,3 +35,4 @@ func (u *penanamanUsecase) Update(ctx context.Context, p *domain.Penanaman) erro
 func (u *penanamanUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
+

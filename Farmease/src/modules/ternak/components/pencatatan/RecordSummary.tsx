@@ -155,16 +155,16 @@ export default defineComponent({
                                <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan === 'usg' ? 'Cek USG' : item.metodePemeriksaan === 'palpasi' ? 'Palpasi' : item.metodePemeriksaan === 'testpack' ? 'Testpack' : item.metodePemeriksaan} />
                                <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
                             </>
-                          ) : (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi') ? (
+                          ) : (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') ? (
                             <>
                               <SummaryItem label="Hasil Pencatatan Birahi" value={item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'} />
                             </>
                           ) : (
                             <>
-                              {!( (item.metoda === 'ib' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && item.sumberPejantan === 'eksternal' ) && (
+                              {!( (item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && item.sumberPejantan === 'eksternal' ) && (
                                 <SummaryItem label="ID Pejantan" value={item.idPejantan} />
                               )}
-                              {(item.metoda === 'ib' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && (
+                              {(item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && (
                                 <>
                                   <SummaryItem label="Sumber Pejantan" value={item.sumberPejantan === 'eksternal' ? 'Donor Eksternal' : 'Internal'} />
                                   <SummaryItem label="Kode Batch / Nomor Straw Semen" value={item.asalSemen} />
@@ -178,7 +178,7 @@ export default defineComponent({
                                   )}
                                 </>
                               )}
-                              {!(item.name === 'IB' || item.name === 'Inseminasi Buatan' || item.name === 'Kawin Alam' || item.name === 'Kawin Alami') && (
+                              {!(item.name === 'IB' || item.name === 'Inseminasi Buatan' || item.name === 'Kawin Alam' || item.name === 'Kawin Alami') && item.metoda !== 'ib' && item.metoda !== 'inseminasi buatan' && (
                                 <SummaryItem label="Metode Kawin" value={item.metoda} />
                               )}
                             </>

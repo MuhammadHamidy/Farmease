@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
+	"github.com/farmease/kebun-be/kebun/module/tasks/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -244,3 +244,4 @@ func (r *Repository) FindByScheduleAndDate(ctx context.Context, scheduleID strin
 	}
 	return &t, nil
 }
+

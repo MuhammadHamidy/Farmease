@@ -1,8 +1,8 @@
 package http
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/pengobatan/domain"
-	"github.com/farmease/farmease-be/libraries/apiresponses"
+	"github.com/farmease/kebun-be/kebun/module/pengobatan/domain"
+	"github.com/farmease/kebun-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -99,3 +99,4 @@ func (h *PengobatanHandler) GetRekomendasi(c *fiber.Ctx) error {
 		"rekomendasi": rekomendasi,
 	})
 }
+

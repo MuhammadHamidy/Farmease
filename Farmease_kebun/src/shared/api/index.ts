@@ -18,6 +18,9 @@ export {
   submissionsApi,
   pencatatanTypesApi,
   notificationsApi as notifikasiApi,
+  pemupukanApi,
+  stokApi,
+  fermentasiApi,
   type Lahan,
   type Pohon,
   type Aktivitas,
@@ -30,6 +33,12 @@ export {
   type JenisPencatatanItem,
   type RincianPencatatanItem,
   type Notification as Notifikasi,
+  type Pemupukan,
+  type StokBahan,
+  type StokPupuk,
+  type StokObat,
+  type Fermentasi,
+  type LogFermentasi,
 } from './perkebunan'
 
 // Convenience exports for common imports

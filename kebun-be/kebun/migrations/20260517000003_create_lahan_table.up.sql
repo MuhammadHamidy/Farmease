@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS gardening.lahan (
     -- Contoh: 'Alpukat', 'Kelengkeng'
     status_lahan  INT          NOT NULL DEFAULT 1,
     -- 1 = Aktif, 0 = Tidak Aktif
-    luas_lahan    NUMERIC(10,2) NOT NULL DEFAULT 0.00
+    luas_lahan    NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     -- Dalam satuan m²
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

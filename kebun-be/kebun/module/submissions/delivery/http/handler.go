@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/kebun-be/kebun/module/submissions/domain"
+	"github.com/farmease/kebun-be/libraries/middleware"
+	"github.com/farmease/kebun-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -141,3 +141,4 @@ func (h *SubmissionHandler) DeleteSubmission(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
 }
+

@@ -82,6 +82,7 @@ export interface CropInfo {
   type: string;
   land: string;
   age: string;
+  status_pohon?: string;
 }
 
 export const cagesList = ref<CageInfo[]>([])
@@ -133,8 +134,12 @@ export async function fetchCropsList() {
         code: p.kode_pohon,
         name: p.nama_pohon,
         type: p.status,
+        status_pohon: p.status_pohon,
         land: landObj ? landObj.code : `Lahan #${p.id_lahan}`,
         age: String(p.umur) + ' Tahun',
+        rawAge: p.umur,
+        rawDate: p.created_at,
+        id_lahan: p.id_lahan
       }
     })
   } catch (err) {

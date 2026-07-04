@@ -9,7 +9,7 @@ import (
 func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 	var resolvedCageID string
 	if s.IDCage != "" {
-		err := r.db.QueryRow(ctx, `SELECT id_cage FROM master.cages WHERE cage_code = $1 OR id_cage::text = $1 LIMIT 1`, s.IDCage).Scan(&resolvedCageID)
+		err := r.db.QueryRow(ctx, `SELECT id_cage FROM livestock.cages WHERE cage_code = $1 OR id_cage::text = $1 LIMIT 1`, s.IDCage).Scan(&resolvedCageID)
 		if err == nil && resolvedCageID != "" {
 			s.IDCage = resolvedCageID
 		}
@@ -17,7 +17,7 @@ func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 
 	var resolvedTypeID string
 	if s.IDType != "" {
-		err := r.db.QueryRow(ctx, `SELECT id_type FROM master.sheep_types WHERE type_name = $1 OR id_type::text = $1 LIMIT 1`, s.IDType).Scan(&resolvedTypeID)
+		err := r.db.QueryRow(ctx, `SELECT id_type FROM livestock.sheep_types WHERE type_name = $1 OR id_type::text = $1 LIMIT 1`, s.IDType).Scan(&resolvedTypeID)
 		if err == nil && resolvedTypeID != "" {
 			s.IDType = resolvedTypeID
 		}
@@ -41,7 +41,7 @@ func (r *Repository) Store(ctx context.Context, s *domain.Sheep) error {
 
 func (r *Repository) StoreType(ctx context.Context, t *domain.SheepType) error {
 	query := `
-		INSERT INTO master.sheep_types (type_name, type_description)
+		INSERT INTO livestock.sheep_types (type_name, type_description)
 		VALUES ($1, $2)
 		RETURNING id_type, created_at, updated_at`
 	return r.db.QueryRow(ctx, query, t.TypeName, t.TypeDescription).Scan(&t.IDType, &t.CreatedAt, &t.UpdatedAt)

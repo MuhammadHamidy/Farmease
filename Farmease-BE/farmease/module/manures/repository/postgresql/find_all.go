@@ -7,7 +7,7 @@ import (
 )
 
 func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([]*domain.Manure, int, error) {
-	query := `SELECT id_manure, id_sheep, activity_type, amount, unit, external_destination_id, destination_type, notes, created_at FROM logistics.manures WHERE 1=1`
+	query := `SELECT id_manure, id_sheep, activity_type, amount, unit, external_destination_id, destination_type, notes, created_at FROM livestock.manures WHERE 1=1`
 	args := []interface{}{}
 
 	if filter.IDSheep != "" {
@@ -44,7 +44,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([
 	}
 
 	var total int
-	countQuery := "SELECT COUNT(*) FROM logistics.manures WHERE 1=1"
+	countQuery := "SELECT COUNT(*) FROM livestock.manures WHERE 1=1"
 	if filter.IDSheep != "" {
 		countQuery += " AND id_sheep = $1"
 		err = r.db.QueryRow(ctx, countQuery, filter.IDSheep).Scan(&total)

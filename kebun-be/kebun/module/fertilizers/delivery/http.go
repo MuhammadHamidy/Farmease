@@ -3,8 +3,8 @@ package http
 import (
 	nethttp "net/http"
 
-	"github.com/farmease/farmease-be/farmease/module/fertilizers/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/kebun-be/kebun/module/fertilizers/domain"
+	"github.com/farmease/kebun-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -33,3 +33,4 @@ func (h *FertilizersHandler) GetRecommendation(c *fiber.Ctx) error {
 	}
 	return c.Status(nethttp.StatusOK).JSON(res)
 }
+

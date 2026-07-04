@@ -1,4 +1,4 @@
-module github.com/farmease/farmease-be/framework
+module github.com/farmease/kebun-be/framework
 
 go 1.25.5
 
@@ -70,3 +70,4 @@ require (
 	google.golang.org/grpc v1.77.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )
+

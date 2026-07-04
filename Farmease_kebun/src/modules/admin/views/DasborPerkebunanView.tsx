@@ -1,6 +1,8 @@
 import { defineComponent, computed, onMounted, ref } from 'vue';
 import { landsList, fetchLandsList, cropsList, fetchCropsList, panenList, fetchPanenList, userSession } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
+import apiClient from '@/shared/api/client';
+import '@/modules/kebun/assets/css/PerkebunanDetailPages.css';
 
 export default defineComponent({
   name: 'DasborPerkebunanView',
@@ -8,6 +10,11 @@ export default defineComponent({
     const selectedLand = ref('all');
     const currentDateText = ref('');
     const currentTimeText = ref('');
+
+    // Dynamic states for integrated monitoring
+    const pemupukanList = ref<any[]>([]);
+    const pengobatanList = ref<any[]>([]);
+    const monitoringLoading = ref(false);
 
     const updateDateTime = () => {
       const now = new Date();
@@ -26,11 +33,25 @@ export default defineComponent({
       updateDateTime();
       const interval = setInterval(updateDateTime, 60000);
 
+      monitoringLoading.value = true;
       await Promise.all([
         fetchLandsList(),
         fetchCropsList(),
         fetchPanenList()
       ]);
+
+      try {
+        const [rawPemupukan, rawPengobatan] = await Promise.all([
+          apiClient.get<any>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any>('/api/v1/pengobatan').catch(() => [])
+        ]);
+        pemupukanList.value = Array.isArray(rawPemupukan) ? rawPemupukan : (rawPemupukan?.data || []);
+        pengobatanList.value = Array.isArray(rawPengobatan) ? rawPengobatan : (rawPengobatan?.data || []);
+      } catch (err) {
+        console.error('Failed to load dashboard monitoring data:', err);
+      } finally {
+        monitoringLoading.value = false;
+      }
       
       console.log('=== DEBUG DASHBOARD ===');
       console.log('landsList:', JSON.stringify(landsList.value, null, 2));
@@ -43,6 +64,47 @@ export default defineComponent({
     const landOptions = computed(() => {
       const list = landsList.value.map(l => ({ value: l.code, label: `Lahan ${l.code}` }));
       return [{ value: 'all', label: 'Semua Lahan' }, ...list];
+    });
+
+    const activeLandId = computed(() => {
+      if (selectedLand.value === 'all') return null;
+      const land = landsList.value.find(l => l.code === selectedLand.value);
+      return land ? land.id : null;
+    });
+
+    const totalHarvestMetric = computed(() => {
+      const list = activeLandId.value 
+        ? panenList.value.filter(p => String(p.id_pohon) === String(activeLandId.value))
+        : panenList.value;
+      return list.reduce((acc, curr) => acc + (Number(curr.jumlah_panen) || 0), 0);
+    });
+
+    const totalPemupukanCount = computed(() => {
+      const list = activeLandId.value 
+        ? pemupukanList.value.filter(p => String(p.Lahan_id_lahan || p.id_lahan) === String(activeLandId.value))
+        : pemupukanList.value;
+      return list.length;
+    });
+
+    const totalPemupukanDose = computed(() => {
+      const list = activeLandId.value 
+        ? pemupukanList.value.filter(p => String(p.Lahan_id_lahan || p.id_lahan) === String(activeLandId.value))
+        : pemupukanList.value;
+      return list.reduce((acc, curr) => acc + (Number(curr.dosis) || 0), 0);
+    });
+
+    const totalPengobatanCount = computed(() => {
+      const list = activeLandId.value 
+        ? pengobatanList.value.filter(p => String(p.Lahan_id_lahan || p.id_lahan) === String(activeLandId.value))
+        : pengobatanList.value;
+      return list.length;
+    });
+
+    const totalPengobatanDose = computed(() => {
+      const list = activeLandId.value 
+        ? pengobatanList.value.filter(p => String(p.Lahan_id_lahan || p.id_lahan) === String(activeLandId.value))
+        : pengobatanList.value;
+      return list.reduce((acc, curr) => acc + (Number(curr.dosis) || 0), 0);
     });
 
     // Dynamic metrics based on lands/crops database
@@ -354,6 +416,173 @@ export default defineComponent({
         </svg>
       );
     };
+
+    const handleExport = async () => {
+      try {
+        const [rawLands, rawTrees, rawPerawatan, rawPanen, rawPemangkasan] = await Promise.all([
+          apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
+          apiClient.get<any[]>('/api/v1/perawatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/panen').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
+        ])
+
+        const lands = Array.isArray(rawLands) ? rawLands : []
+        const trees = Array.isArray(rawTrees) ? rawTrees : []
+        const perawatanList = Array.isArray(rawPerawatan) ? rawPerawatan : []
+        const panenList = Array.isArray(rawPanen) ? rawPanen : []
+        const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const isFiltering = selectedLand.value !== 'all'
+        const targetLand = isFiltering ? lands.find((l: any) => l.kode_lahan === selectedLand.value) : null
+        const targetLandId = targetLand?.id_lahan || targetLand?.id
+
+        const exportLands = isFiltering && targetLand ? [targetLand] : lands
+
+        const csvRows: string[][] = []
+
+        // CSV Header
+        csvRows.push([
+          'Kategori Data',
+          'Tanggal',
+          'Kode Lahan',
+          'Nama Lahan',
+          'Kode/Detail Pohon',
+          'Nama Item / Aktivitas',
+          'Jumlah / Dosis',
+          'Satuan',
+          'Deskripsi / Catatan'
+        ])
+
+        exportLands.forEach((landObj: any) => {
+          const landId = landObj.id_lahan || landObj.id
+
+          // Add Land Info
+          csvRows.push([
+            'Lahan',
+            landObj.tanggal_tanam || '-',
+            landObj.kode_lahan || '-',
+            landObj.nama_lahan || '-',
+            '-',
+            landObj.varietas || 'Tanaman',
+            String(landObj.luas_lahan || landObj.luas || 0),
+            'Hektar',
+            `Fase Tanam: ${landObj.fase_tanam || '-'}`
+          ])
+
+          const landTrees = trees.filter((t: any) => 
+            String(t.Lahan_id_lahan || t.id_lahan) === String(landId) ||
+            String(t.lahan_code) === String(landObj.kode_lahan)
+          )
+          const landPerawatan = perawatanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPanen = panenList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPemangkasan = pemangkasanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+
+          // Add Trees
+          landTrees.forEach((t: any) => {
+            let age = t.umur
+            if (!age && t.tanggal_tanam) {
+              const plantedYear = new Date(t.tanggal_tanam).getFullYear()
+              const currentYear = new Date().getFullYear()
+              age = Math.max(1, currentYear - plantedYear)
+            }
+
+            csvRows.push([
+              'Pohon',
+              t.tanggal_tanam ? t.tanggal_tanam.split('T')[0] : (t.created_at ? t.created_at.split('T')[0] : '-'),
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              t.kode_pohon || '-',
+              t.varietas || t.nama_pohon || t.jenis || '-',
+              String(age || 0),
+              'Tahun',
+              `Status: ${t.fase_pohon || t.status || '-'}`
+            ])
+          })
+
+          // Add Pemupukan & Pemberian Obat
+          landPerawatan.forEach((p: any) => {
+            const jenisBahan = (p.jenis_bahan || '').toLowerCase()
+            let kategori = 'Perawatan'
+            if (jenisBahan === 'pupuk') {
+              kategori = 'Pemupukan'
+            } else if (jenisBahan === 'obat') {
+              kategori = 'Pemberian Obat'
+            }
+
+            csvRows.push([
+              kategori,
+              p.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              p.detail_pohon || '-',
+              p.nama_obat || p.jenis_perawatan || '-',
+              String(p.dosis || 0),
+              p.satuan || '-',
+              `Teknik: ${p.teknik_perawatan || '-'}, Bagian: ${p.bagian_pohon || '-'}, Catatan: ${p.deskripsi || '-'}`
+            ])
+          })
+
+          // Add Panen
+          landPanen.forEach((pa: any) => {
+            csvRows.push([
+              'Panen',
+              pa.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              pa.nama_rincian_aktivitas || 'Panen Buah',
+              String(pa.jumlah || 0),
+              pa.satuan || 'kg',
+              'Selesai'
+            ])
+          })
+
+          // Add Pemangkasan
+          landPemangkasan.forEach((pe: any) => {
+            csvRows.push([
+              'Pemangkasan',
+              pe.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              'Pemangkasan Pemeliharaan',
+              String(pe.jumlah || 0),
+              pe.satuan || 'kg',
+              pe.keterangan || '-'
+            ])
+          })
+        })
+
+        const csvContent = csvRows
+          .map((row) =>
+            row
+              .map((val) => {
+                const escaped = String(val).replace(/"/g, '""')
+                return `"${escaped}"`
+              })
+              .join(',')
+          )
+          .join('\n')
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', url)
+        
+        const dateStr = new Date().toISOString().split('T')[0]
+        const landLabel = isFiltering && targetLand ? targetLand.nama_lahan.replace(/\s+/g, '_') : 'Semua_Lahan'
+        const filename = `Ekspor_Data_${landLabel}_${dateStr}.csv`
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (err: any) {
+        console.error('Gagal mengekspor data:', err)
+        alert('Gagal mengekspor data: ' + (err?.message || err || 'Terjadi kesalahan.'))
+      }
+    }
   
     return () => {
       const adminName = userSession.value?.name || 'Admin';
@@ -385,7 +614,86 @@ export default defineComponent({
               </select>
             </div>
           </div>
-  
+
+          {/* Ekspor Data Kebun (Full-width Section) */}
+          <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <strong style={{ fontSize: '0.9rem', color: '#111827', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>Ekspor Data Kebun</strong>
+            <button
+              type="button"
+              class="pencatatan-mode-btn is-active"
+              onClick={handleExport}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download CSV
+            </button>
+          </div>
+
+          {/* ============ LAPORAN MONITORING TERPADU ============ */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#111827', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: "'Outfit', sans-serif" }}>
+              <span style={{ display: 'inline-block', width: '4px', height: '1.3rem', background: '#38431F', borderRadius: '2px' }}></span>
+              Laporan Monitoring Terpadu
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+              {/* Card 1: Panen */}
+              <div class="monitoring-card" style={{ background: 'linear-gradient(135deg, #F4F7F1 0%, #FFFFFF 100%)', border: '1.5px solid #D1E0C5', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(56,67,31,0.02)', position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div style={{ background: '#E6EFE0', padding: '0.5rem', borderRadius: '10px' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38431F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: '0.73rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#7C8B64', background: '#FFF', border: '1px solid #E6D9CE', padding: '0.25rem 0.5rem', borderRadius: '9999px' }}>PANEN</span>
+                </div>
+                <span style={{ fontSize: '2.5rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.25rem', fontFamily: "'Outfit', sans-serif" }}>
+                  {totalHarvestMetric.value.toLocaleString('id-ID')} <span style={{ fontSize: '1rem', color: '#4B5563' }}>Kg</span>
+                </span>
+                <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Hasil Panen Buah Terakumulasi</strong>
+              </div>
+
+              {/* Card 2: Pemupukan */}
+              <div class="monitoring-card" style={{ background: 'linear-gradient(135deg, #FDF9F5 0%, #FFFFFF 100%)', border: '1.5px solid #ECDCCF', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(60,48,38,0.02)', position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div style={{ background: '#F7EDE2', padding: '0.5rem', borderRadius: '10px' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E5E38" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: '0.73rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#8E5E38', background: '#FFF', border: '1px solid #E6D9CE', padding: '0.25rem 0.5rem', borderRadius: '9999px' }}>PEMUPUKAN</span>
+                </div>
+                <span style={{ fontSize: '2.5rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.25rem', fontFamily: "'Outfit', sans-serif" }}>
+                  {totalPemupukanCount.value} <span style={{ fontSize: '1rem', color: '#4B5563' }}>Kali</span>
+                </span>
+                <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>
+                  Total Dosis: {totalPemupukanDose.value.toLocaleString('id-ID')} Kg
+                </strong>
+              </div>
+
+              {/* Card 3: Pemberian Obat */}
+              <div class="monitoring-card" style={{ background: 'linear-gradient(135deg, #F1F7F7 0%, #FFFFFF 100%)', border: '1.5px solid #C5DFDF', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(18,100,100,0.02)', position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div style={{ background: '#E0F0F0', padding: '0.5rem', borderRadius: '10px' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2B7A7A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4.82 4.82a9 9 0 0 1 12.73 0M2.41 9.66a14 14 0 0 1 19.18 0M19.18 19.18a9 9 0 0 1-12.73 0M21.59 14.34a14 14 0 0 1-19.18 0"/>
+                      <circle cx="12" cy="12" r="1"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: '0.73rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#2B7A7A', background: '#FFF', border: '1px solid #E6D9CE', padding: '0.25rem 0.5rem', borderRadius: '9999px' }}>PENGOBATAN</span>
+                </div>
+                <span style={{ fontSize: '2.5rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.25rem', fontFamily: "'Outfit', sans-serif" }}>
+                  {totalPengobatanCount.value} <span style={{ fontSize: '1rem', color: '#4B5563' }}>Kali</span>
+                </span>
+                <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>
+                  Total Dosis: {totalPengobatanDose.value.toLocaleString('id-ID')} L
+                </strong>
+              </div>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
             {/* ============ ALPUKAT SECTION ============ */}
             {showAlpukat.value && (

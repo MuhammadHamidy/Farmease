@@ -1,5 +1,5 @@
 -- Seed Sheep Types
-INSERT INTO master.sheep_types (id_type, type_name, type_description) VALUES 
+INSERT INTO livestock.sheep_types (id_type, type_name, type_description) VALUES 
 ('22222222-2222-2222-2222-222222222201', 'Garut', 'Native Garut sheep breed'),
 ('22222222-2222-2222-2222-222222222202', 'Texel', 'Texel meat sheep breed'),
 ('22222222-2222-2222-2222-222222222203', 'Dorper', 'Dorper meat sheep breed'),

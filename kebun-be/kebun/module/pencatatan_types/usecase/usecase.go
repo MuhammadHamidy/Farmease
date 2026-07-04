@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/farmease/farmease-be/farmease/module/pencatatan_types/domain"
+	"github.com/farmease/kebun-be/kebun/module/pencatatan_types/domain"
 )
 
 type usecase struct {
@@ -109,3 +109,4 @@ func (u *usecase) CreateRincian(ctx context.Context, input domain.CreateRincianI
 	}
 	return item, nil
 }
+

@@ -26,7 +26,7 @@ func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) e
 	if matingData.IDSheepFemale == "" {
 		return fmt.Errorf("domba betina wajib terisi")
 	}
-	if matingData.MatingMethod == "ib" {
+	if matingData.MatingMethod == "ib" || matingData.MatingMethod == "inseminasi buatan" {
 		if matingData.IDSheepMale == "" && (matingData.ExternalDonor == nil || matingData.ExternalDonor.Name == "") {
 			return fmt.Errorf("sumber pejantan (internal atau external donor) wajib terisi untuk inseminasi buatan")
 		}
@@ -37,7 +37,7 @@ func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) e
 	}
 
 	// 1. If mating is IB and has an external donor, register or find the external donor first
-	if matingData.MatingMethod == "ib" && matingData.ExternalDonor != nil && matingData.ExternalDonor.Name != "" {
+	if (matingData.MatingMethod == "ib" || matingData.MatingMethod == "inseminasi buatan") && matingData.ExternalDonor != nil && matingData.ExternalDonor.Name != "" {
 		donor, err := u.sheepRepo.FindExternalDonor(ctx, matingData.ExternalDonor.Name, matingData.ExternalDonor.Origin)
 		if err != nil || donor == nil {
 			// Generate code DN-YYMMDDHHMMSS

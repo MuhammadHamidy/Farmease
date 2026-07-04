@@ -1,6 +1,6 @@
-CREATE SCHEMA IF NOT EXISTS master;
+CREATE SCHEMA IF NOT EXISTS livestock;
 
-CREATE TABLE IF NOT EXISTS master.sheep_types (
+CREATE TABLE IF NOT EXISTS livestock.sheep_types (
     id_type UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type_name VARCHAR(100) NOT NULL,
     type_description TEXT,

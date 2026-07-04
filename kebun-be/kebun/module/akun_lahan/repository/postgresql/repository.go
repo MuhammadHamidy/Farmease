@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/akun_lahan/domain"
+	"github.com/farmease/kebun-be/kebun/module/akun_lahan/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -98,4 +98,5 @@ func parseTime(val string) (time.Time, error) {
 	}
 	return time.Time{}, errors.New("invalid time format")
 }
+
 

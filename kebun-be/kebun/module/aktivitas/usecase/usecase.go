@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/aktivitas/domain"
+	"github.com/farmease/kebun-be/kebun/module/aktivitas/domain"
 )
 
 type aktivitasUsecase struct {
@@ -33,3 +33,4 @@ func (u *aktivitasUsecase) Update(ctx context.Context, a *domain.Aktivitas) erro
 func (u *aktivitasUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
+

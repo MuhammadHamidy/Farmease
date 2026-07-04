@@ -1,10 +1,10 @@
 package penanaman
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/penanaman/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/penanaman/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/penanaman/usecase"
-	frameworkFiber "github.com/farmease/farmease-be/framework/fiber"
+	"github.com/farmease/kebun-be/kebun/module/penanaman/delivery/http"
+	"github.com/farmease/kebun-be/kebun/module/penanaman/repository/postgresql"
+	"github.com/farmease/kebun-be/kebun/module/penanaman/usecase"
+	frameworkFiber "github.com/farmease/kebun-be/framework/fiber"
 	"go.uber.org/fx"
 )
 
@@ -22,3 +22,4 @@ var Module = fx.Module("penanaman",
 		),
 	),
 )
+

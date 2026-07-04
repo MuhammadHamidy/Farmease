@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/routine_schedules/domain"
+	"github.com/farmease/kebun-be/kebun/module/routine_schedules/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -252,3 +252,4 @@ func (r *routineScheduleRepository) FindActiveSchedules(ctx context.Context) ([]
 	}
 	return list, nil
 }
+

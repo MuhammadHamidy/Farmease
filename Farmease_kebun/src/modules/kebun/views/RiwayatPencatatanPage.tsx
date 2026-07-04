@@ -5,6 +5,7 @@ import PerkebunanBackButton from '../components/shared/PerkebunanBackButton'
 import { landSession, userSession, fetchCropsList, cropsList } from '@/store/navigation'
 import { perawatan, panen, aktivitas, fetchPerawatan, fetchPanen, fetchAktivitas } from '@/store/gardening'
 import { pencatatanSubmissions, fetchSubmissions } from '@/store/operatorAdmin'
+import PerkebunanFormSelect from '@/modules/kebun/components/shared/PerkebunanFormSelect'
 
 export default defineComponent({
   name: 'RiwayatPencatatanPage',
@@ -342,28 +343,12 @@ export default defineComponent({
               />
             </div>
             
-            <select
-              value={selectedCategory.value}
-              onChange={(e: any) => selectedCategory.value = e.target.value}
-              style="
-                height: 42px;
-                width: 100%;
-                max-width: 220px;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 0 0.75rem;
-                font-weight: 600;
-                color: #374151;
-                background-color: #ffffff;
-                outline: none;
-                cursor: pointer;
-                box-sizing: border-box;
-              "
-            >
-              {categoryOptions.value.map(opt => (
-                <option value={opt} key={opt}>{opt}</option>
-              ))}
-            </select>
+            <PerkebunanFormSelect
+              modelValue={selectedCategory.value}
+              onUpdate:modelValue={(val: string) => selectedCategory.value = val}
+              options={categoryOptions.value}
+              style="max-width: 220px;"
+            />
           </div>
 
           {/* Heading */}

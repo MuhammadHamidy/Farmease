@@ -1,10 +1,10 @@
 package pengobatan
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/pengobatan/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/pengobatan/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/pengobatan/usecase"
-	frameworkFiber "github.com/farmease/farmease-be/framework/fiber"
+	"github.com/farmease/kebun-be/kebun/module/pengobatan/delivery/http"
+	"github.com/farmease/kebun-be/kebun/module/pengobatan/repository/postgresql"
+	"github.com/farmease/kebun-be/kebun/module/pengobatan/usecase"
+	frameworkFiber "github.com/farmease/kebun-be/framework/fiber"
 	"go.uber.org/fx"
 )
 
@@ -22,3 +22,4 @@ var Module = fx.Module("pengobatan",
 		),
 	),
 )
+

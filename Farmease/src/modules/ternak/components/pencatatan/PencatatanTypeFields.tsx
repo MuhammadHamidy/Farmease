@@ -679,7 +679,7 @@ export default defineComponent({
             }));
         }
 
-        if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi') {
+        if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi' || formName === 'Pengecekan Birahi') {
           return list
             .filter(s => {
               if (s.status === 'Hamil') return false;
@@ -823,7 +823,7 @@ export default defineComponent({
         }
         return;
       }
-      if (props.form.name === 'Cek Birahi' || props.form.name === 'Pencatatan Birahi') {
+      if (props.form.name === 'Cek Birahi' || props.form.name === 'Pencatatan Birahi' || props.form.name === 'Pengecekan Birahi') {
         props.form.targetId = s.id;
         props.form.idPejantan = s.gender === 'jantan' ? s.id : '';
       } else {
@@ -894,7 +894,7 @@ export default defineComponent({
         const dataObj: any = (sub.payload as any)?.data || sub.payload;
         const items = dataObj?.items || [];
         for (const item of items) {
-          if ((item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi') && (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))) {
+          if ((item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') && (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))) {
             hasCheckedEstrus = true;
             const time = sub.submittedAt ? new Date(sub.submittedAt).getTime() : Date.now();
             if (!latestEstrusCheck || time > latestEstrusCheck.time) {
@@ -1110,7 +1110,7 @@ export default defineComponent({
     });
 
     watch(selectedBaseSheep, (newBase) => {
-      if (newBase && newBase.gender === 'jantan' && f().metoda === 'ib' && props.form.name !== 'IB' && props.form.name !== 'Inseminasi Buatan') {
+      if (newBase && newBase.gender === 'jantan' && (f().metoda === 'ib' || f().metoda === 'inseminasi buatan') && props.form.name !== 'IB' && props.form.name !== 'Inseminasi Buatan') {
         f().metoda = 'alami';
       }
     });
@@ -1393,10 +1393,10 @@ export default defineComponent({
                           {(() => {
                             const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
                             if (!mating) return 'Silakan pilih perkawinan di bawah';
-                            if (mating.mating_method === 'ib' && mating.external_donor) {
+                            if ((mating.mating_method === 'ib' || mating.mating_method === 'inseminasi buatan') && mating.external_donor) {
                               return `Donor: ${mating.external_donor.name} (${mating.external_donor.origin || ''})`;
                             }
-                            if (mating.mating_method === 'ib' && mating.straw_code) {
+                            if ((mating.mating_method === 'ib' || mating.mating_method === 'inseminasi buatan') && mating.straw_code) {
                               return `IB Straw: ${mating.straw_code}`;
                             }
                             const maleId = mating.id_sheep_male || mating.id_male_sheep;
@@ -1411,7 +1411,7 @@ export default defineComponent({
                           {(() => {
                             const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
                             if (!mating) return '—';
-                            return mating.mating_method === 'ib' ? 'Inseminasi Buatan (IB)' : 'Kawin Alami';
+                            return (mating.mating_method === 'ib' || mating.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : 'Kawin Alami';
                           })()}
                         </span>
                       </div>
@@ -1435,7 +1435,7 @@ export default defineComponent({
             </div>
           )}
 
-          {props.jenisId === 'perkawinan' && props.form.name !== 'Cek Birahi' && props.form.name !== 'Pencatatan Birahi' && props.form.name !== 'Kontrol Kebuntingan' && f().mode === 'individu' && selectedBaseSheep.value && (() => {
+          {props.jenisId === 'perkawinan' && props.form.name !== 'Cek Birahi' && props.form.name !== 'Pencatatan Birahi' && props.form.name !== 'Pengecekan Birahi' && props.form.name !== 'Kontrol Kebuntingan' && f().mode === 'individu' && selectedBaseSheep.value && (() => {
             const isIB = f().metoda === 'ib' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan';
             return (
               <>
@@ -1507,7 +1507,7 @@ export default defineComponent({
             );
           })()}
 
-          {props.jenisId === 'perkawinan' && props.form.name !== 'Cek Birahi' && props.form.name !== 'Pencatatan Birahi' && f().mode === 'individu' && selectedPartnerSheep.value && (
+          {props.jenisId === 'perkawinan' && props.form.name !== 'Cek Birahi' && props.form.name !== 'Pencatatan Birahi' && props.form.name !== 'Pengecekan Birahi' && f().mode === 'individu' && selectedPartnerSheep.value && (
             <div class="col-12 animate-fade-in">
               <div class="p-3 rounded-4 bg-light border border-light-cream" style={{ fontSize: '0.85rem', color: '#2C3E50' }}>
                 <div class="fw-bold mb-2 text-dark" style={{ fontSize: '0.9rem' }}>
@@ -2100,7 +2100,7 @@ export default defineComponent({
                     </div>
                   </PencatatanField>
                 </>
-              ) : (props.form.name === 'Cek Birahi' || props.form.name === 'Pencatatan Birahi') ? (
+              ) : (props.form.name === 'Cek Birahi' || props.form.name === 'Pencatatan Birahi' || props.form.name === 'Pengecekan Birahi') ? (
                 <>
                   <PencatatanField label="Tanggal Pemeriksaan" colClass="col-12" required>
                     <PencatatanInput
@@ -2147,7 +2147,7 @@ export default defineComponent({
 
                   {f().mode === 'individu' && (
                     <>
-                      {props.form.name !== 'IB' && props.form.name !== 'Inseminasi Buatan' && props.form.name !== 'Kawin Alam' && props.form.name !== 'Kawin Alami' && (
+                      {props.form.name !== 'IB' && props.form.name !== 'Inseminasi Buatan' && props.form.name !== 'Kawin Alam' && props.form.name !== 'Kawin Alami' && (f().metoda !== 'ib' && f().metoda !== 'inseminasi buatan') && (
                         <PencatatanField label="Metoda Perkawinan" colClass="col-12">
                           <PencatatanSelect
                             modelValue={f().metoda}

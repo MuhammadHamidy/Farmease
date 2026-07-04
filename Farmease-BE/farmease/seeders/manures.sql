@@ -1,5 +1,5 @@
 -- Seed Manures
-INSERT INTO logistics.manures (id_manure, id_sheep, activity_type, amount, unit, destination_type, notes) VALUES 
+INSERT INTO livestock.manures (id_manure, id_sheep, activity_type, amount, unit, destination_type, notes) VALUES 
 ('cccccccc-cccc-cccc-cccc-cccccccc0001', '55555555-5555-5555-5555-555555555501', 'collection', 5.50, 'kg', 'internal', 'Morning cage manure collection'),
 ('cccccccc-cccc-cccc-cccc-cccccccc0002', '55555555-5555-5555-5555-555555555502', 'collection', 4.80, 'kg', 'internal', 'Morning cage manure collection'),
 ('cccccccc-cccc-cccc-cccc-cccccccc0003', '55555555-5555-5555-5555-555555555504', 'collection', 2.10, 'kg', 'internal', 'Morning cage manure collection')

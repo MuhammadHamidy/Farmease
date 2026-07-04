@@ -18,7 +18,7 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const token = to.query.token as string;
   const role = to.query.role as string;
   const username = to.query.username as string;
@@ -59,10 +59,10 @@ router.beforeEach((to, from, next) => {
     // Redirect Owner/Pemilik to dedicated pemilik page
     const isOwner = role === 'Owner' || role === 'Pemilik';
     if (isOwner && to.path !== '/pemilik') {
-      return next({ path: '/pemilik', query });
+      return { path: '/pemilik', query };
     }
     
-    return next({ path: to.path, query });
+    return { path: to.path, query };
   }
 
   // Restore session if not loaded but token exists in localStorage
@@ -90,19 +90,19 @@ router.beforeEach((to, from, next) => {
   if (!hasToken && !publicPaths.includes(to.path)) {
     console.warn('[Auth Guard] No valid token found, redirecting to SSO...');
     window.location.href = 'http://localhost:3000/?service=kebun';
-    return;
+    return false;
   }
 
   // Enforce Owner/Pemilik always lands on /pemilik and non-owners cannot enter /pemilik
   const isOwner = userSession.value?.role === 'Owner' || userSession.value?.role === 'Pemilik';
   if (isOwner && to.path !== '/pemilik' && !publicPaths.includes(to.path)) {
-    return next('/pemilik');
+    return '/pemilik';
   }
   if (!isOwner && to.path === '/pemilik') {
-    return next(userSession.value?.role === 'Admin' ? '/admin' : '/kebun');
+    return userSession.value?.role === 'Admin' ? '/admin' : '/kebun';
   }
 
-  next();
+  return true;
 });
 
 export default router;

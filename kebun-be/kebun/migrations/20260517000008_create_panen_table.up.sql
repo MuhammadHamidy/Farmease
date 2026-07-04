@@ -13,5 +13,8 @@ CREATE TABLE IF NOT EXISTS gardening.panen (
     -- Relasi ke lahan
     Lahan_id_lahan         UUID NOT NULL REFERENCES gardening.lahan(id_lahan)         ON DELETE CASCADE,
     -- Relasi wajib ke aktivitas
-    Aktivitas_id_aktivitas UUID NOT NULL REFERENCES gardening.aktivitas(id_aktivitas) ON DELETE CASCADE
+    Aktivitas_id_aktivitas UUID NOT NULL REFERENCES gardening.aktivitas(id_aktivitas) ON DELETE CASCADE,
+    
+    created_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

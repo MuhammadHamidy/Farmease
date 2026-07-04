@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/farmease/farmease-be/farmease/module/lahan/domain"
+	"github.com/farmease/kebun-be/kebun/module/lahan/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -88,3 +88,4 @@ func (r *lahanRepository) FindByKodeLahan(ctx context.Context, kode string) (*do
 	l.TanggalTanam = ""
 	return &l, nil
 }
+

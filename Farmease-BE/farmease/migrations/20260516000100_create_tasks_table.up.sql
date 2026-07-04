@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS operations.tasks (
     category operations.task_category_enum,
     end_time VARCHAR(255) DEFAULT '',
     schedule_id UUID REFERENCES operations.routine_schedules(id) ON DELETE CASCADE,
-    id_cage UUID REFERENCES master.cages(id_cage) ON DELETE SET NULL,
+    id_cage UUID REFERENCES livestock.cages(id_cage) ON DELETE SET NULL,
     start_time TIME,
     rincian operations.task_rincian_enum,
     id_mating UUID NULL REFERENCES breeding.matings(id_mating) ON DELETE SET NULL,

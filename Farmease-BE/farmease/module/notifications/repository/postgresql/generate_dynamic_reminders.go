@@ -21,7 +21,7 @@ func (r *Repository) GenerateDynamicReminders(ctx context.Context, idAccount str
 	tomorrowQuery := `
 		SELECT t.id_task, t.title, COALESCE(c.cage_code, 'A') as cage_code, t.start_time
 		FROM operations.tasks t
-		LEFT JOIN master.cages c ON t.id_cage = c.id_cage
+		LEFT JOIN livestock.cages c ON t.id_cage = c.id_cage
 		WHERE t.id_account = $1
 		  AND t.task_date >= $2
 		  AND t.task_date <= $3
@@ -75,7 +75,7 @@ func (r *Repository) GenerateDynamicReminders(ctx context.Context, idAccount str
 	vitaminQuery := `
 		SELECT t.id_task, t.title, COALESCE(c.cage_code, 'A') as cage_code, t.start_time
 		FROM operations.tasks t
-		LEFT JOIN master.cages c ON t.id_cage = c.id_cage
+		LEFT JOIN livestock.cages c ON t.id_cage = c.id_cage
 		WHERE t.id_account = $1
 		  AND t.task_date >= $2
 		  AND t.task_date <= $3

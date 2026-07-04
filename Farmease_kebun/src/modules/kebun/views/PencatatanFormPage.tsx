@@ -136,7 +136,7 @@ export default defineComponent({
       kodePohon: 'LA001', deskripsiPenanaman: '', jumlahPemangkasan: '',
       deskripsiPemangkasan: '', jenisObat: 'Jenis Obat', kodePohonPerawatan: 'Kode Pohon',
       bagianPohon: 'Bagian Pohon', teknikPemberian: 'Teknik Pemberian Obat', namaObat: '',
-      dosisObat: '', deskripsiPerawatan: '', jenisPupuk: 'Jenis Pupuk', fasePohon: 'Fase Pohon',
+      dosisObat: '', deskripsiPerawatan: '', jenisPupuk: 'Jenis Pupuk', fasePohon: 'Vegetatif', statusProduktivitas: 'usia produktif (> 4 tahun)',
       kodePohonPemupukan: 'Kode Pohon', jumlahBeratPupuk: '', deskripsiPemupukan: '',
       jumlahPanen: '', beratPanen: '', deskripsiPanen: '', deskripsiPembersihan: '',
       metodePemangkasan: 'Metode Pemangkasan', tujuanPemanfaatan: 'Pemanfaatan',
@@ -635,9 +635,23 @@ export default defineComponent({
       { immediate: true }
     )
 
+    watch(kindTitle, (newKind) => {
+      const k = (newKind || '').toLowerCase()
+      if (k.includes('panen') || k.includes('pembuahan')) {
+        formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
+        formState.value.fasePohon = 'Generatif'
+      } else if (k.includes('penanaman')) {
+        formState.value.statusProduktivitas = 'usia belum produktif (0 - 3 tahun)'
+        formState.value.fasePohon = 'Belum Produktif'
+      } else {
+        formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
+        formState.value.fasePohon = 'Vegetatif'
+      }
+    }, { immediate: true })
+
     const fetchTrees = async () => {
       try {
-        const list = await pohonApi.getList()
+        const list = (await pohonApi.getList()).filter(p => (p.status_pohon || 'aktif').toLowerCase() === 'aktif')
         const activeLandCode = landSession.value?.code
         if (activeLandCode) {
           // Try to find the land's DB id from landsList
@@ -707,6 +721,19 @@ export default defineComponent({
     const isSaving = ref(false)
     const saveRecording = async () => {
       if (isSaving.value) return
+
+      // Automatically set phase and productivity status for Panen, Penanaman, Pembuahan
+      const jenisLower = (selectedJenis.value || '').toLowerCase()
+      if (jenisLower.includes('panen')) {
+        formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
+        formState.value.fasePohon = 'Generatif'
+      } else if (jenisLower.includes('penanaman')) {
+        formState.value.statusProduktivitas = 'usia belum produktif (0 - 3 tahun)'
+        formState.value.fasePohon = 'Belum Produktif'
+      } else if (jenisLower.includes('pembuahan')) {
+        formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
+        formState.value.fasePohon = 'Generatif'
+      }
 
 
 
@@ -956,11 +983,14 @@ export default defineComponent({
                 varietasOptions={varietasOptions.value}
                 selectedVarietas={selectedVarietas.value}
                 fasePohon={formState.value.fasePohon}
+                statusProduktivitas={formState.value.statusProduktivitas}
                 treeIcon={getLahanIcon(landSession.value?.name ?? 'alpukat')}
                 maxSelection={selectedRincian.value.toLowerCase().includes('penggantian') ? 1 : 0}
+                kindTitle={kindTitle.value}
                 onUpdate:selectedCodes={(codes: string[]) => { selectedTrees.value = codes }}
                 onUpdate:selectedVarietas={(val: string) => { selectedVarietas.value = val }}
                 onUpdate:fasePohon={(val: string) => { formState.value.fasePohon = val }}
+                onUpdate:statusProduktivitas={(val: string) => { formState.value.statusProduktivitas = val }}
               />
             )}
 

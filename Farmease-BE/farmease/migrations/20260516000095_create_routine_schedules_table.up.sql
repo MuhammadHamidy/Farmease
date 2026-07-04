@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS operations.routine_schedules (
     start_time      TIME,
     end_time        TIME,
     priority        operations.priority_enum DEFAULT 'sedang',
-    id_cage         UUID REFERENCES master.cages(id_cage) ON DELETE SET NULL,
+    id_cage         UUID REFERENCES livestock.cages(id_cage) ON DELETE SET NULL,
     id_account      UUID,
     rincian         operations.task_rincian_enum,
     is_active       BOOLEAN DEFAULT TRUE,

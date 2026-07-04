@@ -131,7 +131,7 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
     if (formName === 'Kontrol Kebuntingan') {
       return ['targetId', 'idMating', 'metodePemeriksaan', 'hasilPemeriksaan', 'tanggal', 'note'].includes(key);
     }
-    if (formName === 'Cek Birahi') {
+    if (formName === 'Cek Birahi' || formName === 'Pengecekan Birahi') {
       return ['targetId', 'hasilPemeriksaan', 'tanggal', 'note'].includes(key);
     }
     const baseKeys = ['targetId', 'idPejantan', 'metoda', 'tanggal', 'note'];
@@ -142,7 +142,7 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
       return true;
     }
     
-    const isIB = item.metoda === 'ib' || formName === 'IB' || formName === 'Inseminasi Buatan';
+    const isIB = item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || formName === 'IB' || formName === 'Inseminasi Buatan';
     if (isIB) {
       const ibKeys = ['waktuIB', 'sumberPejantan', 'asalSemen', 'namaInseminator'];
       if (ibKeys.includes(key)) return true;
@@ -814,7 +814,7 @@ export default defineComponent({
                              
                              let displayValue = String(val);
                              if (key === 'hasilPemeriksaan') {
-                               if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi') {
+                               if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi' || formName === 'Pengecekan Birahi') {
                                  displayValue = val === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi';
                                } else {
                                  displayValue = val === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' :

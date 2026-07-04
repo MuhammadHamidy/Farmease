@@ -1,8 +1,3 @@
--- Drop index
-DROP INDEX IF EXISTS logistics.idx_manures_cage_id;
-
--- Remove id_cage column
-ALTER TABLE logistics.manures DROP COLUMN IF EXISTS id_cage;
-
--- Make id_sheep NOT NULL (Warning: this might fail if there are records with null id_sheep, but it is standard for down migration)
-ALTER TABLE logistics.manures ALTER COLUMN id_sheep SET NOT NULL;
+-- id_cage column and index are now part of the manures table creation migration (20260516000090).
+-- This migration is a no-op kept for migration history continuity.
+SELECT 1;

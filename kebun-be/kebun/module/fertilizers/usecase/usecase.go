@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/fertilizers/domain"
-	pohonDomain "github.com/farmease/farmease-be/farmease/module/pohon/domain"
+	"github.com/farmease/kebun-be/kebun/module/fertilizers/domain"
+	pohonDomain "github.com/farmease/kebun-be/kebun/module/pohon/domain"
 )
 
 type useCase struct {
@@ -97,3 +97,4 @@ func hitungUsiaTahun(tglTanam string) float64 {
 	}
 	return years
 }
+

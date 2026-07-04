@@ -373,6 +373,15 @@ export default defineComponent({
                 </div>
               </div>
             </div>
+            <PerkebunanConfirmModal
+              isOpen={isLogoutConfirmOpen.value}
+              title="Konfirmasi Keluar"
+              message="Apakah Anda yakin ingin keluar dari halaman perkebunan?"
+              confirmLabel="Keluar"
+              cancelLabel="Batal"
+              onConfirm={confirmLogout}
+              onCancel={() => isLogoutConfirmOpen.value = false}
+            />
           </div>
         )
       }
@@ -452,7 +461,8 @@ export default defineComponent({
             item={selectedScheduleItem.value}
             onClose={() => { showDetailModal.value = false }}
             onNext={handleModalNext}
-          
+          />
+
           <PerkebunanConfirmModal
             isOpen={isLogoutConfirmOpen.value}
             title="Konfirmasi Keluar"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/farmease/farmease-be/farmease/module/pencatatan_types/domain"
+	"github.com/farmease/kebun-be/kebun/module/pencatatan_types/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -157,4 +157,5 @@ func (r *repository) StoreRincian(ctx context.Context, item *domain.RincianPenca
 	item.JenisID = item.JenisNama
 	return err
 }
+
 

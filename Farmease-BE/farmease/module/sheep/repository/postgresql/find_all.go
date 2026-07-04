@@ -17,7 +17,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 		       (SELECT weight_kg FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight,
 		       (SELECT weighing_date FROM livestock.weights WHERE id_sheep = d.id_sheep ORDER BY weighing_date ASC LIMIT 1) as first_weight_date
 		FROM livestock.sheep d
-		LEFT JOIN master.sheep_types t ON d.id_type = t.id_type
+		LEFT JOIN livestock.sheep_types t ON d.id_type = t.id_type
 		WHERE 1=1`
 	
 	args := []interface{}{}

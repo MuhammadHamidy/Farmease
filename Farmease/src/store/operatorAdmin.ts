@@ -862,12 +862,12 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
               catatan: item.note || '',
             })
           );
-        } else if (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi') {
+        } else if (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') {
           // Cek Birahi / Pencatatan Birahi doesn't record a mating. The approved submission itself acts as the historical record.
           promises.push(Promise.resolve());
         } else {
           // Catat perkawinan
-          const isIB = item.metoda === 'ib';
+          const isIB = item.metoda === 'ib' || item.metoda === 'inseminasi buatan';
           const notesStr = item.note || '';
         
           const matingPayload: any = {

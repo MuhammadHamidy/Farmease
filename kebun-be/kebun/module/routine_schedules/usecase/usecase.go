@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/routine_schedules/domain"
-	tasksDomain "github.com/farmease/farmease-be/farmease/module/tasks/domain"
+	"github.com/farmease/kebun-be/kebun/module/routine_schedules/domain"
+	tasksDomain "github.com/farmease/kebun-be/kebun/module/tasks/domain"
 )
 
 type useCase struct {
@@ -226,3 +226,4 @@ func shouldGenerateTask(rs *domain.RoutineSchedule, targetDate time.Time) bool {
 func sameDate(t1, t2 time.Time) bool {
 	return t1.Year() == t2.Year() && t1.Month() == t2.Month() && t1.Day() == t2.Day()
 }
+
