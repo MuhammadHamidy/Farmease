@@ -3,8 +3,8 @@ package middleware
 import (
 	"strings"
 
-	"github.com/farmease/farmease-be/libraries/idp"
-	"github.com/farmease/farmease-be/libraries/ssoclient"
+	"github.com/farmease/sso-be/libraries/idp"
+	"github.com/farmease/sso-be/libraries/ssoclient"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -107,3 +107,4 @@ func (a *AuthorizationMiddleware) Authenticate(scopes ...string) fiber.Handler {
 		return c.Next()
 	}
 }
+

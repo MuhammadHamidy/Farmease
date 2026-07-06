@@ -12,6 +12,7 @@ export default defineComponent({
     activeMode: { type: String as PropType<'lahan' | 'pohon'>, required: true },
     selectedRincian: { type: String, required: true },
     manureStock: { type: Number, default: 0 },
+    selectedPupukStock: { type: Number, default: 0 },
     manureCollections: { type: Array as PropType<any[]>, default: () => [] },
     pruningCollections: { type: Array as PropType<any[]>, default: () => [] },
     allSubmissions: { type: Array as PropType<any[]>, default: () => [] },
@@ -359,7 +360,7 @@ export default defineComponent({
           totalDoseCalc = `${treeCount * 100} - ${treeCount * 150} mL pupuk`
         }
       } else if (isOrganikPadat) {
-        if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
+        if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('tidak produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
           recommendedDose = '5 - 10 kg per pohon'
           totalDoseCalc = `${treeCount * 5} - ${treeCount * 10} kg`
         } else {
@@ -368,7 +369,7 @@ export default defineComponent({
         }
       } else {
         // Kimia / NPK
-        if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
+        if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('tidak produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
           recommendedDose = '150 - 200 g per pohon'
           totalDoseCalc = `${treeCount * 150} - ${treeCount * 200} g`
         } else {
@@ -460,22 +461,28 @@ export default defineComponent({
       if (!isOrganik && !isCair) return null
 
       if (isCair) {
+        const matVal = 0.3 * dose
+        const matStr = matVal < 0.1 ? Math.round(matVal * 1000) + ' gram' : matVal.toFixed(1) + ' kg'
+        const waterStr = dose < 0.1 ? Math.round(dose * 1000) + ' ml' : dose.toFixed(1) + ' Liter'
         return {
           type: 'cair',
           materialLabel: 'Bahan Organik (Hasil Pemangkasan)',
-          materialQty: (0.3 * dose).toFixed(1) + ' kg',
-          waterQty: dose.toFixed(1) + ' Liter',
+          materialQty: matStr,
+          waterQty: waterStr,
           decomposerQty: Math.round(20 * dose) + ' ml',
           molaseQty: Math.round(20 * dose) + ' ml'
         }
       } else {
         // Solid organic (Pupuk Kandang / Kotoran Domba)
         const isKompos = name.includes('kompos')
+        const matStr = dose < 0.1 ? Math.round(dose * 1000) + ' gram' : dose.toFixed(1) + ' kg'
+        const waterVal = 0.3 * dose
+        const waterStr = waterVal < 0.1 ? Math.round(waterVal * 1000) + ' ml' : waterVal.toFixed(1) + ' Liter'
         return {
           type: 'padat',
           materialLabel: isKompos ? 'Bahan Organik (Hasil Pemangkasan)' : 'Kotoran Domba',
-          materialQty: dose.toFixed(1) + ' kg',
-          waterQty: (0.3 * dose).toFixed(1) + ' Liter',
+          materialQty: matStr,
+          waterQty: waterStr,
           decomposerQty: Math.round(10 * dose) + ' ml',
           molaseQty: Math.round(10 * dose) + ' ml'
         }
@@ -646,11 +653,21 @@ export default defineComponent({
                     />
                   ) : (
                     <PerkebunanFormInput
-                      modelValue={f().namaObat}
-                      placeholder="Contoh: Ekstrak Nimba"
-                      onUpdate:modelValue={(val) => { f().namaObat = val }}
+                       modelValue={f().namaObat}
+                       placeholder="Contoh: Ekstrak Nimba"
+                       onUpdate:modelValue={(val) => { f().namaObat = val }}
                     />
                   )}
+                </div>
+
+                <div class="form-group">
+                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Teknik Pemberian Obat</span>
+                  <PerkebunanFormSelect
+                    modelValue={f().teknikPemberianObat}
+                    options={['Semprot', 'Kocor', 'Siram', 'Oles']}
+                    placeholder="Teknik Pemberian Obat"
+                    onUpdate:modelValue={(val) => { f().teknikPemberianObat = val }}
+                  />
                 </div>
 
                 {medicineRecommendation.value && (
@@ -666,7 +683,7 @@ export default defineComponent({
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; margin-top: 0.75rem;">
                       <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
                         <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Obat Terpilih
+                           Obat Terpilih
                         </span>
                         <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
                           {medicineRecommendation.value.obat}
@@ -675,7 +692,7 @@ export default defineComponent({
 
                       <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
                         <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Teknik Pemberian
+                           Teknik Pemberian
                         </span>
                         <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
                           {medicineRecommendation.value.teknik}
@@ -719,16 +736,6 @@ export default defineComponent({
                     options={['Mililiter (ml)', 'Liter (L)']}
                     placeholder="Satuan Volume"
                     onUpdate:modelValue={(val) => { f().satuanVolumeObat = val }}
-                  />
-                </div>
-
-                <div class="form-group">
-                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Teknik Pemberian Obat</span>
-                  <PerkebunanFormSelect
-                    modelValue={f().teknikPemberianObat}
-                    options={['Semprot', 'Kocor', 'Siram', 'Oles']}
-                    placeholder="Teknik Pemberian Obat"
-                    onUpdate:modelValue={(val) => { f().teknikPemberianObat = val }}
                   />
                 </div>
 
@@ -992,26 +999,32 @@ export default defineComponent({
                   />
                 </div>
 
-                {isOrganik && Number(f().jumlahBeratPupuk) > 0 && (
-                  <div style={`background-color: ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#fff5f5' : '#f6f8ee'}; border: 1px solid ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#ffe3e3' : '#dce1d0'}; border-radius: 0.5rem; padding: 1rem; margin-top: 0.5rem;`}>
-                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
-                      <span style="font-size: 1.25rem;">{Number(f().jumlahBeratPupuk) > props.manureStock ? '⚠️' : '💡'}</span>
-                      <div>
-                        <h4 style={`margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#e03131' : '#2f3b1d'};`}>
-                          {Number(f().jumlahBeratPupuk) > props.manureStock ? 'Peringatan Stok Kurang' : 'Prediksi Dosis Pemupukan'}
-                        </h4>
-                        <p style={`margin: 0; font-size: 0.85rem; font-weight: 600; color: ${Number(f().jumlahBeratPupuk) > props.manureStock ? '#c92a2a' : '#4f5d2e'}; line-height: 1.4;`}>
-                          {Number(f().jumlahBeratPupuk) > props.manureStock 
-                            ? `Jumlah yang Anda masukkan (${f().jumlahBeratPupuk} Kg) melebihi stok kotoran domba dari peternakan yang tersedia saat ini (${props.manureStock.toFixed(1)} Kg).`
-                            : props.activeMode === 'pohon'
-                              ? `Dengan total ${f().jumlahBeratPupuk} Kg untuk ${props.selectedTreesCount} pohon, maka setiap pohon akan mendapatkan dosis ${(Number(f().jumlahBeratPupuk) / props.selectedTreesCount).toFixed(2)} Kg/pohon.`
-                              : `Anda menggunakan ${f().jumlahBeratPupuk} Kg dari stok pupuk organik (${props.manureStock.toFixed(1)} Kg) untuk seluruh lahan.`
-                          }
-                        </p>
+                {isOrganik && Number(f().jumlahBeratPupuk) > 0 && (() => {
+                  const selectedName = (f().jenisPupukDetail || '').toLowerCase();
+                  const isKotoranDomba = selectedName.includes('kotoran') || selectedName.includes('manure');
+                  const availableStock = isKotoranDomba ? props.manureStock : props.selectedPupukStock;
+                  const isInsufficient = Number(f().jumlahBeratPupuk) > availableStock;
+                  return (
+                    <div style={`background-color: ${isInsufficient ? '#fff5f5' : '#f6f8ee'}; border: 1px solid ${isInsufficient ? '#ffe3e3' : '#dce1d0'}; border-radius: 0.5rem; padding: 1rem; margin-top: 0.5rem;`}>
+                      <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="font-size: 1.25rem;">{isInsufficient ? '⚠️' : '💡'}</span>
+                        <div>
+                          <h4 style={`margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: ${isInsufficient ? '#e03131' : '#2f3b1d'};`}>
+                            {isInsufficient ? 'Peringatan Stok Kurang' : 'Prediksi Dosis Pemupukan'}
+                          </h4>
+                          <p style={`margin: 0; font-size: 0.85rem; font-weight: 600; color: ${isInsufficient ? '#c92a2a' : '#4f5d2e'}; line-height: 1.4;`}>
+                            {isInsufficient 
+                              ? `Jumlah yang Anda masukkan (${f().jumlahBeratPupuk} Kg) melebihi stok ${f().jenisPupukDetail || 'pupuk'} yang tersedia saat ini (${availableStock.toFixed(1)} Kg).`
+                              : props.activeMode === 'pohon'
+                                ? `Dengan total ${f().jumlahBeratPupuk} Kg untuk ${props.selectedTreesCount} pohon, maka setiap pohon akan mendapatkan dosis ${(Number(f().jumlahBeratPupuk) / props.selectedTreesCount).toFixed(2)} Kg/pohon.`
+                                : `Anda menggunakan ${f().jumlahBeratPupuk} Kg dari stok ${f().jenisPupukDetail || 'pupuk'} (${availableStock.toFixed(1)} Kg) untuk seluruh lahan.`
+                            }
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </>
             )
           })()}

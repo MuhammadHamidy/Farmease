@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/middleware"
+	"github.com/farmease/sso-be/libraries/responses"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 type (
@@ -77,3 +77,4 @@ func (h *RoleHandler) UpdateRole(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(responses.Success[any](nil, "Role updated"))
 }
+

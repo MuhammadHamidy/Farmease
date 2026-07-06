@@ -23,7 +23,8 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 	args := []interface{}{}
 	if filter.IDCage != "" {
 		args = append(args, filter.IDCage)
-		query += fmt.Sprintf(" AND d.id_cage = $%d", len(args))
+		// Accept both cage UUID and cage code (e.g. "K-INDUKAN-01")
+		query += fmt.Sprintf(` AND d.id_cage = (SELECT id_cage FROM livestock.cages WHERE cage_code = $%d OR id_cage::text = $%d LIMIT 1)`, len(args), len(args))
 	}
 	if filter.Gender != "" {
 		args = append(args, filter.Gender)
@@ -99,7 +100,7 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 	countArgs := []interface{}{}
 	if filter.IDCage != "" {
 		countArgs = append(countArgs, filter.IDCage)
-		countQuery += fmt.Sprintf(" AND d.id_cage = $%d", len(countArgs))
+		countQuery += fmt.Sprintf(` AND d.id_cage = (SELECT id_cage FROM livestock.cages WHERE cage_code = $%d OR id_cage::text = $%d LIMIT 1)`, len(countArgs), len(countArgs))
 	}
 	if filter.Gender != "" {
 		countArgs = append(countArgs, filter.Gender)

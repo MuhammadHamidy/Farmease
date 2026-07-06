@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/errors"
 )
 
 // Delete removes a role from the system.
@@ -25,3 +25,4 @@ func (u *UseCase) Delete(ctx context.Context, institutionId string, id string) e
 
 	return nil
 }
+

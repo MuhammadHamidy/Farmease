@@ -53,6 +53,9 @@ func (h *LahanHandler) Create(c *fiber.Ctx) error {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
 	}
 	if err := h.usecase.Create(c.Context(), &l); err != nil {
+		if err.Error() == "kode lahan sudah digunakan" {
+			return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
+		}
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusCreated, "Success create land", l)
@@ -69,6 +72,9 @@ func (h *LahanHandler) Update(c *fiber.Ctx) error {
 	}
 	l.IDLahan = id
 	if err := h.usecase.Update(c.Context(), &l); err != nil {
+		if err.Error() == "kode lahan sudah digunakan oleh lahan lain" {
+			return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
+		}
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success update land", l)

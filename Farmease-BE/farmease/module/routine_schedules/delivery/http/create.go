@@ -10,6 +10,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Create godoc
+// @Summary      Create a routine schedule
+// @Description  Create a new routine schedule and generate tasks for it
+// @Tags         routine-schedules
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request body      domain.RoutineSchedule  true  "Routine Schedule details"
+// @Success      201     {object}  domain.RoutineSchedule
+// @Failure      400     {object}  responses.Response[any]
+// @Failure      409     {object}  responses.Response[any]
+// @Failure      500     {object}  responses.Response[any]
+// @Router       /api/routine-schedules [post]
 func (h *RoutineScheduleHandler) Create(c *fiber.Ctx) error {
 	var req struct {
 		Title        string    `json:"title"`

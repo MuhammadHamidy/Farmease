@@ -95,13 +95,37 @@ export const jenisPencatatanList = computed(() => {
   return Array.from(set);
 });
 
+const DEFAULT_MAP: Record<string, string[]> = {
+  'Panen': ['Panen Buah'],
+  'Pemangkasan': ['Pemangkasan Pemeliharaan', 'Ranting dan Daun'],
+  'Pembersihan': ['Penyiangan Gulma', 'Pembumbunan Tanah', 'Sanitasi Serasah & Ranting', 'Limbah'],
+  'Pembuahan': ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
+  'Pemberian Obat': ['Insektisida', 'Fungisida', 'Pestisida', 'Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi'],
+  'Pemupukan': ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia', 'Pupuk Padat', 'Pupuk Cair', 'Pupuk Organik'],
+  'Penanaman': ['Bibit Baru', 'Penggantian Bibit'],
+  'Penyiraman': ['Siram Manual', 'Irigrasi Drip / Pipanisasi', 'Irigasi Drip / Pipanisasi', 'Penyiraman Rutin'],
+  'Pengolahan Pupuk': ['Fermentasi Pupuk', 'Cek Fermentasi', 'Pupuk Kandang', 'Pupuk Kompos']
+};
+
+function belongsToOtherCategory(rincian: string, currentCategory: string): boolean {
+  const rLower = rincian.toLowerCase().trim();
+  for (const [cat, list] of Object.entries(DEFAULT_MAP)) {
+    if (cat === currentCategory) continue;
+    if (list.some(item => item.toLowerCase().trim() === rLower)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const rincianPencatatanByJenis = computed(() => {
   const map: Record<string, string[]> = {};
   const source = catalog.value?.rincian_by_jenis ?? FALLBACK_RINCIAN_BY_JENIS;
   for (const [jenis, items] of Object.entries(source)) {
-    map[jenis] = Array.isArray(items)
+    const rawNames = Array.isArray(items)
       ? items.map((item) => (typeof item === 'string' ? item : item.nama))
       : [];
+    map[jenis] = rawNames.filter(name => !belongsToOtherCategory(name, jenis));
   }
   // Always enforce custom options for Stok Pupuk and Stok Obat
   map['Stok Obat'] = ['Pendaftaran Obat Baru', 'Tambah Stok Obat (Exp Lama)'];

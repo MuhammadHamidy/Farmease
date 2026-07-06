@@ -1,6 +1,7 @@
 package stok
 
 import (
+	"github.com/farmease/kebun-be/kebun/module/stok/consumer"
 	"github.com/farmease/kebun-be/kebun/module/stok/delivery/http"
 	"github.com/farmease/kebun-be/kebun/module/stok/repository/postgresql"
 	"github.com/farmease/kebun-be/kebun/module/stok/usecase"
@@ -13,6 +14,7 @@ var Module = fx.Module("stok",
 		postgresql.NewStokRepository,
 		usecase.NewStokUsecase,
 		http.NewStokHandler,
+		consumer.NewManureConsumer,
 	),
 	fx.Provide(
 		fx.Annotate(
@@ -21,5 +23,6 @@ var Module = fx.Module("stok",
 			fx.As(new(frameworkFiber.Router)),
 		),
 	),
+	fx.Invoke(func(c *consumer.ManureConsumer) {}),
 )
 

@@ -114,14 +114,14 @@ export default defineComponent({
 
     const kebunRincianOptions: Record<string, string[]> = {
       panen: ['Panen Buah'],
-      pemangkasan: ['Ranting dan Daun'],
-      pembersihan: ['Limbah'],
-      pembuahan: [],
-      penanaman: [],
-      'pengendalian hama': [],
-      pemupukan: ['Pupuk Organik', 'Pupuk Padat', 'Pupuk Cair', 'Pupuk Kandang', 'Pupuk Kompos'],
-      penyiraman: ['Penyiraman Rutin'],
-      pengolahan_pupuk: ['Pupuk Kandang', 'Pupuk Kompos', 'Fermentasi Pupuk', 'Cek Fermentasi'],
+      pemangkasan: ['Pemangkasan Pemeliharaan'],
+      pembersihan: ['Penyiangan Gulma', 'Pembumbunan Tanah', 'Sanitasi Serasah & Ranting'],
+      pembuahan: ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
+      penanaman: ['Bibit Baru', 'Penggantian Bibit'],
+      'pengendalian hama': ['Insektisida', 'Fungisida', 'Pestisida'],
+      pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
+      penyiraman: ['Siram Manual', 'Irigrasi Drip / Pipanisasi'],
+      pengolahan_pupuk: ['Fermentasi Pupuk', 'Cek Fermentasi'],
       umum: []
     };
 
@@ -434,21 +434,75 @@ export default defineComponent({
 
     const activeCount = computed(() => filteredSchedules.value.filter((s) => s.active).length);
 
+    // Pagination per sesi — max 3 tugas per halaman
+    const TASKS_PER_PAGE = 3;
+    const sessionPages = reactive<Record<string, number>>({
+      Pagi: 1,
+      Siang: 1,
+      Sore: 1,
+    });
+
+    // Reset halaman sesi ketika filter berubah
+    watch([filteredTasks, sessionFilter, statusFilter, dateFilter], () => {
+      sessionPages.Pagi = 1;
+      sessionPages.Siang = 1;
+      sessionPages.Sore = 1;
+    });
+
+    const pagedTasksForSession = (sessionName: 'Pagi' | 'Siang' | 'Sore') => {
+      const all = groupedTasks.value[sessionName];
+      const page = sessionPages[sessionName];
+      const start = (page - 1) * TASKS_PER_PAGE;
+      return all.slice(start, start + TASKS_PER_PAGE);
+    };
+
+    const totalPagesForSession = (sessionName: 'Pagi' | 'Siang' | 'Sore') =>
+      Math.ceil(groupedTasks.value[sessionName].length / TASKS_PER_PAGE);
+
     const handleExport = async () => {
       try {
-        const [rawLands, rawTrees, rawPerawatan, rawPanen, rawPemangkasan] = await Promise.all([
+        const [rawLands, rawTrees, rawPengobatan, rawPemupukan, rawPenyiraman, rawPanen, rawPemangkasan] = await Promise.all([
           apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
           apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
-          apiClient.get<any[]>('/api/v1/perawatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
           apiClient.get<any[]>('/api/v1/panen').catch(() => []),
           apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
         ])
 
         const lands = Array.isArray(rawLands) ? rawLands : []
         const trees = Array.isArray(rawTrees) ? rawTrees : []
-        const perawatanList = Array.isArray(rawPerawatan) ? rawPerawatan : []
+        const pengobatanList = Array.isArray(rawPengobatan) ? rawPengobatan : []
+        const pemupukanList = Array.isArray(rawPemupukan) ? rawPemupukan : []
+        const penyiramanList = Array.isArray(rawPenyiraman) ? rawPenyiraman : []
         const panenList = Array.isArray(rawPanen) ? rawPanen : []
         const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const perawatanList = [
+          ...pengobatanList.map(o => ({
+            ...o,
+            id_perawatan: o.id_pengobatan,
+            jenis_bahan: 'obat',
+            id_lahan: o.Lahan_id_lahan
+          })),
+          ...pemupukanList.map(f => ({
+            ...f,
+            id_perawatan: f.id_pemupukan,
+            jenis_bahan: 'pupuk',
+            id_lahan: f.Lahan_id_lahan,
+            nama_obat: f.nama_pupuk,
+            deskripsi: f.deskripsi
+          })),
+          ...penyiramanList.map(w => ({
+            ...w,
+            id_perawatan: w.id_penyiraman,
+            jenis_bahan: 'air',
+            id_lahan: w.Lahan_id_lahan,
+            teknik_perawatan: w.teknik_penyiraman,
+            deskripsi: w.deskripsi
+          }))
+        ]
 
         const csvRows: string[][] = []
 
@@ -717,6 +771,10 @@ export default defineComponent({
             if (sessionFilter.value !== 'Semua Sesi' && sessionFilter.value !== sessionName) return null;
             if (tasksInSession.length === 0) return null;
 
+            const currentPage = sessionPages[sessionName];
+            const totalPages = totalPagesForSession(sessionName);
+            const pagedTasks = pagedTasksForSession(sessionName);
+
             return (
               <div class="session-section mb-4" key={sessionName}>
                 <div class="d-flex align-items-center gap-2 mb-3 mt-4">
@@ -732,7 +790,7 @@ export default defineComponent({
                 </div>
                 <hr style={{ borderColor: '#2C3E50', opacity: 0.6, margin: '0 0 1.25rem 0' }} />
                 <div class="row g-3">
-                  {tasksInSession.map(task => (
+                  {pagedTasks.map(task => (
                     <RoutineScheduleCard
                       key={task.id}
                       task={task}
@@ -745,6 +803,72 @@ export default defineComponent({
                     />
                   ))}
                 </div>
+
+                {/* Pagination — hanya muncul jika lebih dari 3 tugas */}
+                {totalPages > 1 && (
+                  <div class="d-flex align-items-center justify-content-between mt-3 px-1">
+                    <span style={{ fontSize: '0.78rem', color: '#6C757D', fontWeight: '600' }}>
+                      Menampilkan {((currentPage - 1) * TASKS_PER_PAGE) + 1}–{Math.min(currentPage * TASKS_PER_PAGE, tasksInSession.length)} dari {tasksInSession.length} tugas
+                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                      <button
+                        class="btn btn-sm rounded-3"
+                        style={{
+                          border: '1.5px solid #E6D9CE',
+                          backgroundColor: currentPage === 1 ? '#F4F1EA' : '#fff',
+                          color: currentPage === 1 ? '#C4B9AE' : '#2C3E50',
+                          fontWeight: '700',
+                          fontSize: '0.8rem',
+                          padding: '0.3rem 0.75rem',
+                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        }}
+                        disabled={currentPage === 1}
+                        onClick={() => { sessionPages[sessionName] = currentPage - 1; }}
+                      >
+                        ‹ Sebelumnya
+                      </button>
+                      <div class="d-flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
+                          <button
+                            key={pg}
+                            class="btn btn-sm rounded-3"
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              padding: '0',
+                              fontWeight: '700',
+                              fontSize: '0.8rem',
+                              border: pg === currentPage ? 'none' : '1.5px solid #E6D9CE',
+                              backgroundColor: pg === currentPage
+                                ? (props.type === 'peternakan' ? '#2D7D46' : '#4A7C59')
+                                : '#fff',
+                              color: pg === currentPage ? '#fff' : '#2C3E50',
+                            }}
+                            onClick={() => { sessionPages[sessionName] = pg; }}
+                          >
+                            {pg}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        class="btn btn-sm rounded-3"
+                        style={{
+                          border: '1.5px solid #E6D9CE',
+                          backgroundColor: currentPage === totalPages ? '#F4F1EA' : '#fff',
+                          color: currentPage === totalPages ? '#C4B9AE' : '#2C3E50',
+                          fontWeight: '700',
+                          fontSize: '0.8rem',
+                          padding: '0.3rem 0.75rem',
+                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        }}
+                        disabled={currentPage === totalPages}
+                        onClick={() => { sessionPages[sessionName] = currentPage + 1; }}
+                      >
+                        Berikutnya ›
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

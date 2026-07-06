@@ -8,6 +8,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// CreateFermentationLog godoc
+// @Summary      Create fermentation log
+// @Description  Create a new fermentation log for a silage conversion process
+// @Tags         fermentations
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id      path      string                       true  "Silage Conversion ID"
+// @Param        request body      domain.SilageFermentationLog true  "Fermentation Log details"
+// @Success      201     {object}  domain.SilageFermentationLog
+// @Failure      400     {object}  responses.Response[any]
+// @Failure      500     {object}  responses.Response[any]
+// @Router       /api/fermentations/conversions/{id}/logs [post]
 func (h *FermentationHandler) CreateFermentationLog(c *fiber.Ctx) error {
 	conversionID := c.Params("id")
 	var log domain.SilageFermentationLog

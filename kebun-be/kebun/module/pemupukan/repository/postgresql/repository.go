@@ -21,9 +21,9 @@ func NewPemupukanRepository(db *pgxpool.Pool) domain.PemupukanRepository {
 func (r *pemupukanRepository) FindAll(ctx context.Context) ([]*domain.Pemupukan, error) {
 	query := `
 		SELECT p.id_pemupukan, p.nama_pupuk, p.dosis, p.satuan, p.deskripsi, p.manure_id, p.id_stok_pupuk,
-		       p.Lahan_id_lahan, p.Aktivitas_id_aktivitas, p.created_at, p.updated_at
+		       p."Lahan_id_lahan", p."Aktivitas_id_aktivitas", p.created_at, p.updated_at
 		FROM gardening.pemupukan p
-		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
+		JOIN gardening.aktivitas a ON p."Aktivitas_id_aktivitas" = a.id_aktivitas
 		ORDER BY a.tanggal_aktivitas DESC
 	`
 	rows, err := r.db.Query(ctx, query)
@@ -48,7 +48,7 @@ func (r *pemupukanRepository) FindByID(ctx context.Context, id string) (*domain.
 	p := &domain.Pemupukan{}
 	query := `
 		SELECT id_pemupukan, nama_pupuk, dosis, satuan, deskripsi, manure_id, id_stok_pupuk,
-		       Lahan_id_lahan, Aktivitas_id_aktivitas, created_at, updated_at
+		       "Lahan_id_lahan", "Aktivitas_id_aktivitas", created_at, updated_at
 		FROM gardening.pemupukan
 		WHERE id_pemupukan = $1
 	`
@@ -86,7 +86,7 @@ func (r *pemupukanRepository) Store(ctx context.Context, p *domain.Pemupukan) er
 
 	err = tx.QueryRow(ctx,
 		`INSERT INTO gardening.pemupukan
-		 (nama_pupuk, dosis, satuan, deskripsi, manure_id, id_stok_pupuk, Lahan_id_lahan, Aktivitas_id_aktivitas)
+		 (nama_pupuk, dosis, satuan, deskripsi, manure_id, id_stok_pupuk, "Lahan_id_lahan", "Aktivitas_id_aktivitas")
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id_pemupukan`,
 		p.NamaPupuk, p.Dosis, p.Satuan, p.Deskripsi, p.ManureID, p.IDStokPupuk, p.LahanIDLahan, aktivitasID,
@@ -107,7 +107,7 @@ func (r *pemupukanRepository) Update(ctx context.Context, p *domain.Pemupukan) e
 
 	var aktivitasID string
 	err = tx.QueryRow(ctx,
-		`SELECT Aktivitas_id_aktivitas FROM gardening.pemupukan WHERE id_pemupukan = $1`,
+		`SELECT "Aktivitas_id_aktivitas" FROM gardening.pemupukan WHERE id_pemupukan = $1`,
 		p.IDPemupukan,
 	).Scan(&aktivitasID)
 	if err != nil {
@@ -126,7 +126,7 @@ func (r *pemupukanRepository) Update(ctx context.Context, p *domain.Pemupukan) e
 
 	_, err = tx.Exec(ctx,
 		`UPDATE gardening.pemupukan
-		 SET nama_pupuk = $1, dosis = $2, satuan = $3, deskripsi = $4, manure_id = $5, id_stok_pupuk = $6, Lahan_id_lahan = $7, updated_at = CURRENT_TIMESTAMP
+		 SET nama_pupuk = $1, dosis = $2, satuan = $3, deskripsi = $4, manure_id = $5, id_stok_pupuk = $6, "Lahan_id_lahan" = $7, updated_at = CURRENT_TIMESTAMP
 		 WHERE id_pemupukan = $8`,
 		p.NamaPupuk, p.Dosis, p.Satuan, p.Deskripsi, p.ManureID, p.IDStokPupuk, p.LahanIDLahan, p.IDPemupukan,
 	)
@@ -140,7 +140,7 @@ func (r *pemupukanRepository) Update(ctx context.Context, p *domain.Pemupukan) e
 func (r *pemupukanRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx,
 		`DELETE FROM gardening.aktivitas
-		 WHERE id_aktivitas = (SELECT Aktivitas_id_aktivitas FROM gardening.pemupukan WHERE id_pemupukan = $1)`,
+		 WHERE id_aktivitas = (SELECT "Aktivitas_id_aktivitas" FROM gardening.pemupukan WHERE id_pemupukan = $1)`,
 		id,
 	)
 	return err

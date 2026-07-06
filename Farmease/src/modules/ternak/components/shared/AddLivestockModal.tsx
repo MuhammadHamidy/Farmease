@@ -358,10 +358,10 @@ export default defineComponent({
                   )}
                 </div>
                 <div class="col-12">
-                  <label class="form-label text-secondary small fw-bold mb-2">Status Awal <span class="text-danger">*</span></label>
+                  <label class="form-label text-secondary small fw-bold mb-2">Kondisi Awal <span class="text-danger">*</span></label>
                   <CustomSelect 
-                    placeholder="Pilih Status Awal"
-                    options={['Aktif', 'Produktif', 'Hamil', 'Sakit']}
+                    placeholder="Pilih Kondisi Awal"
+                    options={['Sehat', 'Sakit', 'Hamil', 'Tidak Hamil', 'Birahi', 'Tidak Birahi', 'Mati']}
                     modelValue={newDomba.value.status}
                     onUpdate:modelValue={(val: string) => newDomba.value.status = val}
                   />

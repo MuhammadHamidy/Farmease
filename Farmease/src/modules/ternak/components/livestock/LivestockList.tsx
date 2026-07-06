@@ -143,7 +143,7 @@ export default defineComponent({
               <CustomSelect
                 options={[
                   { value: '', label: 'Semua Kondisi / Status' },
-                  ...['Sehat', 'Produktif', 'Hamil', 'Birahi', 'Sakit', 'Siap Jual'].map(status => ({ value: status, label: status }))
+                  ...['Sehat', 'Sakit', 'Hamil', 'Tidak Hamil', 'Birahi', 'Tidak Birahi', 'Mati'].map(status => ({ value: status, label: status }))
                 ]}
                 modelValue={filterStatus.value}
                 onUpdate:modelValue={(val: string) => filterStatus.value = val}

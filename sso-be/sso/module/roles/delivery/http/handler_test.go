@@ -11,10 +11,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	deliverhttp "github.com/farmease/farmease-be/farmease/module/roles/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
-	"github.com/farmease/farmease-be/farmease/tests/mocks"
+	"github.com/farmease/sso-be/libraries/middleware"
+	deliverhttp "github.com/farmease/sso-be/sso/module/roles/delivery/http"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
+	"github.com/farmease/sso-be/sso/tests/mocks"
 )
 
 func setupRoleApp(useCase domain.UseCase) *fiber.App {
@@ -302,3 +302,4 @@ func TestRoleHandler_RegisterRoutes(t *testing.T) {
 		handler.RegisterRoutes(app)
 	})
 }
+

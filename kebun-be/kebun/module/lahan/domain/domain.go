@@ -12,7 +12,7 @@ const (
 	FaseTanamVegetatif      FaseTanam = "Vegetatif"
 	FaseTanamGeneratif      FaseTanam = "Generatif"
 	FaseTanamPanen          FaseTanam = "Panen"
-	FaseTanamTidakProduktif FaseTanam = "Tidak Produktif"
+	FaseTanamTidakProduktif FaseTanam = "Belum Produktif"
 )
 
 type Lahan struct {

@@ -6,6 +6,7 @@ export interface TreeItem {
   code: string
   varietas: string
   fase?: string
+  umur?: number
 }
 
 export default defineComponent({
@@ -96,9 +97,9 @@ export default defineComponent({
                 onUpdate:modelValue={(val: string) => {
                   emit('update:statusProduktivitas', val)
                   if (val === 'usia belum produktif (0 - 3 tahun)') {
-                    emit('update:fasePohon', 'Belum Produktif')
-                  } else {
                     emit('update:fasePohon', 'Vegetatif')
+                  } else {
+                    emit('update:fasePohon', 'Generatif')
                   }
                 }}
               />

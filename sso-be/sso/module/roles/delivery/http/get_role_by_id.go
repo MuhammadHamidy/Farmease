@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/responses"
 )
 
 type (
@@ -53,3 +53,4 @@ func (h *RoleHandler) GetRoleByID(c *fiber.Ctx) error {
 		Permissions:   role.Permissions,
 	}, "Role retrieved"))
 }
+

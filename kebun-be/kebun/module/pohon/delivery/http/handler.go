@@ -179,6 +179,9 @@ func (h *PohonHandler) Create(c *fiber.Ctx) error {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
 	}
 	if err := h.usecase.Create(c.Context(), &p); err != nil {
+		if err.Error() == "kode pohon sudah digunakan" || strings.Contains(err.Error(), "tidak valid") {
+			return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
+		}
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusCreated, "Success create tree", p)
@@ -195,6 +198,9 @@ func (h *PohonHandler) Update(c *fiber.Ctx) error {
 	}
 	p.IDPohon = id
 	if err := h.usecase.Update(c.Context(), &p); err != nil {
+		if err.Error() == "kode pohon sudah digunakan oleh pohon lain" || strings.Contains(err.Error(), "tidak valid") {
+			return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
+		}
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success update tree", p)

@@ -3,8 +3,8 @@ package usecase
 import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"github.com/farmease/farmease-be/libraries/idp"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/idp"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 var _ domain.UseCase = (*UseCase)(nil)
@@ -24,3 +24,4 @@ func NewUseCase(repository domain.UserRepository, idp idp.IDPProvider) *UseCase 
 		tracer:     otel.Tracer("users"),
 	}
 }
+

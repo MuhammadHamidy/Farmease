@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 var queryAssignRole = `
@@ -43,3 +43,4 @@ func (r *Repository) AssignRole(ctx context.Context, role *domain.UserRole) erro
 	role.Id = id
 	return nil
 }
+

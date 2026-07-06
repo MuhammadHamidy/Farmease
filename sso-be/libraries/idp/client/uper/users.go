@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 )
 
 func (i *Idp) GetUsers(ctx context.Context, token string, search string, page, perPage int) (*client.GeneralResponse, error) {
@@ -257,3 +257,4 @@ func (i *Idp) GetLdapUsers(ctx context.Context, token string) (*client.GeneralRe
 	}
 	return &result, nil
 }
+

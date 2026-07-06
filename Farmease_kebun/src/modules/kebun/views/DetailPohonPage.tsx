@@ -1,4 +1,4 @@
-import { defineComponent, ref, computed, onMounted } from 'vue'
+import { defineComponent, ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { landSession, userSession, cropsList, fetchCropsList } from '@/store/navigation'
 import { perawatan, panen, aktivitas, fetchPerawatan, fetchPanen, fetchAktivitas } from '@/store/gardening'
@@ -21,6 +21,22 @@ export default defineComponent({
     const draftWaktu = ref('10:30')
     const draftDeskripsi = ref('Pupuk bagus')
     const draftStatusPohon = ref('aktif')
+
+    const isTidakProduktifByAge = computed(() => {
+      if (!draftTanggal.value) return false
+      const plantedYear = new Date(draftTanggal.value).getFullYear()
+      const currentYear = new Date().getFullYear()
+      const age = currentYear - plantedYear
+      return age <= 3
+    })
+
+    watch(isTidakProduktifByAge, (newVal) => {
+      if (newVal) {
+        draftFase.value = 'Belum Produktif'
+      } else if (draftFase.value === 'Belum Produktif') {
+        draftFase.value = 'Vegetatif'
+      }
+    })
 
     onMounted(async () => {
       await Promise.all([
@@ -47,13 +63,18 @@ export default defineComponent({
         draftKode.value = tree.code || ''
         draftFase.value = tree.type || 'Vegetatif'
         draftNama.value = tree.name || ''
-        draftStatusPohon.value = (tree as any).status_pohon || 'aktif'
         
         // Format date string from rawDate (YYYY-MM-DD)
         if (tree.rawDate) {
-          draftTanggal.value = tree.rawDate.split('T')[0]
+          draftTanggal.value = tree.rawDate.split('T')[0] ?? ''
         } else {
-          draftTanggal.value = new Date().toISOString().split('T')[0]
+          draftTanggal.value = new Date().toISOString().split('T')[0] ?? ''
+        }
+
+        // Initialize status correctly
+        draftStatusPohon.value = tree.status_pohon || 'aktif'
+        if (isTidakProduktifByAge.value) {
+          draftFase.value = 'Vegetatif'
         }
       }
       isEditPopupOpen.value = true
@@ -61,6 +82,14 @@ export default defineComponent({
 
     const saveTreeDetails = async () => {
       if (!activeTree.value) return
+
+      // Check uniqueness locally
+      const codeExists = cropsList.value.some(c => c.code.toUpperCase() === draftKode.value.trim().toUpperCase() && String(c.id) !== String(activeTree.value!.id));
+      if (codeExists) {
+        alert(`Kode pohon "${draftKode.value}" sudah terdaftar.`);
+        return;
+      }
+
       try {
         // Calculate age automatically from the planting date
         const plantedYear = new Date(draftTanggal.value).getFullYear()
@@ -75,7 +104,7 @@ export default defineComponent({
           jenis: draftNama.value,
           umur: calculatedAge,
           created_at: draftTanggal.value,
-          id_lahan: (activeTree.value as any).id_lahan,
+          id_lahan: activeTree.value.id_lahan,
           status_pohon: draftStatusPohon.value
         })
 
@@ -83,9 +112,9 @@ export default defineComponent({
         activeTree.value.code = draftKode.value
         activeTree.value.type = draftFase.value
         activeTree.value.name = draftNama.value
-        ;(activeTree.value as any).status_pohon = draftStatusPohon.value
-        ;(activeTree.value as any).rawAge = calculatedAge
-        ;(activeTree.value as any).rawDate = draftTanggal.value
+        activeTree.value.status_pohon = draftStatusPohon.value
+        activeTree.value.rawAge = calculatedAge
+        activeTree.value.rawDate = draftTanggal.value
         activeTree.value.age = String(calculatedAge) + ' Tahun'
         
         // Update globally in cropsList
@@ -95,9 +124,9 @@ export default defineComponent({
           match.type = draftFase.value
           match.name = draftNama.value
           match.age = String(calculatedAge) + ' Tahun'
-          ;(match as any).status_pohon = draftStatusPohon.value
-          ;(match as any).rawAge = calculatedAge
-          ;(match as any).rawDate = draftTanggal.value
+          match.status_pohon = draftStatusPohon.value
+          match.rawAge = calculatedAge
+          match.rawDate = draftTanggal.value
         }
         
         isEditPopupOpen.value = false
@@ -112,7 +141,7 @@ export default defineComponent({
       }
     }
 
-    const formatIndoDate = (dateStr: string) => {
+    const formatIndoDate = (dateStr?: string) => {
       if (!dateStr) return '-'
       try {
         return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(dateStr))
@@ -125,28 +154,34 @@ export default defineComponent({
     const activeTreeCode = computed(() => activeTree.value?.code ?? '')
 
     const riwayatAktivitas = computed(() => {
-      const code = activeTreeCode.value
+      const code = activeTreeCode.value.toLowerCase()
+      const treeId = String(activeTree.value?.id || '').toLowerCase()
+      const landId = String(activeTree.value?.id_lahan || '').toLowerCase()
       const list: any[] = []
 
-      // 1. Perawatan
+      // 1. Perawatan (Tree-specific)
       perawatan.value.forEach(p => {
-        if (p.pohon_id === code) {
-          const typeLower = p.type.toLowerCase()
+        const target = String(p.pohon_id || '').toLowerCase()
+        if (target === code || target === treeId) {
+          const typeLower = (p.type || '').toLowerCase()
           if (typeLower.includes('stok') || typeLower.includes('pengolahan')) return
+
+          const isPenanaman = p.nama_jenis_aktivitas === 'Penanaman' || typeLower.includes('penanaman')
 
           list.push({
             id: 'perawatan-' + p.id,
             tanggal: p.date,
-            kegiatan: p.type,
+            kegiatan: isPenanaman ? 'Penanaman (' + (p.nama_rincian_aktivitas || 'Bibit Baru') + ')' : p.type,
             catatan: p.notes,
-            badgeText: p.type.includes('Obat') ? 'Pemberian Obat' : 'Perawatan'
+            badgeText: isPenanaman ? 'Penanaman' : (p.type.includes('Obat') ? 'Pemberian Obat' : 'Perawatan')
           })
         }
       })
 
-      // 2. Panen
+      // 2. Panen (Land-level)
       panen.value.forEach(pa => {
-        if (pa.pohon_id === code) {
+        const target = String(pa.pohon_id || '').toLowerCase()
+        if (target === landId) {
           list.push({
             id: 'panen-' + pa.id,
             tanggal: pa.date,
@@ -157,9 +192,10 @@ export default defineComponent({
         }
       })
 
-      // 3. Aktivitas
+      // 3. Aktivitas (Land-level)
       aktivitas.value.forEach(a => {
-        if (a.pohon_id === code) {
+        const target = String(a.pohon_id || '').toLowerCase()
+        if (target === landId) {
           const nameLower = a.name.toLowerCase()
           if (nameLower.includes('stok') || nameLower.includes('pengolahan')) return
 
@@ -222,7 +258,13 @@ export default defineComponent({
                     font-weight: 800;
                     padding: 0.2rem 0.65rem;
                     border-radius: 6px;
-                    ${currentTree.type === 'Generatif' ? 'background: #fde8e8; color: #e11d48;' : 'background: #38431f; color: #ffffff;'}
+                    ${
+                      currentTree.type === 'Generatif'
+                        ? 'background: #fde8e8; color: #e11d48;'
+                        : currentTree.type === 'Vegetatif'
+                        ? 'background: #38431f; color: #ffffff;'
+                        : 'background: #f3f4f6; color: #4b5563;'
+                    }
                   `}
                 >
                   {currentTree.type}
@@ -262,7 +304,7 @@ export default defineComponent({
 
               <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: #1f2937;">
-                  Informasi Lengkap Tanaman
+                  Informasi Lengkap Pohon
                 </h4>
                 
                 <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: #4b5563;">
@@ -271,7 +313,11 @@ export default defineComponent({
                     <span style="color: #1f2937; font-weight: 800;">{currentTree.code}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6;">
-                    <span style="color: #9ca3af;">Nama/Varietas</span>
+                    <span style="color: #9ca3af;">Tanggal Penanaman</span>
+                    <span style="color: #1f2937;">{formatIndoDate(currentTree.rawDate) || '10 April 2026'}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6;">
+                    <span style="color: #9ca3af;">Jenis Varietas</span>
                     <span style="color: #1f2937; font-weight: 800;">{currentTree.name || 'Alpukat Mentega'}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6;">
@@ -280,13 +326,15 @@ export default defineComponent({
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6;">
                     <span style="color: #9ca3af;">Status Pohon</span>
-                    <span style="color: #1f2937; font-weight: 800; text-transform: capitalize;">
+                    <span style={`font-weight: 800; text-transform: capitalize; color: ${((currentTree as any).status_pohon || 'aktif').toLowerCase() === 'aktif' ? '#000000' : '#ef4444'};`}>
                       {(currentTree as any).status_pohon || 'aktif'}
                     </span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6;">
-                    <span style="color: #9ca3af;">Tanggal Penanaman</span>
-                    <span style="color: #1f2937;">{formatIndoDate(currentTree.rawDate) || '10 April 2026'}</span>
+                    <span style="color: #9ca3af;">Status Usia Pohon</span>
+                    <span style="color: #ef4444; font-weight: 800;">
+                      {(currentTree.rawAge || 0) <= 3 ? 'Belum Produktif' : 'Produktif'}
+                    </span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6;">
                     <span style="color: #9ca3af;">Waktu Penanaman</span>
@@ -378,7 +426,23 @@ export default defineComponent({
                           <strong style="font-size: 0.85rem; color: #1f2937; font-weight: 800;">
                             {item.kegiatan}
                           </strong>
-                          <span style="background: #e2e8f0; color: #475569; font-size: 0.65rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 4px;">
+                          <span
+                            style={`
+                              font-size: 0.65rem;
+                              font-weight: 800;
+                              padding: 0.1rem 0.4rem;
+                              border-radius: 4px;
+                              ${
+                                item.badgeText === 'Penanaman'
+                                  ? 'background: #ecfdf5; color: #047857;'
+                                  : item.badgeText === 'Pemberian Obat'
+                                  ? 'background: #fef3c7; color: #b45309;'
+                                  : item.badgeText === 'Panen'
+                                  ? 'background: #fce7f3; color: #be185d;'
+                                  : 'background: #e0f2fe; color: #0369a1;'
+                              }
+                            `}
+                          >
                             {item.badgeText}
                           </span>
                         </div>
@@ -418,32 +482,48 @@ export default defineComponent({
                       <input
                         type="text"
                         value={draftKode.value}
-                        onInput={(e: any) => { draftKode.value = e.target.value }}
+                        disabled
                         class="kebun-form-input"
+                        style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed;"
+                      />
+                    </div>
+
+                    {/* Tanggal Penanaman */}
+                    <div class="form-group">
+                      <label class="field-label">Tanggal Penanaman</label>
+                      <input
+                        type="date"
+                        value={draftTanggal.value}
+                        disabled
+                        class="kebun-form-input"
+                        style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed;"
                       />
                     </div>
 
                     {/* Nama/Varietas */}
                     <div class="form-group">
-                      <label class="field-label">Nama/Varietas</label>
+                      <label class="field-label">Jenis Varietas</label>
                       <input
                         type="text"
                         value={draftNama.value}
                         onInput={(e: any) => { draftNama.value = e.target.value }}
                         class="kebun-form-input"
                       />
-                    </div>
-
-                    {/* Fase Tanaman */}
+                    </div>                     {/* Fase Tanaman */}
                     <div class="form-group">
                       <label class="field-label">Fase Tanaman</label>
                       <PerkebunanFormSelect
                         modelValue={draftFase.value}
                         onUpdate:modelValue={(val: string) => { draftFase.value = val }}
-                        options={[
-                          { value: 'Vegetatif', label: 'Vegetatif' },
-                          { value: 'Generatif', label: 'Generatif' },
-                        ]}
+                        disabled={isTidakProduktifByAge.value}
+                        options={
+                          isTidakProduktifByAge.value
+                            ? [{ value: 'Vegetatif', label: 'Vegetatif' }]
+                            : [
+                                { value: 'Vegetatif', label: 'Vegetatif' },
+                                { value: 'Generatif', label: 'Generatif' },
+                              ]
+                        }
                       />
                     </div>
 
@@ -457,17 +537,6 @@ export default defineComponent({
                           { value: 'aktif', label: 'Aktif' },
                           { value: 'tidak aktif', label: 'Tidak Aktif' },
                         ]}
-                      />
-                    </div>
-
-                    {/* Tanggal Penanaman */}
-                    <div class="form-group">
-                      <label class="field-label">Tanggal Penanaman</label>
-                      <input
-                        type="date"
-                        value={draftTanggal.value}
-                        onChange={(e: any) => { draftTanggal.value = e.target.value }}
-                        class="kebun-form-input"
                       />
                     </div>
 

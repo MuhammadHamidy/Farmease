@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 )
 
 func (i *Idp) GetRoles(ctx context.Context, token string, search string, page int) (*client.GeneralResponse, error) {
@@ -133,3 +133,4 @@ func (i *Idp) DeleteRole(ctx context.Context, token, uuid string) (*client.Gener
 	}
 	return &result, nil
 }
+

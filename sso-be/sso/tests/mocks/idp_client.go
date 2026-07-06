@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -408,3 +408,4 @@ func (m *IDPClientMock) RemoveUserRole(ctx context.Context, token, uuid string) 
 	}
 	return args.Get(0).(*client.GeneralResponse), args.Error(1)
 }
+

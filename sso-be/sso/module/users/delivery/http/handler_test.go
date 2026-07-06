@@ -11,11 +11,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	liberrors "github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	deliverhttp "github.com/farmease/farmease-be/farmease/module/users/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
-	"github.com/farmease/farmease-be/farmease/tests/mocks"
+	liberrors "github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/middleware"
+	deliverhttp "github.com/farmease/sso-be/sso/module/users/delivery/http"
+	"github.com/farmease/sso-be/sso/module/users/domain"
+	"github.com/farmease/sso-be/sso/tests/mocks"
 )
 
 func setupUserApp(useCase domain.UseCase) *fiber.App {
@@ -327,3 +327,4 @@ func TestUserHandler_RegisterRoutes(t *testing.T) {
 		handler.RegisterRoutes(app)
 	})
 }
+

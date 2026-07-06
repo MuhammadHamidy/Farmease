@@ -3,10 +3,10 @@ package users
 import (
 	gofiber "github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
-	"github.com/farmease/farmease-be/farmease/module/users/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
-	"github.com/farmease/farmease-be/farmease/module/users/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/users/usecase"
+	"github.com/farmease/sso-be/sso/module/users/delivery/http"
+	"github.com/farmease/sso-be/sso/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/repository/postgresql"
+	"github.com/farmease/sso-be/sso/module/users/usecase"
 )
 
 // Module exports the users module for Fx.
@@ -28,3 +28,4 @@ var Module = fx.Options(
 func registerRoutes(h *http.UserHandler, app *gofiber.App) {
 	h.RegisterRoutes(app)
 }
+

@@ -5,8 +5,9 @@ import { userSession, cageSession, cagesList, fetchCagesList, prefilledPencatata
 import CustomSelect from '@/shared/ui/admin/Select';
 import { sheep, weightRecords, fetchSheep, fetchWeightRecords } from '@/store/livestock';
 import { fetchTasks, operatorTasks, tasksLoading, completeTask, mapApiTaskToLocal, fetchAccountsList } from '@/store/operatorAdmin';
-import { pregnancyApi, tasksApi, cagesApi } from '@/shared/api';
+import { pregnancyApi, tasksApi, cagesApi, feedsApi, manureApi, birthApi } from '@/shared/api';
 import { pencatatanSubmissions, fetchSubmissions } from '@/modules/ternak/store/operatorAdmin';
+import { FeedStockChart, ManureProductionChart, BirthCountChart } from '@/shared/ui/DashboardCharts';
 
 // Components
 import BirthAlerts, { type BirthAlert } from '../components/dashboard/BirthAlerts';
@@ -29,6 +30,10 @@ export default defineComponent({
     const isWelcomeOpen = ref(false);
     const showLoginToast = ref(false);
     const isLoading = ref(false);
+    
+    const feedsData = ref<any[]>([]);
+    const manuresData = ref<any[]>([]);
+    const birthsData = ref<any[]>([]);
     
     const isMiscarriageConfirmOpen = ref(false);
     const pregnancyIdToReport = ref<string | null>(null);
@@ -190,6 +195,19 @@ export default defineComponent({
         fetchTasks(localDateStr),
         fetchSubmissions(),
       ]);
+
+      try {
+        const [f, m, b] = await Promise.all([
+          feedsApi.getList(),
+          manureApi.getList(),
+          birthApi.getHistory()
+        ]);
+        feedsData.value = f || [];
+        manuresData.value = m || [];
+        birthsData.value = b || [];
+      } catch (err) {
+        console.error('Failed to load chart data in operator dashboard:', err);
+      }
 
       try {
         const pregnancies = await pregnancyApi.getList();
@@ -465,6 +483,18 @@ export default defineComponent({
                 cagesList={cagesList.value}
                 sheepList={sheep.value}
               />
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12 col-xl-6">
+              <ManureProductionChart manures={manuresData.value} sheepList={sheep.value} />
+            </div>
+            <div class="col-12 col-xl-6">
+              <BirthCountChart births={birthsData.value} sheepList={sheep.value} />
+            </div>
+            <div class="col-12">
+              <FeedStockChart feeds={feedsData.value} sheepList={sheep.value} />
             </div>
           </div>
 

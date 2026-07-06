@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/farmease/farmease-be/libraries/idp/client"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
-	"github.com/farmease/farmease-be/farmease/module/users/usecase"
-	"github.com/farmease/farmease-be/farmease/tests/mocks"
+	"github.com/farmease/sso-be/libraries/idp/client"
+	"github.com/farmease/sso-be/sso/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/usecase"
+	"github.com/farmease/sso-be/sso/tests/mocks"
 )
 
 func TestUseCase_Users(t *testing.T) {
@@ -183,3 +183,4 @@ func TestUseCase_Users(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 }
+

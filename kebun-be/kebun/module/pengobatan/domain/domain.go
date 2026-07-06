@@ -14,6 +14,7 @@ type Pengobatan struct {
 	Satuan               string  `json:"satuan" db:"satuan"`
 	BagianPohon          string  `json:"bagian_pohon" db:"bagian_pohon"`
 	Deskripsi            string  `json:"deskripsi" db:"deskripsi"`
+	DetailPohon          string  `json:"detail_pohon" db:"detail_pohon"`
 	LahanIDLahan         string  `json:"Lahan_id_lahan" db:"Lahan_id_lahan"`
 }
 

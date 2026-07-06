@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue'
+import { defineComponent, computed } from 'vue'
 import type { PropType } from 'vue'
 import { userSession, landSession } from '@/store/navigation'
 
@@ -10,6 +10,9 @@ type ScheduleItem = {
   progress: string
   description?: string
   rincian?: string
+  dueDate?: string
+  dueTime?: string
+  endTime?: string
 }
 
 export default defineComponent({
@@ -26,10 +29,45 @@ export default defineComponent({
   },
   emits: ['close', 'next'],
   setup(props, { emit }) {
+    const currentProgress = computed(() => {
+      if (!props.item) return 'Kerjakan'
+      const progress = props.item.progress.toLowerCase()
+      if (progress === 'selesai' || progress === 'done') return 'Selesai'
+      if (progress.includes('belum') || progress.includes('pending')) return 'Belum Disetujui'
+
+      // Check if it's late (terlambat) dynamically based on deadline
+      const now = new Date()
+      const localYear = now.getFullYear()
+      const localMonth = String(now.getMonth() + 1).padStart(2, '0')
+      const localDay = String(now.getDate()).padStart(2, '0')
+      const todayStr = `${localYear}-${localMonth}-${localDay}`
+      const hours = String(now.getHours()).padStart(2, '0')
+      const mins = String(now.getMinutes()).padStart(2, '0')
+      const currentTimeStr = `${hours}:${mins}`
+
+      const itemVal = props.item as any
+      const dueDate = itemVal.dueDate
+      const dueTime = itemVal.dueTime
+      const endTime = itemVal.endTime
+
+      if (dueDate && dueDate < todayStr) {
+        return 'Terlambat'
+      } else if (dueDate === todayStr) {
+        const deadline = (endTime && endTime.trim()) ? endTime.trim() : dueTime
+        if (deadline && currentTimeStr > deadline) {
+          return 'Terlambat'
+        }
+      }
+      return 'Kerjakan'
+    })
+
     const getStatusStyle = (status: string) => {
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done') {
         return 'background: #6e7a55; color: #fff; font-weight: bold; padding: 0.55rem 1.35rem; font-size: 0.85rem; border-radius: 0.5rem; display: inline-block;'
+      }
+      if (normalized === 'terlambat') {
+        return 'background: #ef4444; color: #fff; font-weight: bold; padding: 0.55rem 1.35rem; font-size: 0.85rem; border-radius: 0.5rem; display: inline-block;'
       }
       return 'background: #2d3a1a; color: #fff; font-weight: bold; padding: 0.55rem 1.35rem; font-size: 0.85rem; border-radius: 0.5rem; display: inline-block;'
     }
@@ -38,6 +76,7 @@ export default defineComponent({
       const normalized = status.toLowerCase()
       if (normalized === 'selesai' || normalized === 'done') return 'Selesai'
       if (normalized.includes('belum') || normalized.includes('pending')) return 'Belum Disetujui'
+      if (normalized === 'terlambat') return 'Terlambat'
       return 'Kerjakan'
     }
 
@@ -58,7 +97,7 @@ export default defineComponent({
 
     const handleButtonClick = () => {
       if (!props.item) return
-      const label = getModalButtonLabel(props.item.progress)
+      const label = getModalButtonLabel(currentProgress.value)
       if (label === 'Selesai') {
         emit('close')
       } else {
@@ -73,7 +112,6 @@ export default defineComponent({
       const isKelengkeng = currentItem.name.toLowerCase().includes('kelengkeng')
       const imageSrc = isKelengkeng ? '/icon/kelengkeng.png' : '/icon/alpukat.png'
 
-      // Extract ID from detail (e.g., "A001 • 3 x sehari" -> "L001" or parse ID)
       let landId = 'L001'
       if (currentItem.detail) {
         const firstSegment = (currentItem.detail.split('•')[0] || '').trim()
@@ -218,8 +256,8 @@ export default defineComponent({
                 <span style="font-size: 1.1rem; font-weight: 800; color: #111827;">
                   Status Pengingat
                 </span>
-                <span style={getStatusStyle(currentItem.progress)}>
-                  {getStatusLabel(currentItem.progress)}
+                <span style={getStatusStyle(currentProgress.value)}>
+                  {getStatusLabel(currentProgress.value)}
                 </span>
               </div>
 
@@ -294,7 +332,7 @@ export default defineComponent({
                     Deskripsi Tugas
                   </span>
                   <strong style="font-size: 1.05rem; color: #111827; font-weight: 800;">
-                    {currentItem.description || 'Berikan pupuk kandang'}
+                    {currentItem.description || ''}
                   </strong>
                 </div>
               </div>
@@ -302,10 +340,10 @@ export default defineComponent({
               {/* Selanjutnya / Selesai Button */}
               <button
                 onClick={handleButtonClick}
-                style={getModalButtonStyle(currentItem.progress)}
-                disabled={currentItem.progress.toLowerCase().includes('belum') || currentItem.progress.toLowerCase() === 'selesai' || currentItem.progress.toLowerCase() === 'done'}
+                style={getModalButtonStyle(currentProgress.value)}
+                disabled={currentProgress.value.toLowerCase().includes('belum') || currentProgress.value.toLowerCase() === 'selesai' || currentProgress.value.toLowerCase() === 'done'}
               >
-                {getModalButtonLabel(currentItem.progress)}
+                {getModalButtonLabel(currentProgress.value)}
               </button>
             </div>
           </div>

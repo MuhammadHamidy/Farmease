@@ -10,6 +10,7 @@ type ScheduleItem = {
   description?: string
   time?: string
   recurrence?: string
+  endTime?: string
 }
 
 export default defineComponent({
@@ -65,7 +66,7 @@ export default defineComponent({
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 0.15rem; text-align: right;">
                     <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">Waktu Tenggat</span>
-                    <span style="font-size: 0.85rem; font-weight: 800; color: #dc2626;">22 : 00 WIB</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #dc2626;">{item.endTime || '09 : 00 WIB'}</span>
                   </div>
                 </div>
 

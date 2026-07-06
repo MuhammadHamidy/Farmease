@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/middleware"
+	"github.com/farmease/sso-be/libraries/responses"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 // RoleHandler handles HTTP requests for roles module.
@@ -44,3 +44,4 @@ func (h *RoleHandler) handleError(c *fiber.Ctx, err error) error {
 
 	return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 }
+

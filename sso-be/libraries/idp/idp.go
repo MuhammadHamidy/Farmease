@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/farmease/farmease-be/libraries/idp/client"
-	"github.com/farmease/farmease-be/libraries/idp/client/uper"
+	"github.com/farmease/sso-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client/uper"
 )
 
 type (
@@ -88,3 +88,4 @@ func (i *IDP) findInstitutionByCode(ctx context.Context, id string) (*Institutio
 
 	return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[Institution])
 }
+

@@ -347,7 +347,7 @@ export default defineComponent({
                         }}
                       >
                         <img
-                          src={showPassword.value ? '/icon/open-eye.png' : '/icon/hide-eye.png'}
+                          src={showPassword.value ? '/icon/open/grey-20.svg' : '/icon/hide/grey-20.svg'}
                           alt={showPassword.value ? 'Sembunyikan Kata Sandi' : 'Tampilkan Kata Sandi'}
                         />
                       </button>

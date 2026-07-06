@@ -9,14 +9,17 @@ import (
 
 	internalConfig "github.com/farmease/kebun-be/kebun/config"
 	_ "github.com/farmease/kebun-be/kebun/docs"
+	"github.com/farmease/kebun-be/framework/bunnymq"
 	"github.com/farmease/kebun-be/framework/common/logger"
 	"github.com/farmease/kebun-be/framework/config"
 	"github.com/farmease/kebun-be/framework/fiber"
 	"github.com/farmease/kebun-be/framework/otel"
 	"github.com/farmease/kebun-be/framework/postgres"
 	"github.com/farmease/kebun-be/framework/redis"
+	"github.com/farmease/kebun-be/libraries/consumer"
 	"github.com/farmease/kebun-be/libraries/idp"
 	"github.com/farmease/kebun-be/libraries/middleware"
+	"github.com/farmease/kebun-be/libraries/publisher"
 	gofiber "github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	filterSwagger "github.com/swaggo/fiber-swagger"
@@ -42,6 +45,7 @@ import (
 	"github.com/farmease/kebun-be/kebun/module/pemupukan"
 	"github.com/farmease/kebun-be/kebun/module/stok"
 	"github.com/farmease/kebun-be/kebun/module/fermentasi"
+	"github.com/farmease/kebun-be/kebun/module/aktivitas"
 )
 
 // @title           Farmease API
@@ -76,6 +80,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		otel.Module,
 		postgres.Module,
 		redis.Module,
+		bunnymq.Module,
 
 		// supply config source & resolvers
 		fx.Supply(
@@ -102,10 +107,13 @@ func serveE(cmd *cobra.Command, args []string) error {
 			config.ProvideConfig[internalConfig.ApplicationConfig](),
 			internalConfig.Postgres,
 			internalConfig.Redis,
+			internalConfig.RabbitMQ,
 			internalConfig.Fiber,
 			internalConfig.Otel,
 			internalConfig.Logger,
 			internalConfig.InternalApp,
+			consumer.New,
+			publisher.New,
 			func(idpProvider idp.IDPProvider, appCfg *internalConfig.InternalAppConfig) *middleware.AuthorizationMiddleware {
 				return middleware.NewAuthorizationMiddlewareWithSSO(idpProvider, nil, nil, appCfg.SsoApiUrl)
 			},
@@ -133,6 +141,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		pemupukan.Module,
 		stok.Module,
 		fermentasi.Module,
+		aktivitas.Module,
 
 		fx.Provide(
 			fx.Annotate(

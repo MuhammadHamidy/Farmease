@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/farmease/farmease-be/farmease/version"
+	"github.com/farmease/sso-be/sso/version"
 )
 
 var root = &cobra.Command{
@@ -28,3 +28,4 @@ func init() {
 func Execute() error {
 	return root.Execute()
 }
+

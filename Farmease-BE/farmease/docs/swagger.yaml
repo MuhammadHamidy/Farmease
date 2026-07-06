@@ -279,6 +279,130 @@ definitions:
       updated_by:
         type: string
     type: object
+  domain.SilageFermentationLog:
+    properties:
+      check_date:
+        type: string
+      created_at:
+        type: string
+      id_conversion:
+        type: string
+      id_log:
+        type: string
+      notes:
+        type: string
+      ph_level:
+        type: number
+      physical_condition:
+        type: string
+      status:
+        type: string
+      temperature:
+        type: number
+    type: object
+  domain.RoutineSchedule:
+    properties:
+      id:
+        type: string
+      title:
+        type: string
+      description:
+        type: string
+      category:
+        type: string
+      frequency:
+        type: string
+        enum:
+        - sekali
+        - harian
+        - mingguan
+        - bulanan
+      days_of_week:
+        items:
+          type: integer
+        type: array
+      day_of_month:
+        type: integer
+      start_date:
+        type: string
+      end_date:
+        type: string
+      start_time:
+        type: string
+      end_time:
+        type: string
+      priority:
+        type: string
+      id_cage:
+        type: string
+      id_account:
+        type: string
+      rincian:
+        type: string
+      is_active:
+        type: boolean
+      created_at:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - title
+    - category
+    - frequency
+    - priority
+    type: object
+  domain.Submission:
+    properties:
+      id_submission:
+        type: string
+      submission_code:
+        type: string
+      type:
+        type: string
+      typeLabel:
+        type: string
+      operatorCode:
+        type: string
+      operatorName:
+        type: string
+      cageCode:
+        type: string
+      scope:
+        type: string
+      summary:
+        type: string
+      payload:
+        type: object
+      submittedAt:
+        type: string
+      approvalStatus:
+        type: string
+        enum:
+        - pending
+        - approved
+        - rejected
+      reviewedAt:
+        type: string
+      reviewedBy:
+        type: string
+      reviewNote:
+        type: string
+      taskId:
+        type: string
+      createdAt:
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - type
+    - typeLabel
+    - operatorCode
+    - operatorName
+    - cageCode
+    - scope
+    - summary
+    - approvalStatus
+    type: object
   domain.SilageConversion:
     properties:
       conversion_date:
@@ -429,6 +553,408 @@ info:
   title: Farmease API
   version: "1.0"
 paths:
+  /api/fermentations/conversions/{id}/logs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all fermentation logs for a specific silage conversion ID
+      parameters:
+      - description: Silage Conversion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.SilageFermentationLog'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get fermentation logs
+      tags:
+      - fermentations
+    post:
+      consumes:
+      - application/json
+      description: Create a new fermentation log for a silage conversion process
+      parameters:
+      - description: Silage Conversion ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fermentation Log details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.SilageFermentationLog'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.SilageFermentationLog'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create fermentation log
+      tags:
+      - fermentations
+  /api/routine-schedules:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all active/inactive routine schedules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.RoutineSchedule'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all routine schedules
+      tags:
+      - routine-schedules
+    post:
+      consumes:
+      - application/json
+      description: Create a new routine schedule and generate tasks for it
+      parameters:
+      - description: Routine Schedule details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RoutineSchedule'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.RoutineSchedule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a routine schedule
+      tags:
+      - routine-schedules
+  /api/routine-schedules/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a routine schedule by its ID
+      parameters:
+      - description: Routine Schedule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a routine schedule
+      tags:
+      - routine-schedules
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detail of a routine schedule by its ID
+      parameters:
+      - description: Routine Schedule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.RoutineSchedule'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get routine schedule by ID
+      tags:
+      - routine-schedules
+    put:
+      consumes:
+      - application/json
+      description: Update a routine schedule details by ID and regenerate its tasks
+      parameters:
+      - description: Routine Schedule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Routine Schedule details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RoutineSchedule'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.RoutineSchedule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a routine schedule
+      tags:
+      - routine-schedules
+  /api/routine-schedules/generate:
+    post:
+      consumes:
+      - application/json
+      description: Manually trigger generation of tasks for routine schedules within
+        a window of days
+      parameters:
+      - description: Window Days Request (e.g. {"window_days": 7})
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Generate tasks from routine schedules
+      tags:
+      - routine-schedules
+  /api/submissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all submissions with filtering by status or type
+      parameters:
+      - description: 'Filter by status (pending, approved, rejected)'
+        in: query
+        name: status
+        type: string
+      - description: Filter by type
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Submission'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get list of submissions
+      tags:
+      - submissions
+    post:
+      consumes:
+      - application/json
+      description: Create a new submission for audit / logging (e.g. estrus checks,
+        routine feeds)
+      parameters:
+      - description: Submission details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Submission'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a submission
+      tags:
+      - submissions
+  /api/submissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a submission record by ID
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a submission
+      tags:
+      - submissions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve details of a submission by its ID
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Submission'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get submission by ID
+      tags:
+      - submissions
+    put:
+      consumes:
+      - application/json
+      description: Update details of a submission record (e.g. approve or reject)
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Submission update patch fields
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.Response-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a submission
+      tags:
+      - submissions
   /api/cages:
     get:
       consumes:

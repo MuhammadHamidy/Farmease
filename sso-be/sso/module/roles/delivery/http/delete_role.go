@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/middleware"
+	"github.com/farmease/sso-be/libraries/responses"
 )
 
 // DeleteRole godoc
@@ -43,3 +43,4 @@ func (h *RoleHandler) DeleteRole(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(responses.Success[any](nil, "Role deleted"))
 }
+

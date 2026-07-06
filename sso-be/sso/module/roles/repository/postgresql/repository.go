@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 var _ domain.RoleRepository = (*Repository)(nil)
@@ -127,3 +127,4 @@ func (r *Repository) GetPermissions(ctx context.Context, roleId string) ([]strin
 
 	return permissions, nil
 }
+

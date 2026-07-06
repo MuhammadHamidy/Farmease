@@ -1280,14 +1280,14 @@ export default defineComponent({
                     />
                   </PencatatanField>
                   <PencatatanField
-                    label={f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' ? 'ID Domba Betina' : 'ID Domba'}
+                    label={f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami' ? 'ID Domba Betina' : 'ID Domba'}
                     colClass="col-12"
                     required
                   >
                     <PencatatanSelect
                       modelValue={selectedBaseSheepId.value}
                       options={baseSheepOptions.value}
-                      placeholder={selectedCageCode.value ? (f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' ? 'Pilih Domba Betina' : 'Pilih ID Domba') : 'Pilih Kandang Terlebih Dahulu'}
+                      placeholder={selectedCageCode.value ? (f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami' ? 'Pilih Domba Betina' : 'Pilih ID Domba') : 'Pilih Kandang Terlebih Dahulu'}
                       disabled={!selectedCageCode.value}
                       onUpdateModelValue={handleBaseSheepChange}
                     />

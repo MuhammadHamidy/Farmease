@@ -9,6 +9,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Update godoc
+// @Summary      Update a routine schedule
+// @Description  Update a routine schedule details by ID and regenerate its tasks
+// @Tags         routine-schedules
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id      path      string                  true  "Routine Schedule ID"
+// @Param        request body      domain.RoutineSchedule  true  "Routine Schedule details"
+// @Success      200     {object}  domain.RoutineSchedule
+// @Failure      400     {object}  responses.Response[any]
+// @Failure      500     {object}  responses.Response[any]
+// @Router       /api/routine-schedules/{id} [put]
 func (h *RoutineScheduleHandler) Update(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var req struct {

@@ -44,7 +44,7 @@ func TestGetManureHistory(t *testing.T) {
 			"m-2": {IDManure: "m-2", IDSheep: "sheep-1", Amount: 3.0, Unit: "kg"},
 		},
 	}
-	uc := NewUseCase(repo)
+	uc := NewUseCase(repo, nil)
 
 	history, err := uc.GetManureHistory(context.Background(), "sheep-1")
 	if err != nil {
@@ -67,7 +67,7 @@ func TestRecordManure(t *testing.T) {
 	repo := &mockManureRepo{
 		manures: make(map[string]*domain.Manure),
 	}
-	uc := NewUseCase(repo)
+	uc := NewUseCase(repo, nil)
 
 	mn := &domain.Manure{
 		IDManure: "m-new",

@@ -343,7 +343,8 @@ export interface Birth {
   id_sheep: string | number
   pregnancy_id: string | number
   birth_date: string
-  num_offspring: number
+  num_offspring?: number
+  number_of_offspring?: number
   notes?: string
   created_at: string
   updated_at: string

@@ -5,6 +5,457 @@
       "description": "",
       "item": [
         {
+          "name": "fermentations",
+          "description": "",
+          "item": [
+            {
+              "name": "Get fermentation logs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fermentations/conversions/:id/logs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fermentations",
+                    "conversions",
+                    ":id",
+                    "logs"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Retrieve all fermentation logs for a specific silage conversion ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create fermentation log",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"check_date\": \"2026-07-06T00:00:00Z\",\n  \"status\": \"fermentasi\",\n  \"ph_level\": 4.2,\n  \"temperature\": 32.5,\n  \"physical_condition\": \"baik\",\n  \"notes\": \"fermentasi hari ke-7\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/fermentations/conversions/:id/logs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fermentations",
+                    "conversions",
+                    ":id",
+                    "logs"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Create a new fermentation log for a silage conversion process"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "routine-schedules",
+          "description": "",
+          "item": [
+            {
+              "name": "Get all routine schedules",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routine-schedules",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routine-schedules"
+                  ]
+                },
+                "description": "Retrieve all active/inactive routine schedules"
+              },
+              "response": []
+            },
+            {
+              "name": "Get routine schedule by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routine-schedules/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routine-schedules",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Retrieve detail of a routine schedule by its ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create a routine schedule",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Pemberian Pakan Pagi\",\n  \"description\": \"Jadwal rutin pemberian pakan pagi\",\n  \"category\": \"pakan\",\n  \"frequency\": \"harian\",\n  \"priority\": \"tinggi\",\n  \"start_time\": \"08:00\",\n  \"end_time\": \"09:00\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/routine-schedules",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routine-schedules"
+                  ]
+                },
+                "description": "Create a new routine schedule and generate tasks for it"
+              },
+              "response": []
+            },
+            {
+              "name": "Update a routine schedule",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Pemberian Pakan Pagi (Updated)\",\n  \"description\": \"Jadwal rutin pemberian pakan pagi\",\n  \"category\": \"pakan\",\n  \"frequency\": \"harian\",\n  \"priority\": \"tinggi\",\n  \"start_time\": \"07:30\",\n  \"end_time\": \"08:30\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/routine-schedules/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routine-schedules",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Update a routine schedule details by ID and regenerate its tasks"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete a routine schedule",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routine-schedules/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routine-schedules",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete a routine schedule by its ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Generate tasks from routine schedules",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"window_days\": 7\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/routine-schedules/generate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routine-schedules",
+                    "generate"
+                  ]
+                },
+                "description": "Manually trigger generation of tasks for routine schedules within a window of days"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "submissions",
+          "description": "",
+          "item": [
+            {
+              "name": "Get list of submissions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "",
+                      "description": "Filter by status (pending, approved, rejected)"
+                    },
+                    {
+                      "key": "type",
+                      "value": "",
+                      "description": "Filter by type"
+                    }
+                  ]
+                },
+                "description": "Retrieve all submissions with filtering by status or type"
+              },
+              "response": []
+            },
+            {
+              "name": "Get submission by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Retrieve details of a submission by its ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create a submission",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"cek_birahi\",\n  \"typeLabel\": \"Cek Birahi\",\n  \"operatorCode\": \"OP-001\",\n  \"operatorName\": \"Hamidy\",\n  \"cageCode\": \"K-01\",\n  \"scope\": \"livestock\",\n  \"summary\": \"Cek birahi domba XG827\",\n  \"payload\": {\n    \"sheep_code\": \"XG827\",\n    \"result\": \"birahi\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions"
+                  ]
+                },
+                "description": "Create a new submission for audit / logging (e.g. estrus checks, routine feeds)"
+              },
+              "response": []
+            },
+            {
+              "name": "Update a submission",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"approvalStatus\": \"approved\",\n  \"reviewNote\": \"Disetujui oleh pemilik\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Update details of a submission record (e.g. approve or reject)"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete a submission",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "submissions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete a submission record by ID"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "cages",
           "description": "",
           "item": [

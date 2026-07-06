@@ -126,19 +126,48 @@ export default defineComponent({
     };
     const handleExport = async () => {
       try {
-        const [rawLands, rawTrees, rawPerawatan, rawPanen, rawPemangkasan] = await Promise.all([
+        const [rawLands, rawTrees, rawPengobatan, rawPemupukan, rawPenyiraman, rawPanen, rawPemangkasan] = await Promise.all([
           apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
           apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
-          apiClient.get<any[]>('/api/v1/perawatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
           apiClient.get<any[]>('/api/v1/panen').catch(() => []),
           apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
         ])
 
         const lands = Array.isArray(rawLands) ? rawLands : []
         const trees = Array.isArray(rawTrees) ? rawTrees : []
-        const perawatanList = Array.isArray(rawPerawatan) ? rawPerawatan : []
+        const pengobatanList = Array.isArray(rawPengobatan) ? rawPengobatan : []
+        const pemupukanList = Array.isArray(rawPemupukan) ? rawPemupukan : []
+        const penyiramanList = Array.isArray(rawPenyiraman) ? rawPenyiraman : []
         const panenList = Array.isArray(rawPanen) ? rawPanen : []
         const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const perawatanList = [
+          ...pengobatanList.map(o => ({
+            ...o,
+            id_perawatan: o.id_pengobatan,
+            jenis_bahan: 'obat',
+            id_lahan: o.Lahan_id_lahan
+          })),
+          ...pemupukanList.map(f => ({
+            ...f,
+            id_perawatan: f.id_pemupukan,
+            jenis_bahan: 'pupuk',
+            id_lahan: f.Lahan_id_lahan,
+            nama_obat: f.nama_pupuk,
+            deskripsi: f.deskripsi
+          })),
+          ...penyiramanList.map(w => ({
+            ...w,
+            id_perawatan: w.id_penyiraman,
+            jenis_bahan: 'air',
+            id_lahan: w.Lahan_id_lahan,
+            teknik_perawatan: w.teknik_penyiraman,
+            deskripsi: w.deskripsi
+          }))
+        ]
 
         const csvRows: string[][] = []
 
@@ -520,7 +549,7 @@ export default defineComponent({
                   <div class="col-12">
                     <label class="pencatatan-label text-uppercase" style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Fase Pertumbuhan</label>
                     <CustomSelect 
-                      options={['Vegetatif', 'Generatif', 'Pembibitan']}
+                      options={['Vegetatif', 'Generatif']}
                       modelValue={newCrop.value.type}
                       onUpdate:modelValue={(val: string) => newCrop.value.type = val}
                     />

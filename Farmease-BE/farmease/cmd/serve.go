@@ -10,6 +10,7 @@ import (
 
 	internalConfig "github.com/farmease/farmease-be/farmease/config"
 	_ "github.com/farmease/farmease-be/farmease/docs"
+	"github.com/farmease/farmease-be/framework/bunnymq"
 	"github.com/farmease/farmease-be/framework/common/logger"
 	"github.com/farmease/farmease-be/framework/config"
 	"github.com/farmease/farmease-be/framework/fiber"
@@ -18,6 +19,7 @@ import (
 	"github.com/farmease/farmease-be/framework/redis"
 	"github.com/farmease/farmease-be/libraries/idp"
 	"github.com/farmease/farmease-be/libraries/middleware"
+	"github.com/farmease/farmease-be/libraries/publisher"
 	gofiber "github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	filterSwagger "github.com/swaggo/fiber-swagger"
@@ -73,6 +75,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		otel.Module,
 		postgres.Module,
 		redis.Module,
+		bunnymq.Module,
 
 		// supply config source & resolvers
 		fx.Supply(
@@ -99,10 +102,12 @@ func serveE(cmd *cobra.Command, args []string) error {
 			config.ProvideConfig[internalConfig.ApplicationConfig](),
 			internalConfig.Postgres,
 			internalConfig.Redis,
+			internalConfig.RabbitMQ,
 			internalConfig.Fiber,
 			internalConfig.Otel,
 			internalConfig.Logger,
 			internalConfig.InternalApp,
+			publisher.New,
 			func(idpProvider idp.IDPProvider, appCfg *internalConfig.InternalAppConfig) *middleware.AuthorizationMiddleware {
 				return middleware.NewAuthorizationMiddlewareWithSSO(idpProvider, nil, nil, appCfg.SsoApiUrl)
 			},

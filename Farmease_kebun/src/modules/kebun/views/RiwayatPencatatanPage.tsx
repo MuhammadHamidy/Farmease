@@ -12,7 +12,9 @@ export default defineComponent({
   setup() {
     const router = useRouter()
     const query = ref('')
-    const selectedCategory = ref('Semua Kegiatan')
+    const selectedCategory = ref('Semua Pencatatan')
+    const selectedStatus = ref('Semua Status')
+    const statusFilterOptions = ['Semua Status', 'Disetujui', 'Ditolak', 'Menunggu Persetujuan']
     const activeHistoryDetail = ref<any | null>(null)
     const isModalOpen = ref(false)
 
@@ -27,6 +29,7 @@ export default defineComponent({
     })
 
     const activeLandCode = computed(() => landSession.value?.code || 'L001')
+    const activeLandId = computed(() => String(landSession.value?.id || ''))
     const activeLandName = computed(() => landSession.value?.name || 'Lahan Alpukat')
     const isAlpukat = computed(() => activeLandName.value.toLowerCase().includes('alpukat'))
 
@@ -36,11 +39,13 @@ export default defineComponent({
     // Unified history items mapped from gardening store + fallbacks
     const historyItems = computed(() => {
       const list: any[] = []
-      const activeTrees = cropsList.value.filter(c => c.land === activeLandCode.value).map(c => c.code)
+      const activeLandTrees = cropsList.value.filter(c => c.land === activeLandCode.value)
+      const activeTreeIds = activeLandTrees.map(c => String(c.id))
+      const activeTreeCodes = activeLandTrees.map(c => String(c.code))
 
       // 1. Map Perawatan
       perawatan.value
-        .filter(p => activeTrees.includes(p.pohon_id) || !p.pohon_id)
+        .filter(p => activeTreeIds.includes(String(p.pohon_id)) || activeTreeCodes.includes(String(p.pohon_id)) || !p.pohon_id)
         .forEach(p => {
           const lowerType = (p.type || '').toLowerCase()
           if (lowerType === 'stok pupuk' || lowerType === 'stok obat') return
@@ -59,7 +64,7 @@ export default defineComponent({
 
       // 2. Map Panen
       panen.value
-        .filter(pa => activeTrees.includes(pa.pohon_id) || !pa.pohon_id)
+        .filter(pa => String(pa.pohon_id) === activeLandId.value || String(pa.pohon_id) === activeLandCode.value || !pa.pohon_id)
         .forEach(pa => {
           list.push({
             id: pa.id,
@@ -74,21 +79,23 @@ export default defineComponent({
         })
 
       // 3. Map Aktivitas
-      aktivitas.value.forEach(a => {
-        const lowerName = (a.name || '').toLowerCase()
-        if (lowerName === 'stok pupuk' || lowerName === 'stok obat') return
+      aktivitas.value
+        .filter(a => String(a.pohon_id) === activeLandId.value || String(a.pohon_id) === activeLandCode.value || !a.pohon_id)
+        .forEach(a => {
+          const lowerName = (a.name || '').toLowerCase()
+          if (lowerName === 'stok pupuk' || lowerName === 'stok obat') return
 
-        list.push({
-          id: a.id,
-          jenis: a.name || 'Aktivitas',
-          judul: isAlpukat.value ? 'Alpukat' : 'Kelengkeng',
-          tanggal: new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(a.date || Date.now())),
-          detail: `${a.name} • Deskripsi: ${a.type || '-'}`,
-          rawDate: a.date,
-          status: a.status === 'selesai' ? 'Disetujui' : 'Pending',
-          pohonId: a.pohon_id
+          list.push({
+            id: a.id,
+            jenis: a.name || 'Aktivitas',
+            judul: isAlpukat.value ? 'Alpukat' : 'Kelengkeng',
+            tanggal: new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(a.date || Date.now())),
+            detail: `${a.name} • Deskripsi: ${a.type || '-'}`,
+            rawDate: a.date,
+            status: 'Disetujui',
+            pohonId: a.pohon_id
+          })
         })
-      })
 
       // 4. Map Pencatatan Submissions (pending, rejected, and approved stock records)
       pencatatanSubmissions.value
@@ -120,7 +127,7 @@ export default defineComponent({
               displayJenis = 'Pembersihan'
             }
 
-            const item = s.payload?.data?.items?.[0] || {}
+            const item = (s.payload as any)?.data?.items?.[0] || {}
             let detail = s.summary || ''
             
             if (type === 'stok pupuk' || type === 'stok obat') {
@@ -139,7 +146,8 @@ export default defineComponent({
               detail: detail,
               rawDate: s.submittedAt,
               status: displayStatus,
-              pohonId: item.kodePohon || ''
+              pohonId: item.kodePohon || '',
+              reviewNote: s.reviewNote
             })
           }
         })
@@ -157,17 +165,19 @@ export default defineComponent({
     const filteredHistory = computed(() => {
       const q = query.value.trim().toLowerCase()
       const category = selectedCategory.value
+      const statusF = selectedStatus.value
 
       return historyItems.value.filter(item => {
         const matchesQuery = !q || [item.jenis, item.judul, item.detail].some(field => field.toLowerCase().includes(q))
-        const matchesCategory = category === 'Semua Kegiatan' || item.jenis.toLowerCase() === category.toLowerCase()
-        return matchesQuery && matchesCategory
+        const matchesCategory = category === 'Semua Pencatatan' || item.jenis.toLowerCase() === category.toLowerCase()
+        const matchesStatus = statusF === 'Semua Status' || item.status.toLowerCase() === statusF.toLowerCase()
+        return matchesQuery && matchesCategory && matchesStatus
       })
     })
 
     const categoryOptions = computed(() => {
       const categories = new Set(historyItems.value.map(item => item.jenis))
-      return ['Semua Kegiatan', ...Array.from(categories)]
+      return ['Semua Pencatatan', ...Array.from(categories)]
     })
 
     const openHistoryDetail = (item: any) => {
@@ -194,7 +204,7 @@ export default defineComponent({
         if (rincianPart) {
           return rincianPart.split(':')[1]?.trim() || rincianPart.trim()
         }
-        return parts[1].trim()
+        return parts[1]?.trim() || ''
       }
       return detail
     }
@@ -347,6 +357,13 @@ export default defineComponent({
               modelValue={selectedCategory.value}
               onUpdate:modelValue={(val: string) => selectedCategory.value = val}
               options={categoryOptions.value}
+              style="max-width: 220px;"
+            />
+
+            <PerkebunanFormSelect
+              modelValue={selectedStatus.value}
+              onUpdate:modelValue={(val: string) => selectedStatus.value = val}
+              options={statusFilterOptions}
               style="max-width: 220px;"
             />
           </div>
@@ -514,6 +531,28 @@ export default defineComponent({
                   Rincian Riwayat Pencatatan
                 </div>
 
+                {/* Status Badge in Modal */}
+                <div style="display: flex; justify-content: center; margin-bottom: 1.25rem;">
+                  <span
+                    style={`
+                      font-size: 0.8rem;
+                      font-weight: 800;
+                      padding: 0.35rem 1.25rem;
+                      border-radius: 6px;
+                      text-transform: capitalize;
+                      ${
+                        activeHistoryDetail.value.status === 'Disetujui'
+                          ? 'background: #ecfdf5; color: #047857;'
+                          : activeHistoryDetail.value.status === 'Ditolak'
+                          ? 'background: #fde8e8; color: #e11d48;'
+                          : 'background: #fffbeb; color: #d97706;'
+                      }
+                    `}
+                  >
+                    {activeHistoryDetail.value.status}
+                  </span>
+                </div>
+
                 {/* Detail Times */}
                 <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 1.25rem; padding: 0 1.5rem;">
                   <span style="color: #374151;">Waktu Mulai: <span style="font-weight: 800;">22 : 00 WIB</span></span>
@@ -655,6 +694,34 @@ export default defineComponent({
                     return detail || 'Pekerjaan selesai dengan baik.'
                   })()}
                 </div>
+
+                {/* Admin Note Section */}
+                {activeHistoryDetail.value.status === 'Ditolak' && (
+                  <div style="margin-bottom: 1.5rem;">
+                    <h4 style="font-size: 0.9rem; font-weight: 800; color: #e11d48; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.35rem;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      Catatan Penolakan Admin
+                    </h4>
+                    <div
+                      style="
+                        border: 1px solid #fecaca;
+                        border-radius: 0.5rem;
+                        padding: 0.75rem;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        color: #991b1b;
+                        background: #fef2f2;
+                        min-height: 48px;
+                      "
+                    >
+                      {activeHistoryDetail.value.reviewNote || 'Tidak ada catatan penolakan dari admin.'}
+                    </div>
+                  </div>
+                )}
 
                 {/* Selanjutnya/Close Button */}
                 <button

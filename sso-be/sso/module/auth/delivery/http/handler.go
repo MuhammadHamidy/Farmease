@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/farmease/farmease-be/farmease/module/auth/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/sso-be/sso/module/auth/domain"
+	"github.com/farmease/sso-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -372,3 +372,4 @@ func (h *AuthHandler) Introspect(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(result)
 }
+

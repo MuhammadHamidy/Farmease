@@ -14,6 +14,12 @@ export default defineComponent({
     const data = computed(() => props.payload.data || {});
     const type = computed(() => props.payload.type);
 
+    const resolvePejantanName = (id: any) => {
+      if (!id) return '-';
+      const s = sheep.value.find(x => String(x.id) === String(id) || String(x.code) === String(id));
+      return s ? `[${s.code}] ${s.name}` : id;
+    };
+
     const typeLabel = computed(() => {
       switch (type.value) {
         case 'pakan': return 'Pencatatan Pakan';
@@ -31,7 +37,7 @@ export default defineComponent({
       switch (type.value) {
         case 'pakan':
         case 'stok_pakan': return '/icon/catat_pakan.png';
-        case 'kesehatan': return '/icon/catat_sehat.png';
+        case 'kesehatan': return '/icon/sheep_kesehatan.png';
         case 'kotoran': return '/icon/catat_kotoran.png';
         case 'reproduksi':
         case 'kelahiran': return '/icon/catat_lahir.png';
@@ -162,7 +168,7 @@ export default defineComponent({
                           ) : (
                             <>
                               {!( (item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && item.sumberPejantan === 'eksternal' ) && (
-                                <SummaryItem label="ID Pejantan" value={item.idPejantan} />
+                                <SummaryItem label="ID Pejantan" value={resolvePejantanName(item.idPejantan)} />
                               )}
                               {(item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && (
                                 <>
@@ -189,7 +195,7 @@ export default defineComponent({
 
                       {type.value === 'kelahiran' && (
                         <>
-                          <SummaryItem label="ID Pejantan" value={item.idPejantan} />
+                          <SummaryItem label="ID Pejantan" value={resolvePejantanName(item.idPejantan)} />
                           <SummaryItem label="Ear Tag Anak" value={item.sheepCode} />
                           <SummaryItem label="Nama Anak" value={item.namaAnak} />
                           <SummaryItem label="Jenis Kelamin Anak" value={item.genderAnak === 'jantan' ? 'Jantan' : 'Betina'} />

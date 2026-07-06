@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { lahanApi, pohonApi, panenApi } from '@/shared/api'
 
 export interface UserSession {
@@ -14,6 +14,7 @@ export interface CageSession {
 }
 
 export interface LandSession {
+  id?: string | number;
   code: string;
   name: string;
   area?: string;
@@ -24,7 +25,27 @@ export const isLoginOpen = ref(false)
 
 export const userSession = ref<UserSession | null>(null)
 export const cageSession = ref<CageSession | null>(null)
-export const landSession = ref<LandSession | null>(null)
+
+// Initialize landSession from localStorage if available to survive page refresh
+const savedLand = localStorage.getItem('land_session')
+let initialLand: LandSession | null = null
+if (savedLand && savedLand !== 'null') {
+  try {
+    initialLand = JSON.parse(savedLand)
+  } catch {
+    initialLand = null
+  }
+}
+export const landSession = ref<LandSession | null>(initialLand)
+
+// Watch landSession to persist the selected land in localStorage
+watch(landSession, (newVal) => {
+  if (newVal) {
+    localStorage.setItem('land_session', JSON.stringify(newVal))
+  } else {
+    localStorage.removeItem('land_session')
+  }
+}, { deep: true })
 
 export interface GlobalAlertState {
   isOpen: boolean;
@@ -83,6 +104,9 @@ export interface CropInfo {
   land: string;
   age: string;
   status_pohon?: string;
+  rawAge?: number;
+  rawDate?: string;
+  id_lahan?: number | string;
 }
 
 export const cagesList = ref<CageInfo[]>([])

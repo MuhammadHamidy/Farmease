@@ -8,9 +8,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
-	"github.com/farmease/farmease-be/farmease/module/roles/usecase"
-	"github.com/farmease/farmease-be/farmease/tests/mocks"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
+	"github.com/farmease/sso-be/sso/module/roles/usecase"
+	"github.com/farmease/sso-be/sso/tests/mocks"
 )
 
 func TestUseCase_Roles(t *testing.T) {
@@ -172,3 +172,4 @@ func TestUseCase_Roles(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 }
+

@@ -202,46 +202,95 @@ export default defineComponent({
       if (selectedVarietas.value !== 'Semua Varietas') {
         result = result.filter(t => t.varietas === selectedVarietas.value)
       }
+      
+      const isBelumProduktif = formState.value.statusProduktivitas?.includes('0 - 3') || formState.value.statusProduktivitas?.includes('belum')
+      const isProduktif = formState.value.statusProduktivitas?.includes('> 4') || (formState.value.statusProduktivitas?.includes('produktif') && !formState.value.statusProduktivitas?.includes('belum'))
+      
       if (formState.value.fasePohon && formState.value.fasePohon !== 'Fase Pohon') {
         result = result.filter(t => t.fase === formState.value.fasePohon)
+      } else if (isBelumProduktif) {
+        result = result.filter(t => t.fase === 'Vegetatif')
       }
+
+      if (isBelumProduktif) {
+        result = result.filter(t => (t.umur ?? 0) <= 3)
+      } else if (isProduktif) {
+        const temp = result.filter(t => (t.umur ?? 0) >= 4)
+        // If they ask for productive phase of this category, but no trees of that phase are >= 4 years old,
+        // we fall back to displaying the vegetative trees anyway instead of rendering a blank list.
+        if (temp.length > 0) {
+          result = temp
+        }
+      }
+      
       return result
+    })
+
+    const currentObatStocks = computed(() => {
+      const stockMap: Record<string, { qty: number; unit: string; type: string; expiry: string }> = {
+        'Mankozeb': { qty: 500, unit: 'g', type: 'fungisida', expiry: '02 - 12 - 2026' },
+        'Fungisida Tembaga': { qty: 300, unit: 'ml', type: 'fungisida', expiry: '02 - 12 - 2026' },
+        'Sipermetrin 50EC': { qty: 500, unit: 'ml', type: 'insektisida', expiry: '02 - 12 - 2026' },
+        'Imidakloprid': { qty: 300, unit: 'ml', type: 'insektisida', expiry: '02 - 12 - 2026' },
+        'Ekstrak Nimba': { qty: 500, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026' },
+        'Ekstrak Bawang Putih': { qty: 300, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026' },
+      }
+
+      // Add from approved stok obat submissions
+      allSubmissions.value
+        .filter((s: any) => (s.type || '').toLowerCase() === 'stok obat' && s.approvalStatus === 'approved')
+        .forEach((s: any) => {
+          const item = s.payload?.data?.items?.[0] || {}
+          const name = item.namaObat
+          if (name) {
+            const val = parseFloat(item.volumeObat) || 0
+            const unit = item.satuanVolumeObat || 'ml'
+            const expiry = item.tanggalKadaluarsa || '-'
+            const type = (item.jenisObat || item.selectedRincian || '').toLowerCase()
+            if (stockMap[name]) {
+              stockMap[name].qty += val
+            } else {
+              stockMap[name] = { qty: val, unit, type, expiry }
+            }
+          }
+        })
+
+      // Deduct from approved pemberian obat usages
+      allSubmissions.value
+        .filter((s: any) => (s.type || '').toLowerCase() === 'pemberian obat' && s.approvalStatus === 'approved')
+        .forEach((s: any) => {
+          const item = s.payload?.data?.items?.[0] || {}
+          const name = item.namaObat
+          if (name && stockMap[name]) {
+            const val = parseFloat(item.volumeObat) || 0
+            stockMap[name].qty = Math.max(0, stockMap[name].qty - val)
+          }
+        })
+
+      return stockMap
     })
 
     const obatStocks = computed(() => {
       const r = (selectedRincian.value || '').toLowerCase()
-      
-      // Build from approved stok obat submissions first
-      const fromSubmissions = allSubmissions.value
-        .filter((s: any) => (s.type || '').toLowerCase() === 'stok obat' && s.approvalStatus === 'approved')
-        .map((s: any) => {
-          const item = s.payload?.data?.items?.[0] || {}
-          return {
-            name: item.namaObat || '',
-            qty: `${item.volumeObat || '0'} ${item.satuanVolumeObat || 'ml'}`,
-            expiry: item.tanggalKadaluarsa || '-',
-            type: (item.jenisObat || item.selectedRincian || '').toLowerCase()
-          }
-        })
-        .filter((o: any) => o.name)
-
-      const allObat = fromSubmissions.length > 0 ? fromSubmissions : [
-        { name: 'Mankozeb', qty: '500 Gram (g)', expiry: '02 - 12 - 2026', type: 'fungisida' },
-        { name: 'Fungisida Tembaga', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'fungisida' },
-        { name: 'Sipermetrin 50EC', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'insektisida' },
-        { name: 'Imidakloprid', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'insektisida' },
-        { name: 'Ekstrak Nimba', qty: '500 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'pestisida' },
-        { name: 'Ekstrak Bawang Putih', qty: '300 Mililiter (ml)', expiry: '02 - 12 - 2026', type: 'pestisida' }
-      ]
+      const pool = Object.entries(currentObatStocks.value).map(([name, data]) => {
+        return {
+          name,
+          qty: `${data.qty.toFixed(0)} ${data.unit}`,
+          expiry: data.expiry,
+          type: data.type,
+          val: data.qty,
+          unit: data.unit
+        }
+      }).filter(o => o.val > 0)
 
       if (r.includes('fungisida')) {
-        return allObat.filter(o => o.type === 'fungisida')
+        return pool.filter(o => o.type.includes('fungisida'))
       } else if (r.includes('insektisida')) {
-        return allObat.filter(o => o.type === 'insektisida')
+        return pool.filter(o => o.type.includes('insektisida'))
       } else if (r.includes('pestisida')) {
-        return allObat.filter(o => o.type === 'pestisida')
+        return pool.filter(o => o.type.includes('pestisida'))
       }
-      return allObat
+      return pool
     })
 
     const parseQty = (qtyStr: any, unitStr: string) => {
@@ -270,15 +319,7 @@ export default defineComponent({
     }
 
     const rawLedger = computed(() => {
-      const pupukStockMap: Record<string, number> = {
-        'Pupuk Kandang_#_-': 15,
-        'NPK_#_-': 2,
-        'Urea_#_-': 2,
-        'SP - 36_#_-': 2,
-        'POC Air Kelapa_#_-': 50,
-        'Fungisida Tembaga_#_-': 300,
-        'NPK Kelengkeng_#_-': 300,
-      }
+      const pupukStockMap: Record<string, number> = {}
 
       const bahanStockMap: Record<string, number> = {
         'Kotoran domba': manureStock.value,
@@ -368,7 +409,14 @@ export default defineComponent({
           else if (type === 'pemupukan') {
             const name = item.jenisPupukDetail || ''
             if (!name) return
-            const usedVal = parseQty(item.jumlahBeratPupuk, item.satuanVolumeObat)
+
+            const nameLower = name.toLowerCase()
+            const isCair = nameLower.includes('poc') || nameLower.includes('cair')
+            const isOrganik = nameLower.includes('kandang') || nameLower.includes('kotoran') || nameLower.includes('kompos') || nameLower.includes('organik')
+            let unit = 'gram'
+            if (isCair) unit = 'liter'
+            else if (isOrganik) unit = 'kilogram'
+            const usedVal = parseQty(item.jumlahBeratPupuk, unit)
 
             // Deduct using FIFO based on expiration date
             let remainingToDeduct = usedVal
@@ -467,6 +515,26 @@ export default defineComponent({
         }
       })
     })
+
+    const getAvailableFertilizerStock = (name: string) => {
+      const nameLower = name.toLowerCase()
+      if (nameLower.includes('kotoran') || nameLower === 'manure' || nameLower === 'kotoran domba') {
+        return manureStock.value
+      }
+      const matches = pupukStocks.value.filter(p => p.name === name)
+      return matches.reduce((acc, curr) => acc + (curr.val || 0), 0)
+    }
+
+    const selectedPupukStock = computed(() => {
+      const selected = formState.value.jenisPupukDetail
+      if (!selected) return 0
+      return getAvailableFertilizerStock(selected)
+    })
+
+    const getStockOf = (name: string) => {
+      const match = bahanStocks.value.find((b: any) => b.name === name)
+      return match ? match.val : 0
+    }
 
     const pruningStockMap = computed(() => rawLedger.value.pruningMap)
 
@@ -642,42 +710,36 @@ export default defineComponent({
         formState.value.fasePohon = 'Generatif'
       } else if (k.includes('penanaman')) {
         formState.value.statusProduktivitas = 'usia belum produktif (0 - 3 tahun)'
-        formState.value.fasePohon = 'Belum Produktif'
+        formState.value.fasePohon = 'Vegetatif'
       } else {
         formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
-        formState.value.fasePohon = 'Vegetatif'
+        formState.value.fasePohon = 'Generatif'
       }
     }, { immediate: true })
 
     const fetchTrees = async () => {
       try {
-        const list = (await pohonApi.getList()).filter(p => (p.status_pohon || 'aktif').toLowerCase() === 'aktif')
+        const list = await pohonApi.getList()
         const activeLandCode = landSession.value?.code
+        const activeLandName = (landSession.value?.name || '').toLowerCase()
+        
+        let filtered = list
         if (activeLandCode) {
-          // Try to find the land's DB id from landsList
-          if (landsList.value.length === 0) {
-            await fetchLandsList()
-          }
-          const activeLand = landsList.value.find(l => l.code === activeLandCode)
-          const activeLandId = activeLand?.id
-          const filtered = activeLandId
-            ? list.filter(p => String(p.id_lahan) === String(activeLandId))
-            : list
-          if (filtered && filtered.length > 0) {
-            allTrees.value = filtered.map(p => ({
-              code: p.kode_pohon,
-              varietas: p.jenis || p.nama_pohon || 'Varietas',
-              fase: p.status || 'Generatif',
-            }))
-            selectedTrees.value = [allTrees.value[0]!.code]
-            return
+          const isAlpukat = activeLandCode === 'L001' || activeLandName.includes('alpukat')
+          const isKelengkeng = activeLandCode === 'L002' || activeLandName.includes('kelengkeng')
+          if (isAlpukat) {
+            filtered = list.filter(p => p.kode_pohon.startsWith('LA'))
+          } else if (isKelengkeng) {
+            filtered = list.filter(p => p.kode_pohon.startsWith('LK'))
           }
         }
-        if (list && list.length > 0) {
-          allTrees.value = list.map(p => ({
+
+        if (filtered && filtered.length > 0) {
+          allTrees.value = filtered.map(p => ({
             code: p.kode_pohon,
             varietas: p.jenis || p.nama_pohon || 'Varietas',
             fase: p.status || 'Generatif',
+            umur: p.umur || 1,
           }))
           selectedTrees.value = [allTrees.value[0]!.code]
         } else {
@@ -729,13 +791,67 @@ export default defineComponent({
         formState.value.fasePohon = 'Generatif'
       } else if (jenisLower.includes('penanaman')) {
         formState.value.statusProduktivitas = 'usia belum produktif (0 - 3 tahun)'
-        formState.value.fasePohon = 'Belum Produktif'
+        formState.value.fasePohon = 'Vegetatif'
       } else if (jenisLower.includes('pembuahan')) {
         formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
         formState.value.fasePohon = 'Generatif'
       }
 
+      // Stock validation for Pemupukan
+      if (selectedJenis.value === 'Pemupukan') {
+        const selectedPupuk = formState.value.jenisPupukDetail
+        if (!selectedPupuk || selectedPupuk === 'Pilih Pupuk' || selectedPupuk === 'Jenis Pupuk Detail') {
+          alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: 'Harap pilih pupuk yang digunakan!', type: 'error' }
+          return
+        }
+        const dose = parseFloat(formState.value.jumlahBeratPupuk) || 0
+        if (dose <= 0) {
+          alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: 'Harap masukkan jumlah/dosis pupuk yang valid!', type: 'error' }
+          return
+        }
 
+        const nameLower = selectedPupuk.toLowerCase()
+        const isCair = nameLower.includes('poc') || nameLower.includes('cair')
+        const isOrganik = nameLower.includes('kandang') || nameLower.includes('kotoran') || nameLower.includes('kompos') || nameLower.includes('organik')
+        let unit = 'gram'
+        if (isCair) unit = 'liter'
+        else if (isOrganik) unit = 'kilogram'
+        const usedVal = parseQty(formState.value.jumlahBeratPupuk, unit)
+        const available = getAvailableFertilizerStock(selectedPupuk)
+
+        if (usedVal > available) {
+          alertModal.value = {
+            isOpen: true,
+            title: 'Stok Tidak Cukup',
+            message: `Stok pupuk "${selectedPupuk}" tidak mencukupi. Tersedia: ${formatQty(available, selectedPupuk)}, ingin digunakan: ${formatQty(usedVal, selectedPupuk)}.`,
+            type: 'error'
+          }
+          return
+        }
+      }
+
+      // Stock validation for Pemberian Obat
+      if (jenisLower.includes('obat') || jenisLower.includes('perawatan') || jenisLower.includes('hama') || jenisLower.includes('penyakit')) {
+        const selectedObat = formState.value.namaObat
+        if (selectedObat && selectedObat !== 'Pilih Obat' && selectedObat !== 'Jenis Obat') {
+          const usedVal = parseFloat(formState.value.volumeObat) || 0
+          if (usedVal <= 0) {
+            alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: 'Harap masukkan volume obat yang valid!', type: 'error' }
+            return
+          }
+          const stockItem = currentObatStocks.value[selectedObat]
+          const available = stockItem ? stockItem.qty : 0
+          if (usedVal > available) {
+            alertModal.value = {
+              isOpen: true,
+              title: 'Stok Tidak Cukup',
+              message: `Stok obat "${selectedObat}" tidak mencukupi. Tersedia: ${available} ${stockItem?.unit || ''}, ingin digunakan: ${usedVal} ${formState.value.satuanVolumeObat || ''}.`,
+              type: 'error'
+            }
+            return
+          }
+        }
+      }
 
       // Validation for Pengolahan Pupuk -> Fermentasi Pupuk
       if (selectedJenis.value === 'Pengolahan Pupuk' && selectedRincian.value === 'Fermentasi Pupuk') {
@@ -759,6 +875,60 @@ export default defineComponent({
         if (!f.qty) {
           alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: 'Harap masukkan estimasi jumlah produksi!', type: 'error' }
           return
+        }
+
+        // Validate ingredient stocks for fermentation
+        const qty = parseFloat(f.qty) || 0
+        const hasil = f.hasilJadi || ''
+        const isCair = hasil.toLowerCase().includes('cair') || hasil.toLowerCase().includes('poc')
+        
+        const decNeed = (isCair ? 20 : 10) * qty
+        const molNeed = (isCair ? 20 : 10) * qty
+        const rawNeed = (isCair ? 0.3 : 1.0) * qty
+
+        // Validate Dekomposer
+        const decName = f.dekomposer
+        if (decName) {
+          const decAvail = getStockOf(decName)
+          if (decNeed > decAvail) {
+            alertModal.value = {
+              isOpen: true,
+              title: 'Stok Tidak Cukup',
+              message: `Stok dekomposer "${decName}" tidak mencukupi. Butuh: ${formatQty(decNeed, decName)}, Tersedia: ${formatQty(decAvail, decName)}.`,
+              type: 'error'
+            }
+            return
+          }
+        }
+
+        // Validate Molase
+        const molName = f.molase
+        if (molName) {
+          const molAvail = getStockOf(molName)
+          if (molNeed > molAvail) {
+            alertModal.value = {
+              isOpen: true,
+              title: 'Stok Tidak Cukup',
+              message: `Stok molase/gula "${molName}" tidak mencukupi. Butuh: ${formatQty(molNeed, molName)}, Tersedia: ${formatQty(molAvail, molName)}.`,
+              type: 'error'
+            }
+            return
+          }
+        }
+
+        // Validate Raw Material
+        const rawName = f.bahanMentahId
+        if (rawName) {
+          const rawAvail = getStockOf(rawName)
+          if (rawNeed > rawAvail) {
+            alertModal.value = {
+              isOpen: true,
+              title: 'Stok Tidak Cukup',
+              message: `Stok bahan mentah "${rawName}" tidak mencukupi. Butuh: ${formatQty(rawNeed, rawName)}, Tersedia: ${formatQty(rawAvail, rawName)}.`,
+              type: 'error'
+            }
+            return
+          }
         }
       }
 
@@ -1000,6 +1170,7 @@ export default defineComponent({
               activeMode={activeMode.value}
               selectedRincian={selectedRincian.value}
               manureStock={manureStock.value}
+              selectedPupukStock={selectedPupukStock.value}
               manureCollections={manureCollections.value}
               pruningCollections={pruningCollections.value}
               allSubmissions={allSubmissions.value}
@@ -1056,6 +1227,20 @@ export default defineComponent({
             }
           }}
         />
+
+        {isSaving.value && (
+          <Teleport to="body">
+            <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1250; display:flex; align-items:center; justify-content:center;">
+              <div style="background:#fff; border-radius:1.25rem; padding:2.5rem 2rem; max-width:320px; width:85%; text-align:center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); display:flex; flex-direction:column; align-items:center; gap:1.25rem;">
+                <div style="width:48px; height:48px; border:4px solid #dce1d0; border-top-color:#38431f; border-radius:50%; animation:pencatatanSpin 1s linear infinite;" />
+                <div>
+                  <h4 style="font-weight:800; margin:0 0 0.25rem; font-size:1.1rem; color:#111827;">Menyimpan Catatan</h4>
+                  <p style="color:#6b7280; margin:0; font-size:0.88rem;">Mohon tunggu sebentar...</p>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+        )}
 
         {alertModal.value.isOpen && (
           <Teleport to="body">

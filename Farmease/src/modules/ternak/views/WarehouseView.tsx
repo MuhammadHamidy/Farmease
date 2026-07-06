@@ -26,7 +26,7 @@ export default defineComponent({
     const loadConversions = async () => {
       try {
         conversionsLoading.value = true;
-        conversions.value = await feedsApi.getSilageConversions();
+        conversions.value = (await feedsApi.getSilageConversions()) || [];
       } catch (err) {
         console.error('Gagal memuat riwayat konversi/fermentasi:', err);
       } finally {
@@ -175,7 +175,12 @@ export default defineComponent({
     };
 
     const categories = computed<string[]>(() => {
-      const cats = new Set(stocks.value.map(s => s.category).filter((c): c is string => !!c));
+      // Normalise: 'greenery' is the same as 'hijauan' — merge them
+      const cats = new Set(
+        stocks.value
+          .map(s => (s.category || '').toLowerCase() === 'greenery' ? 'hijauan' : s.category)
+          .filter((c): c is string => !!c)
+      );
       return ['Semua', ...Array.from(cats)];
     });
 
@@ -187,7 +192,11 @@ export default defineComponent({
         list = list.filter(s => s.name.toLowerCase().includes(query) || (s.notes && s.notes.toLowerCase().includes(query)));
       }
       if (filterCategory.value !== 'Semua') {
-        list = list.filter(s => s.category === filterCategory.value);
+        list = list.filter(s => {
+          // Treat 'greenery' as 'hijauan' for filtering purposes
+          const cat = (s.category || '').toLowerCase() === 'greenery' ? 'hijauan' : s.category;
+          return cat === filterCategory.value;
+        });
       }
       return list;
     });
@@ -204,10 +213,10 @@ export default defineComponent({
 
     // Filtering conversions
     const filteredConversions = computed(() => {
-      let list = conversions.value;
+      let list = conversions.value || [];
       if (searchVal.value) {
         const query = searchVal.value.toLowerCase();
-        list = list.filter(c => c.target_feed_name.toLowerCase().includes(query) || (c.notes && c.notes.toLowerCase().includes(query)));
+        list = list.filter(c => (c.target_feed_name || '').toLowerCase().includes(query) || (c.notes && c.notes.toLowerCase().includes(query)));
       }
       if (filterStatus.value !== 'Semua') {
         list = list.filter(c => {

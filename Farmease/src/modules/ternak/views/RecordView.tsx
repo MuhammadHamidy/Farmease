@@ -15,7 +15,7 @@ import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/Penc
 const recordTypeOptions = [
   { id: 'berat_badan', label: 'Berat Badan', icon: '/icon/statistic.png' },
   { id: 'kelahiran', label: 'Kelahiran', icon: '/icon/catat_lahir.png' },
-  { id: 'kesehatan', label: 'Kesehatan', icon: '/icon/catat_sehat.png' },
+  { id: 'kesehatan', label: 'Kesehatan', icon: '/icon/sheep_kesehatan.png' },
   { id: 'kotoran', label: 'Kotoran', icon: '/icon/catat_kotoran.png' },
   { id: 'pakan', label: 'Pakan', icon: '/icon/catat_pakan.png' },
   { id: 'perkawinan', label: 'Perkawinan', icon: '/icon/catat_kawin.png' },
@@ -35,7 +35,7 @@ const detailOptions: Record<string, string[]> = {
 const categoryIcons: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
   stok_pakan: '/icon/catat_pakan.png',
-  kesehatan: '/icon/catat_sehat.png',
+  kesehatan: '/icon/sheep_kesehatan.png',
   kotoran: '/icon/catat_kotoran.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',

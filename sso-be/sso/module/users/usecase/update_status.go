@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
+	"github.com/farmease/sso-be/libraries/errors"
 )
 
 // UpdateStatus updates a user's status.
@@ -30,3 +30,4 @@ func (u *UseCase) UpdateStatus(ctx context.Context, id string, status string, up
 
 	return nil
 }
+

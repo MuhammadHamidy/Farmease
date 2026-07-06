@@ -5,7 +5,7 @@ import Badge from '@/shared/ui/Badge';
 export const CATEGORY_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
   stok_pakan: '/icon/inventory.png',
-  kesehatan: '/icon/catat_sehat.png',
+  kesehatan: '/icon/sheep_kesehatan.png',
   kotoran: '/icon/catat_kotoran.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',

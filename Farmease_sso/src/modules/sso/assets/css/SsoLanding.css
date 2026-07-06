@@ -364,9 +364,10 @@
   transform: translateY(-50%) scale(0.92);
 }
 
-.sso-toggle-password-btn img {
-  width: 20px;
-  height: 20px;
+.sso-toggle-password-btn img,
+.sso-toggle-password-btn svg {
+  width: 22px;
+  height: 22px;
   display: block;
 }
 

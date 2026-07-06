@@ -104,6 +104,13 @@ export default defineComponent({
         return;
       }
 
+      // Check uniqueness locally
+      const exists = landsList.value.some(l => l.code.toUpperCase() === code && (!isEditing.value || String(l.id) !== String(editingLandId.value)));
+      if (exists) {
+        error.value = `Kode lahan "${code}" sudah terdaftar.`;
+        return;
+      }
+
       error.value = '';
       alertError.value = '';
       successMessage.value = '';
@@ -200,19 +207,48 @@ export default defineComponent({
 
     const handleExport = async () => {
       try {
-        const [rawLands, rawTrees, rawPerawatan, rawPanen, rawPemangkasan] = await Promise.all([
+        const [rawLands, rawTrees, rawPengobatan, rawPemupukan, rawPenyiraman, rawPanen, rawPemangkasan] = await Promise.all([
           apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
           apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
-          apiClient.get<any[]>('/api/v1/perawatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
           apiClient.get<any[]>('/api/v1/panen').catch(() => []),
           apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
         ])
 
         const lands = Array.isArray(rawLands) ? rawLands : []
         const trees = Array.isArray(rawTrees) ? rawTrees : []
-        const perawatanList = Array.isArray(rawPerawatan) ? rawPerawatan : []
+        const pengobatanList = Array.isArray(rawPengobatan) ? rawPengobatan : []
+        const pemupukanList = Array.isArray(rawPemupukan) ? rawPemupukan : []
+        const penyiramanList = Array.isArray(rawPenyiraman) ? rawPenyiraman : []
         const panenList = Array.isArray(rawPanen) ? rawPanen : []
         const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const perawatanList = [
+          ...pengobatanList.map(o => ({
+            ...o,
+            id_perawatan: o.id_pengobatan,
+            jenis_bahan: 'obat',
+            id_lahan: o.Lahan_id_lahan
+          })),
+          ...pemupukanList.map(f => ({
+            ...f,
+            id_perawatan: f.id_pemupukan,
+            jenis_bahan: 'pupuk',
+            id_lahan: f.Lahan_id_lahan,
+            nama_obat: f.nama_pupuk,
+            deskripsi: f.deskripsi
+          })),
+          ...penyiramanList.map(w => ({
+            ...w,
+            id_perawatan: w.id_penyiraman,
+            jenis_bahan: 'air',
+            id_lahan: w.Lahan_id_lahan,
+            teknik_perawatan: w.teknik_penyiraman,
+            deskripsi: w.deskripsi
+          }))
+        ]
 
         const csvRows: string[][] = []
 

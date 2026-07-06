@@ -1,11 +1,11 @@
 package auth
 
 import (
-	"github.com/farmease/farmease-be/farmease/config"
-	"github.com/farmease/farmease-be/farmease/module/auth/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/auth/domain"
-	"github.com/farmease/farmease-be/farmease/module/auth/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/auth/usecase"
+	"github.com/farmease/sso-be/sso/config"
+	"github.com/farmease/sso-be/sso/module/auth/delivery/http"
+	"github.com/farmease/sso-be/sso/module/auth/domain"
+	"github.com/farmease/sso-be/sso/module/auth/repository/postgresql"
+	"github.com/farmease/sso-be/sso/module/auth/usecase"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
 )
@@ -31,3 +31,4 @@ var Module = fx.Options(
 func registerRoutes(h *http.AuthHandler, app *fiber.App) {
 	h.RegisterRoutes(app)
 }
+

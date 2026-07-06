@@ -25,7 +25,7 @@ const (
 	FasePohonVegetatif      FasePohon = "Vegetatif"
 	FasePohonGeneratif      FasePohon = "Generatif"
 	FasePohonPanen          FasePohon = "Panen"
-	FasePohonTidakProduktif FasePohon = "Tidak Produktif"
+	FasePohonTidakProduktif FasePohon = "Belum Produktif"
 )
 
 // BagianPohon adalah nilai valid untuk kolom bagian_pohon (ENUM di database).

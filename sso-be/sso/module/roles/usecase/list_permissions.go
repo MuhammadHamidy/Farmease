@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 // ListPermissions retrieves a list of permissions based on filter criteria.
@@ -27,3 +27,4 @@ func (u *UseCase) ListPermissions(ctx context.Context, filter domain.PermissionF
 
 	return permissions, nil
 }
+

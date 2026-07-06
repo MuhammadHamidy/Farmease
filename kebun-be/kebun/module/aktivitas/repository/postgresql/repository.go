@@ -29,8 +29,12 @@ func (r *aktivitasRepository) FindAll(ctx context.Context) ([]domain.Aktivitas, 
 	for rows.Next() {
 		var a domain.Aktivitas
 		var tTgl time.Time
-		if err := rows.Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &a.LahanIDLahan); err != nil {
+		var lahanID *string
+		if err := rows.Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &lahanID); err != nil {
 			return nil, err
+		}
+		if lahanID != nil {
+			a.LahanIDLahan = *lahanID
 		}
 		a.TanggalAktivitas = tTgl.Format("2006-01-02 15:04:05")
 		list = append(list, a)
@@ -41,13 +45,17 @@ func (r *aktivitasRepository) FindAll(ctx context.Context) ([]domain.Aktivitas, 
 func (r *aktivitasRepository) FindByID(ctx context.Context, id string) (*domain.Aktivitas, error) {
 	var a domain.Aktivitas
 	var tTgl time.Time
+	var lahanID *string
 	err := r.db.QueryRow(ctx, "SELECT id_aktivitas, tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan FROM gardening.aktivitas WHERE id_aktivitas = $1", id).
-		Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &a.LahanIDLahan)
+		Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &lahanID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
+	}
+	if lahanID != nil {
+		a.LahanIDLahan = *lahanID
 	}
 	a.TanggalAktivitas = tTgl.Format("2006-01-02 15:04:05")
 	return &a, nil

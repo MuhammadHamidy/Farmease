@@ -3,7 +3,7 @@ package postgresql
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/auth/domain"
+	"github.com/farmease/sso-be/sso/module/auth/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -131,3 +131,4 @@ func (r *Repository) FindRoleByID(ctx context.Context, id string) (*domain.Role,
 	}
 	return &role, nil
 }
+

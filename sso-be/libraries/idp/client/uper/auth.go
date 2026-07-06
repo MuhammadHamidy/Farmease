@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 )
 
 func (i *Idp) Login(ctx context.Context, username, password string) (*client.LoginResponse, error) {
@@ -336,3 +336,4 @@ func (i *Idp) GetActiveImpersonations(ctx context.Context, token string) (*clien
 	}
 	return &result, nil
 }
+

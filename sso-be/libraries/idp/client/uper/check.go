@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 )
 
 type CheckSessionResponse struct {
@@ -71,3 +71,4 @@ func (i *Idp) Check(ctx context.Context, token string) (*client.AuthSession, err
 		ExpiresIn:   sessionResponse.ExpiresIn,
 	}, nil
 }
+

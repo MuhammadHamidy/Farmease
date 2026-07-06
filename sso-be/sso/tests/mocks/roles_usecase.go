@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -49,3 +49,4 @@ func (m *RolesUseCaseMock) ListPermissions(ctx context.Context, filter domain.Pe
 	}
 	return args.Get(0).([]*domain.Permission), args.Error(1)
 }
+

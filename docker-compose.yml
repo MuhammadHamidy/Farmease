@@ -37,6 +37,24 @@ services:
       - farmease_network
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: farmease_rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
   sso_migrate:
     image: migrate/migrate
     container_name: farmease_sso_migrate
@@ -160,6 +178,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_PORT: "8081"
@@ -167,6 +187,7 @@ services:
       APP_REDIS_ADDRESS: redis:6379
       APP_REDIS_PASSWORD: ""
       APP_REDIS_DB: "0"
+      APP_RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
       APP_SSOAPIURL: http://sso_backend:8080
       APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
       APP_CORS_ALLOWED_ORIGINS: "*"
@@ -205,6 +226,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_PORT: "8082"
@@ -212,6 +235,7 @@ services:
       APP_REDIS_ADDRESS: redis:6379
       APP_REDIS_PASSWORD: ""
       APP_REDIS_DB: "0"
+      APP_RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
       APP_SSOAPIURL: http://sso_backend:8080
       APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
       APP_CORS_ALLOWED_ORIGINS: "*"

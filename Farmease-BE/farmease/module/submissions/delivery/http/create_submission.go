@@ -8,6 +8,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// CreateSubmission godoc
+// @Summary      Create a submission
+// @Description  Create a new submission for audit / logging (e.g. estrus checks, routine feeds)
+// @Tags         submissions
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        request body      domain.Submission  true  "Submission details"
+// @Success      201     {object}  domain.Submission
+// @Failure      400     {object}  responses.Response[any]
+// @Failure      500     {object}  responses.Response[any]
+// @Router       /api/submissions [post]
 func (h *SubmissionHandler) CreateSubmission(c *fiber.Ctx) error {
 	var item domain.Submission
 	if err := c.BodyParser(&item); err != nil {

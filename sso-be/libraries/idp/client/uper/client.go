@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 )
 
 func (i *Idp) ClearSession(ctx context.Context, token string) (*client.GeneralResponse, error) {
@@ -110,3 +110,4 @@ func (i *Idp) UpsertUser(ctx context.Context, body map[string]interface{}) (*cli
 	}
 	return &result, nil
 }
+

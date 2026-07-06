@@ -9,6 +9,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// UpdateSubmission godoc
+// @Summary      Update a submission
+// @Description  Update details of a submission record (e.g. approve or reject)
+// @Tags         submissions
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id      path      string             true  "Submission ID"
+// @Param        request body      object             true  "Submission update patch fields"
+// @Success      200     {object}  domain.Submission
+// @Failure      400     {object}  responses.Response[any]
+// @Failure      500     {object}  responses.Response[any]
+// @Router       /api/submissions/{id} [put]
 func (h *SubmissionHandler) UpdateSubmission(c *fiber.Ctx) error {
 	id := c.Params("id")
 	

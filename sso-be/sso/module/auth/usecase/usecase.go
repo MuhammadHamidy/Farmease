@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/auth/domain"
+	"github.com/farmease/sso-be/sso/module/auth/domain"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -156,3 +156,4 @@ func (u *useCase) Introspect(ctx context.Context, tokenString string) (*domain.I
 		UserInfo: account,
 	}, nil
 }
+

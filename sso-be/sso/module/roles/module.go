@@ -3,10 +3,10 @@ package roles
 import (
 	gofiber "github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
-	"github.com/farmease/farmease-be/farmease/module/roles/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
-	"github.com/farmease/farmease-be/farmease/module/roles/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/roles/usecase"
+	"github.com/farmease/sso-be/sso/module/roles/delivery/http"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
+	"github.com/farmease/sso-be/sso/module/roles/repository/postgresql"
+	"github.com/farmease/sso-be/sso/module/roles/usecase"
 )
 
 // Module exports the roles module for Fx.
@@ -28,3 +28,4 @@ var Module = fx.Options(
 func registerRoutes(h *http.RoleHandler, app *gofiber.App) {
 	h.RegisterRoutes(app)
 }
+

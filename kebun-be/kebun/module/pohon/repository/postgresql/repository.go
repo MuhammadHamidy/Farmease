@@ -124,6 +124,25 @@ func (r *pohonRepository) Delete(ctx context.Context, id string) error {
 	return err
 }
 
+func (r *pohonRepository) FindByKodePohon(ctx context.Context, kode string) (*domain.Pohon, error) {
+	var p domain.Pohon
+	var tTanam *time.Time
+	err := r.db.QueryRow(ctx, `SELECT id_pohon, kode_pohon, tanggal_tanam, varietas, fase_pohon, "Lahan_id_lahan", status_pohon FROM gardening.pohon WHERE kode_pohon = $1`, kode).
+		Scan(&p.IDPohon, &p.KodePohon, &tTanam, &p.Varietas, &p.FasePohon, &p.LahanIDLahan, &p.StatusPohon)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if tTanam != nil {
+		p.TanggalTanam = tTanam.Format("2006-01-02")
+	} else {
+		p.TanggalTanam = ""
+	}
+	return &p, nil
+}
+
 func parseTime(val string) (time.Time, error) {
 	layouts := []string{
 		"2006-01-02T15:04:05Z07:00",

@@ -21,7 +21,7 @@ export default defineComponent({
       type: 'error',
     });
 
-    const statusOptions = ['Sehat', 'Sakit', 'Hamil', 'Melahirkan', 'Dijual', 'Mati'];
+    const statusOptions = ['Sehat', 'Sakit', 'Hamil', 'Tidak Hamil', 'Birahi', 'Tidak Birahi', 'Mati'];
 
     watch(() => props.isOpen, (open) => {
       if (open && props.sheepData) {

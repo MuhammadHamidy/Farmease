@@ -61,7 +61,7 @@ export default defineComponent({
 
     const totalHarvest = computed(() => {
       const land = landsList.value.find(l => l.code === activeLandCode.value)
-      const landId = land ? land.id : null
+      const landId = landSession.value?.id || (land ? land.id : null)
       
       let sum = 0
       if (landId) {
@@ -114,12 +114,12 @@ export default defineComponent({
     const monthlyHarvest = computed(() => {
       const data = [0, 0, 0, 0, 0, 0]
       const land = landsList.value.find(l => l.code === activeLandCode.value)
-      const landId = land ? land.id : null
+      const landId = landSession.value?.id || (land ? land.id : null)
       
       panenList.value.forEach(p => {
         if (landId && String(p.id_pohon) === String(landId)) {
           const date = new Date(p.tanggal_panen)
-          const month = date.getMonth()
+          const month = date.expandMonth ? date.expandMonth() : date.getMonth()
           if (month >= 0 && month <= 5) {
             data[month] = (data[month] ?? 0) + (Number(p.jumlah_panen) || 0)
           }
@@ -130,19 +130,48 @@ export default defineComponent({
 
     const handleExport = async () => {
       try {
-        const [rawLands, rawTrees, rawPerawatan, rawPanen, rawPemangkasan] = await Promise.all([
+        const [rawLands, rawTrees, rawPengobatan, rawPemupukan, rawPenyiraman, rawPanen, rawPemangkasan] = await Promise.all([
           apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
           apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
-          apiClient.get<any[]>('/api/v1/perawatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
           apiClient.get<any[]>('/api/v1/panen').catch(() => []),
           apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
         ])
 
         const lands = Array.isArray(rawLands) ? rawLands : []
         const trees = Array.isArray(rawTrees) ? rawTrees : []
-        const perawatanList = Array.isArray(rawPerawatan) ? rawPerawatan : []
+        const pengobatanList = Array.isArray(rawPengobatan) ? rawPengobatan : []
+        const pemupukanList = Array.isArray(rawPemupukan) ? rawPemupukan : []
+        const penyiramanList = Array.isArray(rawPenyiraman) ? rawPenyiraman : []
         const panenList = Array.isArray(rawPanen) ? rawPanen : []
         const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const perawatanList = [
+          ...pengobatanList.map(o => ({
+            ...o,
+            id_perawatan: o.id_pengobatan,
+            jenis_bahan: 'obat',
+            id_lahan: o.Lahan_id_lahan
+          })),
+          ...pemupukanList.map(f => ({
+            ...f,
+            id_perawatan: f.id_pemupukan,
+            jenis_bahan: 'pupuk',
+            id_lahan: f.Lahan_id_lahan,
+            nama_obat: f.nama_pupuk,
+            deskripsi: f.deskripsi
+          })),
+          ...penyiramanList.map(w => ({
+            ...w,
+            id_perawatan: w.id_penyiraman,
+            jenis_bahan: 'air',
+            id_lahan: w.Lahan_id_lahan,
+            teknik_perawatan: w.teknik_penyiraman,
+            deskripsi: w.deskripsi
+          }))
+        ]
 
         let currentLand = lands.find((l: any) => l.kode_lahan === activeLandCode.value)
         if (!currentLand) {
@@ -300,7 +329,7 @@ export default defineComponent({
 
     return () => (
       <div class="detail-page" style="background: #ffffff; min-height: 100vh; font-family: 'Outfit', sans-serif; padding: 1.5rem; box-sizing: border-box; width: 100%;">
-        <div class="detail-shell" style="max-width: 1200px; margin: 0 auto; width: 100%;">
+        <div class="detail-shell" style="max-width: 1240px; margin: 0 auto; width: 100%;">
           {/* Topbar Back button */}
           <header class="detail-topbar" style="display: flex; align-items: center; margin-bottom: 1.5rem;">
             <button
@@ -475,7 +504,7 @@ export default defineComponent({
               {/* Line Chart Grid SVG - Dynamic */}
               {(() => {
                 const data = monthlyHarvest.value
-                const sum = data.reduce((a, b) => a + b, 0)
+                const sum = data.reduce((acc, curr) => acc + curr, 0)
                 if (sum === 0) {
                   return (
                     <div style="height: 180px; display: flex; align-items: center; justify-content: center; color: #9CA3AF; font-weight: 700; font-size: 0.85rem; width: 100%;">

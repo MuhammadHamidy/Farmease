@@ -7,6 +7,7 @@ import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/admin/Select';
 import Button from '@/shared/ui/Button';
 import { cageSession } from '@/store/navigation';
+import { sheep } from '@/store/livestock';
 import { pencatatanSubmissions, fetchSubmissions, type PencatatanSubmission } from '@/modules/ternak/store/operatorAdmin';
 
 type RiwayatCategory = 'Semua' | 'Pakan' | 'Perkawinan' | 'Kelahiran' | 'Kesehatan' | 'Kotoran' | 'Berat Badan';
@@ -103,7 +104,7 @@ export default defineComponent({
       'Berat Badan': '/icon/statistic.png',
       'Perkawinan': '/icon/catat_kawin.png',
       'Kelahiran': '/icon/catat_lahir.png',
-      'Kesehatan': '/icon/catat_sehat.png',
+      'Kesehatan': '/icon/sheep_kesehatan.png',
       'Kotoran': '/icon/catat_kotoran.png',
       'Semua': '/icon/catat_jenis.png',
     };
@@ -119,7 +120,12 @@ export default defineComponent({
       
       if (item.targetId && sType !== 'stok_pakan') {
         const label = item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak/Target';
-        chips.push({ label, value: String(item.targetId) });
+        let val = String(item.targetId);
+        if (item.mode !== 'kelompok') {
+          const s = sheep.value.find(x => String(x.id) === String(item.targetId) || String(x.code) === String(item.targetId));
+          if (s) val = `[${s.code}] ${s.name}`;
+        }
+        chips.push({ label, value: val });
       }
       
       if (item.hijauan) {
@@ -163,7 +169,11 @@ export default defineComponent({
         const label = sType === 'kesehatan' ? 'Jumlah Vitamin/Dosis' : 'Vitamin';
         chips.push({ label, value: String(item.vitaminAmount) });
       }
-      if (item.idPejantan) chips.push({ label: 'ID Pejantan', value: String(item.idPejantan) });
+      if (item.idPejantan) {
+        const s = sheep.value.find(x => String(x.id) === String(item.idPejantan) || String(x.code) === String(item.idPejantan));
+        const val = s ? `[${s.code}] ${s.name}` : String(item.idPejantan);
+        chips.push({ label: 'ID Pejantan', value: val });
+      }
       if (item.metoda && sType !== 'kelahiran') {
         let label = 'Metoda';
         let val = String(item.metoda);

@@ -24,8 +24,8 @@ export default defineComponent({
 
     const statusItems = [
       { label: 'Total Populasi Ternak', value: props.totalAnimals, icon: '/icon/domba.png', color: '#3d2f24', bg: '#f4ebe4', filter: undefined },
-      { label: 'Domba Sehat', value: props.healthyAnimals, icon: '/icon/medical-shield.png', color: '#198754', bg: '#e8f5e9', filter: 'Sehat' },
-      { label: 'Domba Hamil', value: props.pregnantAnimals, icon: '/icon/warning.png', color: '#ff9800', bg: '#fff3e0', filter: 'Hamil', filterHue: 'hue-rotate(60deg)' },
+      { label: 'Domba Sehat', value: props.healthyAnimals, icon: '/icon/sheep_kesehatan.png', color: '#198754', bg: '#e8f5e9', filter: 'Sehat' },
+      { label: 'Domba Hamil', value: props.pregnantAnimals, icon: '/icon/sheep_hamil.png', color: '#ff9800', bg: '#fff3e0', filter: 'Hamil' },
       { label: 'Domba Birahi', value: props.birahiAnimals, icon: '/icon/catat_kawin.png', color: '#795548', bg: '#efebe9', filter: 'Birahi', filterHue: 'hue-rotate(240deg)' },
       { label: 'Domba Sakit', value: props.sickAnimals, icon: '/icon/warning.png', color: '#dc3545', bg: '#ffebee', filter: 'Sakit' },
     ];

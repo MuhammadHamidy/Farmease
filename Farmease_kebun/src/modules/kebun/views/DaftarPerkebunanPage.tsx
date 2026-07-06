@@ -260,7 +260,13 @@ export default defineComponent({
                         font-weight: 800;
                         padding: 0.25rem 0.65rem;
                         border-radius: 6px;
-                        ${isGen ? 'background: #fde8e8; color: #e11d48;' : 'background: #7a8857; color: #ffffff;'}
+                        ${
+                          (item.type || '').toLowerCase() === 'generatif'
+                            ? 'background: #fde8e8; color: #e11d48;'
+                            : (item.type || '').toLowerCase() === 'vegetatif'
+                            ? 'background: #7a8857; color: #ffffff;'
+                            : 'background: #f3f4f6; color: #4b5563;'
+                        }
                       `}
                     >
                       {item.type}

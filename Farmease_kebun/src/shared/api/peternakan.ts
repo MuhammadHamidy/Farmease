@@ -215,7 +215,8 @@ export const weightApi = {
 
 // ============ Feeds ============
 export interface Feed {
-  id: string | number
+  id?: string | number
+  id_feed?: string | number
   feed_name: string
   feed_type: string
   stock: number
@@ -226,10 +227,22 @@ export interface Feed {
 
 export const feedsApi = {
   getList: async (): Promise<Feed[]> => {
-    return await peternakanDirectClient.get('/api/feeds')
+    const list = await peternakanDirectClient.get('/api/feeds')
+    return (list || []).map((f: any) => ({
+      ...f,
+      id: f.id ?? f.id_feed,
+      stock: f.stock ?? f.available_stock,
+      feed_type: f.feed_type ?? f.category
+    }))
   },
   create: async (payload: Partial<Feed>): Promise<Feed> => {
-    return await peternakanDirectClient.post('/api/feeds', payload)
+    const f = await peternakanDirectClient.post('/api/feeds', payload)
+    return {
+      ...f,
+      id: f.id ?? f.id_feed,
+      stock: f.stock ?? f.available_stock,
+      feed_type: f.feed_type ?? f.category
+    }
   },
   updateStock: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
     return await peternakanDirectClient.patch(`/api/feeds/${id}/stock`, { amount, type })

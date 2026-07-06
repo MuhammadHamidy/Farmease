@@ -154,13 +154,13 @@ export default defineComponent({
                     </div>
                   </div>
 
-                  {/* 4. Pilih Priorita Pencatatan */}
+                  {/* 4. Pilih Prioritas Pencatatan */}
                   <div class="col-12">
-                    <label class="pencatatan-label" style={{ fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Pilih Priorita Pencatatan</label>
+                    <label class="pencatatan-label" style={{ fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Pilih Prioritas Pencatatan</label>
                     <Select
                       options={['Rendah', 'Sedang', 'Tinggi']}
                       modelValue={form.priority === 'rendah' ? 'Rendah' : form.priority === 'tinggi' ? 'Tinggi' : form.priority === 'sedang' ? 'Sedang' : ''}
-                      placeholder="Pilih Priorita Pencatatan"
+                      placeholder="Pilih Prioritas Pencatatan"
                       onUpdate:modelValue={(val: string) => {
                         if (val === 'Rendah') form.priority = 'rendah';
                         else if (val === 'Tinggi') form.priority = 'tinggi';

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 var queryStore = `
@@ -42,3 +42,4 @@ func (r *Repository) Store(ctx context.Context, user *domain.User) error {
 	user.Id = id
 	return nil
 }
+

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 // PermissionEntity represents the database schema for permissions.
@@ -77,3 +77,4 @@ func (r *Repository) FindAllPermissions(ctx context.Context, filter domain.Permi
 
 	return result, nil
 }
+

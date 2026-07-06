@@ -104,10 +104,21 @@ function mapBackendPohonToFrontend(backend: any): Pohon {
   if (!backend) return {} as Pohon
   let age = 1
   if (backend.tanggal_tanam) {
-    const plantedYear = new Date(backend.tanggal_tanam).getFullYear()
-    const currentYear = new Date().getFullYear()
-    age = Math.max(1, currentYear - plantedYear)
+    const parts = backend.tanggal_tanam.split('-')
+    if (parts.length > 0) {
+      const plantedYear = parseInt(parts[0], 10)
+      if (!isNaN(plantedYear)) {
+        const currentYear = new Date().getFullYear()
+        age = Math.max(1, currentYear - plantedYear)
+      }
+    }
   }
+  
+  let fase = backend.fase_pohon || 'Generatif'
+  if (fase === 'Produktif') {
+    fase = 'Generatif'
+  }
+
   return {
     id: backend.id_pohon,
     kode_pohon: backend.kode_pohon,
@@ -115,7 +126,7 @@ function mapBackendPohonToFrontend(backend: any): Pohon {
     jenis: backend.varietas || '',
     umur: age,
     id_lahan: backend.Lahan_id_lahan,
-    status: backend.fase_pohon || 'Produktif',
+    status: fase,
     status_pohon: backend.status_pohon || 'aktif',
     created_at: backend.tanggal_tanam || '',
     updated_at: backend.tanggal_tanam || '',
@@ -235,63 +246,65 @@ export interface Perawatan {
   status: string
   created_at: string
   updated_at: string
+  nama_jenis_aktivitas?: string
+  nama_rincian_aktivitas?: string
 }
 
 function mapBackendPerawatanToFrontend(backend: any): Perawatan {
   if (!backend) return {} as Perawatan
   return {
-    id: backend.id_perawatan,
-    jenis_perawatan: backend.jenis_bahan || backend.nama_rincian_aktivitas || '',
-    deskripsi: backend.deskripsi || backend.nama_rincian_aktivitas || '',
+    id: backend.id_pengobatan || backend.id_perawatan,
+    jenis_perawatan: backend.nama_obat || backend.nama_rincian_aktivitas || 'Obat',
+    deskripsi: backend.deskripsi || backend.nama_rincian_aktivitas || 'Pemberian obat',
     tanggal_perawatan: backend.tanggal_aktivitas || '',
-    id_pohon: backend.Lahan_id_lahan || '',
+    id_pohon: backend.detail_pohon || '',
     status: 'Selesai',
     created_at: backend.tanggal_aktivitas || '',
     updated_at: backend.tanggal_aktivitas || '',
+    nama_jenis_aktivitas: backend.nama_jenis_aktivitas || '',
+    nama_rincian_aktivitas: backend.nama_rincian_aktivitas || '',
   }
 }
 
 function mapFrontendPerawatanToBackend(frontend: any): any {
   return {
-    id_perawatan: frontend.id || frontend.id_perawatan,
-    Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
-    jenis_bahan: frontend.jenis_bahan || frontend.jenis_perawatan || '',
-    fase_pohon: frontend.fase_pohon || frontend.status || '',
+    id_pengobatan: frontend.id || frontend.id_perawatan || frontend.id_pengobatan || '',
+    nama_obat: frontend.nama_obat || 'Obat',
     dosis: frontend.dosis !== undefined ? frontend.dosis : 0,
-    satuan: frontend.satuan || '',
-    bagian_pohon: frontend.bagian_pohon || '',
-    teknik_perawatan: frontend.teknik_perawatan || '',
-    nama_obat: frontend.nama_obat || '',
+    satuan: frontend.satuan || 'ml',
+    bagian_pohon: frontend.bagian_pohon || 'Umum',
     deskripsi: frontend.deskripsi || '',
-    detail_pohon: String(frontend.detail_pohon || frontend.id_pohon || ''),
-    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_pohon || '',
+    Lahan_id_lahan: frontend.Lahan_id_lahan || '',
+    nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || 'Insektisida',
+    tanggal_aktivitas: frontend.tanggal_aktivitas || new Date().toISOString().split('T')[0],
+    detail_pohon: frontend.detail_pohon || frontend.id_pohon || '',
   }
 }
 
 export const perawatanApi = {
   getList: async (): Promise<Perawatan[]> => {
-    const list = await apiClient.get<any>('/api/v1/perawatan')
+    const list = await apiClient.get<any>('/api/v1/pengobatan')
     return (list || []).map(mapBackendPerawatanToFrontend)
   },
   getById: async (id: string | number): Promise<Perawatan> => {
-    const res = await apiClient.get<any>(`/api/v1/perawatan/${id}`)
+    const res = await apiClient.get<any>(`/api/v1/pengobatan/${id}`)
     return mapBackendPerawatanToFrontend(res)
   },
   create: async (payload: Partial<Perawatan>): Promise<Perawatan> => {
     const mapped = mapFrontendPerawatanToBackend(payload)
-    const res = await apiClient.post<any>('/api/v1/perawatan', mapped)
+    const res = await apiClient.post<any>('/api/v1/pengobatan', mapped)
     return mapBackendPerawatanToFrontend(res)
   },
   update: async (id: string | number, payload: Partial<Perawatan>): Promise<Perawatan> => {
     const mapped = mapFrontendPerawatanToBackend(payload)
-    const res = await apiClient.put<any>(`/api/v1/perawatan/${id}`, mapped)
+    const res = await apiClient.put<any>(`/api/v1/pengobatan/${id}`, mapped)
     return mapBackendPerawatanToFrontend(res)
   },
   delete: async (id: string | number): Promise<void> => {
-    return await apiClient.delete(`/api/v1/perawatan/${id}`)
+    return await apiClient.delete(`/api/v1/pengobatan/${id}`)
   },
   getRekomendasi: async (varietas: string, fase: string, obat: string): Promise<string> => {
-    const res = await apiClient.get<any>('/api/v1/perawatan/rekomendasi', {
+    const res = await apiClient.get<any>('/api/v1/pengobatan/rekomendasi', {
       params: { varietas, fase, obat }
     })
     return res?.rekomendasi || ''

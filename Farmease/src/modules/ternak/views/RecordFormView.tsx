@@ -19,7 +19,7 @@ import CustomAlertModal, { type AlertModalState } from '../components/shared/Cus
 const JENIS_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
   stok_pakan: '/icon/inventory.png',
-  kesehatan: '/icon/catat_sehat.png',
+  kesehatan: '/icon/sheep_kesehatan.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
   kotoran: '/icon/catat_kotoran.png',
@@ -1075,7 +1075,12 @@ export default defineComponent({
                       {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && item.name !== 'Pengecekan Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>ID Pejantan</span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.idPejantan}</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                            : {(() => {
+                              const s = sheep.value.find(x => String(x.id) === String(item.idPejantan) || String(x.code) === String(item.idPejantan));
+                              return s ? `[${s.code}] ${s.name}` : item.idPejantan;
+                            })()}
+                          </span>
                         </div>
                       )}
                       {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && item.name !== 'Pengecekan Birahi' && (

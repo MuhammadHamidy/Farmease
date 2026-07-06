@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/libraries/object"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/object"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 var queryFindBySubject = `
@@ -34,3 +34,4 @@ func (r *Repository) FindByExternalSubject(ctx context.Context, institutionId st
 
 	return object.Parse[*UserEntity, *domain.User](object.TagDB, object.TagObject, record)
 }
+

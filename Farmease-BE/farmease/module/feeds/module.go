@@ -1,6 +1,7 @@
 package feeds
 
 import (
+	"github.com/farmease/farmease-be/farmease/module/feeds/consumer"
 	"github.com/farmease/farmease-be/farmease/module/feeds/delivery/http"
 	"github.com/farmease/farmease-be/farmease/module/feeds/domain"
 	"github.com/farmease/farmease-be/farmease/module/feeds/repository/postgresql"
@@ -21,8 +22,10 @@ var Module = fx.Options(
 			return usecase.NewUseCase(repo, sheepRepo, taskRepo)
 		},
 		http.NewFeedHandler,
+		consumer.NewCropResidueConsumer,
 	),
 	fx.Invoke(registerRoutes),
+	fx.Invoke(func(c *consumer.CropResidueConsumer) {}),
 )
 
 func registerRoutes(h *http.FeedHandler, app *fiber.App) {

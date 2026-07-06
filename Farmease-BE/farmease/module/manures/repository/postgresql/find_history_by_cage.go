@@ -13,7 +13,7 @@ func (r *Repository) FindHistoryByCage(ctx context.Context, idCage string) ([]*d
 		idCage = resolvedCageID
 	}
 
-	query := `SELECT id_manure, COALESCE(id_sheep::text, ''), id_cage::text, activity_type, amount, unit, COALESCE(external_destination_id, ''), destination_type, notes, created_at FROM livestock.manures WHERE id_cage = $1 ORDER BY created_at DESC`
+	query := `SELECT id_manure, COALESCE(id_sheep::text, ''), id_cage::text, activity_type, amount, unit, COALESCE(external_destination_id, ''), COALESCE(destination_type::text, 'internal'), COALESCE(notes, ''), created_at FROM livestock.manures WHERE id_cage = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, idCage)
 	if err != nil {
 		return nil, err
@@ -23,13 +23,14 @@ func (r *Repository) FindHistoryByCage(ctx context.Context, idCage string) ([]*d
 	var list []*domain.Manure
 	for rows.Next() {
 		var m domain.Manure
-		var idSheepStr, idCageStr, extDestStr string
-		err := rows.Scan(&m.IDManure, &idSheepStr, &idCageStr, &m.ActivityType, &m.Amount, &m.Unit, &extDestStr, &m.DestinationType, &m.Notes, &m.CreatedAt)
+		var idSheepStr, idCageStr, extDestStr, notesStr string
+		err := rows.Scan(&m.IDManure, &idSheepStr, &idCageStr, &m.ActivityType, &m.Amount, &m.Unit, &extDestStr, &m.DestinationType, &notesStr, &m.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		m.IDSheep = idSheepStr
 		m.IDCage = idCageStr
+		m.Notes = notesStr
 		if extDestStr != "" {
 			m.ExternalDestinationID = &extDestStr
 		}
