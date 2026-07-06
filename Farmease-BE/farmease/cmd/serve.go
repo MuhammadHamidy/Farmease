@@ -17,6 +17,7 @@ import (
 	"github.com/farmease/farmease-be/framework/otel"
 	"github.com/farmease/farmease-be/framework/postgres"
 	"github.com/farmease/farmease-be/framework/redis"
+	"github.com/farmease/farmease-be/libraries/consumer"
 	"github.com/farmease/farmease-be/libraries/idp"
 	"github.com/farmease/farmease-be/libraries/middleware"
 	"github.com/farmease/farmease-be/libraries/publisher"
@@ -108,6 +109,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 			internalConfig.Logger,
 			internalConfig.InternalApp,
 			publisher.New,
+			consumer.New,
 			func(idpProvider idp.IDPProvider, appCfg *internalConfig.InternalAppConfig) *middleware.AuthorizationMiddleware {
 				return middleware.NewAuthorizationMiddlewareWithSSO(idpProvider, nil, nil, appCfg.SsoApiUrl)
 			},
