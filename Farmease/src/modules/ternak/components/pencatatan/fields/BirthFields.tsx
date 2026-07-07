@@ -103,7 +103,7 @@ export default defineComponent({
                     label: `${c.name} (${c.code}) — Terisi: ${currentCount}/${capacity}`
                   };
                 })}
-                placeholder="Pilih Kandang untuk Anak"
+                placeholder="Pilih Kode Kandang (Untuk Anak)"
                 onUpdateModelValue={(v: string) => { f().kandangAnak = v; }}
               />
             </PencatatanField>

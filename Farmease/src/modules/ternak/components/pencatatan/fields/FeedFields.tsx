@@ -698,7 +698,7 @@ export default defineComponent({
                   const isHijauan = stockItem && stockItem.category === 'hijauan';
                   return isMentah || isGreenery || isHijauan;
                 })}
-                placeholder="Pilih Pakan Hijauan"
+                placeholder="Pilih Pakan Hijauan (Mentah Kebun)"
                 onUpdateModelValue={(v: string) => { f().obat = v; }}
               />
             </PencatatanField>

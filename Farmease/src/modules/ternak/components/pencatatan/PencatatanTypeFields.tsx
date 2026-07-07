@@ -395,7 +395,7 @@ export default defineComponent({
                     <PencatatanSelect
                       modelValue={f().targetId}
                       options={activeCageSheepOptions.value}
-                      placeholder={selectedCageCode.value ? (props.jenisId === 'kelahiran' ? 'Pilih Indukan Betina' : 'Pilih ID Domba') : 'Pilih Kandang Terlebih Dahulu'}
+                      placeholder={selectedCageCode.value ? (props.jenisId === 'kelahiran' ? 'Pilih ID Ternak (Indukan Betina)' : 'Pilih ID Domba') : 'Pilih Kandang Terlebih Dahulu'}
                       disabled={!selectedCageCode.value}
                       onUpdateModelValue={(v: string) => { f().targetId = v; }}
                     />

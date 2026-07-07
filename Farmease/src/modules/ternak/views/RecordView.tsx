@@ -196,6 +196,7 @@ export default defineComponent({
                       <PencatatanSelect
                         modelValue={selectedType.value}
                         options={recordTypeOptions.map((o) => ({ value: o.id, label: o.label }))}
+                        placeholder="Pilih Jenis Pencatatan"
                         onUpdateModelValue={(v: string) => handleTypeChange(v)}
                       />
                     </PencatatanField>
@@ -203,6 +204,7 @@ export default defineComponent({
                       <PencatatanSelect
                         modelValue={selectedDetail.value}
                         options={currentDetailOptions.value}
+                        placeholder="Pilih Rincian Pencatatan"
                         onUpdateModelValue={(v: string) => { selectedDetail.value = v; }}
                       />
                     </PencatatanField>

@@ -66,6 +66,10 @@ func (u *pohonUsecase) Update(ctx context.Context, p *domain.Pohon) error {
 		return errors.New("pohon tidak ditemukan")
 	}
 
+	if strings.ToLower(existing.StatusPohon) == "tidak aktif" {
+		return errors.New("pohon dengan status tidak aktif tidak dapat diedit kembali")
+	}
+
 	existingByCode, err := u.repo.FindByKodePohon(ctx, p.KodePohon)
 	if err != nil {
 		return err
