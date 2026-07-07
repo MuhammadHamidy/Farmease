@@ -2,8 +2,8 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { userSession, cageSession, cagesList, fetchCagesList, cagesLoading } from '@/store/navigation';
 import BackButton from '@/shared/ui/BackButton';
-import CustomConfirmModal from '../components/shared/CustomConfirmModal';
-import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
+import CustomConfirmModal from '@/shared/ui/CustomConfirmModal';
+import '@/assets/css/modules/peternakan/PeternakanPage.css';
 
 export default defineComponent({
   name: 'CageSelectionView',

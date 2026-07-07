@@ -696,7 +696,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
             const existingRaw = feedsList.find(f => f.feed_name.toLowerCase() === rawName.toLowerCase());
             if (existingRaw) {
               promises.push(
-                feedsApi.updateStock(existingRaw.id, rawQty, 'kurang').catch(() => feedsApi.updateStok(existingRaw.id, rawQty, 'kurang'))
+                feedsApi.updateStock(existingRaw.id!, rawQty, 'kurang').catch(() => feedsApi.updateStok(existingRaw.id!, rawQty, 'kurang'))
               );
             }
           }
@@ -705,7 +705,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
             const existingTarget = feedsList.find(f => f.feed_name.toLowerCase() === targetName.toLowerCase());
             if (existingTarget) {
               promises.push(
-                feedsApi.updateStock(existingTarget.id, targetQty, 'tambah').catch(() => feedsApi.updateStok(existingTarget.id, targetQty, 'tambah'))
+                feedsApi.updateStock(existingTarget.id!, targetQty, 'tambah').catch(() => feedsApi.updateStok(existingTarget.id!, targetQty, 'tambah'))
               );
             } else {
               promises.push(
@@ -726,7 +726,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
             const existing = feedsList.find(f => f.feed_name.toLowerCase() === name.toLowerCase());
             if (existing) {
               promises.push(
-                feedsApi.updateStock(existing.id, qty, 'tambah').catch(() => feedsApi.updateStok(existing.id, qty, 'tambah'))
+                feedsApi.updateStock(existing.id!, qty, 'tambah').catch(() => feedsApi.updateStok(existing.id!, qty, 'tambah'))
               );
             } else {
               promises.push(
@@ -800,7 +800,8 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
         const weight = parseFloat(item.jumlahPemangkasan || item.qty || item.amount || 0);
         if (!isNaN(weight) && weight > 0) {
           const rawUnit = item.satuanBerat || '';
-          const mappedUnit = rawUnit.toLowerCase().includes('gram') || rawUnit.toLowerCase() === 'g' ? 'g' : 'kg';
+          const unitLower = rawUnit.toLowerCase();
+          const mappedUnit = (unitLower.includes('gram') && !unitLower.includes('kilo')) || unitLower === 'g' ? 'g' : 'kg';
           promises.push(
             pemangkasanApi.create({
               Aktivitas_id_aktivitas: '',
@@ -1052,7 +1053,7 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
                 // 3. If ready, load original batch details to update/increase stock pupuk!
                 if (isReady) {
                   const origSub = await submissionsApi.getById(item.batchFermentasiId);
-                  const origItem = origSub?.payload?.data?.items?.[0] || {};
+                  const origItem = (origSub?.payload as any)?.data?.items?.[0] || {};
                   const origQty = parseFloat(origItem.qty || origItem.jumlahBeratPupuk || 0);
                   const origUnit = origItem.unit || 'kg';
                   const origHasil = origItem.hasilJadi || 'Pupuk Organik Padat Kandang';
@@ -1293,7 +1294,7 @@ export async function syncOfflineSubmissions() {
 
   for (const sub of offlineList) {
     try {
-      const payloadToSend = {
+      const payloadToSend: any = {
         ...sub,
         submittedAt: new Date(sub.submittedAt).toISOString(),
       };

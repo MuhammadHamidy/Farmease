@@ -10,10 +10,10 @@ import {
   fetchSheepById, fetchSilsilah, fetchHealthForSheep, fetchWeightForSheep, fetchMatingForSheep, sheep, detailLoading,
   updateSheep
 } from '@/store/livestock';
-import EditLivestockModal from '../components/shared/EditLivestockModal';
-import SheepWeightChart from '../components/shared/SheepWeightChart';
+import EditLivestockModal from '@/shared/ui/EditLivestockModal';
+import SheepWeightChart from '@/shared/ui/SheepWeightChart';
 import CustomSelect from '@/shared/ui/admin/Select';
-import CustomAlertModal, { type AlertModalState } from '../components/shared/CustomAlertModal';
+import CustomAlertModal, { type AlertModalState } from '@/shared/ui/CustomAlertModal';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 // calcADG is now handled by the backend

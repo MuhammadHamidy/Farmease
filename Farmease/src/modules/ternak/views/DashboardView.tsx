@@ -1,4 +1,4 @@
-import { defineComponent, ref, computed, onMounted, watch, type PropType } from 'vue';
+import { defineComponent, ref, computed, onMounted, watch, type PropType, Teleport } from 'vue';
 import { useRouter } from 'vue-router';
 import Typography from '@/shared/ui/Typography';
 import { userSession, cageSession, cagesList, fetchCagesList, prefilledPencatatanType, prefilledPencatatanRincian, prefilledPencatatanTaskId, prefilledPencatatanSheepId, prefilledPencatatanCageCode, activePencatatanForm } from '@/store/navigation';
@@ -16,7 +16,7 @@ import RoutineTasks from '../components/dashboard/RoutineTasks';
 import WeightChart from '../components/dashboard/WeightChart';
 import CageConditionChart from '../components/dashboard/CageConditionChart';
 import TaskDetailModal from '../components/dashboard/TaskDetailModal';
-import AddLivestockModal from '../components/shared/AddLivestockModal';
+import AddLivestockModal from '@/shared/ui/AddLivestockModal';
 
 export default defineComponent({
   name: 'DasborView',
@@ -465,7 +465,7 @@ export default defineComponent({
           </div>
 
           <div class="row g-4 mb-4">
-            <div class="col-12 col-xl-7">
+            <div class="col-12">
               <WeightChart 
                 activeCageCode={activeCageCode.value}
                 averageWeightCurrent={averageWeightCurrent.value}
@@ -477,6 +477,19 @@ export default defineComponent({
                 areaPath={areaPath.value}
               />
             </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-12 col-xl-7">
+              <div class="d-flex flex-column gap-4 h-100">
+                <div class="flex-fill">
+                  <ManureProductionChart manures={manuresData.value} sheepList={sheep.value} />
+                </div>
+                <div class="flex-fill">
+                  <BirthCountChart births={birthsData.value} sheepList={sheep.value} />
+                </div>
+              </div>
+            </div>
 
             <div class="col-12 col-xl-5">
               <CageConditionChart
@@ -487,12 +500,6 @@ export default defineComponent({
           </div>
 
           <div class="row g-4 mb-4">
-            <div class="col-12 col-xl-6">
-              <ManureProductionChart manures={manuresData.value} sheepList={sheep.value} />
-            </div>
-            <div class="col-12 col-xl-6">
-              <BirthCountChart births={birthsData.value} sheepList={sheep.value} />
-            </div>
             <div class="col-12">
               <FeedStockChart feeds={feedsData.value} sheepList={sheep.value} />
             </div>

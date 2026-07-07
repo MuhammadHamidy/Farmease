@@ -1,6 +1,6 @@
 import { defineComponent, ref, computed, onMounted, watch, Teleport } from 'vue';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
-import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
+import '@/assets/css/modules/peternakan/RecordForm.css';
+import '@/assets/css/modules/peternakan/PeternakanPage.css';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import CustomInput from '@/shared/ui/Input';

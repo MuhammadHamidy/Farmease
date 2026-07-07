@@ -1,5 +1,5 @@
 import { defineComponent, computed } from 'vue';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
+import '@/assets/css/modules/peternakan/RecordForm.css';
 import { selectedPencatatanPayload } from '@/store/navigation';
 import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin';
 import RecordSummary from '@/modules/ternak/components/pencatatan/RecordSummary';

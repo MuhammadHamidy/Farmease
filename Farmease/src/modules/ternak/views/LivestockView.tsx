@@ -7,7 +7,7 @@ import { sheep, loading, error, fetchSheep, mutationHistory } from '@/store/live
 // Components
 import LivestockList from '../components/livestock/LivestockList';
 import UpdateStatusModal from '../components/livestock/UpdateStatusModal';
-import AddLivestockModal from '../components/shared/AddLivestockModal';
+import AddLivestockModal from '@/shared/ui/AddLivestockModal';
 import CustomInput from '@/shared/ui/Input';
 
 export default defineComponent({

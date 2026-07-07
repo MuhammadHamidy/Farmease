@@ -10,7 +10,7 @@ import PencatatanTextarea from '@/modules/ternak/components/pencatatan/Pencatata
 import { feedsApi, fermentationsApi } from '@/shared/api';
 import { stocks, stocksLoading, fetchStocks } from '@/modules/ternak/store/peternakan';
 import { sheep, fetchSheep } from '@/store/livestock';
-import CustomAlertModal from '../components/shared/CustomAlertModal';
+import CustomAlertModal from '@/shared/ui/CustomAlertModal';
 
 export default defineComponent({
   name: 'WarehouseView',

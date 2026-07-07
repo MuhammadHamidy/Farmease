@@ -30,8 +30,8 @@ async function fetchNotifications() {
     try {
       const feeds = await feedsApi.getList();
       const hasCritical = (feeds || []).some(f => 
-        (f.category || '').toLowerCase() === 'konsentrat' && 
-        (f.qty || 0) < 100
+        (f.feed_type || '').toLowerCase() === 'konsentrat' && 
+        (f.stock || 0) < 100
       );
       if (hasCritical) {
         const alreadyExists = mapped.some((n: any) => n.id === 'mock-critical-stock-notification');

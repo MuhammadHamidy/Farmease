@@ -13,6 +13,7 @@ export interface Lahan {
   tanggal_tanam: string
   fase_tanam: string
   // Kept for backward compatibility if needed in UI:
+  code?: string
   lokasi?: string
   luas?: number
   status?: string
@@ -33,6 +34,7 @@ function mapBackendLahanToFrontend(backend: any): Lahan {
     fase_tanam: backend.fase_tanam || '',
     
     // UI mapping
+    code: backend.kode_lahan,
     lokasi: backend.jenis_tanaman || backend.fase_tanam || '',
     luas: backend.luas_lahan || 1.0,
     status: backend.status_lahan === 1 ? 'Subur' : backend.status_lahan === 2 ? 'Pemulihan' : 'Perlu Pengairan',
@@ -402,7 +404,7 @@ export const perawatanApi = {
         nama_obat: payload.nama_obat || (isPupuk ? 'Pupuk' : 'Obat'),
         dosis: payload.dosis || 0,
         satuan: payload.satuan || (isPupuk ? 'kg' : 'ml'),
-        bagian_pohon: payload.bagian_pohon || 'Daun',
+        bagian_pohon: ['Daun', 'Akar', 'Batang', 'Buah', 'Bunga', 'Lahan', 'Tanah', 'Umum'].includes(payload.bagian_pohon) ? payload.bagian_pohon : 'Umum',
         deskripsi: payload.deskripsi || '',
         Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
       })
@@ -508,7 +510,7 @@ export const perawatanApi = {
         nama_obat: payload.nama_obat,
         dosis: payload.dosis,
         satuan: payload.satuan,
-        bagian_pohon: payload.bagian_pohon,
+        bagian_pohon: ['Daun', 'Akar', 'Batang', 'Buah', 'Bunga', 'Lahan', 'Tanah', 'Umum'].includes(payload.bagian_pohon) ? payload.bagian_pohon : 'Umum',
         deskripsi: payload.deskripsi,
         Lahan_id_lahan: payload.Lahan_id_lahan || payload.id_pohon
       })

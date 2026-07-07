@@ -1,6 +1,6 @@
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
+import '@/assets/css/modules/peternakan/PeternakanPage.css';
 import { userSession, cageSession, cagesList, fetchCagesList, cagesLoading, selectedTernakId } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
 import { useNotifications } from '@/shared/composables/useNotifications';
@@ -8,7 +8,7 @@ import DashboardView from './DashboardView';
 import RecordView from './RecordView';
 import HistoryView from './HistoryView';
 import LivestockDetailView from './LivestockDetailView';
-import CustomConfirmModal from '../components/shared/CustomConfirmModal';
+import CustomConfirmModal from '@/shared/ui/CustomConfirmModal';
 
 const tabs = [
   { id: 'dasbor',      label: 'Dasbor' },

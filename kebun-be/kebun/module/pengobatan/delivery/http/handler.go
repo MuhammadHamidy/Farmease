@@ -4,6 +4,7 @@ import (
 	"github.com/farmease/kebun-be/kebun/module/pengobatan/domain"
 	"github.com/farmease/kebun-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type PengobatanHandler struct {
@@ -27,6 +28,7 @@ func (h *PengobatanHandler) RegisterRoutes(app *fiber.App) {
 func (h *PengobatanHandler) FindAll(c *fiber.Ctx) error {
 	list, err := h.usecase.FindAll(c.Context())
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to find all medical treatment records")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success get all medical treatment records", list)
@@ -39,6 +41,7 @@ func (h *PengobatanHandler) FindByID(c *fiber.Ctx) error {
 	}
 	p, err := h.usecase.FindByID(c.Context(), id)
 	if err != nil {
+		log.Error().Err(err).Str("id", id).Msg("Failed to find medical treatment record by ID")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	if p == nil {
@@ -53,6 +56,7 @@ func (h *PengobatanHandler) Create(c *fiber.Ctx) error {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
 	}
 	if err := h.usecase.Create(c.Context(), &p); err != nil {
+		log.Error().Err(err).Interface("payload", p).Msg("Failed to create medical treatment record")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusCreated, "Success create medical treatment record", p)
@@ -69,6 +73,7 @@ func (h *PengobatanHandler) Update(c *fiber.Ctx) error {
 	}
 	p.IDPengobatan = id
 	if err := h.usecase.Update(c.Context(), &p); err != nil {
+		log.Error().Err(err).Interface("payload", p).Msg("Failed to update medical treatment record")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success update medical treatment record", p)
@@ -80,6 +85,7 @@ func (h *PengobatanHandler) Delete(c *fiber.Ctx) error {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 	if err := h.usecase.Delete(c.Context(), id); err != nil {
+		log.Error().Err(err).Str("id", id).Msg("Failed to delete medical treatment record")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusOK, "Success delete medical treatment record", nil)
@@ -92,6 +98,7 @@ func (h *PengobatanHandler) GetRekomendasi(c *fiber.Ctx) error {
 
 	rekomendasi, err := h.usecase.GetRekomendasiObat(c.Context(), varietas, fase, obat)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to get medical treatment recommendation")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 

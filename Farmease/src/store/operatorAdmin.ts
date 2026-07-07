@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, routineSchedulesApi, type ApiRoutineSchedule, type User, type MetadataEnums, type EnumChoice, submissionsApi, type ApiSubmission } from '@/shared/api';
+import { pemangkasanApi } from '@/shared/api/perkebunan';
 import { sheep, fetchSheep } from '@/store/livestock';
 import { cagesList, landsList, fetchCagesList, fetchLandsList, activePencatatanForm, triggerGlobalAlert } from '@/store/navigation';
 
@@ -672,29 +673,137 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
       }
 
       if (item.name === 'Konversi Pakan') {
-        const rawName = item.hijauan;
-        const energyName = item.energi;
-        const proteinName = item.protein;
-        const mineralName = item.mineral;
+        const rawNames = (item.hijauan || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const energyNames = (item.energi || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const proteinNames = (item.protein || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const mineralNames = (item.mineral || '').split(',').map((s: string) => s.trim()).filter(Boolean);
         const targetName = item.obat;
         const targetQty = parseFloat(item.qty) || 0;
 
-        const rawQty = targetQty * 0.7;
-        const energyQty = targetQty * 0.3 * (0.0180 / 0.0312);
-        const proteinQty = targetQty * 0.3 * (0.0108 / 0.0312);
-        const mineralQty = targetQty * 0.3 * (0.0024 / 0.0312);
+        const rawQtyTotal = targetQty * 0.7;
+        const energyQtyTotal = targetQty * 0.3 * (0.0180 / 0.0312);
+        const proteinQtyTotal = targetQty * 0.3 * (0.0108 / 0.0312);
+        const mineralQtyTotal = targetQty * 0.3 * (0.0024 / 0.0312);
 
         const targetId = await resolveFeedId(targetName, 'silase');
-        const rawId = await resolveFeedId(rawName, 'hijauan');
-        const energyId = await resolveFeedId(energyName, 'konsentrat');
-        const proteinId = await resolveFeedId(proteinName, 'konsentrat');
-        const mineralId = await resolveFeedId(mineralName, 'mineral');
 
         const conversionDetails = [];
-        if (rawId && rawQty > 0) conversionDetails.push({ id_feed: rawId, amount: Number(rawQty.toFixed(2)) });
-        if (energyId && energyQty > 0) conversionDetails.push({ id_feed: energyId, amount: Number(energyQty.toFixed(2)) });
-        if (proteinId && proteinQty > 0) conversionDetails.push({ id_feed: proteinId, amount: Number(proteinQty.toFixed(2)) });
-        if (mineralId && mineralQty > 0) conversionDetails.push({ id_feed: mineralId, amount: Number(mineralQty.toFixed(2)) });
+
+        if (rawNames.length > 0) {
+          const qtyPerRaw = rawQtyTotal / rawNames.length;
+
+          // Ambil semua data pemangkasan sekali saja untuk efisiensi
+          let pruningList: any[] = [];
+          const hasPruningItems = rawNames.some(n => /^Pemangkasan\s+/i.test(n.trim()));
+          if (hasPruningItems) {
+            try { pruningList = await pemangkasanApi.getList(); } catch (e) {
+              console.warn('Gagal ambil data pemangkasan kebun:', e);
+            }
+          }
+
+          for (const name of rawNames) {
+            // -------------------------------------------------------
+            // SINKRONISASI STOK: Jika bahan berasal dari kebun
+            // -------------------------------------------------------
+            if (/^Pemangkasan\s+/i.test(name.trim())) {
+              try {
+                const cleanName = name.trim().replace(/^Pemangkasan\s+/i, '').toLowerCase();
+
+                // Hitung total stok yang tersedia di kebun untuk bahan ini
+                const matchedEntries = pruningList.filter((p: any) => {
+                  const pName = ((p.nama_rincian_aktivitas || '').replace(/^Pemangkasan\s+/i, '')).toLowerCase().trim();
+                  return pName === cleanName && Number(p.jumlah) > 0;
+                });
+                const totalKebunStock = matchedEntries.reduce((sum: number, p: any) => sum + Number(p.jumlah), 0);
+
+                // Cek apakah entri sudah ada di feedsList (logistics.feeds)
+                const existingFeed = feedsList.find(
+                  (f: any) => f.feed_name.toLowerCase() === name.trim().toLowerCase()
+                );
+
+                if (existingFeed) {
+                  // Entri sudah ada: set stok menjadi total kebun yang sebenarnya
+                  const feedId = String(existingFeed.id || (existingFeed as any).id_feed);
+                  const currentStock = Number(existingFeed.stock || (existingFeed as any).available_stock || 0);
+                  const diff = totalKebunStock - currentStock;
+                  if (diff > 0) {
+                    await feedsApi.updateStok(feedId, diff, 'tambah');
+                    existingFeed.stock = totalKebunStock;
+                    (existingFeed as any).available_stock = totalKebunStock;
+                  } else if (diff < 0) {
+                    await feedsApi.updateStok(feedId, Math.abs(diff), 'kurang');
+                    existingFeed.stock = totalKebunStock;
+                    (existingFeed as any).available_stock = totalKebunStock;
+                  }
+                } else {
+                  // Entri belum ada: buat baru dengan stok yang tepat dari kebun
+                  try {
+                    const newFeed = await feedsApi.create({
+                      feed_name: name.trim(),
+                      feed_type: 'hijauan',
+                      unit: matchedEntries[0]?.satuan || 'kg',
+                      stock: totalKebunStock > 0 ? totalKebunStock : 0
+                    } as any);
+                    feedsList.push(newFeed);
+                  } catch (createErr) {
+                    console.error('Gagal buat entri feed dari kebun:', createErr);
+                  }
+                }
+
+                // Kurangi jumlah di kebun secara berurutan dari entri terbesar
+                let remaining = qtyPerRaw;
+                const sorted = [...matchedEntries].sort((a: any, b: any) => Number(b.jumlah) - Number(a.jumlah));
+                for (const entry of sorted) {
+                  if (remaining <= 0) break;
+                  const available = Number(entry.jumlah);
+                  const deduct = Math.min(available, remaining);
+                  const newQty = Math.max(0, available - deduct);
+                  await pemangkasanApi.update(entry.id_pemangkasan, { jumlah: newQty });
+                  remaining -= deduct;
+                }
+              } catch (kebunErr) {
+                console.warn('Gagal sinkronisasi stok kebun untuk:', name, kebunErr);
+              }
+            }
+
+            // Setelah stok tersinkron, resolve ID feed seperti biasa
+            // (sekarang feedsList sudah berisi entri dengan stok yang benar)
+            const rawId = await resolveFeedId(name, 'hijauan');
+            if (rawId && qtyPerRaw > 0) {
+              conversionDetails.push({ id_feed: rawId, amount: Number(qtyPerRaw.toFixed(2)) });
+            }
+          }
+        }
+
+        if (energyNames.length > 0) {
+          const qtyPerEnergy = energyQtyTotal / energyNames.length;
+          for (const name of energyNames) {
+            const energyId = await resolveFeedId(name, 'konsentrat');
+            if (energyId && qtyPerEnergy > 0) {
+              conversionDetails.push({ id_feed: energyId, amount: Number(qtyPerEnergy.toFixed(2)) });
+            }
+          }
+        }
+
+        if (proteinNames.length > 0) {
+          const qtyPerProtein = proteinQtyTotal / proteinNames.length;
+          for (const name of proteinNames) {
+            const proteinId = await resolveFeedId(name, 'konsentrat');
+            if (proteinId && qtyPerProtein > 0) {
+              conversionDetails.push({ id_feed: proteinId, amount: Number(qtyPerProtein.toFixed(2)) });
+            }
+          }
+        }
+
+        if (mineralNames.length > 0) {
+          const qtyPerMineral = mineralQtyTotal / mineralNames.length;
+          for (const name of mineralNames) {
+            const mineralId = await resolveFeedId(name, 'mineral');
+            if (mineralId && qtyPerMineral > 0) {
+              conversionDetails.push({ id_feed: mineralId, amount: Number(qtyPerMineral.toFixed(2)) });
+            }
+          }
+        }
 
         if (targetId) {
           promises.push(
@@ -712,32 +821,52 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         if (targetSheepIds.length > 0) {
           const totalQty = Number(item.qty) || 0;
           const qtyPerSheep = isCageScope ? (totalQty / targetSheepIds.length) : totalQty;
-
           for (const sId of targetSheepIds) {
-            if (item.metoda === 'dadakan') {
+            if (item.name === 'Pemberian Mineral') {
+              const mineralName = item.mineral || item.obat || 'Mineral';
+              const mineralId = await resolveFeedId(mineralName, 'vitamin');
+              if (mineralId) {
+                promises.push(
+                  feedsApi.recordPemberianPakan(sId, {
+                    id_feed: String(mineralId),
+                    amount: Number(qtyPerSheep.toFixed(2)),
+                    unit: item.unit || 'kg',
+                    notes: `Pemberian Mineral: ${mineralName}. ${item.note || ''}`,
+                    feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                  })
+                );
+              }
+            } else if (item.metoda === 'dadakan') {
               // Pakan Dadakan - mixtures API
-              const scale = item.hijauan ? 0.104 : 0.0312;
-              const energyAmt = qtyPerSheep * (0.018 / scale);
-              const proteinAmt = qtyPerSheep * (0.0108 / scale);
-              const mineralAmt = qtyPerSheep * (0.0024 / scale);
-              const hijauanAmt = qtyPerSheep * (0.0728 / scale);
+              // Di pakan dadakan hanya ada Energi (62.5%) dan Protein (37.5%)
+              const energyAmt = qtyPerSheep * 0.625;
+              const proteinAmt = qtyPerSheep * 0.375;
 
               const details = [];
+
               if (item.energi) {
-                const energyId = await resolveFeedId(item.energi, 'konsentrat');
-                if (energyId && energyAmt > 0) details.push({ id_feed: energyId, amount: Number(energyAmt.toFixed(2)) });
+                const energySources = item.energi.split(',').map((s: string) => s.trim()).filter(Boolean);
+                if (energySources.length > 0) {
+                  const energyAmtPerSource = energyAmt / energySources.length;
+                  for (const src of energySources) {
+                    const energyId = await resolveFeedId(src, 'konsentrat');
+                    if (energyId && energyAmtPerSource > 0) {
+                      details.push({ id_feed: energyId, amount: Number(energyAmtPerSource.toFixed(2)) });
+                    }
+                  }
+                }
               }
               if (item.protein) {
-                const proteinId = await resolveFeedId(item.protein, 'konsentrat');
-                if (proteinId && proteinAmt > 0) details.push({ id_feed: proteinId, amount: Number(proteinAmt.toFixed(2)) });
-              }
-              if (item.mineral) {
-                const mineralId = await resolveFeedId(item.mineral, 'konsentrat');
-                if (mineralId && mineralAmt > 0) details.push({ id_feed: mineralId, amount: Number(mineralAmt.toFixed(2)) });
-              }
-              if (item.hijauan) {
-                const hijauanId = await resolveFeedId(item.hijauan, 'hijauan');
-                if (hijauanId && hijauanAmt > 0) details.push({ id_feed: hijauanId, amount: Number(hijauanAmt.toFixed(2)) });
+                const proteinSources = item.protein.split(',').map((s: string) => s.trim()).filter(Boolean);
+                if (proteinSources.length > 0) {
+                  const proteinAmtPerSource = proteinAmt / proteinSources.length;
+                  for (const src of proteinSources) {
+                    const proteinId = await resolveFeedId(src, 'konsentrat');
+                    if (proteinId && proteinAmtPerSource > 0) {
+                      details.push({ id_feed: proteinId, amount: Number(proteinAmtPerSource.toFixed(2)) });
+                    }
+                  }
+                }
               }
 
               promises.push(
@@ -1031,7 +1160,8 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
         const weight = parseFloat(item.jumlahPemangkasan || item.qty || item.amount || 0);
         if (!isNaN(weight) && weight > 0) {
           const rawUnit = item.satuanBerat || '';
-          const mappedUnit = rawUnit.toLowerCase().includes('gram') || rawUnit.toLowerCase() === 'g' ? 'g' : 'kg';
+          const unitLower = rawUnit.toLowerCase();
+          const mappedUnit = (unitLower.includes('gram') && !unitLower.includes('kilo')) || unitLower === 'g' ? 'g' : 'kg';
           promises.push(
             pemangkasanApi.create({
               Aktivitas_id_aktivitas: '',
@@ -1045,13 +1175,13 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             } as any)
           );
 
-          let feedName = 'Daun Alpukat (Mentah)';
+          let feedName = 'Hijauan Daun Alpukat';
           const rincian = (item.selectedRincian || '').toLowerCase();
           if (rincian.includes('gulma') || rincian.includes('rumput')) {
-            feedName = 'Gulma / Rumput Liar (Mentah)';
+            feedName = 'Hijauan Rumput / Gulma';
           } else if (rincian.includes('ranting') || rincian.includes('daun')) {
             if (rincian.includes('kelengkeng')) {
-              feedName = 'Daun Kelengkeng (Mentah)';
+              feedName = 'Hijauan Daun Kelengkeng';
             }
           }
 

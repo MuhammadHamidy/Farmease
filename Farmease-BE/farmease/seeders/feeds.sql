@@ -16,14 +16,14 @@ INSERT INTO logistics.feeds (id_feed, feed_name, unit, available_stock, price_pe
 ('ca000001-0000-0000-0000-000000000005', 'Ilalang', 'kg', 1000.00, 0.00, 'hijauan', 'internal', 'Ilalang segar lapangan'),
 
 -- Konsentrat / Energi
-('ca000002-0000-0000-0000-000000000001', 'Bekatul Halus', 'kg', 1000.00, 1500.00, 'konsentrat', 'internal', 'Bekatul padi halus, sumber energi utama'),
-('ca000002-0000-0000-0000-000000000002', 'Onggok (Singkong Kering)', 'kg', 800.00, 1200.00, 'konsentrat', 'internal', 'Onggok singkong kering, sumber energi alternatif'),
-('ca000002-0000-0000-0000-000000000003', 'Jagung Pipil Giling', 'kg', 600.00, 4500.00, 'konsentrat', 'internal', 'Jagung pipil digiling kasar, sumber energi premium'),
+('ca000002-0000-0000-0000-000000000001', 'Bekatul', 'kg', 1000.00, 2500.00, 'konsentrat', 'internal', 'Bekatul padi halus, sumber energi utama'),
+('ca000002-0000-0000-0000-000000000002', 'Onggok', 'kg', 800.00, 1000.00, 'konsentrat', 'internal', 'Onggok singkong kering, sumber energi alternatif'),
+('ca000002-0000-0000-0000-000000000003', 'Jagung', 'kg', 600.00, 4000.00, 'konsentrat', 'internal', 'Jagung pipil digiling kasar, sumber energi premium'),
 
 -- Konsentrat / Protein
-('ca000003-0000-0000-0000-000000000001', 'Ampas Tahu Segar', 'kg', 400.00, 500.00, 'konsentrat', 'internal', 'Ampas tahu segar, sumber protein murah'),
-('ca000003-0000-0000-0000-000000000002', 'Bungkil Kelapa Sawit (BKS)', 'kg', 750.00, 2000.00, 'konsentrat', 'internal', 'Bungkil kelapa sawit, sumber protein tinggi'),
-('ca000003-0000-0000-0000-000000000003', 'Bungkil Kacang Tanah', 'kg', 300.00, 3000.00, 'konsentrat', 'internal', 'Bungkil kacang tanah premium'),
+('ca000003-0000-0000-0000-000000000001', 'Ampas Tahu', 'kg', 400.00, 2000.00, 'konsentrat', 'internal', 'Ampas tahu segar, sumber protein murah'),
+('ca000003-0000-0000-0000-000000000002', 'Bungkil kelapa Sawit', 'kg', 750.00, 3600.00, 'konsentrat', 'internal', 'Bungkil kelapa sawit, sumber protein tinggi'),
+('ca000003-0000-0000-0000-000000000003', 'Bungkil Kacang Tanah', 'kg', 300.00, 5000.00, 'konsentrat', 'internal', 'Bungkil kacang tanah premium, sumber protein tinggi'),
 
 -- Pellet Komersial
 ('ca000004-0000-0000-0000-000000000001', 'Pellet Konsentrat A', 'kg', 500.00, 6000.00, 'pellet', 'internal', 'Pellet starter berkualitas tinggi untuk pertumbuhan cepat'),
@@ -35,15 +35,16 @@ INSERT INTO logistics.feeds (id_feed, feed_name, unit, available_stock, price_pe
 ('ca000005-0000-0000-0000-000000000003', 'Premix Multivitamin', 'kg', 50.00, 80000.00, 'vitamin', 'internal', 'Premix multivitamin lengkap'),
 ('ca000005-0000-0000-0000-000000000004', 'Vitamin B-Complex Powder', 'kg', 30.00, 120000.00, 'vitamin', 'internal', 'Vitamin B-Complex suplemen nafsu makan'),
 
--- Pakan Hijau dari Kebun
-('ca000006-0000-0000-0000-000000000001', 'Hijauan Daun Alpukat', 'kg', 200.00, 0.00, 'hijauan', 'internal', 'Daun alpukat segar hasil pemotongan/pruning kebun'),
-('ca000006-0000-0000-0000-000000000002', 'Hijauan Daun Kelengkeng', 'kg', 300.00, 0.00, 'hijauan', 'internal', 'Daun kelengkeng segar hasil pemotongan/pruning kebun'),
-('ca000006-0000-0000-0000-000000000003', 'Hijauan Rumput / Gulma', 'kg', 500.00, 0.00, 'hijauan', 'internal', 'Gulma dan rumput liar segar hasil pembersihan kebun'),
+-- Aktivator Fermentasi (untuk Konversi Pakan / Silase)
+('ca000008-0000-0000-0000-000000000001', 'EM4', 'liter', 10.00, 25000.00, 'vitamin', 'internal', 'Effective Microorganisms 4 - aktivator probiotik fermentasi pakan'),
+('ca000008-0000-0000-0000-000000000002', 'Molase', 'kg', 50.00, 5000.00, 'vitamin', 'internal', 'Tetes tebu / gula merah, sumber makanan bakteri fermentasi'),
+('ca000008-0000-0000-0000-000000000003', 'Ragi', 'kg', 5.00, 15000.00, 'vitamin', 'internal', 'Ragi tempe/tape sebagai starter fermentasi alternatif'),
 
--- Pakan Olahan / Silase
-('ca000007-0000-0000-0000-000000000001', 'Silase Daun Alpukat', 'kg', 450.00, 0.00, 'hijauan', 'internal', 'Silase hasil fermentasi daun alpukat kebun'),
-('ca000007-0000-0000-0000-000000000002', 'Silase Daun Kelengkeng', 'kg', 380.00, 0.00, 'hijauan', 'internal', 'Silase hasil fermentasi daun kelengkeng kebun'),
-('ca000007-0000-0000-0000-000000000003', 'Pakan Silase Campuran', 'kg', 600.00, 0.00, 'hijauan', 'internal', 'Pakan silase campuran lengkap siap saji')
+-- Hijauan Serat Kasar Tambahan (untuk Konversi Pakan / Silase)
+('ca000009-0000-0000-0000-000000000001', 'Jerami Padi', 'kg', 500.00, 0.00, 'hijauan', 'internal', 'Jerami padi kering, sumber serat kasar untuk fermentasi'),
+('ca000009-0000-0000-0000-000000000002', 'Tebon Jagung', 'kg', 300.00, 0.00, 'hijauan', 'internal', 'Batang dan daun jagung muda (tebon), sumber serat energi tinggi'),
+('ca000009-0000-0000-0000-000000000003', 'Daun Singkong', 'kg', 200.00, 0.00, 'hijauan', 'internal', 'Daun singkong segar, sumber leguminosa dan protein tambahan'),
+('ca000009-0000-0000-0000-000000000004', 'Lamtoro', 'kg', 150.00, 0.00, 'hijauan', 'internal', 'Daun lamtoro (petai cina), leguminosa dengan protein tinggi')
 
 ON CONFLICT (id_feed) DO UPDATE SET
   feed_name       = EXCLUDED.feed_name,
@@ -52,12 +53,8 @@ ON CONFLICT (id_feed) DO UPDATE SET
   source_type     = EXCLUDED.source_type,
   notes           = EXCLUDED.notes;
 
--- Hapus pakan lama yang tidak relevan (greenery duplikat & nama membingungkan)
-DELETE FROM logistics.feeds WHERE id_feed IN (
-  'ca000007-0000-0000-0000-000000000004'  -- Rumput Cacah (lama)
-);
-
--- Hapus pakan lama dengan nama mentahan yang digantikan oleh nama baru
+-- Hapus pakan hasil fermentasi dan pakan hijau dari kebun agar tidak disebarkan/disiarkan di seeder
+DELETE FROM logistics.feeds WHERE id_feed::text LIKE 'ca000006-%' OR id_feed::text LIKE 'ca000007-%';
 DELETE FROM logistics.feeds WHERE feed_name IN (
   'Daun Alpukat (Mentah)',
   'Daun Kelengkeng (Mentah)',
@@ -66,13 +63,13 @@ DELETE FROM logistics.feeds WHERE feed_name IN (
   'Hijauan Kebun (Segar)',
   'Rumput Cacah',
   'Silase Daun Alpukat',
-  'Silase Daun Kelengkeng'
-) AND id_feed NOT IN (
-  'ca000006-0000-0000-0000-000000000001',
-  'ca000006-0000-0000-0000-000000000002',
-  'ca000006-0000-0000-0000-000000000003',
-  'ca000007-0000-0000-0000-000000000001',
-  'ca000007-0000-0000-0000-000000000002'
+  'Silase Daun Kelengkeng',
+  'Pakan Silase Campuran',
+  'Bekatul Halus',
+  'Onggok (Singkong Kering)',
+  'Jagung Pipil Giling',
+  'Ampas Tahu Segar',
+  'Bungkil Kelapa Sawit (BKS)'
 );
 
 

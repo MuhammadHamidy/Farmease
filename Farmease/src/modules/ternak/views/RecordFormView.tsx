@@ -1,11 +1,11 @@
 import { defineComponent, ref, computed, watch, onMounted } from 'vue';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
+import '@/assets/css/modules/peternakan/RecordForm.css';
 import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession, cagesList, fetchCagesList, prefilledPencatatanSheepId, prefilledPencatatanCageCode } from '@/store/navigation';
 import { operatorTasks, submitPencatatanSubmission } from '@/store/operatorAdmin';
 import { pencatatanSubmissions, fetchSubmissions } from '@/modules/ternak/store/operatorAdmin';
 import { stocks, fetchStocks } from '@/modules/ternak/store/peternakan';
 import { sheep, fetchSheep } from '@/store/livestock';
-import { feedsApi, breedingApi, pregnancyApi } from '@/shared/api';
+import { feedsApi, breedingApi, pregnancyApi, pemangkasanApi } from '@/shared/api';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import Button from '@/shared/ui/Button';
@@ -14,7 +14,7 @@ import BackButton from '@/shared/ui/BackButton';
 import PencatatanTypeFields, { type PencatatanFormItem } from '@/modules/ternak/components/pencatatan/PencatatanTypeFields';
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import { useRouter } from 'vue-router';
-import CustomAlertModal, { type AlertModalState } from '../components/shared/CustomAlertModal';
+import CustomAlertModal, { type AlertModalState } from '@/shared/ui/CustomAlertModal';
 
 const JENIS_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
@@ -133,6 +133,43 @@ export default defineComponent({
       }
     };
 
+    const pruningOptions = ref<any[]>([]);
+    const fetchPruningOptions = async () => {
+      try {
+        const res = await pemangkasanApi.getList();
+        const grouped: Record<string, { jumlah: number; satuan: string }> = {};
+        (res || []).filter((p: any) => Number(p.jumlah) > 0).forEach((p: any) => {
+          const rawName = (p.nama_rincian_aktivitas || 'Daun').trim();
+          const cleanName = rawName.replace(/^Pemangkasan\s+/i, '');
+          const key = cleanName.toLowerCase();
+          if (!grouped[key]) {
+            grouped[key] = { jumlah: 0, satuan: p.satuan || 'kg' };
+          }
+          grouped[key].jumlah += Number(p.jumlah);
+        });
+        pruningOptions.value = Object.entries(grouped).map(([, item], idx) => {
+          const allEntries = (res || []).filter((p: any) => {
+            const rawName = (p.nama_rincian_aktivitas || 'Daun').trim();
+            const cleanName = rawName.replace(/^Pemangkasan\s+/i, '');
+            return cleanName.toLowerCase() === Object.keys(grouped)[idx];
+          });
+          const displayName = allEntries.length > 0
+            ? (allEntries[0]?.nama_rincian_aktivitas || 'Daun').trim().replace(/^Pemangkasan\s+/i, '')
+            : Object.keys(grouped)[idx];
+          return {
+            id: `pruning-${idx}`,
+            name: `Pemangkasan ${displayName}`,
+            qty: item.jumlah,
+            unit: item.satuan,
+            category: 'greenery',
+            notes: 'Hasil pemangkasan kebun'
+          };
+        });
+      } catch (err) {
+        console.error('Failed to load pruning in RecordFormView', err);
+      }
+    };
+
     const pregnancies = ref<any[]>([]);
     const fetchPregnancies = async () => {
       try {
@@ -158,15 +195,19 @@ export default defineComponent({
             return idMother === targetIdStr && isActive;
           });
           
-          let startDate = foundPreg 
-            ? new Date(foundPreg.pregnancy_start_date || foundPreg.created_at)
-            : new Date(new Date().getTime() - 90 * 24 * 60 * 60 * 1000);
-            
-          if (isNaN(startDate.getTime()) || startDate.getFullYear() <= 1970) {
-            startDate = new Date(new Date().getTime() - 90 * 24 * 60 * 60 * 1000);
+          // Gunakan expected_birth_date langsung dari DB jika tersedia
+          let hpl: Date;
+          if (foundPreg?.expected_birth_date) {
+            hpl = new Date(foundPreg.expected_birth_date);
+          } else if (foundPreg?.pregnancy_date) {
+            hpl = new Date(new Date(foundPreg.pregnancy_date).getTime() + 150 * 24 * 60 * 60 * 1000);
+          } else {
+            // Fallback: estimasi 60 hari dari sekarang
+            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
           }
-            
-          const hpl = new Date(startDate.getTime() + 150 * 24 * 60 * 60 * 1000);
+          if (isNaN(hpl.getTime())) {
+            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+          }
           const today = new Date();
           today.setHours(0,0,0,0);
           hpl.setHours(0,0,0,0);
@@ -198,6 +239,9 @@ export default defineComponent({
           if (jenisId === 'pakan' || jenisId === 'stok_pakan' || jenisId === 'perkawinan') {
             fetchSubmissions();
           }
+          if (jenisId === 'pakan') {
+            fetchPruningOptions();
+          }
           if (jenisId === 'perkawinan') {
             fetchActiveMatings();
           }
@@ -220,6 +264,7 @@ export default defineComponent({
         fetchSheep();
       }
       fetchPregnancies();
+      fetchPruningOptions();
     });
 
     const handleModeChange = (form: PencatatanFormItem, mode: PencatatanMode) => {
@@ -317,13 +362,31 @@ export default defineComponent({
             for (const item of feedsToCheck) {
               const reqAmount = requestedQty * item.pct;
               const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
-              if (!stockItem || stockItem.qty < reqAmount) {
+              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === item.name.toLowerCase());
+              const available = stockItem ? stockItem.qty : (pruningItem ? pruningItem.qty : null);
+              if (available === null || available < reqAmount) {
                 isStockInsufficient = true;
-                insufficientMessage = `Stok pakan ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty.toFixed(2) : 0} kg\nDibutuhkan (proporsional): ${reqAmount.toFixed(2)} kg.`;
+                insufficientMessage = `Stok pakan ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${available !== null ? Number(available).toFixed(2) : 0} kg\nDibutuhkan (proporsional): ${reqAmount.toFixed(2)} kg.`;
                 break;
               }
             }
             if (isStockInsufficient) break;
+          } else if (f.metoda === 'hijauan_kebun') {
+            // Pakan Hijauan Kebun — cek pruningOptions dulu, lalu DB stok
+            const feedName = f.obat;
+            if (feedName) {
+              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === feedName.toLowerCase());
+              if (pruningItem) {
+                // Stok dari kebun tersedia, lewati validasi DB
+              } else {
+                const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === feedName.toLowerCase());
+                if (!stockItem || stockItem.qty < requestedQty) {
+                  isStockInsufficient = true;
+                  insufficientMessage = `Stok hijauan kebun "${feedName}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty : 0} kg\nDibutuhkan: ${requestedQty} kg.`;
+                  break;
+                }
+              }
+            }
           } else {
             // Pakan Silase / Stok
             const feedName = f.obat;
@@ -442,8 +505,14 @@ export default defineComponent({
         if (categoryId === 'stok_pakan') {
           const isConversion = formItem.name === 'Konversi Pakan';
           if (!isConversion && (!formItem.obat || !formItem.qty)) return showError('Nama pakan sumber dan jumlah masuk wajib diisi.');
-          if (isConversion && (!formItem.hijauan || !formItem.energi || !formItem.protein || !formItem.mineral || !formItem.qty)) {
-            return showError('Semua field konversi pakan (Pakan Mentah dan ketiga Pakan Tambahan) wajib diisi.');
+          if (isConversion && (
+            !(formItem.hijauan || '').trim() ||
+            !(formItem.energi || '').trim() ||
+            !(formItem.protein || '').trim() ||
+            !(formItem.mineral || '').trim() ||
+            !formItem.qty
+          )) {
+            return showError('Semua kelompok bahan baku konversi pakan (Serat, Energi, Protein, Aktivator) dan target kuantitas wajib diisi.');
           }
         }
         if (categoryId === 'kesehatan') {
@@ -490,7 +559,8 @@ export default defineComponent({
               return showError('Tanggal keguguran wajib diisi.');
             }
           } else {
-            if (!formItem.jumlahAnak || !formItem.idPejantan || !formItem.namaAnak || !formItem.sheepCode || !formItem.kandangAnak || !formItem.tanggal || !formItem.beratLahir) {
+            const sheepCode = formItem.sheepCode;
+            if (!formItem.jumlahAnak || !formItem.idPejantan || !formItem.namaAnak || !sheepCode || !formItem.kandangAnak || !formItem.tanggal || !formItem.beratLahir) {
               return showError('Seluruh data kelahiran anak (ID Pejantan, Nama Anak, Kode Ear Tag Anak, Kandang Anak, Tanggal Lahir, Berat, dan Jumlah) wajib diisi.');
             }
             const numAnak = Number(formItem.jumlahAnak) || 0;
@@ -507,9 +577,9 @@ export default defineComponent({
               return showError('Induk jantan dan induk betina tidak boleh domba yang sama.');
             }
             // Check if code / ear tag already exists in active sheep list
-            const codeExists = sheep.value.some(s => s.code.toUpperCase() === formItem.sheepCode.trim().toUpperCase() && !['Mati', 'Terjual', 'Disembelih'].includes(s.status));
+            const codeExists = sheep.value.some(s => s.code.toUpperCase() === sheepCode.trim().toUpperCase() && !['Mati', 'Terjual', 'Disembelih'].includes(s.status));
             if (codeExists) {
-              return showError(`Kode Ear Tag Anak "${formItem.sheepCode}" sudah terdaftar untuk domba lain yang masih aktif.`);
+              return showError(`Kode Ear Tag Anak "${sheepCode}" sudah terdaftar untuk domba lain yang masih aktif.`);
             }
             // Validate cage capacity
             const cage = cagesList.value.find(c => c.code === formItem.kandangAnak);
@@ -698,17 +768,35 @@ export default defineComponent({
             .slice()
             .sort((a, b) => a.name.localeCompare(b.name));
         } else if (currentMetoda === 'hijauan_kebun') {
-          // Only show raw garden clippings/greenery
-          return stocks.value
-            .filter(s => s.category === 'greenery' || s.name.toLowerCase().includes('mentah') || s.name.toLowerCase().includes('kebun') || s.name.toLowerCase().includes('pemangkasan'))
-            .slice()
-            .sort((a, b) => a.name.localeCompare(b.name));
+          // Show hijauan DB stocks + raw garden clippings/greenery + orchard pruning
+          const dbGreenery = stocks.value.filter(s =>
+            s.category === 'hijauan' ||
+            s.category === 'greenery' ||
+            s.name.toLowerCase().includes('mentah') ||
+            s.name.toLowerCase().includes('kebun') ||
+            s.name.toLowerCase().includes('pemangkasan')
+          );
+          const combined = [...dbGreenery, ...pruningOptions.value];
+          const unique: Record<string, any> = {};
+          combined.forEach(item => {
+            const key = item.name.toLowerCase();
+            if (!unique[key] || (item.id && !item.id.toString().startsWith('pruning-'))) {
+              unique[key] = item;
+            }
+          });
+          return Object.values(unique).sort((a: any, b: any) => a.name.localeCompare(b.name));
         } else {
-          // dadakan: show hijauan + konsentrat + pellet
-          return stocks.value
-            .filter(s => s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery')
-            .slice()
-            .sort((a, b) => a.name.localeCompare(b.name));
+          // dadakan: show hijauan + konsentrat + pellet + greenery + pruning
+          const dbStocks = stocks.value.filter(s => s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery');
+          const combined = [...dbStocks, ...pruningOptions.value];
+          const unique: Record<string, any> = {};
+          combined.forEach(item => {
+            const key = item.name.toLowerCase();
+            if (!unique[key] || (item.id && !item.id.toString().startsWith('pruning-'))) {
+              unique[key] = item;
+            }
+          });
+          return Object.values(unique).sort((a: any, b: any) => a.name.localeCompare(b.name));
         }
       }
 
@@ -1016,24 +1104,24 @@ export default defineComponent({
                       ) : item.name === 'Konversi Pakan' ? (
                         <>
                           <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Mentah Asal</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.hijauan}</span>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Sumber Serat Kasar</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.hijauan}</span>
                           </div>
                           <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Tambahan (Energi)</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.energi}</span>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Energi / Karbohidrat</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.energi}</span>
                           </div>
                           <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Tambahan (Protein)</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.protein}</span>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Protein / Konsentrat</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.protein}</span>
                           </div>
                           <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pakan Tambahan (Mineral)</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.mineral}</span>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Aktivator & Mineral</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.mineral}</span>
                           </div>
                           <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hasil Konversi Jadi</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Hasil Konversi Jadi</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.obat}</span>
                           </div>
                         </>
                       ) : (

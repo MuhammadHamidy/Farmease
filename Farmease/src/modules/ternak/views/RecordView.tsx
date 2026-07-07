@@ -1,5 +1,5 @@
 import { defineComponent, ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
+import '@/assets/css/modules/peternakan/RecordForm.css';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import Button from '@/shared/ui/Button';

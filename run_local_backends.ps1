@@ -13,7 +13,7 @@ Write-Host "==========================================================" -Foregro
 
 # 1. Pastikan Database & Redis di Docker sudah berjalan
 Write-Host "[1/4] Memastikan Postgres & Redis aktif di Docker..." -ForegroundColor Yellow
-docker compose up -d postgres redis
+docker compose up -d postgres redis rabbitmq
 
 Write-Host "Menunggu database siap..." -ForegroundColor Gray
 Start-Sleep -Seconds 3
@@ -50,6 +50,7 @@ $TERNAC_CMD = @"
 `$env:APP_CORS_ALLOWED_ORIGINS='*'; `
 `$env:APP_LOG_LEVEL='debug'; `
 `$env:APP_LOG_FORMAT='console'; `
+`$env:APP_RABBITMQ_URL='amqp://guest:guest@127.0.0.1:5672/'; `
 `$env:APP_EXPORTER='none'; `
 Write-Host '=== PETERNAKAN BACKEND RUNNING NATIVE ===' -ForegroundColor Green; `
 go run main.go serve
@@ -69,6 +70,7 @@ $KEBUN_CMD = @"
 `$env:APP_CORS_ALLOWED_ORIGINS='*'; `
 `$env:APP_LOG_LEVEL='debug'; `
 `$env:APP_LOG_FORMAT='console'; `
+`$env:APP_RABBITMQ_URL='amqp://guest:guest@127.0.0.1:5672/'; `
 `$env:APP_EXPORTER='none'; `
 Write-Host '=== PERKEBUNAN BACKEND RUNNING NATIVE ===' -ForegroundColor Green; `
 go run main.go serve

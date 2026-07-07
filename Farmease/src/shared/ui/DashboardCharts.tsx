@@ -202,27 +202,8 @@ export const ManureProductionChart = defineComponent({
             <div class="d-flex align-items-center gap-2">
               <img src="/icon/barrel.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
               <Typography variant="h4" weight="extrabold" className="m-0 text-dark">
-                Tren Produksi Pupuk Kandang per Bulan ({mode.value === 'total' ? 'kg' : 'kg/ekor'})
+                Tren Panen Kotoran Ternak per Bulan (kg)
               </Typography>
-            </div>
-            
-            <div class="btn-group btn-group-sm rounded-pill p-0.5 bg-light border" role="group">
-              <button
-                type="button"
-                class={['btn rounded-pill px-2.5 py-1', mode.value === 'total' ? 'btn-primary' : 'btn-light text-secondary']}
-                style={{ fontSize: '0.7rem', fontWeight: 'bold' }}
-                onClick={() => mode.value = 'total'}
-              >
-                Total
-              </button>
-              <button
-                type="button"
-                class={['btn rounded-pill px-2.5 py-1', mode.value === 'per_ekor' ? 'btn-primary' : 'btn-light text-secondary']}
-                style={{ fontSize: '0.7rem', fontWeight: 'bold' }}
-                onClick={() => mode.value = 'per_ekor'}
-              >
-                Per Ekor
-              </button>
             </div>
           </div>
 

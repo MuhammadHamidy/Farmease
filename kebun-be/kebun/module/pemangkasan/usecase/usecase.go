@@ -58,13 +58,13 @@ func (u *pemangkasanUsecase) Create(ctx context.Context, p *domain.Pemangkasan) 
 		rincian := strings.ToLower(p.NamaRincianAktivitas)
 		var feedName string
 		if strings.Contains(rincian, "gulma") || strings.Contains(rincian, "rumput") {
-			feedName = "Gulma / Rumput Liar (Mentah)"
+			feedName = "Hijauan Rumput / Gulma"
 		} else if strings.Contains(rincian, "ranting") || strings.Contains(rincian, "daun") || strings.Contains(rincian, "pemangkasan") {
 			if strings.Contains(rincian, "kelengkeng") {
-				feedName = "Daun Kelengkeng (Mentah)"
+				feedName = "Hijauan Daun Kelengkeng"
 			} else {
 				// Default to Avocado Leaf
-				feedName = "Daun Alpukat (Mentah)"
+				feedName = "Hijauan Daun Alpukat"
 			}
 		}
 

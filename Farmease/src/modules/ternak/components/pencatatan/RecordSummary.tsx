@@ -3,7 +3,7 @@ import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import { stocks } from '@/modules/ternak/store/peternakan';
 import { sheep } from '@/store/livestock';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
+import '@/assets/css/modules/peternakan/RecordForm.css';
 
 export default defineComponent({
   name: 'RecordSummary',

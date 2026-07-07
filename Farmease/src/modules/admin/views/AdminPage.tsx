@@ -1,6 +1,6 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import '@/modules/admin/assets/css/modules/AdminPage.css';
+import '@/assets/css/modules/admin/AdminPage.css';
 import { userSession, cageSession, globalAlertState } from '@/store/navigation';
 import { pendingApprovalCount } from '@/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
@@ -8,8 +8,8 @@ import DasborPeternakanView from './DasborPeternakanView.tsx';
 import RoutineScheduleView from './RoutineScheduleView.tsx';
 import PencatatanApprovalView from './PencatatanApprovalView.tsx';
 import CageManagementView from './CageManagementView.tsx';
-import CustomConfirmModal from '../../ternak/components/shared/CustomConfirmModal';
-import CustomAlertModal from '../../ternak/components/shared/CustomAlertModal';
+import CustomConfirmModal from '@/shared/ui/CustomConfirmModal';
+import CustomAlertModal from '@/shared/ui/CustomAlertModal';
 
 export default defineComponent({
   name: 'AdminPage',

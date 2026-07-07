@@ -13,6 +13,7 @@ export interface Lahan {
   tanggal_tanam: string
   fase_tanam: string
   // Kept for backward compatibility if needed in UI:
+  code?: string
   lokasi?: string
   luas?: number
   status?: string
@@ -33,6 +34,7 @@ function mapBackendLahanToFrontend(backend: any): Lahan {
     fase_tanam: backend.fase_tanam || '',
     
     // UI mapping
+    code: backend.kode_lahan,
     lokasi: backend.jenis_tanaman || backend.fase_tanam || '',
     luas: backend.luas_lahan || 1.0,
     status: backend.status_lahan === 1 ? 'Subur' : backend.status_lahan === 2 ? 'Pemulihan' : 'Perlu Pengairan',
@@ -272,7 +274,7 @@ function mapFrontendPerawatanToBackend(frontend: any): any {
     nama_obat: frontend.nama_obat || 'Obat',
     dosis: frontend.dosis !== undefined ? frontend.dosis : 0,
     satuan: frontend.satuan || 'ml',
-    bagian_pohon: frontend.bagian_pohon || 'Umum',
+    bagian_pohon: ['Daun', 'Akar', 'Batang', 'Buah', 'Bunga', 'Lahan', 'Tanah', 'Umum'].includes(frontend.bagian_pohon) ? frontend.bagian_pohon : 'Umum',
     deskripsi: frontend.deskripsi || '',
     Lahan_id_lahan: frontend.Lahan_id_lahan || '',
     nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || 'Insektisida',
@@ -344,6 +346,9 @@ function mapFrontendPemangkasanToBackend(frontend: any): any {
   return {
     id_pemangkasan: frontend.id || frontend.id_pemangkasan || '',
     Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
+    tanggal_aktivitas: frontend.tanggal_aktivitas || '',
+    nama_jenis_aktivitas: frontend.nama_jenis_aktivitas || '',
+    nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || '',
     jumlah: String(frontend.jumlah !== undefined ? frontend.jumlah : (frontend.jumlah_pemangkasan || '0')),
     satuan: frontend.satuan || 'kg',
     keterangan: frontend.keterangan || frontend.deskripsi || '',
