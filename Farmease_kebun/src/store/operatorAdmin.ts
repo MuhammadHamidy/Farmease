@@ -1013,8 +1013,13 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
       } else if (typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk') {
         const dosisVal = parseFloat(item.qty || item.amount || item.hasilJadiQty || 0);
         // 1. Create a Fermentasi parent-child record
-        if (item.selectedRincian === 'Pupuk Kandang' || item.selectedRincian === 'Pupuk Kompos') {
-          const targetHasil = item.selectedRincian === 'Pupuk Kandang' ? 'Pupuk Kandang (Fermentasi)' : 'Pupuk Kompos (Fermentasi)';
+        const isFerment = item.selectedRincian === 'Pupuk Kandang' || 
+          item.selectedRincian === 'Pupuk Kompos' || 
+          item.selectedRincian?.includes('Fermentasi') || 
+          item.rincian?.includes('Fermentasi');
+
+        if (isFerment) {
+          const targetHasil = item.hasilJadi || (item.selectedRincian === 'Pupuk Kandang' ? 'Pupuk Kandang (Fermentasi)' : 'Pupuk Kompos (Fermentasi)');
           promises.push(
             fermentasiApi.create({
               status: 'proses',

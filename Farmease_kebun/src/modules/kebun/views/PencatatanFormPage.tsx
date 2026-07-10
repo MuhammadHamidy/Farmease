@@ -375,7 +375,7 @@ export default defineComponent({
             }
           }
 
-          else if (type === 'pengolahan pupuk' && (item.selectedRincian?.includes('Fermentasi') || item.rincian?.includes('Fermentasi')) && !(item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))) {
+          else if ((type === 'pengolahan pupuk' || type === 'pengolahan_pupuk') && (item.selectedRincian?.includes('Fermentasi') || item.rincian?.includes('Fermentasi')) && !(item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))) {
             const outQty = parseFloat(item.qty) || 0
             const outVal = parseQty(item.qty, item.unit)
             const name = item.hasilJadi || ''

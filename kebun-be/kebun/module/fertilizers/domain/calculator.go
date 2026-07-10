@@ -32,10 +32,10 @@ var DefaultAlpukatDosis = AlpukatDosis{
 	VegetatifMudaMax:   10.0,
 	VegetatifDewasaMin: 10.0,
 	VegetatifDewasaMax: 20.0,
-	GeneratifMin:       50.0,
-	GeneratifMax:       100.0,
+	GeneratifMin:       10.0, // Disesuaikan dengan Tabel 2.2 (10-20 kg)
+	GeneratifMax:       20.0, // Disesuaikan dengan Tabel 2.2 (10-20 kg)
 	FrekuensiVegetatif: 2,
-	FrekuensiGeneratif: 1,
+	FrekuensiGeneratif: 3,    // Disesuaikan dengan Tabel 2.2 (3 kali/tahun)
 }
 
 // --- KELENGKENG (Dimocarpus longan) ---

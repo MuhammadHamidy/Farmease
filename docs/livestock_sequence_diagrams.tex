@@ -1,0 +1,380 @@
+% =========================================================================
+% DOKUMENTASI SEQUENCE DIAGRAM FARMEASE DALAM FORMAT LATEX (pgf-umlsd / TikZ)
+% =========================================================================
+%
+% Catatan Penggunaan:
+% 1. Salin isi dokumen ini ke dalam berkas .tex proyek Tugas Akhir/Skripsi Anda.
+% 2. Pastikan Anda menyertakan package berikut di preamble dokumen Anda:
+%    \usepackage{tikz}
+%    \usepackage{pgf-umlsd}
+%
+% =========================================================================
+
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{pgf-umlsd}
+
+\begin{document}
+
+% -------------------------------------------------------------------------
+% UC-01: Melihat Dasbor Ternak
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-01: Melihat Dasbor Ternak}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{usr}{Pengguna}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{ds}{ds:DasborService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{usr}{Buka Halaman Utama / Dasbor}{ui}
+        \begin{messcall}{ui}{getDasborStats()}{ds}
+            \begin{messcall}{ds}{selectStatistikPopulasi()}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ds}{selectLogAktivitasTerakhir()}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \node (ds_ret) at (ds) {};
+        \end{messcall}
+        \node (ui_ret) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Melihat Dasbor Ternak}
+\label{fig:seq_uc01_dasbor}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-02.1: Registrasi Domba Baru
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-02.1: Registrasi Domba Baru}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[2.5]{ui}{ui:Antarmuka}
+    \newinst[2.5]{ds}{ds:DombaService}
+    \newinst[2.5]{ks}{ks:KandangService}
+    \newinst[2.5]{db}{db:Database}
+
+    \begin{messcall}{op}{Buka halaman Registrasi Domba}{ui}
+        \begin{messcall}{ui}{getKandangTersedia()}{ks}
+            \begin{messcall}{ks}{selectKandangTersedia()}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \node (ks_ret) at (ks) {};
+        \end{messcall}
+        \node (ui_ret1) at (ui) {};
+    \end{messcall}
+    
+    \begin{messcall}{op}{Isi data domba \& klik "Simpan"}{ui}
+        \begin{messcall}{ui}{registrasiDomba(data)}{ds}
+            \begin{messcall}{ds}{checkKodeDombaExist(kode)}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ds}{insertDombaBaru(data)}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ds}{tambahOccupancyKandang()}{db}
+                \node (db_ret4) at (db) {};
+            \end{messcall}
+            \node (ds_ret) at (ds) {};
+        \end{messcall}
+        \node (ui_ret2) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Registrasi Domba Baru}
+\label{fig:seq_uc02_registrasi}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-02.2: Mutasi Kandang Domba
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-02.2: Mutasi Kandang Domba}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{ks}{ks:KandangService}
+    \newinst[3]{ds}{ds:DombaService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Klik "Mutasi Kandang"}{ui}
+        \begin{messcall}{ui}{getKandangTersedia()}{ks}
+            \begin{messcall}{ks}{selectKandangTersedia()}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \node (ks_ret) at (ks) {};
+        \end{messcall}
+        \node (ui_ret1) at (ui) {};
+    \end{messcall}
+
+    \begin{messcall}{op}{Pilih kandang tujuan \& klik "Simpan"}{ui}
+        \begin{messcall}{ui}{mutasiKandang(id\_domba, new\_cage)}{ds}
+            \begin{messcall}{ds}{updateKandangDomba()}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ds}{updateKapasitasKandang()}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \node (ds_ret) at (ds) {};
+        \end{messcall}
+        \node (ui_ret2) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Mutasi Kandang Domba}
+\label{fig:seq_uc02_mutasi}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-03.1: Pencatatan Perkawinan & Kelahiran Anak Domba
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-03.1: Pencatatan Perkawinan \& Kelahiran}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{rs}{rs:ReproduksiService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Input ID Pejantan \& Betina}{ui}
+        \begin{messcall}{ui}{simpanPerkawinan(jantan, betina)}{rs}
+            \begin{messcall}{rs}{checkStatusBirahiBetina(betina)}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \begin{messcall}{rs}{insertPerkawinan()}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \node (rs_ret1) at (rs) {};
+        \end{messcall}
+        \node (ui_ret1) at (ui) {};
+    \end{messcall}
+
+    \begin{messcall}{op}{Input hasil cek kehamilan (Positif)}{ui}
+        \begin{messcall}{ui}{simpanKehamilan(betina, est\_tgl)}{rs}
+            \begin{messcall}{rs}{insertKehamilan()}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \begin{messcall}{rs}{updateStatusDomba(betina, "hamil")}{db}
+                \node (db_ret4) at (db) {};
+            \end{messcall}
+            \node (rs_ret2) at (rs) {};
+        \end{messcall}
+        \node (ui_ret2) at (ui) {};
+    \end{messcall}
+
+    \begin{messcall}{op}{Kirim data kelahiran anak domba}{ui}
+        \begin{messcall}{ui}{catatKelahiran(id\_preg, jumlah)}{rs}
+            \begin{messcall}{rs}{updateStatusKehamilan(id\_preg, "selesai")}{db}
+                \node (db_ret5) at (db) {};
+            \end{messcall}
+            \begin{messcall}{rs}{insertAnakDombaBaru()}{db}
+                \node (db_ret6) at (db) {};
+            \end{messcall}
+            \node (rs_ret3) at (rs) {};
+        \end{messcall}
+        \node (ui_ret3) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Siklus Perkawinan dan Kelahiran}
+\label{fig:seq_uc03_reproduksi}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-03.2: Pencatatan Pemberian Pakan Harian
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-03.2: Pencatatan Pemberian Pakan Harian}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{ps}{ps:PakanService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Buka halaman Pemberian Pakan}{ui}
+        \begin{messcall}{ui}{getDaftarStokPakan()}{ps}
+            \begin{messcall}{ps}{selectStokPakan()}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \node (ps_ret) at (ps) {};
+        \end{messcall}
+        \node (ui_ret1) at (ui) {};
+    \end{messcall}
+
+    \begin{messcall}{op}{Pilih pakan, input jumlah, pilih kandang \& simpan}{ui}
+        \begin{messcall}{ui}{catatPemberianPakan(id\_kandang, id\_pakan, jumlah)}{ps}
+            \begin{messcall}{ps}{insertRiwayatPemberianPakan()}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ps}{kurangiStokPakan()}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \node (ps_ret2) at (ps) {};
+        \end{messcall}
+        \node (ui_ret2) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Pencatatan Pemberian Pakan Harian}
+\label{fig:seq_uc03_pakan}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-03.3: Pencatatan Bobot Domba & ADG
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-03.3: Pencatatan Bobot Domba \& ADG}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{bs}{bs:BobotService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Input ID Domba \& Bobot Baru}{ui}
+        \begin{messcall}{ui}{catatTimbangan(id\_domba, bobot\_baru)}{bs}
+            \begin{messcall}{bs}{selectTimbanganTerakhir(id\_domba)}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \begin{messcall}{bs}{insertRiwayatTimbangan(adg)}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \begin{messcall}{bs}{updateBobotTerakhirDomba()}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \node (bs_ret) at (bs) {};
+        \end{messcall}
+        \node (ui_ret) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Pencatatan Bobot Domba}
+\label{fig:seq_uc03_bobot}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-04: Kelola Stok Pakan
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-04: Kelola Stok Pakan (Batch Fermentasi)}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{ps}{ps:PakanService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Input bahan baku \& target qty silase}{ui}
+        \begin{messcall}{ui}{buatBatchFermentasi(bahan, qty)}{ps}
+            \begin{messcall}{ps}{insertBatchFermentasi("proses")}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ps}{kurangiStokBahanBaku()}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \node (ps_ret1) at (ps) {};
+        \end{messcall}
+        \node (ui_ret1) at (ui) {};
+    \end{messcall}
+
+    \begin{messcall}{op}{Input perkembangan silase (suhu, catatan)}{ui}
+        \begin{messcall}{ui}{tambahLogFermentasi(id\_batch, suhu, notes)}{ps}
+            \begin{messcall}{ps}{insertLogFermentasi()}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \node (ps_ret2) at (ps) {};
+        \end{messcall}
+        \node (ui_ret2) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Pembuatan Silase}
+\label{fig:seq_uc04_stok_pakan}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-07: Kelola Data Birahi
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-07: Kelola Data Birahi}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{rs}{rs:ReproduksiService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Input hasil pemeriksaan birahi betina}{ui}
+        \begin{messcall}{ui}{catatCekBirahi(betina, hasil)}{rs}
+            \begin{messcall}{rs}{insertCekBirahi(betina, hasil)}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \node (rs_ret) at (rs) {};
+        \end{messcall}
+        \node (ui_ret) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Kelola Data Pengecekan Birahi}
+\label{fig:seq_uc07_birahi}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-08: Melihat Riwayat Kesehatan
+% -------------------------------------------------------------------------
+\subsection{Sequence Diagram UC-08: Melihat Riwayat Kesehatan}
+\begin{figure}[htbp]
+\centering
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[3]{ui}{ui:Antarmuka}
+    \newinst[3]{ks}{ks:KesehatanService}
+    \newinst[3]{db}{db:Database}
+
+    \begin{messcall}{op}{Input log kesehatan (diagnosis, obat, dosis)}{ui}
+        \begin{messcall}{ui}{catatKesehatan(id\_domba, diag, obat, dosis)}{ks}
+            \begin{messcall}{ks}{insertRiwayatKesehatan()}{db}
+                \node (db_ret1) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ks}{kurangiStokObat()}{db}
+                \node (db_ret2) at (db) {};
+            \end{messcall}
+            \begin{messcall}{ks}{updateStatusKesehatanDomba(id\_domba, "sakit")}{db}
+                \node (db_ret3) at (db) {};
+            \end{messcall}
+            \node (ks_ret1) at (ks) {};
+        \end{messcall}
+        \node (ui_ret1) at (ui) {};
+    \end{messcall}
+
+    \begin{messcall}{op}{Buka tab "Riwayat Pengobatan Domba"}{ui}
+        \begin{messcall}{ui}{getRiwayatKesehatanDomba(id\_domba)}{ks}
+            \begin{messcall}{ks}{selectRiwayatKesehatanDomba(id\_domba)}{db}
+                \node (db_ret4) at (db) {};
+            \end{messcall}
+            \node (ks_ret2) at (ks) {};
+        \end{messcall}
+        \node (ui_ret2) at (ui) {};
+    \end{messcall}
+\end{sequencediagram}
+\caption{Sequence Diagram Melihat Riwayat Kesehatan Domba}
+\label{fig:seq_uc08_riwayat_kesehatan}
+\end{figure}
+
+\end{document}

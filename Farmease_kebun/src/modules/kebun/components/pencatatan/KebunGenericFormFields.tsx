@@ -152,7 +152,8 @@ export default defineComponent({
       return (props.allSubmissions || [])
         .filter((s: any) => {
           const item = s.payload?.data?.items?.[0] || {}
-          const isCheck = s.type === 'pengolahan pupuk' && (item.selectedRincian === 'Cek Fermentasi' || item.rincian === 'Cek Fermentasi')
+          const typeLower = (s.type || '').toLowerCase()
+          const isCheck = (typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk') && (item.selectedRincian === 'Cek Fermentasi' || item.rincian === 'Cek Fermentasi')
           return isCheck && String(item.batchFermentasiId) === String(batchId)
         })
         .map((s: any) => {
@@ -202,13 +203,16 @@ export default defineComponent({
       return (props.allSubmissions || [])
         .filter((s: any) => {
           const item = s.payload?.data?.items?.[0] || {}
-          const isFermentation = s.type === 'pengolahan pupuk' && (item.selectedRincian === 'Fermentasi Pupuk' || item.rincian === 'Fermentasi Pupuk')
+          const typeLower = (s.type || '').toLowerCase()
+          const isFermentation = (typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk') && 
+            (item.selectedRincian?.includes('Fermentasi') || item.rincian?.includes('Fermentasi')) &&
+            !(item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))
           
           let resolvedHasilJadi = item.hasilJadi || ''
           if (resolvedHasilJadi === 'Pupuk Organik Cair') {
             resolvedHasilJadi = 'Pupuk Organik Cair' // match choice
           }
-          return isFermentation && resolvedHasilJadi === selectedJenis
+          return isFermentation && resolvedHasilJadi === selectedJenis && s.approvalStatus === 'approved'
         })
         .map((s: any) => {
           const item = s.payload?.data?.items?.[0] || {}
@@ -1792,7 +1796,8 @@ export default defineComponent({
             const fermentationOptions = (props.allSubmissions || [])
               .filter((s: any) => {
                 const payloadItem = s.payload?.data?.items?.[0]
-                return s.type === 'pengolahan pupuk' && (payloadItem?.selectedRincian?.includes('Fermentasi') || payloadItem?.rincian?.includes('Fermentasi')) && !(payloadItem?.selectedRincian?.includes('Cek') || payloadItem?.rincian?.includes('Cek'))
+                const typeLower = (s.type || '').toLowerCase()
+                return (typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk') && (payloadItem?.selectedRincian?.includes('Fermentasi') || payloadItem?.rincian?.includes('Fermentasi')) && !(payloadItem?.selectedRincian?.includes('Cek') || payloadItem?.rincian?.includes('Cek'))
               })
               .map((s: any) => {
                 const payloadItem = s.payload?.data?.items?.[0]
