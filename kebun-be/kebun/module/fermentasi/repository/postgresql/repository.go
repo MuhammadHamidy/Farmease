@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/farmease/kebun-be/kebun/module/fermentasi/domain"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -97,9 +98,35 @@ func (r *fermentasiRepository) Store(ctx context.Context, f *domain.Fermentasi) 
 		targetJumlah = f.PupukDetails.TargetJumlah
 		satuan = f.PupukDetails.Satuan
 		idStokBahan = f.PupukDetails.IDStokBahan
+		if idStokBahan != nil {
+			val := *idStokBahan
+			if val == "" || val == "undefined" || val == "null" {
+				idStokBahan = nil
+				f.PupukDetails.IDStokBahan = nil
+			} else {
+				// Check if val is a valid UUID
+				_, err := uuid.Parse(val)
+				if err != nil {
+					// It is NOT a valid UUID! It must be a literal material name like "Kotoran domba"
+					// Let's resolve the UUID by looking up/inserting into gardening.stok_bahan
+					resolvedUUID, err := r.resolveStokBahanByName(ctx, val)
+					if err != nil {
+						return err
+					}
+					idStokBahan = &resolvedUUID
+					f.PupukDetails.IDStokBahan = &resolvedUUID
+				}
+			}
+		}
 	} else {
 		targetName = "Kompos"
 		satuan = "kg"
+	}
+
+	idAccount := f.IDAccount
+	if idAccount != nil && (*idAccount == "" || *idAccount == "undefined" || *idAccount == "null") {
+		idAccount = nil
+		f.IDAccount = nil
 	}
 
 	query := `
@@ -107,7 +134,7 @@ func (r *fermentasiRepository) Store(ctx context.Context, f *domain.Fermentasi) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id_fermentasi, created_at, updated_at
 	`
-	err := r.db.QueryRow(ctx, query, f.TanggalMulai, f.Status, f.Notes, f.IDAccount, targetName, targetJumlah, satuan, idStokBahan).
+	err := r.db.QueryRow(ctx, query, f.TanggalMulai, f.Status, f.Notes, idAccount, targetName, targetJumlah, satuan, idStokBahan).
 		Scan(&f.IDFermentasi, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
 		return err
@@ -165,12 +192,39 @@ func (r *fermentasiRepository) FindLogsByFermentasiID(ctx context.Context, ferme
 
 func (r *fermentasiRepository) StoreLog(ctx context.Context, l *domain.LogFermentasi) error {
 	l.TanggalCek = time.Now()
+	idAccount := l.IDAccount
+	if idAccount != nil && (*idAccount == "" || *idAccount == "undefined" || *idAccount == "null") {
+		idAccount = nil
+		l.IDAccount = nil
+	}
 	query := `
 		INSERT INTO gardening.log_fermentasi_pupuk (id_fermentasi, tanggal_cek, suhu, kelembaban, kondisi_fisik, notes, status, id_account)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id_log, created_at
 	`
-	return r.db.QueryRow(ctx, query, l.IDFermentasi, l.TanggalCek, l.Suhu, l.Kelembaban, l.KondisiFisik, l.Notes, l.Status, l.IDAccount).
+	return r.db.QueryRow(ctx, query, l.IDFermentasi, l.TanggalCek, l.Suhu, l.Kelembaban, l.KondisiFisik, l.Notes, l.Status, idAccount).
 		Scan(&l.IDLog, &l.CreatedAt)
+}
+
+func (r *fermentasiRepository) resolveStokBahanByName(ctx context.Context, name string) (string, error) {
+	// 1. Try to find the existing material by name (case-insensitive)
+	var id string
+	querySelect := `SELECT id_stok_bahan FROM gardening.stok_bahan WHERE LOWER(nama_bahan) = LOWER($1) LIMIT 1`
+	err := r.db.QueryRow(ctx, querySelect, name).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+
+	// 2. If it does not exist, insert it with 0 stock
+	queryInsert := `
+		INSERT INTO gardening.stok_bahan (nama_bahan, stok_tersedia, satuan)
+		VALUES ($1, 0.00, 'kg')
+		RETURNING id_stok_bahan
+	`
+	err = r.db.QueryRow(ctx, queryInsert, name).Scan(&id)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }
 

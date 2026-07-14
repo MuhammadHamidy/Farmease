@@ -606,9 +606,9 @@ export default defineComponent({
                         onUpdate:modelValue={(val) => {
                           f().statusProduktivitas = val
                           if (val === 'usia belum produktif (0 - 3 tahun)') {
-                            f().fasePohon = 'Belum Produktif'
-                          } else {
                             f().fasePohon = 'Vegetatif'
+                          } else {
+                            f().fasePohon = 'Generatif'
                           }
                         }}
                       />
@@ -762,6 +762,40 @@ export default defineComponent({
                   />
                 </div>
 
+                {/* ── Inline obat stock warning ── */}
+                {(() => {
+                  const selectedObat = f().namaObat
+                  const vol = parseFloat(f().volumeObat)
+                  if (!selectedObat || selectedObat === 'Jenis Obat' || selectedObat === 'Pilih Obat' || !f().volumeObat || isNaN(vol) || vol <= 0) return null
+                  const stockItem = props.obatStocks?.find((o: any) => o.name === selectedObat)
+                  if (!stockItem) return null
+                  const available = stockItem.val ?? 0
+                  const unit = stockItem.unit || 'ml'
+                  const satuan = f().satuanVolumeObat || unit
+                  // Normalize to ml for comparison
+                  const isLiterInput = (satuan || '').toLowerCase().includes('liter') || (satuan || '').toLowerCase() === 'l'
+                  const usedMl = isLiterInput ? vol * 1000 : vol
+                  const isInsufficient = usedMl > available
+                  return (
+                    <div style={`background-color: ${isInsufficient ? '#fff5f5' : '#f6f8ee'}; border: 1px solid ${isInsufficient ? '#ffe3e3' : '#dce1d0'}; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;`}>
+                      <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="font-size: 1.25rem;">{isInsufficient ? '⚠️' : '💊'}</span>
+                        <div>
+                          <h4 style={`margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: ${isInsufficient ? '#e03131' : '#2f3b1d'};`}>
+                            {isInsufficient ? 'Peringatan Stok Kurang' : 'Informasi Stok Obat'}
+                          </h4>
+                          <p style={`margin: 0; font-size: 0.85rem; font-weight: 600; color: ${isInsufficient ? '#c92a2a' : '#4f5d2e'}; line-height: 1.4;`}>
+                            {isInsufficient
+                              ? `Jumlah yang Anda masukkan (${vol} ${satuan}) melebihi stok ${selectedObat} yang tersedia saat ini (${available} ${unit}).`
+                              : `Stok tersedia: ${available} ${unit}. Anda menggunakan ${vol} ${satuan} dari stok ${selectedObat}.`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 <div class="form-group">
                   <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Catatan (Opsional)</span>
                   <PerkebunanFormInput
@@ -861,9 +895,9 @@ export default defineComponent({
                         onUpdate:modelValue={(val) => {
                           f().statusProduktivitas = val
                           if (val === 'usia belum produktif (0 - 3 tahun)') {
-                            f().fasePohon = 'Belum Produktif'
-                          } else {
                             f().fasePohon = 'Vegetatif'
+                          } else {
+                            f().fasePohon = 'Generatif'
                           }
                         }}
                       />

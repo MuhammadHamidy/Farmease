@@ -193,9 +193,10 @@ export default defineComponent({
     const allTrees = ref<TreeItem[]>([])
 
     const varietasOptions = computed(() => {
-      const set = new Set(allTrees.value.map(t => t.varietas))
+      const set = new Set(allTrees.value.map(t => t.varietas).filter(Boolean))
       return ['Semua Varietas', ...Array.from(set)]
     })
+
 
     const filteredTrees = computed(() => {
       let result = allTrees.value
@@ -796,6 +797,67 @@ export default defineComponent({
         formState.value.statusProduktivitas = 'usia produktif (> 4 tahun)'
         formState.value.fasePohon = 'Generatif'
       }
+
+      // ── General field validation ──────────────────────────────────────────────
+      const showErr = (msg: string) => { alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: msg, type: 'error' } }
+      const jenis = selectedJenis.value
+      const rincian = selectedRincian.value
+      const f = formState.value
+
+      if (!jenis || jenis === 'Jenis Pencatatan') { showErr('Harap pilih jenis pencatatan terlebih dahulu!'); return }
+      if (!rincian || rincian === 'Rincian Pencatatan') { showErr('Harap pilih rincian pencatatan terlebih dahulu!'); return }
+      const needsTree = !['Stok Obat', 'Stok Pupuk', 'Penanaman', 'Pengolahan Pupuk'].includes(jenis)
+      if (activeMode.value === 'pohon' && needsTree && selectedTrees.value.length === 0) { showErr('Harap pilih minimal satu pohon terlebih dahulu!'); return }
+
+      if (jenis === 'Pemupukan') {
+        if (!f.jenisPupukDetail || f.jenisPupukDetail === 'Jenis Pupuk Detail' || f.jenisPupukDetail === 'Pilih Pupuk') { showErr('Harap pilih pupuk yang digunakan!'); return }
+        if (!f.teknikPemupukan || f.teknikPemupukan === 'Teknik Pemupukan') { showErr('Harap pilih teknik pemupukan!'); return }
+        if (!f.jumlahBeratPupuk || parseFloat(f.jumlahBeratPupuk) <= 0) { showErr('Harap masukkan jumlah/dosis pupuk yang valid!'); return }
+      }
+      if (jenisLower.includes('obat') || jenisLower.includes('perawatan') || jenisLower.includes('hama') || jenisLower.includes('penyakit')) {
+        if (activeMode.value === 'pohon' && (!f.bagianPohon || f.bagianPohon === 'Bagian Pohon')) { showErr('Harap pilih bagian pohon yang diobati!'); return }
+        if (!f.namaObat || f.namaObat === 'Jenis Obat' || f.namaObat === 'Pilih Obat' || !f.namaObat.trim()) { showErr('Harap pilih atau isi nama obat yang digunakan!'); return }
+        if (!f.teknikPemberianObat || f.teknikPemberianObat === 'Teknik Pemberian Obat') { showErr('Harap pilih teknik pemberian obat!'); return }
+        if (!f.volumeObat || parseFloat(f.volumeObat) <= 0) { showErr('Harap masukkan volume obat yang valid!'); return }
+      }
+      if (jenisLower.includes('panen')) {
+        if (!f.jumlahPanen || parseFloat(f.jumlahPanen) <= 0) { showErr('Harap masukkan jumlah/berat hasil panen!'); return }
+        if (!f.kondisiPanen || f.kondisiPanen === 'Kondisi Panen') { showErr('Harap pilih kondisi panen!'); return }
+        if (!f.caraPanen || f.caraPanen === 'Cara Panen') { showErr('Harap pilih cara panen!'); return }
+      }
+      if (jenisLower.includes('pemangkasan')) {
+        if (!f.jumlahPemangkasan || parseFloat(f.jumlahPemangkasan) <= 0) { showErr('Harap masukkan jumlah pemangkasan yang valid!'); return }
+        if (!f.metodePemangkasan || f.metodePemangkasan === 'Metode Pemangkasan') { showErr('Harap pilih metode pemangkasan!'); return }
+      }
+      if (jenisLower.includes('penyiraman')) {
+        if (!f.teknikPenyiraman || f.teknikPenyiraman === 'Teknik Penyiraman') { showErr('Harap pilih teknik penyiraman!'); return }
+      }
+      if (jenisLower.includes('pembersihan')) {
+        if (!f.alatPembersihan || f.alatPembersihan === 'Alat Pembersihan') { showErr('Harap pilih alat pembersihan!'); return }
+      }
+      if (jenisLower.includes('pembuahan')) {
+        if (rincian === 'Penjarangan Buah') {
+          if (!f.jumlahBuahDibuang || parseFloat(f.jumlahBuahDibuang) <= 0) { showErr('Harap masukkan jumlah buah yang dibuang!'); return }
+          if (!f.sisaBuahPerTandan || parseFloat(f.sisaBuahPerTandan) <= 0) { showErr('Harap masukkan sisa buah per tandan!'); return }
+        }
+        if (rincian === 'Pembungkusan Buah') {
+          if (!f.bahanPembungkus || f.bahanPembungkus === 'Bahan Pembungkus') { showErr('Harap pilih bahan pembungkus!'); return }
+          if (!f.jumlahBuahDibungkus || parseFloat(f.jumlahBuahDibungkus) <= 0) { showErr('Harap masukkan jumlah buah yang dibungkus!'); return }
+        }
+        if (rincian === 'Merangsang Pembungaan') {
+          if (!f.jenisPerangsang || f.jenisPerangsang === 'Jenis Perangsang') { showErr('Harap pilih jenis perangsang bunga!'); return }
+          if (!f.dosisPerangsang || parseFloat(f.dosisPerangsang) <= 0) { showErr('Harap masukkan dosis perangsang!'); return }
+        }
+      }
+      if (jenis === 'Stok Obat') {
+        if (!f.namaObat || !f.namaObat.trim()) { showErr('Harap isi nama obat!'); return }
+        if (!f.volumeObat || parseFloat(f.volumeObat) <= 0) { showErr('Harap masukkan volume/jumlah obat yang valid!'); return }
+      }
+      if (jenis === 'Stok Pupuk' && (rincian === 'Pendaftaran Pupuk/Bahan Baru' || rincian === 'Tambah Stok Pupuk (Exp Lama)' || rincian === 'Tambah Stok Bahan')) {
+        if (!f.namaObat || !f.namaObat.trim()) { showErr('Harap isi nama pupuk/bahan!'); return }
+        if (!f.volumeObat || parseFloat(f.volumeObat) <= 0) { showErr('Harap masukkan jumlah yang valid!'); return }
+      }
+      // ── End general validation ──────────────────────────────────────────────
 
       // Stock validation for Pemupukan
       if (selectedJenis.value === 'Pemupukan') {
