@@ -9,6 +9,7 @@ DELETE FROM gardening.tasks;
 DELETE FROM gardening.routine_schedules;
 DELETE FROM gardening.panen;
 DELETE FROM gardening.pemangkasan;
+DELETE FROM gardening.pemupukan;
 DELETE FROM gardening.penyiraman;
 DELETE FROM gardening.pembersihan;
 DELETE FROM gardening.penanaman;
@@ -17,11 +18,27 @@ DELETE FROM gardening.pembuahan;
 DELETE FROM gardening.pohon;
 DELETE FROM gardening.aktivitas;
 DELETE FROM gardening.lahan;
+DELETE FROM gardening.stok_pupuk;
+DELETE FROM gardening.stok_obat;
+DELETE FROM gardening.stok_bahan;
 
 -- 1. Seed Lahan (Perkebunan)
 INSERT INTO gardening.lahan (id_lahan, kode_lahan, nama_lahan, jenis_tanaman, status_lahan, luas_lahan) VALUES
 ('11111111-1111-1111-1111-111111111111', 'L001', 'Lahan Alpukat', 'Alpukat', 1, 10.00),
 ('11111111-1111-1111-1111-111111111112', 'L002', 'Lahan Kelengkeng', 'Kelengkeng', 1, 12.00);
+
+-- 1b. Seed Stok (Pupuk, Obat, Bahan)
+INSERT INTO gardening.stok_pupuk (id_stok_pupuk, nama_pupuk, kategori, stok_tersedia, satuan) VALUES
+('33333333-3333-3333-3333-333333330001', 'Pupuk NPK', 'Pupuk Kimia', 100.00, 'kg'),
+('33333333-3333-3333-3333-333333330002', 'Pupuk Kandang', 'Pupuk Organik Padat', 250.00, 'kg');
+
+INSERT INTO gardening.stok_obat (id_stok_obat, nama_obat, stok_tersedia, satuan) VALUES
+('44444444-4444-4444-4444-444444440001', 'Mankozeb', 50.00, 'liter'),
+('44444444-4444-4444-4444-444444440002', 'Sipermetrin', 20.00, 'liter');
+
+INSERT INTO gardening.stok_bahan (id_stok_bahan, nama_bahan, stok_tersedia, satuan) VALUES
+('55555555-5555-5555-5555-555555550001', 'EM4', 10.00, 'liter'),
+('55555555-5555-5555-5555-555555550002', 'Molase', 15.00, 'liter');
 
 -- 2. Seed Pohon (Alpukat & Kelengkeng with all varieties and phases: Pembibitan, Vegetatif, Generatif, Panen, Belum Produktif)
 -- Alpukat (L001)

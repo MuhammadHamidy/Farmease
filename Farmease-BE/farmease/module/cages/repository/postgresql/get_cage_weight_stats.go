@@ -5,6 +5,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/cages/domain"
 )
 
+// GetCageWeightStats calculates weight averages and monthly growth trends in a cage.
 func (r *Repository) GetCageWeightStats(ctx context.Context, id string) (*domain.CageWeightStats, error) {
 	query := `
 		WITH monthly_avg AS (
@@ -30,11 +31,11 @@ func (r *Repository) GetCageWeightStats(ctx context.Context, id string) (*domain
 	stats.MonthlyTrend = make([]domain.MonthlyWeight, 0)
 
 	for rows.Next() {
-		var mw domain.MonthlyWeight
-		if err := rows.Scan(&mw.Month, &mw.Weight); err != nil {
+		var monthlyWeight domain.MonthlyWeight
+		if err := rows.Scan(&monthlyWeight.Month, &monthlyWeight.Weight); err != nil {
 			return nil, err
 		}
-		stats.MonthlyTrend = append(stats.MonthlyTrend, mw)
+		stats.MonthlyTrend = append(stats.MonthlyTrend, monthlyWeight)
 	}
 
 	if len(stats.MonthlyTrend) > 0 {

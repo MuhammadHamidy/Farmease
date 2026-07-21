@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/manures/domain"
 )
 
+// FindAll queries all recorded manure entries with pagination filters.
 func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([]*domain.Manure, int, error) {
 	query := `SELECT id_manure, COALESCE(id_sheep::text, ''), COALESCE(id_cage::text, ''), activity_type, amount, unit, COALESCE(external_destination_id, ''), COALESCE(destination_type::text, 'internal'), COALESCE(notes, ''), created_at FROM livestock.manures WHERE 1=1`
 	args := []interface{}{}
@@ -33,21 +34,21 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([
 	}
 	defer rows.Close()
 
-	var list []*domain.Manure
+	var manureList []*domain.Manure
 	for rows.Next() {
-		var m domain.Manure
+		var manure domain.Manure
 		var idSheepStr, idCageStr, extDestStr, notesStr string
-		err := rows.Scan(&m.IDManure, &idSheepStr, &idCageStr, &m.ActivityType, &m.Amount, &m.Unit, &extDestStr, &m.DestinationType, &notesStr, &m.CreatedAt)
+		err := rows.Scan(&manure.IDManure, &idSheepStr, &idCageStr, &manure.ActivityType, &manure.Amount, &manure.Unit, &extDestStr, &manure.DestinationType, &notesStr, &manure.CreatedAt)
 		if err != nil {
 			return nil, 0, err
 		}
-		m.IDSheep = idSheepStr
-		m.IDCage = idCageStr
-		m.Notes = notesStr
+		manure.IDSheep = idSheepStr
+		manure.IDCage = idCageStr
+		manure.Notes = notesStr
 		if extDestStr != "" {
-			m.ExternalDestinationID = &extDestStr
+			manure.ExternalDestinationID = &extDestStr
 		}
-		list = append(list, &m)
+		manureList = append(manureList, &manure)
 	}
 
 	var total int
@@ -59,5 +60,5 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.ManureFilter) ([
 		err = r.db.QueryRow(ctx, countQuery).Scan(&total)
 	}
 
-	return list, total, err
+	return manureList, total, err
 }

@@ -19,7 +19,7 @@ export default defineComponent({
       const payload = selectedPencatatanPayload.value;
       if (!payload) return null;
       return pencatatanSubmissions.value.find(
-        (s) => s.type === payload.type && s.payload === payload,
+        (submission) => submission.type === payload.type && submission.payload === payload,
       ) || pencatatanSubmissions.value[0];
     });
 

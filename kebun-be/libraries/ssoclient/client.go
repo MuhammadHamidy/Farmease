@@ -13,11 +13,19 @@ import (
 type UserInfo struct {
 	IDAccount        string    `json:"id_account"`
 	Username         string    `json:"username"`
-	OperatorCategory string    `json:"operator_category"`
+	Password         string    `json:"password"`
 	IDRole           string    `json:"id_role"`
+	Role             *Role     `json:"role,omitempty"`
 	FarmID           *string   `json:"farm_id,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+// Role berisi informasi role dari SSO.
+type Role struct {
+	IDRole      string `json:"id_role"`
+	RoleName    string `json:"role_name"`
+	Permissions string `json:"permissions"`
 }
 
 // IntrospectResponse adalah wrapper respons dari endpoint /api/auth/introspect.
@@ -35,6 +43,7 @@ type Client struct {
 
 // NewClient membuat instance SSOClient baru.
 // baseURL contoh: "http://localhost:8080"
+// idpProvider and db are omitted to keep the signature compatible, or simple.
 func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL: baseURL,

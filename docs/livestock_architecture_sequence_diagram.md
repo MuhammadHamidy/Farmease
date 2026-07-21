@@ -1,12 +1,12 @@
 # Desain Arsitektur: Sequence Diagram Sistem Peternakan (Farmease)
 
-Dokumen ini memuat diagram urutan (*sequence diagram*) arsitektur untuk menggambarkan bagaimana data mengalir di dalam sistem Peternakan Farmease, memetakan alur konseptual tingkat tinggi antara aktor, antarmuka frontend, backend service, dan database.
+Dokumen ini memuat diagram urutan (*sequence diagram*) arsitektur untuk menggambarkan bagaimana data mengalir di dalam sistem Peternakan Farmease, memetakan alur konseptual antara aktor, antarmuka frontend, backend, dan database.
 
 ---
 
 ## 1. Diagram Alur Pengajuan & Persetujuan Pencatatan (Submission & Approval Workflow)
 
-Diagram ini mengilustrasikan alur ketika seorang Operator mengajukan pencatatan baru (seperti penimbangan bobot atau kesehatan) hingga disetujui oleh Admin dan memperbarui kondisi data domba.
+Diagram ini mengilustrasikan alur ketika seorang Operator mengajukan pencatatan baru (seperti penimbangan bobot atau kesehatan) hingga disetujui oleh Admin dan memperbarui kondisi data domba di database.
 
 ```mermaid
 sequenceDiagram
@@ -20,10 +20,10 @@ sequenceDiagram
     %% Fase Pengajuan oleh Operator
     Note over Operator, DB: Fase 1: Pengajuan Pencatatan (Submission Request)
     Operator->>UI: Isi & kirim form pencatatan (misal: Bobot Domba)
-    UI->>SS: ajukanPencatatan(data, jenis_pencatatan)
+    UI->>SS: CreateSubmission(sub)
     activate SS
-    SS->>DB: insertSubmission(status="pending")
-    SS->>DB: kirimNotifikasiKeAdmin()
+    SS->>DB: Store(sub)
+    SS->>DB: SendNotification(notif)
     SS-->>UI: Pengajuan berhasil disimpan
     deactivate SS
     UI-->>Operator: Menampilkan status "Menunggu Persetujuan"
@@ -31,26 +31,26 @@ sequenceDiagram
     %% Fase Peninjauan oleh Admin
     Note over UI, Admin: Fase 2: Peninjauan & Persetujuan Admin (Review & Approve)
     Admin->>UI: Buka halaman Persetujuan (Pencatatan Baru)
-    UI->>SS: getSubmissionsPending()
+    UI->>SS: GetSubmissions(status="pending")
     activate SS
-    SS->>DB: selectSubmissionsByStatus("pending")
+    SS->>DB: FindAll(status="pending")
     DB-->>SS: Daftar pengajuan pending
     SS-->>UI: Return daftar pengajuan
     deactivate SS
     UI-->>Admin: Menampilkan daftar pengajuan tertunda
 
     Admin->>UI: Klik "Setujui" (Approve)
-    UI->>SS: setujuiPencatatan(id_submission)
+    UI->>SS: ApproveSubmission(id)
     activate SS
-    SS->>DB: updateStatusSubmission(id_submission, status="approved")
+    SS->>DB: UpdateStatus(id, status="approved")
     
     rect rgb(230, 245, 230)
         Note over SS, DB: Fase 3: Pembaruan Data Domain Utama
-        SS->>DB: insertDataKeTabelTimbangan()
-        SS->>DB: updateBobotTerakhirDomba()
+        SS->>DB: StoreWeightRecord() / StoreHealthRecord()
+        SS->>DB: UpdateLastWeight() / UpdateHealthStatus()
     end
 
-    SS->>DB: kirimNotifikasiKeOperator()
+    SS->>DB: SendNotification(targetOperator)
     SS-->>UI: Validasi persetujuan selesai
     deactivate SS
     UI-->>Admin: Menampilkan notifikasi sukses persetujuan
@@ -60,14 +60,14 @@ sequenceDiagram
 
 ## 2. Diagram Alur Distribusi Sisa Panen (Gardening Crop Residue Integration)
 
-Diagram ini menggambarkan integrasi asinkron (*event-driven*) menggunakan broker pesan untuk menyalurkan sisa hasil pemangkasan/kebun perkebunan sebagai stok pakan ternak.
+Diagram ini menggambarkan integrasi asinkron (*event-driven*) menggunakan broker pesan RabbitMQ untuk menyalurkan sisa hasil pemangkasan/kebun perkebunan sebagai stok pakan ternak.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant LK as srv:LayananKebun
     participant RMQ as rmq:RabbitMQ
-    participant LT as srv:LayananTernak
+    participant FS as fs:FeedService
     participant DB as db:Database
 
     %% Event Trigger di Kebun
@@ -77,17 +77,17 @@ sequenceDiagram
 
     %% Event Consumed di Peternakan
     Note over RMQ, DB: 2. Konsumsi Event & Update Stok Pakan di Peternakan
-    RMQ->>LT: kirimPesanEvent()
-    activate LT
-    LT->>DB: selectStokPakanByName(feed_name)
-    DB-->>LT: Data stok pakan
+    RMQ->>FS: HandleCropResidueEvent(payload)
+    activate FS
+    FS->>DB: FindMasterByID(id_feed)
+    DB-->>FS: Data stok pakan
     
     alt Stok pakan sudah ada
-        LT->>DB: tambahJumlahStokPakan(jumlah)
+        FS->>DB: UpdateStock(id_feed, amount, "tambah")
     else Stok pakan belum ada
-        LT->>DB: insertStokPakanBaru()
+        FS->>DB: StoreMaster(feed)
     end
     
-    LT-->>RMQ: konfirmasiPenerimaan(ACK)
-    deactivate LT
+    FS-->>RMQ: konfirmasiPenerimaan(ACK)
+    deactivate FS
 ```

@@ -139,9 +139,9 @@ func (crc *CropResidueConsumer) HandleMessage(ctx context.Context, msg amqp.Deli
 	}
 
 	var targetFeed *domain.Feed
-	for _, f := range feeds {
-		if strings.EqualFold(f.FeedName, event.FeedName) {
-			targetFeed = f
+	for _, feed := range feeds {
+		if strings.EqualFold(feed.FeedName, event.FeedName) {
+			targetFeed = feed
 			break
 		}
 	}

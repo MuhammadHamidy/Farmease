@@ -96,19 +96,19 @@ export default defineComponent({
       prefilledPencatatanSheepId.value = null;
       prefilledPencatatanCageCode.value = null;
 
-      forms.value.forEach((f) => {
-        if (f.mode === 'kelompok' || activePencatatanForm.value?.jenis?.id === 'kotoran') {
+      forms.value.forEach((form) => {
+        if (form.mode === 'kelompok' || activePencatatanForm.value?.jenis?.id === 'kotoran') {
           const linkedTask = activePencatatanForm.value?.taskId 
-            ? operatorTasks.value.find(t => String(t.id) === String(activePencatatanForm.value.taskId)) 
+            ? operatorTasks.value.find(task => String(task.id) === String(activePencatatanForm.value.taskId)) 
             : null;
           if (linkedTask && linkedTask.cageCode) {
-            f.targetId = linkedTask.cageCode;
+            form.targetId = linkedTask.cageCode;
           } else if (cageSession.value?.code) {
-            f.targetId = cageSession.value.code;
+            form.targetId = cageSession.value.code;
           }
         } else {
           if (cageSession.value?.code) {
-            f.selectedCageCode = cageSession.value.code;
+            form.selectedCageCode = cageSession.value.code;
           }
         }
       });
@@ -326,11 +326,11 @@ export default defineComponent({
     };
 
     const handleSaved = async () => {
-      const isValid = forms.value.every((f) => {
+      const isValid = forms.value.every((form) => {
         if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
           return true;
         }
-        return !!f.targetId;
+        return !!form.targetId;
       });
       if (!isValid) {
         alertModal.value = {
@@ -502,6 +502,7 @@ export default defineComponent({
             }
           }
         }
+        // Validation for Feed Stock activity (standard stock additions vs. raw ingredient conversion)
         if (categoryId === 'stok_pakan') {
           const isConversion = formItem.name === 'Konversi Pakan';
           if (!isConversion && (!formItem.obat || !formItem.qty)) return showError('Nama pakan sumber dan jumlah masuk wajib diisi.');
@@ -515,6 +516,7 @@ export default defineComponent({
             return showError('Semua kelompok bahan baku konversi pakan (Serat, Energi, Protein, Aktivator) dan target kuantitas wajib diisi.');
           }
         }
+        // Validation for Health / Treatment activity (routine checks vs. medication injections)
         if (categoryId === 'kesehatan') {
           const isCheckup = formItem.name === 'Pemeriksaan Rutin' || formItem.name === 'Pemeriksaan Kesehatan';
           if (isCheckup) {
@@ -810,9 +812,9 @@ export default defineComponent({
 
       return stocks.value
         .filter(
-          (s) =>
-            (type === 'kesehatan' && s.category === 'vitamin') ||
-            (type === 'kotoran' && s.category === 'kotoran'),
+          (stock) =>
+            (type === 'kesehatan' && stock.category === 'vitamin') ||
+            (type === 'kotoran' && stock.category === 'kotoran'),
         )
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -820,25 +822,25 @@ export default defineComponent({
 
     const selectedFeedNames = computed(() => {
       const names = new Set<string>();
-      forms.value.forEach(f => {
+      forms.value.forEach(form => {
         if (activePencatatanForm.value?.jenis?.id === 'pakan') {
-          if (f.metoda === 'silase' || f.metoda === 'hijauan_kebun') {
-            if (f.obat) names.add(f.obat.toLowerCase());
+          if (form.metoda === 'silase' || form.metoda === 'hijauan_kebun') {
+            if (form.obat) names.add(form.obat.toLowerCase());
           } else {
-            if (f.hijauan) names.add(f.hijauan.toLowerCase());
-            if (f.energi) names.add(f.energi.toLowerCase());
-            if (f.protein) names.add(f.protein.toLowerCase());
-            if (f.mineral) names.add(f.mineral.toLowerCase());
+            if (form.hijauan) names.add(form.hijauan.toLowerCase());
+            if (form.energi) names.add(form.energi.toLowerCase());
+            if (form.protein) names.add(form.protein.toLowerCase());
+            if (form.mineral) names.add(form.mineral.toLowerCase());
           }
         } else if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
-          if (f.name === 'Konversi Pakan') {
-            if (f.hijauan) names.add(f.hijauan.toLowerCase());
-            if (f.energi) names.add(f.energi.toLowerCase());
-            if (f.protein) names.add(f.protein.toLowerCase());
-            if (f.mineral) names.add(f.mineral.toLowerCase());
-            if (f.obat) names.add(f.obat.toLowerCase());
+          if (form.name === 'Konversi Pakan') {
+            if (form.hijauan) names.add(form.hijauan.toLowerCase());
+            if (form.energi) names.add(form.energi.toLowerCase());
+            if (form.protein) names.add(form.protein.toLowerCase());
+            if (form.mineral) names.add(form.mineral.toLowerCase());
+            if (form.obat) names.add(form.obat.toLowerCase());
           } else {
-            if (f.obat) names.add(f.obat.toLowerCase());
+            if (form.obat) names.add(form.obat.toLowerCase());
           }
         }
       });
@@ -910,18 +912,18 @@ export default defineComponent({
     const siapKawinBetina = computed(() => {
       const cageCode = currentSelectedCageCode.value;
       
-      const hasSelectedMale = forms.value.some((f) => {
-        if (!f.idPejantan) return false;
-        const sh = sheep.value.find(s => String(s.id) === String(f.idPejantan) || String(s.code).toUpperCase() === String(f.idPejantan).trim().toUpperCase());
+      const hasSelectedMale = forms.value.some((form) => {
+        if (!form.idPejantan) return false;
+        const sh = sheep.value.find(sheepItem => String(sheepItem.id) === String(form.idPejantan) || String(sheepItem.code).toUpperCase() === String(form.idPejantan).trim().toUpperCase());
         return sh && sh.gender === 'jantan';
       });
 
-      return sheep.value.filter((s) => {
-        if (s.gender !== 'betina') return false;
-        if (!hasSelectedMale && cageCode && s.cage_code !== cageCode) return false;
+      return sheep.value.filter((sheepItem) => {
+        if (sheepItem.gender !== 'betina') return false;
+        if (!hasSelectedMale && cageCode && sheepItem.cage_code !== cageCode) return false;
         
         // Exclude already mated or pending mating sheeps
-        const isActiveMated = activeMatings.value.some(m => String(m.id_sheep_female) === String(s.id));
+        const isActiveMated = activeMatings.value.some(mating => String(mating.id_sheep_female) === String(sheepItem.id));
         const isPendingMated = pencatatanSubmissions.value.some(sub => {
           if (sub.approvalStatus === 'rejected') return false;
           const dataObj: any = (sub.payload as any)?.data || sub.payload;
@@ -929,29 +931,29 @@ export default defineComponent({
           return items.some((item: any) => {
             if (item.name === 'Kawin Alam' || item.name === 'Kawin Alami' || item.name === 'IB' || item.name === 'Inseminasi Buatan') {
               const targetVal = item.targetId || item.idSheepFemale || item.id_sheep_female;
-              return String(targetVal) === String(s.id) || String(targetVal) === String(s.code);
+              return String(targetVal) === String(sheepItem.id) || String(targetVal) === String(sheepItem.code);
             }
             return false;
           });
         });
         if (isActiveMated || isPendingMated) return false;
 
-        return checkIsSheepBirahi(s);
+        return checkIsSheepBirahi(sheepItem);
       });
     });
 
     const siapKawinJantan = computed(() => {
-      return sheep.value.filter((s) => {
-        if (s.gender !== 'jantan') return false;
-        return checkIsSheepBirahi(s);
+      return sheep.value.filter((sheepItem) => {
+        if (sheepItem.gender !== 'jantan') return false;
+        return checkIsSheepBirahi(sheepItem);
       });
     });
 
     const cageActiveMatings = computed(() => {
       const activeCage = currentSelectedCageCode.value;
       if (!activeCage) return activeMatings.value;
-      return activeMatings.value.filter((m) => {
-        const female = sheep.value.find((s) => String(s.id) === String(m.id_sheep_female));
+      return activeMatings.value.filter((mating) => {
+        const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
         return female && female.cage_code === activeCage;
       });
     });
@@ -1442,13 +1444,13 @@ export default defineComponent({
                               })()}
                             </div>
                           ) : (
-                            matchedStocks.value.map((s) => {
-                              const isSelected = selectedFeedNames.value.has(s.name.toLowerCase());
+                            matchedStocks.value.map((stock) => {
+                              const isSelected = selectedFeedNames.value.has(stock.name.toLowerCase());
                               return (
                                 <div
                                   class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
                                   style={isSelected ? { borderLeft: '4px solid var(--color-primary, #bc6c25)', borderTop: '1px solid rgba(188, 108, 37, 0.2)', borderBottom: '1px solid rgba(188, 108, 37, 0.2)', borderRight: '1px solid rgba(188, 108, 37, 0.2)' } : {}}
-                                  key={s.id}
+                                  key={stock.id}
                                 >
                                 <div class="min-w-0">
                                   <Typography
@@ -1457,7 +1459,7 @@ export default defineComponent({
                                     weight="extrabold"
                                     className="mb-0 text-truncate d-block"
                                   >
-                                    {s.name}
+                                    {stock.name}
                                   </Typography>
                                   <Typography
                                     variant="span"
@@ -1465,12 +1467,12 @@ export default defineComponent({
                                     weight="bold"
                                     className="text-muted d-block mt-1 text-truncate"
                                   >
-                                    {s.category}
+                                    {stock.category}
                                   </Typography>
                                 </div>
                                 <div class="text-end ps-3">
                                   <Badge variant="solid-primary" className="px-2 py-1">
-                                    {s.qty} {s.unit}
+                                    {stock.qty} {stock.unit}
                                   </Badge>
                                 </div>
                               </div>
@@ -1513,21 +1515,21 @@ export default defineComponent({
                                       Tidak ada perkawinan tercatat
                                     </div>
                                   ) : (
-                                    cageActiveMatings.value.slice(0, 5).map((m) => {
-                                      const female = sheep.value.find((s) => String(s.id) === String(m.id_sheep_female));
-                                      const male = sheep.value.find((s) => String(s.id) === String(m.id_sheep_male));
-                                      const matingDate = new Date(m.mating_date);
-                                      const diffDays = m.days_since_mating || 0;
+                                    cageActiveMatings.value.slice(0, 5).map((mating) => {
+                                      const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
+                                      const male = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_male));
+                                      const matingDate = new Date(mating.mating_date);
+                                      const diffDays = mating.days_since_mating || 0;
                                       const dateStr = matingDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
                                       
                                       return (
-                                        <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={m.id_mating}>
+                                        <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={mating.id_mating}>
                                           <div class="min-w-0">
                                             <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                              {female ? female.name : `Domba #${m.id_sheep_female}`}
+                                              {female ? female.name : `Domba #${mating.id_sheep_female}`}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                              {female ? female.code : '—'} • {(m.mating_method === 'ib' || m.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
+                                              {female ? female.code : '—'} • {(mating.mating_method === 'ib' || mating.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.6rem' }} className="text-primary d-block mt-1">
                                               Kawin: {dateStr} ({diffDays} hari lalu)
@@ -1535,7 +1537,7 @@ export default defineComponent({
                                           </div>
                                           <div class="text-end ps-3">
                                             <Badge variant="solid-primary" className="px-2 py-1" style={{ fontSize: '0.65rem' }}>
-                                              {m.status_mating === 'proses' ? 'Proses' : m.status_mating}
+                                              {mating.status_mating === 'proses' ? 'Proses' : mating.status_mating}
                                             </Badge>
                                           </div>
                                         </div>
@@ -1555,14 +1557,14 @@ export default defineComponent({
                                       Tidak ada betina siap kawin
                                     </div>
                                   ) : (
-                                    siapKawinBetina.value.slice(0, 5).map((s) => (
-                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                    siapKawinBetina.value.slice(0, 5).map((sheepItem) => (
+                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
                                         <div class="min-w-0">
                                           <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                            {s.name}
+                                            {sheepItem.name}
                                           </Typography>
                                           <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                            {s.code} • {getCageName(s.cage_code)}
+                                            {sheepItem.code} • {getCageName(sheepItem.cage_code)}
                                           </Typography>
                                         </div>
                                         <div class="text-end ps-3">
@@ -1582,14 +1584,14 @@ export default defineComponent({
                                       Tidak ada pejantan
                                     </div>
                                   ) : (
-                                    siapKawinJantan.value.slice(0, 5).map((s) => (
-                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                    siapKawinJantan.value.slice(0, 5).map((sheepItem) => (
+                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
                                         <div class="min-w-0">
                                           <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                            {s.name}
+                                            {sheepItem.name}
                                           </Typography>
                                           <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                            {s.code} • {getCageName(s.cage_code)}
+                                            {sheepItem.code} • {getCageName(sheepItem.cage_code)}
                                           </Typography>
                                         </div>
                                         <div class="text-end ps-3">
@@ -1627,19 +1629,19 @@ export default defineComponent({
                               Tidak ada indukan hamil di kandang terpilih
                             </div>
                           ) : (
-                            pregnantCageSheepList.value.map((s) => (
-                              <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
-                                <div class="min-w-0">
-                                  <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block text-dark">
-                                    {s.name}
-                                  </Typography>
-                                  <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                    {s.code} • HPL: {s.hpl}
+                            pregnantCageSheepList.value.map((sheepItem) => (
+                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
+                                        <div class="min-w-0">
+                                          <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block text-dark">
+                                            {sheepItem.name}
+                                          </Typography>
+                                          <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                            {sheepItem.code} • HPL: {sheepItem.hpl}
                                   </Typography>
                                 </div>
                                 <div class="text-end ps-3">
                                   <Badge variant="solid-primary" className="px-2 py-1">
-                                    {s.countdownText}
+                                    {sheepItem.countdownText}
                                   </Badge>
                                 </div>
                               </div>

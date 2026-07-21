@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
+// FindTasksByAccount lists all tasks assigned to an account, filtered by date.
 func (r *Repository) FindTasksByAccount(ctx context.Context, idAccount, roleName string, date *time.Time) ([]*domain.Task, error) {
 	// If Admin, they can see all tasks.
 	// If Operator (e.g. Operator Kandang), they can only see their own tasks.
@@ -25,55 +26,55 @@ WHERE ($1 = 'Admin' OR t.id_account = $2)`
 	}
 	defer rows.Close()
 
-	var list []*domain.Task
+	var taskList []*domain.Task
 	for rows.Next() {
-		var t domain.Task
+		var task domain.Task
 		var desc, end, cat, status, priority *string
-		var taskDate, created, updated *time.Time
+		var taskDateVal, created, updated *time.Time
 		var idAcc, scheduleId, idCage, startTime, rincian, idMating *string
-		err := rows.Scan(&t.IDTask, &t.Title, &desc, &taskDate, &end, &status, &priority, &idAcc, &cat, &scheduleId, &idCage, &startTime, &rincian, &idMating, &created, &updated)
+		err := rows.Scan(&task.IDTask, &task.Title, &desc, &taskDateVal, &end, &status, &priority, &idAcc, &cat, &scheduleId, &idCage, &startTime, &rincian, &idMating, &created, &updated)
 		if err != nil {
 			return nil, err
 		}
 		if desc != nil {
-			t.Description = *desc
+			task.Description = *desc
 		}
 		if end != nil {
-			t.EndTime = *end
+			task.EndTime = *end
 		}
 		if cat != nil {
-			t.Category = *cat
+			task.Category = *cat
 		}
-		if taskDate != nil {
-			t.TaskDate = *taskDate
+		if taskDateVal != nil {
+			task.TaskDate = *taskDateVal
 		}
 		if status != nil {
-			t.Status = *status
+			task.Status = *status
 		}
 		if priority != nil {
-			t.Priority = *priority
+			task.Priority = *priority
 		} else {
-			t.Priority = "sedang"
+			task.Priority = "sedang"
 		}
 		if idAcc != nil {
-			t.IDAccount = *idAcc
+			task.IDAccount = *idAcc
 		}
-		t.ScheduleID = scheduleId
-		t.IDCage = idCage
+		task.ScheduleID = scheduleId
+		task.IDCage = idCage
 		if startTime != nil && len(*startTime) >= 5 {
-			t.StartTime = (*startTime)[:5]
+			task.StartTime = (*startTime)[:5]
 		}
 		if rincian != nil {
-			t.Rincian = *rincian
+			task.Rincian = *rincian
 		}
-		t.IDMating = idMating
+		task.IDMating = idMating
 		if created != nil {
-			t.CreatedAt = *created
+			task.CreatedAt = *created
 		}
 		if updated != nil {
-			t.UpdatedAt = *updated
+			task.UpdatedAt = *updated
 		}
-		list = append(list, &t)
+		taskList = append(taskList, &task)
 	}
-	return list, nil
+	return taskList, nil
 }

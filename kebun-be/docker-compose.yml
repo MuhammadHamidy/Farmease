@@ -1,0 +1,153 @@
+version: '3.9'
+
+services:
+  kebun_postgres:
+    image: postgres:15-alpine
+    container_name: farmease_kebun_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: farmease_kebun
+    ports:
+      - "${KEBUN_DB_PORT:-5437}:5432"
+    volumes:
+      - kebun_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d farmease_kebun"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  kebun_redis:
+    image: redis:7-alpine
+    container_name: farmease_kebun_redis
+    ports:
+      - "${KEBUN_REDIS_PORT:-6383}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  kebun_migrate:
+    image: migrate/migrate
+    container_name: farmease_kebun_migrate
+    volumes:
+      - ./kebun/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@kebun_postgres:5432/farmease_kebun?sslmode=disable up || true"
+    depends_on:
+      kebun_postgres:
+        condition: service_healthy
+    networks:
+      - farmease_network
+
+  kebun_seeder:
+    image: postgres:15-alpine
+    container_name: farmease_kebun_seeder
+    volumes:
+      - ./kebun/seeders:/kebun_seeders:ro
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-pass}
+    command: >
+      sh -c "echo 'Seeding Kebun...'; psql -h kebun_postgres -U $${DB_USER:-user} -d farmease_kebun -f /kebun_seeders/gardening_seeds.sql || true"
+    depends_on:
+      kebun_migrate:
+        condition: service_completed_successfully
+    networks:
+      - farmease_network
+
+  perkebunan_backend:
+    build:
+      context: .
+      dockerfile: kebun/Dockerfile
+      target: dev
+    container_name: farmease_perkebunan_backend
+    depends_on:
+      kebun_postgres:
+        condition: service_healthy
+      kebun_redis:
+        condition: service_healthy
+      kebun_migrate:
+        condition: service_completed_successfully
+      kebun_seeder:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8082"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@kebun_postgres:5432/farmease_kebun?sslmode=disable
+      APP_REDIS_ADDRESS: kebun_redis:6379
+      APP_REDIS_PASSWORD: ""
+      APP_REDIS_DB: "0"
+      APP_RABBITMQ_URL: amqp://guest:guest@farmease_peternakan_rabbitmq:5672/
+      APP_SSOAPIURL: http://farmease_sso_backend:8080
+      APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
+      APP_CORS_ALLOWED_ORIGINS: "*"
+      APP_LOG_LEVEL: debug
+      APP_LOG_FORMAT: console
+      APP_EXPORTER: none
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./framework:/app/framework
+      - ./libraries:/app/libraries
+      - ./kebun:/app/kebun
+      - ./go.work:/app/go.work
+      - kebun_backend_logs:/app/logs
+      - kebun_go_mod_cache:/go/pkg/mod
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8082/health/livez || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+
+  frontend_perkebunan:
+    build:
+      context: ../Farmease_kebun
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        VITE_API_BASE_URL: http://localhost:8082
+    container_name: farmease_perkebunan_frontend
+    depends_on:
+      perkebunan_backend:
+        condition: service_healthy
+    ports:
+      - "3002:3002"
+    volumes:
+      - ../Farmease_kebun:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3002"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  kebun_postgres_data:
+    driver: local
+  kebun_backend_logs:
+    driver: local
+  kebun_go_mod_cache:
+    driver: local
+
+networks:
+  farmease_network:
+    name: farmease_shared_network
+    external: true

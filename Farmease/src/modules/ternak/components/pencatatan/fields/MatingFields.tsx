@@ -217,6 +217,7 @@ export default defineComponent({
       if (props.form.name === 'Cek Birahi' || props.form.name === 'Pencatatan Birahi' || props.form.name === 'Pengecekan Birahi') {
         props.form.targetId = s.id;
         props.form.idPejantan = s.gender === 'jantan' ? s.id : '';
+        props.form.hasilPemeriksaan = checkIsSheepBirahi(s) ? 'birahi' : 'tidak_birahi';
       } else {
         if (s.gender === 'betina') {
           props.form.targetId = s.id;
@@ -312,12 +313,6 @@ export default defineComponent({
 
       if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi' || formName === 'Pengecekan Birahi') {
         return list
-          .filter(s => {
-            if (s.status === 'Hamil') return false;
-            const weightVal = s.weight ? parseFloat(String(s.weight).replace(/[^0-9.]/g, '')) : 0;
-            if (isNaN(weightVal) || weightVal <= 0) return false;
-            return !checkIsSheepBirahi(s);
-          })
           .map(s => ({
             value: s.id,
             label: `${s.code} ${s.name}`

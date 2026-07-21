@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// UpdateStatus updates the breeding status and triggers subsequent updates (e.g. marking sheep as pregnant, inserting pregnancy entries).
 func (r *Repository) UpdateStatus(ctx context.Context, id string, status string, notes string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -21,14 +22,14 @@ func (r *Repository) UpdateStatus(ctx context.Context, id string, status string,
 	}
 
 	if status == "sukses" {
-		// Update sheep status and set updated_at
+		// Update sheep status to pregnant (hamil)
 		updateSheepQuery := `UPDATE livestock.sheep SET status = 'hamil', updated_at = CURRENT_TIMESTAMP WHERE id_sheep = $1`
 		_, err = tx.Exec(ctx, updateSheepQuery, idSheepFemale)
 		if err != nil {
 			return err
 		}
 
-		// Insert pregnancy
+		// Insert pregnancy record (approx. expected birth date is 150 days from mating)
 		expectedBirth := matingDate.AddDate(0, 0, 150)
 		insertPregnancy := `
 			INSERT INTO breeding.pregnancies (id_mating, pregnancy_date, pregnancy_status, expected_birth_date, notes)

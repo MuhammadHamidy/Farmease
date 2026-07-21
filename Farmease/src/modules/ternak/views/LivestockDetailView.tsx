@@ -52,6 +52,47 @@ const SilsilahNode = (props: { node: any; label: string; depth?: number }) => {
   );
 };
 
+const SiblingNode = (props: { sibling: any; onClick?: () => void }) => {
+  const sib = props.sibling;
+  const isKandung = sib.type === 'kandung';
+  const isTiriBapak = sib.type === 'tiri_bapak';
+
+  const badgeStyle = isKandung
+    ? { bg: '#e8f5e9', border: '#a5d6a7', text: '#2e7d32', label: 'Sd. Kandung' }
+    : isTiriBapak
+    ? { bg: '#e3f2fd', border: '#90caf9', text: '#1565c0', label: 'Tiri (Bapak)' }
+    : { bg: '#f3e5f5', border: '#ce93d8', text: '#7b1fa2', label: 'Tiri (Ibu)' };
+
+  return (
+    <div
+      onClick={props.onClick}
+      style={{
+        padding: '0.5rem 0.75rem',
+        borderRadius: '8px',
+        background: 'var(--color-surface)',
+        border: `1.5px solid ${badgeStyle.border}`,
+        fontSize: '0.75rem',
+        minWidth: '120px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+        transition: 'transform 0.15s ease',
+      }}
+      title={`Klik untuk lihat silsilah ${sib.sheep_name || sib.sheep_code}`}
+    >
+      <div style={{ fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', marginBottom: '2px', color: badgeStyle.text }}>
+        {badgeStyle.label} {sib.gender === 'jantan' ? '♂' : '♀'}
+      </div>
+      <div style={{ fontWeight: 700, color: 'var(--color-on-surface)' }}>
+        {sib.sheep_name || sib.sheep_code}
+      </div>
+      <div style={{ fontSize: '0.65rem', color: 'var(--color-gray-800)' }}>
+        {sib.sheep_code}
+      </div>
+    </div>
+  );
+};
+
 export default defineComponent({
   name: 'TernakDetailView',
   props: {
@@ -63,6 +104,7 @@ export default defineComponent({
     const showReminderSheet = ref(false);
     const showEditProfileModal = ref(false);
     const showPindahKandangModal = ref(false);
+    const showFullSilsilahModal = ref(false);
     const selectedNewCageId = ref('');
     const isPindahLoading = ref(false);
     const alertModal = ref<AlertModalState>({
@@ -70,6 +112,18 @@ export default defineComponent({
       title: '',
       message: '',
       type: 'error',
+    });
+
+    const getSilsilahDepth = (node: any): number => {
+      if (!node) return 0;
+      const f = getSilsilahDepth(node.father);
+      const m = getSilsilahDepth(node.mother);
+      return 1 + Math.max(f, m);
+    };
+
+    const silsilahMaxDepth = computed(() => {
+      if (!currentSilsilah.value) return 0;
+      return getSilsilahDepth(currentSilsilah.value);
     });
 
     const selectedTernakId = computed(() => route.params.id as string);
@@ -199,16 +253,16 @@ export default defineComponent({
       }
     };
     
-    const t = computed(() => {
+    const mappedDetail = computed(() => {
       if (currentSheepDetail.value) {
-        const d = currentSheepDetail.value as any;
-        const birthDate = d.date_of_birth
-          ? new Date(d.date_of_birth).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+        const detail = currentSheepDetail.value as any;
+        const birthDate = detail.date_of_birth
+          ? new Date(detail.date_of_birth).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
           : '—';
 
         let poelStr = '—';
-        if (d.date_of_birth) {
-          const bd = new Date(d.date_of_birth);
+        if (detail.date_of_birth) {
+          const bd = new Date(detail.date_of_birth);
           const now = new Date();
           const months = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
           if (months < 12) poelStr = 'Cempe';
@@ -228,10 +282,10 @@ export default defineComponent({
           '22222222-2222-2222-2222-222222222207': 'Cross Dorper'
         };
 
-        const cage = cagesList.value.find((c) => String(c.id) === String(d.id_cage));
-        const kandangStr = cage ? cage.code : ((d as any).cage_code || String(d.id_cage));
+        const cage = cagesList.value.find((cageItem) => String(cageItem.id) === String(detail.id_cage));
+        const kandangStr = cage ? cage.code : ((detail as any).cage_code || String(detail.id_cage));
 
-        let mappedStatus = d.status || '';
+        let mappedStatus = detail.status || '';
         const statusLower = mappedStatus.toLowerCase();
         if (statusLower === 'aktif') mappedStatus = 'Sehat';
         else if (statusLower === 'hamil') mappedStatus = 'Hamil';
@@ -243,23 +297,23 @@ export default defineComponent({
         }
 
         return {
-          id: String(d.id_sheep),
-          code: d.sheep_code,
-          nama: d.sheep_name,
-          jenis: typeMapReverse[String(d.id_type)] || String(d.id_type),
-          umur: d.age_string || '—',
+          id: String(detail.id_sheep),
+          code: detail.sheep_code,
+          nama: detail.sheep_name,
+          jenis: typeMapReverse[String(detail.id_type)] || String(detail.id_type),
+          umur: detail.age_string || '—',
           poel: poelStr,
           status: mappedStatus,
-          jk: d.gender === 'jantan' ? 'Jantan' : (d.gender === 'betina' ? 'Betina' : d.gender),
+          jk: detail.gender === 'jantan' ? 'Jantan' : (detail.gender === 'betina' ? 'Betina' : detail.gender),
           tgl_lahir: birthDate,
           kandang: kandangStr,
-          asal: (d as any).origin || '—',
-          photo_url: d.photo_url || null,
-          owner: d.owner || '—',
+          asal: (detail as any).origin || '—',
+          photo_url: detail.photo_url || null,
+          owner: detail.owner || '—',
         };
       }
       if (sheepFromList.value) {
-        const s = sheepFromList.value;
+        const sheepItem = sheepFromList.value;
         const typeMapReverse: Record<string, string> = {
           '22222222-2222-2222-2222-222222222201': 'Garut',
           '22222222-2222-2222-2222-222222222202': 'Texel',
@@ -271,8 +325,8 @@ export default defineComponent({
         };
         
         let poelStr = '—';
-        if (s.birth_date) {
-          const bd = new Date(s.birth_date);
+        if (sheepItem.birth_date) {
+          const bd = new Date(sheepItem.birth_date);
           const now = new Date();
           const months = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
           if (months < 12) poelStr = 'Cempe';
@@ -282,24 +336,24 @@ export default defineComponent({
           else poelStr = '4 Poel';
         }
 
-        const kandangStr = s.cage_code || '—';
+        const kandangStr = sheepItem.cage_code || '—';
 
         return {
-          id: s.id,
-          code: s.code,
-          nama: s.name,
-          jenis: typeMapReverse[s.type] || s.type,
-          umur: s.age || '—',
+          id: sheepItem.id,
+          code: sheepItem.code,
+          nama: sheepItem.name,
+          jenis: typeMapReverse[sheepItem.type] || sheepItem.type,
+          umur: sheepItem.age || '—',
           poel: poelStr,
-          status: s.status,
-          jk: s.gender === 'jantan' ? 'Jantan' : (s.gender === 'betina' ? 'Betina' : s.gender),
-          tgl_lahir: s.birth_date 
-            ? new Date(s.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+          status: sheepItem.status,
+          jk: sheepItem.gender === 'jantan' ? 'Jantan' : (sheepItem.gender === 'betina' ? 'Betina' : sheepItem.gender),
+          tgl_lahir: sheepItem.birth_date 
+            ? new Date(sheepItem.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
             : '—',
           kandang: kandangStr,
-          asal: s.origin || '—',
-          photo_url: s.photo_url || null,
-          owner: s.owner || '—',
+          asal: sheepItem.origin || '—',
+          photo_url: sheepItem.photo_url || null,
+          owner: sheepItem.owner || '—',
         };
       }
       return null;
@@ -394,7 +448,7 @@ export default defineComponent({
     };
 
     return () => {
-      if (detailLoading.value && !t.value) {
+      if (detailLoading.value && !mappedDetail.value) {
         return (
           <div class="text-center py-5">
             <Typography variant="p" color="secondary">Memuat data ternak...</Typography>
@@ -402,7 +456,7 @@ export default defineComponent({
         );
       }
 
-      if (!t.value) {
+      if (!mappedDetail.value) {
         return (
           <div class="text-center py-5">
             <Typography>Data tidak ditemukan</Typography>
@@ -411,7 +465,7 @@ export default defineComponent({
         );
       }
 
-      const ternak = t.value;
+      const ternak = mappedDetail.value;
 
       return (
         <div class="animate-fade-in-up">
@@ -645,11 +699,30 @@ export default defineComponent({
             </div>
           </div>
 
-          {/* Silsilah Keluarga — 3 Generasi (FR2-02) */}
+          {/* Silsilah Keluarga — 3 Generasi Default + 5 Generasi Auto-Detect (Option B) & Siblings */}
           <div class="bg-white rounded-4 border p-4 mb-4">
-            <Typography variant="h3" weight="bold" color="coffee-brown" className="mb-4 fs-6">
-              Silsilah Keluarga (3 Generasi)
-            </Typography>
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+              <div>
+                <Typography variant="h3" weight="bold" color="coffee-brown" className="mb-0 fs-6">
+                  Silsilah Keluarga (3 Generasi)
+                </Typography>
+                {silsilahMaxDepth.value >= 4 && (
+                  <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style={{ fontSize: '0.7rem' }}>
+                    ✨ Terdeteksi {silsilahMaxDepth.value} Generasi Leluhur
+                  </span>
+                )}
+              </div>
+
+              {silsilahMaxDepth.value >= 4 && (
+                <button
+                  class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold"
+                  style={{ fontSize: '0.75rem' }}
+                  onClick={() => showFullSilsilahModal.value = true}
+                >
+                  🔍 Perluas Pohon Silsilah ({silsilahMaxDepth.value} Generasi)
+                </button>
+              )}
+            </div>
 
             {detailLoading.value ? (
               <div class="text-center py-3 text-secondary" style={{ fontSize: '0.85rem' }}>Memuat silsilah...</div>
@@ -698,16 +771,36 @@ export default defineComponent({
 
                 <div style={{ borderTop: '2px solid var(--color-primary)', margin: '0.25rem 0' }} />
 
-                {/* Domba ini sendiri */}
-                <div class="d-flex justify-content-center mt-3">
+                {/* Generasi Anak: Domba Ini + Kakak & Adik (Saudara Kandung & Tiri) dalam 1 baris */}
+                <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-3 mb-2">
+                  {/* Sibling nodes di sebelah kiri */}
+                  {(silsilah.value?.siblings || []).slice(0, Math.ceil((silsilah.value?.siblings?.length || 0) / 2)).map((sib: any) => (
+                    <SiblingNode
+                      key={sib.id_sheep}
+                      sibling={sib}
+                      onClick={() => router.push(`/livestock/${sib.id_sheep}`)}
+                    />
+                  ))}
+
+                  {/* Domba Utama (Domba Ini) */}
                   <div style={{
                     padding: '0.75rem 1.5rem', borderRadius: '10px',
                     background: 'var(--color-primary)', color: '#fff',
                     fontWeight: 700, fontSize: '0.85rem', textAlign: 'center', minWidth: '160px',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
                   }}>
                     <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8, marginBottom: '2px' }}>🐑 Domba Ini</div>
                     {ternak.nama} ({ternak.code})
                   </div>
+
+                  {/* Sibling nodes di sebelah kanan */}
+                  {(silsilah.value?.siblings || []).slice(Math.ceil((silsilah.value?.siblings?.length || 0) / 2)).map((sib: any) => (
+                    <SiblingNode
+                      key={sib.id_sheep}
+                      sibling={sib}
+                      onClick={() => router.push(`/livestock/${sib.id_sheep}`)}
+                    />
+                  ))}
                 </div>
 
                 {/* Warning jika silsilah tidak lengkap */}
@@ -722,6 +815,138 @@ export default defineComponent({
 
           {/* Modals */}
           <Teleport to="body">
+            {/* Modal Pohon Silsilah 5 Generasi */}
+            {showFullSilsilahModal.value && (
+              <div class="peternakan-modal-overlay" onClick={() => showFullSilsilahModal.value = false}>
+                <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '95vw', width: '1300px', maxHeight: '90vh', overflowY: 'auto' }}>
+                  <div class="peternakan-modal-header">
+                    <button class="peternakan-modal-close" onClick={() => showFullSilsilahModal.value = false}>
+                      <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                    </button>
+                    <div class="peternakan-modal-title">Pohon Silsilah Lengkap ({silsilahMaxDepth.value} Generasi) — {ternak.nama}</div>
+                  </div>
+                  <div class="peternakan-modal-body p-4" style={{ overflowX: 'auto' }}>
+                    <div style={{ minWidth: '1050px' }}>
+                      {/* Generasi 4 (Leluhur GGG) */}
+                      {silsilahMaxDepth.value >= 5 && (
+                        <div class="mb-4">
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', marginBottom: '6px' }}>Generasi 4 (Leluhur GGG)</div>
+                          <div class="d-flex justify-content-around gap-1">
+                            {[
+                              (silsilah.value?.father as any)?.father?.father?.father, (silsilah.value?.father as any)?.father?.father?.mother,
+                              (silsilah.value?.father as any)?.father?.mother?.father, (silsilah.value?.father as any)?.father?.mother?.mother,
+                              (silsilah.value?.father as any)?.mother?.father?.father, (silsilah.value?.father as any)?.mother?.father?.mother,
+                              (silsilah.value?.father as any)?.mother?.mother?.father, (silsilah.value?.father as any)?.mother?.mother?.mother,
+                              (silsilah.value?.mother as any)?.father?.father?.father, (silsilah.value?.mother as any)?.father?.father?.mother,
+                              (silsilah.value?.mother as any)?.father?.mother?.father, (silsilah.value?.mother as any)?.father?.mother?.mother,
+                              (silsilah.value?.mother as any)?.mother?.father?.father, (silsilah.value?.mother as any)?.mother?.father?.mother,
+                              (silsilah.value?.mother as any)?.mother?.mother?.father, (silsilah.value?.mother as any)?.mother?.mother?.mother,
+                            ].map((node, idx) => (
+                              <SilsilahNode key={idx} node={node} label={`GGG-${idx+1}`} depth={4} />
+                            ))}
+                          </div>
+                          <div style={{ borderTop: '2px dashed #ccc', margin: '0.75rem 0' }} />
+                        </div>
+                      )}
+
+                      {/* Generasi 3 (Leluhur GG) */}
+                      {silsilahMaxDepth.value >= 4 && (
+                        <div class="mb-4">
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', marginBottom: '6px' }}>Generasi 3 (Leluhur GG)</div>
+                          <div class="d-flex justify-content-around gap-1">
+                            {[
+                              (silsilah.value?.father as any)?.father?.father, (silsilah.value?.father as any)?.father?.mother,
+                              (silsilah.value?.father as any)?.mother?.father, (silsilah.value?.father as any)?.mother?.mother,
+                              (silsilah.value?.mother as any)?.father?.father, (silsilah.value?.mother as any)?.father?.mother,
+                              (silsilah.value?.mother as any)?.mother?.father, (silsilah.value?.mother as any)?.mother?.mother,
+                            ].map((node, idx) => (
+                              <SilsilahNode key={idx} node={node} label={`GG-${idx+1}`} depth={3} />
+                            ))}
+                          </div>
+                          <div style={{ borderTop: '2px dashed #ccc', margin: '0.75rem 0' }} />
+                        </div>
+                      )}
+
+                      {/* Generasi 2 (Buyut) */}
+                      <div class="mb-4">
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', marginBottom: '6px' }}>Generasi 2 (Buyut)</div>
+                        <div class="d-flex justify-content-around gap-2">
+                          <SilsilahNode node={(silsilah.value?.father as any)?.father?.father} label="GG-Kakek ♂" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.father as any)?.father?.mother} label="GG-Nenek ♀" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.father as any)?.mother?.father} label="GG-Kakek ♂" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.father as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.father?.father} label="GG-Kakek ♂" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.father?.mother} label="GG-Nenek ♀" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.father} label="GG-Kakek ♂" depth={2} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} />
+                        </div>
+                        <div style={{ borderTop: '2px solid var(--color-outline-variant)', margin: '0.75rem 0' }} />
+                      </div>
+
+                      {/* Generasi 1 (Kakek-Nenek) */}
+                      <div class="mb-4">
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', marginBottom: '6px' }}>Generasi 1 (Kakek & Nenek)</div>
+                        <div class="d-flex justify-content-around gap-2">
+                          <SilsilahNode node={(silsilah.value?.father as any)?.father} label="Kakek (Bapak) ♂" depth={1} />
+                          <SilsilahNode node={(silsilah.value?.father as any)?.mother} label="Nenek (Bapak) ♀" depth={1} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.father} label="Kakek (Ibu) ♂" depth={1} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.mother} label="Nenek (Ibu) ♀" depth={1} />
+                        </div>
+                        <div style={{ borderTop: '2px solid var(--color-outline-variant)', margin: '0.75rem 0' }} />
+                      </div>
+
+                      {/* Generasi 0 (Bapak-Ibu) */}
+                      <div class="mb-4">
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', marginBottom: '6px' }}>Generasi 0 (Orang Tua)</div>
+                        <div class="d-flex justify-content-center gap-4">
+                          <SilsilahNode node={silsilah.value?.father} label="Bapak ♂" depth={0} />
+                          <SilsilahNode node={silsilah.value?.mother} label="Ibu ♀" depth={0} />
+                        </div>
+                        <div style={{ borderTop: '2px solid var(--color-primary)', margin: '0.75rem 0' }} />
+                      </div>
+
+                      {/* Generasi Anak: Domba Ini + Kakak & Adik (Saudara Kandung & Tiri) dalam 1 baris */}
+                      <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-3 mb-2">
+                        {/* Sibling nodes di sebelah kiri */}
+                        {(silsilah.value?.siblings || []).slice(0, Math.ceil((silsilah.value?.siblings?.length || 0) / 2)).map((sib: any) => (
+                          <SiblingNode
+                            key={sib.id_sheep}
+                            sibling={sib}
+                            onClick={() => {
+                              showFullSilsilahModal.value = false;
+                              router.push(`/livestock/${sib.id_sheep}`);
+                            }}
+                          />
+                        ))}
+
+                        {/* Domba Utama (Domba Ini) */}
+                        <div style={{
+                          padding: '0.75rem 1.5rem', borderRadius: '10px',
+                          background: 'var(--color-primary)', color: '#fff',
+                          fontWeight: 700, fontSize: '0.85rem', textAlign: 'center', minWidth: '160px',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
+                        }}>
+                          <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8, marginBottom: '2px' }}>🐑 Domba Ini</div>
+                          {ternak.nama} ({ternak.code})
+                        </div>
+
+                        {/* Sibling nodes di sebelah kanan */}
+                        {(silsilah.value?.siblings || []).slice(Math.ceil((silsilah.value?.siblings?.length || 0) / 2)).map((sib: any) => (
+                          <SiblingNode
+                            key={sib.id_sheep}
+                            sibling={sib}
+                            onClick={() => {
+                              showFullSilsilahModal.value = false;
+                              router.push(`/livestock/${sib.id_sheep}`);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <EditLivestockModal 
               isOpen={showEditProfileModal.value}
               sheepData={currentSheepDetail.value}

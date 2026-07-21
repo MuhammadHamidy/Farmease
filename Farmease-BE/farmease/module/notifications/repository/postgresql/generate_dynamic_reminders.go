@@ -38,17 +38,17 @@ func (r *Repository) GenerateDynamicReminders(ctx context.Context, idAccount str
 		}
 		var tasks []taskInfo
 		for rows.Next() {
-			var t taskInfo
+			var taskItem taskInfo
 			var startTimeRaw interface{}
-			if scanErr := rows.Scan(&t.ID, &t.Title, &t.CageCode, &startTimeRaw); scanErr == nil {
+			if scanErr := rows.Scan(&taskItem.ID, &taskItem.Title, &taskItem.CageCode, &startTimeRaw); scanErr == nil {
 				if st, ok := startTimeRaw.(time.Time); ok {
-					t.StartTime = st.Format("15:04")
+					taskItem.StartTime = st.Format("15:04")
 				} else if stStr, ok := startTimeRaw.(string); ok {
-					t.StartTime = stStr
+					taskItem.StartTime = stStr
 				} else {
-					t.StartTime = "08:00"
+					taskItem.StartTime = "08:00"
 				}
-				tasks = append(tasks, t)
+				tasks = append(tasks, taskItem)
 			}
 		}
 		
@@ -93,17 +93,17 @@ func (r *Repository) GenerateDynamicReminders(ctx context.Context, idAccount str
 		}
 		var vTasks []taskInfo
 		for vRows.Next() {
-			var t taskInfo
+			var taskItem taskInfo
 			var startTimeRaw interface{}
-			if scanErr := vRows.Scan(&t.ID, &t.Title, &t.CageCode, &startTimeRaw); scanErr == nil {
+			if scanErr := vRows.Scan(&taskItem.ID, &taskItem.Title, &taskItem.CageCode, &startTimeRaw); scanErr == nil {
 				if st, ok := startTimeRaw.(time.Time); ok {
-					t.StartTime = st.Format("15:04")
+					taskItem.StartTime = st.Format("15:04")
 				} else if stStr, ok := startTimeRaw.(string); ok {
-					t.StartTime = stStr
+					taskItem.StartTime = stStr
 				} else {
-					t.StartTime = "08:00"
+					taskItem.StartTime = "08:00"
 				}
-				vTasks = append(vTasks, t)
+				vTasks = append(vTasks, taskItem)
 			}
 		}
 		
@@ -142,9 +142,9 @@ func (r *Repository) GenerateDynamicReminders(ctx context.Context, idAccount str
 			}
 			var pregs []pregInfo
 			for bRows.Next() {
-				var p pregInfo
-				if scanErr := bRows.Scan(&p.ID, &p.SheepCode); scanErr == nil {
-					pregs = append(pregs, p)
+				var pregItem pregInfo
+				if scanErr := bRows.Scan(&pregItem.ID, &pregItem.SheepCode); scanErr == nil {
+					pregs = append(pregs, pregItem)
 				}
 			}
 			

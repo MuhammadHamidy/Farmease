@@ -96,10 +96,17 @@ func (r *fermentasiRepository) Store(ctx context.Context, f *domain.Fermentasi) 
 		targetName = f.PupukDetails.TargetPupukName
 		targetJumlah = f.PupukDetails.TargetJumlah
 		satuan = f.PupukDetails.Satuan
-		idStokBahan = f.PupukDetails.IDStokBahan
+		if f.PupukDetails.IDStokBahan != nil && *f.PupukDetails.IDStokBahan != "" {
+			idStokBahan = f.PupukDetails.IDStokBahan
+		}
 	} else {
 		targetName = "Kompos"
 		satuan = "kg"
+	}
+
+	var idAccount *string
+	if f.IDAccount != nil && *f.IDAccount != "" {
+		idAccount = f.IDAccount
 	}
 
 	query := `
@@ -107,7 +114,7 @@ func (r *fermentasiRepository) Store(ctx context.Context, f *domain.Fermentasi) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id_fermentasi, created_at, updated_at
 	`
-	err := r.db.QueryRow(ctx, query, f.TanggalMulai, f.Status, f.Notes, f.IDAccount, targetName, targetJumlah, satuan, idStokBahan).
+	err := r.db.QueryRow(ctx, query, f.TanggalMulai, f.Status, f.Notes, idAccount, targetName, targetJumlah, satuan, idStokBahan).
 		Scan(&f.IDFermentasi, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
 		return err
@@ -165,12 +172,16 @@ func (r *fermentasiRepository) FindLogsByFermentasiID(ctx context.Context, ferme
 
 func (r *fermentasiRepository) StoreLog(ctx context.Context, l *domain.LogFermentasi) error {
 	l.TanggalCek = time.Now()
+	var idAccount *string
+	if l.IDAccount != nil && *l.IDAccount != "" {
+		idAccount = l.IDAccount
+	}
 	query := `
 		INSERT INTO gardening.log_fermentasi_pupuk (id_fermentasi, tanggal_cek, suhu, kelembaban, kondisi_fisik, notes, status, id_account)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id_log, created_at
 	`
-	return r.db.QueryRow(ctx, query, l.IDFermentasi, l.TanggalCek, l.Suhu, l.Kelembaban, l.KondisiFisik, l.Notes, l.Status, l.IDAccount).
+	return r.db.QueryRow(ctx, query, l.IDFermentasi, l.TanggalCek, l.Suhu, l.Kelembaban, l.KondisiFisik, l.Notes, l.Status, idAccount).
 		Scan(&l.IDLog, &l.CreatedAt)
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/weights/domain"
 )
 
+// FindAll queries all recorded sheep weights with optional filters.
 func (r *Repository) FindAll(ctx context.Context, filter domain.WeightFilter) ([]*domain.Weight, int, error) {
 	query := `SELECT id_weight, id_sheep, weighing_date, weight_kg, notes, created_at FROM livestock.weights WHERE 1=1`
 	args := []interface{}{}
@@ -33,14 +34,14 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.WeightFilter) ([
 	}
 	defer rows.Close()
 
-	var weights []*domain.Weight
+	var weightList []*domain.Weight
 	for rows.Next() {
-		var w domain.Weight
-		err := rows.Scan(&w.IDWeight, &w.IDSheep, &w.WeighingDate, &w.WeightKg, &w.Notes, &w.CreatedAt)
+		var weight domain.Weight
+		err := rows.Scan(&weight.IDWeight, &weight.IDSheep, &weight.WeighingDate, &weight.WeightKg, &weight.Notes, &weight.CreatedAt)
 		if err != nil {
 			return nil, 0, err
 		}
-		weights = append(weights, &w)
+		weightList = append(weightList, &weight)
 	}
 
 	var total int
@@ -52,5 +53,5 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.WeightFilter) ([
 		err = r.db.QueryRow(ctx, countQuery).Scan(&total)
 	}
 
-	return weights, total, err
+	return weightList, total, err
 }

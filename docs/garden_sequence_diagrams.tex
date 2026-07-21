@@ -1,0 +1,640 @@
+% =========================================================================
+% DOKUMENTASI SEQUENCE DIAGRAM PERKEBUNAN (GARDENING) — VERSI REVISI
+% Pola: Actor -> ui:Antarmuka -> NamaKelas.method() -> db:Database
+% Sintaks: \begin{call}, \begin{sdblock}, \resizebox, \item (pgf-umlsd / TikZ)
+% =========================================================================
+
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{pgf-umlsd}
+
+\begin{document}
+
+% =========================================================================
+% MODUL PERKEBUNAN (GARDENING)
+% =========================================================================
+
+% -------------------------------------------------------------------------
+% UC-01: MELIHAT DASBOR
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-01 N-1: Pemilik Melihat Dasbor Perkebunan}
+
+Pemilik membuka halaman Dasbor Perkebunan. Antarmuka (\texttt{ui:DashboardView}) 
+memanggil method \texttt{GetLahanList(filter)} pada kelas entitas \texttt{lh:Lahan} 
+dan \texttt{GetPohonList(lahanID)} pada kelas entitas \texttt{ph:Pohon} untuk 
+mengambil ringkasan statistik total luas lahan, total pohon aktif, jumlah panen, 
+grafik hasil panen, dan distribusi pohon per fase. Kedua entitas meneruskan 
+permintaan ke \texttt{db:Database} dan mengembalikan data terkini secara \textit{real-time}. 
+Halaman dasbor Pemilik ditampilkan tanpa opsi navigasi panel admin maupun tombol 
+untuk mengubah atau menghapus data. Alur ini disajikan pada Gambar~\ref{fig:seq_uc01_n1_own}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{own}{own:Pemilik}
+    \newinst[1.5]{ui}{ui:DashboardView}
+    \newinst[1.5]{lh}{lh:Lahan}
+    \newinst[1.5]{ph}{ph:Pohon}
+    \newinst[1.5]{db}{db:Database}
+
+    \begin{call}{own}{Buka Halaman Dasbor Perkebunan}{ui}{Menampilkan dasbor perkebunan Pemilik (read-only)}
+        \begin{call}{ui}{GetLahanList(filter)}{lh}{Data ringkasan luas lahan \& panen}
+            \begin{call}{lh}{GetLahanList(filter)}{db}{Rows data lahan \& panen}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{GetPohonList(lahanID)}{ph}{Data pohon per fase}
+            \begin{call}{ph}{GetPohonList(lahanID)}{db}{Rows data pohon}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 N-1: Pemilik Melihat Dasbor Perkebunan}
+\label{fig:seq_uc01_n1_own}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-01 N-2: Admin Melihat Dasbor Perkebunan}
+
+Admin membuka halaman Dasbor Perkebunan. Proses pemuatan data sama seperti 
+skenario sebelumnya, di mana antarmuka memanggil \texttt{GetLahanList(filter)} 
+dan \texttt{GetPohonList(lahanID)} untuk memuat metrik perkebunan. Namun, pada 
+tampilan Admin, antarmuka menyertakan menu navigasi tambahan (\textit{sidebar} 
+Panel Admin) untuk akses administratif penuh. Alur ini disajikan pada Gambar~\ref{fig:seq_uc01_n2_adm}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{adm}{adm:Admin}
+    \newinst[1.5]{ui}{ui:DashboardView}
+    \newinst[1.5]{lh}{lh:Lahan}
+    \newinst[1.5]{ph}{ph:Pohon}
+    \newinst[1.5]{db}{db:Database}
+
+    \begin{call}{adm}{Buka Halaman Dasbor Perkebunan}{ui}{Menampilkan dasbor Admin dengan Panel Admin}
+        \begin{call}{ui}{GetLahanList(filter)}{lh}{Data ringkasan luas lahan \& panen}
+            \begin{call}{lh}{GetLahanList(filter)}{db}{Rows data lahan \& panen}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{GetPohonList(lahanID)}{ph}{Data pohon per fase}
+            \begin{call}{ph}{GetPohonList(lahanID)}{db}{Rows data pohon}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 N-2: Admin Melihat Dasbor Perkebunan}
+\label{fig:seq_uc01_n2_adm}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-01 N-3: Operator Kebun Melihat Dasbor Perkebunan}
+
+Operator Kebun membuka halaman Dasbor Perkebunan. Antarmuka menyaring data 
+berdasarkan wilayah lahan aktif yang menjadi tanggung jawab Operator yang 
+bersangkutan dengan memanggil method \texttt{GetLahanList(filter)} dan 
+\texttt{GetPohonList(lahanID)} yang diteruskan ke basis data. Tampilan dasbor 
+Operator bersifat informatif dan terbatas pada lahan tanggung jawab mereka tanpa 
+akses Panel Admin. Alur ini disajikan pada Gambar~\ref{fig:seq_uc01_n3_op}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[1.5]{ui}{ui:DashboardView}
+    \newinst[1.5]{lh}{lh:Lahan}
+    \newinst[1.5]{ph}{ph:Pohon}
+    \newinst[1.5]{db}{db:Database}
+
+    \begin{call}{op}{Buka Halaman Dasbor Perkebunan}{ui}{Menampilkan dasbor Operator Kebun untuk lahan aktif}
+        \begin{call}{ui}{GetLahanList(filter)}{lh}{Data ringkasan luas lahan \& panen}
+            \begin{call}{lh}{GetLahanList(filter)}{db}{Rows data lahan}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{GetPohonList(lahanID)}{ph}{Data pohon per fase}
+            \begin{call}{ph}{GetPohonList(lahanID)}{db}{Rows data pohon}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 N-3: Operator Kebun Melihat Dasbor Perkebunan}
+\label{fig:seq_uc01_n3_op}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-01 TN-1: Dasbor Perkebunan Gagal Dimuat}
+
+Pengguna membuka dasbor perkebunan, namun pemanggilan method \texttt{GetLahanList(filter)} 
+mengalami kegagalan akibat gangguan jaringan atau basis data mati (*connection timeout*). 
+Kesalahan dipropagasikan dari basis data kembali ke antarmuka, yang kemudian menampilkan 
+pesan kesalahan ``Dasbor tidak dapat dimuat, silakan coba kembali''. Alur ini disajikan pada Gambar~\ref{fig:seq_uc01_tn1_err}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{usr}{usr:Pengguna}
+    \newinst[2]{ui}{ui:DashboardView}
+    \newinst[2]{lh}{lh:Lahan}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{usr}{Buka Halaman Dasbor Perkebunan}{ui}{Tampilkan pesan ``Dasbor tidak dapat dimuat, silakan coba kembali''}
+        \begin{call}{ui}{GetLahanList(filter)}{lh}{Error: gagal mengambil data}
+            \begin{call}{lh}{GetLahanList(filter)}{db}{Database connection timeout}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 TN-1: Dasbor Perkebunan Gagal Dimuat}
+\label{fig:seq_uc01_tn1_err}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-02: KELOLA DATA PENGOLAHAN PUPUK
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-02 N-1: Operator Mencatat Proses Fermentasi Pupuk}
+
+Operator Kebun membuka formulir pencatatan pengolahan pupuk baru. Antarmuka 
+memanggil method \texttt{GetStokBahanList()} pada kelas \texttt{sb:StokBahan} 
+untuk menampilkan informasi sisa stok bahan mentah, dekomposer, dan molase yang 
+tersedia. Setelah data diisi dan tombol Simpan ditekan, antarmuka memanggil 
+\texttt{CreateFermentasi(f)} pada kelas entitas \texttt{fer:FermentasiPupuk} 
+untuk menyimpan batch baru berstatus awal ``Masih Proses Fermentasi'' di 
+\texttt{db:Database}. Selanjutnya, sistem memotong kuantitas stok bahan mentah 
+yang dipakai melalui pemanggilan \texttt{UpdateStokBahan(id, qty)} pada kelas 
+\texttt{sb:StokBahan}. Alur ini disajikan pada Gambar~\ref{fig:seq_uc02_n1_fermentasi}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[1.2]{ui}{ui:FormFermentasiView}
+    \newinst[1.2]{sb}{sb:StokBahan}
+    \newinst[1.2]{fer}{fer:FermentasiPupuk}
+    \newinst[1.2]{db}{db:Database}
+
+    % -- Tampilkan stok bahan baku --
+    \begin{call}{op}{Buka form pencatatan fermentasi pupuk}{ui}{Tampilkan form \& sisa stok bahan}
+        \begin{call}{ui}{GetStokBahanList()}{sb}{Daftar persediaan bahan baku mentah}
+            \begin{call}{sb}{GetStokBahanList()}{db}{Rows stok bahan}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    % -- Simpan data fermentasi baru --
+    \begin{call}{op}{Input detail bahan, air, dekomposer \& klik ``Simpan''}{ui}{Pesan ``Pencatatan Fermentasi Berhasil Simpan''}
+        \begin{call}{ui}{CreateFermentasi(f)}{fer}{Batch fermentasi pupuk diinisiasi}
+            \begin{call}{fer}{CreateFermentasi(f)}{db}{Insert batch baru (status: proses)}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{UpdateStokBahan(id, qty)}{sb}{Stok bahan mentah terpotong}
+            \begin{call}{sb}{UpdateStokBahan(id, qty)}{db}{Update persediaan bahan baku mentah}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02 N-1: Operator Mencatat Proses Fermentasi Pupuk}
+\label{fig:seq_uc02_n1_fermentasi}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-02 N-2: Pengecekan Fermentasi - Pupuk Siap Digunakan}
+
+Operator Kebun melakukan pengecekan berkala terhadap batch fermentasi yang sedang berjalan. 
+Antarmuka memanggil \texttt{GetFermentasiList()} pada kelas \texttt{fer:FermentasiPupuk} 
+untuk menampilkan daftar batch aktif beserta riwayatnya. Operator menginput data kondisi fisik 
+dan memilih status kesiapan ``Ya, Siap Digunakan \& Masuk ke Stok''. Setelah disimpan, antarmuka 
+memanggil \texttt{CreateLogFermentasi(l)} pada kelas \texttt{log:LogFermentasiPupuk} 
+untuk menulis log harian baru. Terakhir, antarmuka memanggil \texttt{UpdateStokPupuk(id, qty)} 
+pada kelas \texttt{sp:StokPupuk} untuk menambahkan volume hasil panen pupuk ke dalam inventaris gudang. 
+Alur ini disajikan pada Gambar~\ref{fig:seq_uc02_n2_cek_siap}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[1.2]{ui}{ui:FormCekFermentasiView}
+    \newinst[1.2]{fer}{fer:FermentasiPupuk}
+    \newinst[1.2]{log}{log:LogFermentasiPupuk}
+    \newinst[1.2]{sp}{sp:StokPupuk}
+    \newinst[1.2]{db}{db:Database}
+
+    % -- Muat daftar batch --
+    \begin{call}{op}{Buka form Cek Fermentasi}{ui}{Tampilkan panduan teknis \& riwayat pengecekan}
+        \begin{call}{ui}{GetFermentasiList()}{fer}{Daftar batch fermentasi aktif}
+            \begin{call}{fer}{GetFermentasiList()}{db}{Rows batch aktif}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    % -- Simpan cek log harian --
+    \begin{call}{op}{Input perlakuan \& pilih status ``Siap Digunakan''}{ui}{Pesan ``Cek Fermentasi Tersimpan \& Pupuk Masuk Gudang''}
+        \begin{call}{ui}{CreateLogFermentasi(l)}{log}{Log pengecekan berhasil tersimpan}
+            \begin{call}{log}{CreateLogFermentasi(l)}{db}{Insert log harian (status: selesai)}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{UpdateStokPupuk(id, qty)}{sp}{Persediaan stok pupuk bertambah}
+            \begin{call}{sp}{UpdateStokPupuk(id, qty)}{db}{Update persediaan pupuk di gudang}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02 N-2: Pengecekan Fermentasi - Pupuk Siap Digunakan}
+\label{fig:seq_uc02_n2_cek_siap}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-02 N-3: Pengecekan Fermentasi - Batch Fermentasi Gagal}
+
+Operator Kebun melakukan pengecekan berkala dan mendapati kegagalan pada batch fermentasi (misal: membusuk/terkontaminasi). 
+Operator memilih status kesiapan ``Gagal, Hapus Log Fermentasi'' dan menekan Simpan. Antarmuka memanggil 
+\texttt{CreateLogFermentasi(l)} pada kelas \texttt{log:LogFermentasiPupuk} untuk mencatat status akhir kegagalan, 
+serta memperbarui batch fermentasi terkait ke database dengan status gagal. Alur ini disajikan pada Gambar~\ref{fig:seq_uc02_n3_cek_gagal}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:FormCekFermentasiView}
+    \newinst[2]{log}{log:LogFermentasiPupuk}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Input perlakuan \& pilih status ``Gagal''}{ui}{Pesan ``Proses Fermentasi Gagal \& Log Dinonaktifkan''}
+        \begin{call}{ui}{CreateLogFermentasi(l)}{log}{Log kegagalan fermentasi disimpan}
+            \begin{call}{log}{CreateLogFermentasi(l)}{db}{Insert log harian \& update batch status ke ``gagal''}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02 N-3: Pengecekan Fermentasi - Batch Fermentasi Gagal}
+\label{fig:seq_uc02_n3_cek_gagal}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-02 TN-1: Pencatatan Pengolahan Pupuk Gagal (Validasi)}
+
+Operator Kebun menekan tombol Simpan pada formulir Fermentasi atau Cek Fermentasi dengan data 
+yang tidak valid atau tidak lengkap. Antarmuka memanggil method \texttt{CreateFermentasi(f)} atau 
+\texttt{CreateLogFermentasi(l)}, namun kelas terkait mengembalikan kesalahan validasi. Sistem memblokir 
+penyimpanan dan menampilkan pesan kesalahan ``Pencatatan gagal, periksa kembali data yang dimasukkan''. 
+Alur ini disajikan pada Gambar~\ref{fig:seq_uc02_tn1_val}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2.5]{ui}{ui:FormFermentasiView}
+    \newinst[2.5]{fer}{fer:FermentasiPupuk}
+
+    \begin{call}{op}{Input data tidak lengkap \& klik ``Simpan''}{ui}{Tampilkan pesan error validasi}
+        \begin{call}{ui}{CreateFermentasi(f)}{fer}{Error: data tidak valid / tidak lengkap}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02 TN-1: Pencatatan Pengolahan Pupuk Gagal (Validasi)}
+\label{fig:seq_uc02_tn1_val}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-02 TN-2: Inisiasi Fermentasi Melebihi Persediaan Stok}
+
+Operator Kebun memasukkan jumlah pembuatan pupuk yang melebihi kapasitas stok bahan baku mentah yang tersedia di gudang. 
+Sistem memanggil method \texttt{GetStokBahanList()} pada kelas \texttt{sb:StokBahan} untuk memverifikasi volume bahan. 
+Sistem mendeteksi kekurangan kuantitas stok bahan di database dan memicu tampilan peringatan ``Peringatan Stok Kurang'' 
+kepada Operator Kebun sebelum tombol simpan dapat diakses. Alur ini disajikan pada Gambar~\ref{fig:seq_uc02_tn2_stok}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:FormFermentasiView}
+    \newinst[2]{sb}{sb:StokBahan}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Input Jumlah Pembuatan melebihi sisa stok}{ui}{Tampilkan ``Peringatan Stok Kurang''}
+        \begin{call}{ui}{GetStokBahanList()}{sb}{Daftar sisa persediaan bahan baku}
+            \begin{call}{sb}{GetStokBahanList()}{db}{Rows data stok bahan}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02 TN-2: Inisiasi Fermentasi Melebihi Persediaan Stok}
+\label{fig:seq_uc02_tn2_stok}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-03: KELOLA DATA PEMUPUKAN
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-03 N-1: Membuka Formulir Pencatatan Pemupukan}
+
+Operator Kebun membuka menu Pemupukan pada halaman utama. Antarmuka memanggil 
+method \texttt{GetPohonList(lahanID)} pada kelas entitas \texttt{ph:Pohon} untuk menyaring 
+daftar pohon aktif berdasarkan varietas, usia, dan lahan yang dipilih. Sistem menampilkan 
+formulir yang telah disaring secara dinamis. Alur ini disajikan pada Gambar~\ref{fig:seq_uc03_n1_buka}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:FormPemupukanView}
+    \newinst[2]{ph}{ph:Pohon}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Pilih Jenis Pencatatan ``Pemupukan'' \& rincian kategori}{ui}{Formulir pencatatan pemupukan termuat}
+        \begin{call}{ui}{GetPohonList(lahanID)}{ph}{Daftar pohon aktif terfilter}
+            \begin{call}{ph}{GetPohonList(lahanID)}{db}{Rows data pohon di lahan terkait}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-03 N-1: Membuka Formulir Pencatatan Pemupukan}
+\label{fig:seq_uc03_n1_buka}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-03 N-2: Operator Mencatat Pemupukan (Fermentasi)}
+
+Operator Kebun mencatat pemupukan menggunakan racikan pupuk organik hasil fermentasi. 
+Sistem memanggil method \texttt{RecordPemupukan(pmp)} pada kelas entitas \texttt{pmp:Pemupukan} 
+untuk memvalidasi parameter masukan, lalu menghitung kecocokan rekomendasi dosis pemupukan. 
+Sistem memotong persediaan pupuk dengan memanggil \texttt{UpdateStokPupuk(id, qty)} pada kelas 
+\texttt{sp:StokPupuk}. Terakhir, untuk pencatatan di lapangan oleh Operator, sistem memanggil 
+\texttt{CreateSubmission(sub)} pada kelas \texttt{sb:Submission} untuk membuat pengajuan baru 
+berstatus ``Menunggu Persetujuan''. Alur ini disajikan pada Gambar~\ref{fig:seq_uc03_n2_pemupukan}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[1.2]{ui}{ui:FormPemupukanView}
+    \newinst[1.2]{pmp}{pmp:Pemupukan}
+    \newinst[1.2]{sp}{sp:StokPupuk}
+    \newinst[1.2]{sb}{sb:Submission}
+    \newinst[1.2]{db}{db:Database}
+
+    % -- Input detail & tampilkan rekomendasi --
+    \begin{call}{op}{Input varietas, pohon, jenis pupuk, \& teknik}{ui}{Tampilkan rekomendasi dosis \& racikan fermentasi}
+    \end{call}
+
+    % -- Simpan pencatatan --
+    \begin{call}{op}{Input jumlah pupuk dipakai \& klik ``Simpan''}{ui}{Pencatatan Diajukan -- Menunggu Persetujuan}
+        \begin{call}{ui}{RecordPemupukan(pmp)}{pmp}{Detail log pemupukan tersimpan}
+            \begin{call}{pmp}{RecordPemupukan(pmp)}{db}{Insert ke tabel fertilizations}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{UpdateStokPupuk(id, qty)}{sp}{Stok pupuk di gudang terpotong}
+            \begin{call}{sp}{UpdateStokPupuk(id, qty)}{db}{Update persediaan pupuk}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{CreateSubmission(sub)}{sb}{Pengajuan pending terbuat}
+            \begin{call}{sb}{CreateSubmission(sub)}{db}{Insert ke tabel submissions}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-03 N-2: Operator Mencatat Pemupukan (Fermentasi)}
+\label{fig:seq_uc03_n2_pemupukan}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-03 TN-1: Pencatatan Pemupukan Gagal (Validasi)}
+
+Operator Kebun mengklik tombol Simpan dengan data formulir yang tidak lengkap atau tidak valid. 
+Sistem memanggil method \texttt{RecordPemupukan(pmp)}, namun terhenti karena kesalahan data masukan. 
+Sistem membatalkan proses dan menampilkan pesan kesalahan ``Pencatatan gagal, periksa kembali data yang dimasukkan''. 
+Alur ini disajikan pada Gambar~\ref{fig:seq_uc03_tn1_val}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2.5]{ui}{ui:FormPemupukanView}
+    \newinst[2.5]{pmp}{pmp:Pemupukan}
+
+    \begin{call}{op}{Input parameter tidak valid \& klik ``Simpan''}{ui}{Tampilkan pesan error validasi}
+        \begin{call}{ui}{RecordPemupukan(pmp)}{pmp}{Error: data pemupukan tidak valid}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-03 TN-1: Pencatatan Pemupukan Gagal (Validasi)}
+\label{fig:seq_uc03_tn1_val}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-03 TN-2: Pencatatan Pemupukan Melebihi Stok Gudang}
+
+Operator memasukkan jumlah pupuk yang digunakan melebihi sisa kapasitas pupuk di gudang. 
+Antarmuka memverifikasi stok dengan memanggil \texttt{UpdateStokPupuk(id, qty)} pada kelas 
+\texttt{sp:StokPupuk} yang mengecek ke basis data. Sistem mendeteksi ketidakcukupan stok dan 
+menampilkan pesan ``Peringatan Stok Kurang'' ke layar Operator. Alur ini disajikan pada Gambar~\ref{fig:seq_uc03_tn2_stok}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:FormPemupukanView}
+    \newinst[2]{sp}{sp:StokPupuk}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Input jumlah pemakaian pupuk melebihi sisa stok}{ui}{Tampilkan ``Peringatan Stok Kurang''}
+        \begin{call}{ui}{UpdateStokPupuk(id, qty)}{sp}{Validasi kecukupan kuantitas stok}
+            \begin{call}{sp}{UpdateStokPupuk(id, qty)}{db}{Query data persediaan pupuk}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-03 TN-2: Pencatatan Pemupukan Melebihi Stok Gudang}
+\label{fig:seq_uc03_tn2_stok}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-04: KELOLA DATA PEMBERIAN OBAT
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-04 N-1: Membuka Formulir Pemberian Obat}
+
+Operator Kebun memilih jenis pencatatan Pemberian Obat. Antarmuka memanggil 
+method \texttt{GetPohonList(lahanID)} pada kelas entitas \texttt{ph:Pohon} untuk menyaring 
+daftar pohon aktif berdasarkan varietas dan lahan yang dipilih untuk pemberian obat. 
+Sistem menampilkan formulir pencatatan beserta pilihan pohon yang sesuai. Alur ini disajikan pada Gambar~\ref{fig:seq_uc04_n1_buka}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:FormPengobatanView}
+    \newinst[2]{ph}{ph:Pohon}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Pilih Jenis Pencatatan ``Pemberian Obat'' \& rincian kategori}{ui}{Formulir pencatatan pemberian obat termuat}
+        \begin{call}{ui}{GetPohonList(lahanID)}{ph}{Daftar pohon aktif terfilter}
+            \begin{call}{ph}{GetPohonList(lahanID)}{db}{Rows data pohon di lahan terkait}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 N-1: Membuka Formulir Pemberian Obat}
+\label{fig:seq_uc04_n1_buka}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-04 N-2: Operator Mencatat Pemberian Obat}
+
+Operator mencatat aktivitas pemberian obat (pestisida/fungisida/insektisida) pada pohon dengan rekomendasi otomatis. 
+Sistem memanggil method \texttt{RecordPengobatan(pgo)} pada kelas entitas \texttt{pgo:Pengobatan} untuk memproses data. 
+Sistem memotong persediaan obat dengan memanggil \texttt{UpdateStokObat(id, qty)} pada kelas \texttt{so:StokObat}. 
+Terakhir, antarmuka memanggil \texttt{CreateSubmission(sub)} pada kelas \texttt{sb:Submission} untuk mengirimkan 
+catatan pengobatan ini sebagai pengajuan tertunda berstatus ``Menunggu Persetujuan''. Alur ini disajikan pada Gambar~\ref{fig:seq_uc04_n2_obat}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[1.2]{ui}{ui:FormPengobatanView}
+    \newinst[1.2]{pgo}{pgo:Pengobatan}
+    \newinst[1.2]{so}{so:StokObat}
+    \newinst[1.2]{sb}{sb:Submission}
+    \newinst[1.2]{db}{db:Database}
+
+    % -- Input detail & tampilkan rekomendasi --
+    \begin{call}{op}{Input varietas, pohon, OPT, nama obat, \& teknik}{ui}{Tampilkan info kadaluwarsa \& rekomendasi dosis obat}
+    \end{call}
+
+    % -- Simpan pencatatan --
+    \begin{call}{op}{Input volume obat \& larutan, klik ``Simpan''}{ui}{Pencatatan Diajukan -- Menunggu Persetujuan}
+        \begin{call}{ui}{RecordPengobatan(pgo)}{pgo}{Detail log pemberian obat tersimpan}
+            \begin{call}{pgo}{RecordPengobatan(pgo)}{db}{Insert ke tabel treatments}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{UpdateStokObat(id, qty)}{so}{Stok obat di gudang terpotong}
+            \begin{call}{so}{UpdateStokObat(id, qty)}{db}{Update persediaan obat}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{CreateSubmission(sub)}{sb}{Pengajuan pending terbuat}
+            \begin{call}{sb}{CreateSubmission(sub)}{db}{Insert ke tabel submissions}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 N-2: Operator Mencatat Pemberian Obat}
+\label{fig:seq_uc04_n2_obat}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-04 TN-1: Pencatatan Pemberian Obat Gagal (Validasi)}
+
+Operator Kebun mengklik tombol Simpan dengan data formulir yang tidak lengkap atau tidak valid. 
+Sistem memanggil method \texttt{RecordPengobatan(pgo)}, namun terhenti karena kesalahan data masukan. 
+Sistem membatalkan proses dan menampilkan pesan kesalahan ``Pencatatan gagal, periksa kembali data yang dimasukkan''. 
+Alur ini disajikan pada Gambar~\ref{fig:seq_uc04_tn1_val}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2.5]{ui}{ui:FormPengobatanView}
+    \newinst[2.5]{pgo}{pgo:Pengobatan}
+
+    \begin{call}{op}{Input parameter tidak valid \& klik ``Simpan''}{ui}{Tampilkan pesan error validasi}
+        \begin{call}{ui}{RecordPengobatan(pgo)}{pgo}{Error: data pengobatan tidak valid}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 TN-1: Pencatatan Pemberian Obat Gagal (Validasi)}
+\label{fig:seq_uc04_tn1_val}
+\end{figure}
+
+\newpage
+
+\item{Sequence Diagram UC-04 TN-2: Pencatatan Pemberian Obat Melebihi Stok Gudang}
+
+Operator memasukkan jumlah volume obat yang digunakan melebihi sisa kapasitas obat di gudang. 
+Antarmuka memverifikasi stok dengan memanggil \texttt{UpdateStokObat(id, qty)} pada kelas 
+\texttt{so:StokObat} yang mengecek ke basis data. Sistem mendeteksi ketidakcukupan stok dan 
+menampilkan pesan ``Peringatan Stok Kurang'' ke layar Operator. Alur ini disajikan pada Gambar~\ref{fig:seq_uc04_tn2_stok}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:FormPengobatanView}
+    \newinst[2]{so}{so:StokObat}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Input volume obat melebihi sisa stok}{ui}{Tampilkan ``Peringatan Stok Kurang''}
+        \begin{call}{ui}{UpdateStokObat(id, qty)}{so}{Validasi kecukupan kuantitas stok}
+            \begin{call}{so}{UpdateStokObat(id, qty)}{db}{Query data persediaan obat}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 TN-2: Pencatatan Pemberian Obat Melebihi Stok Gudang}
+\label{fig:seq_uc04_tn2_stok}
+\end{figure}
+
+\end{document}

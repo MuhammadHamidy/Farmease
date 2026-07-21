@@ -19,8 +19,10 @@ func NewPohonUsecase(repo domain.PohonRepository) domain.PohonUsecase {
 
 func isValidFasePohon(f string) bool {
 	switch domain.FasePohon(f) {
-	case domain.FasePohonVegetatif,
+	case domain.FasePohonPembibitan,
+		domain.FasePohonVegetatif,
 		domain.FasePohonGeneratif,
+		domain.FasePohonPanen,
 		domain.FasePohonTidakProduktif:
 		return true
 	}
@@ -37,7 +39,7 @@ func (u *pohonUsecase) FindByID(ctx context.Context, id string) (*domain.Pohon, 
 
 func (u *pohonUsecase) Create(ctx context.Context, p *domain.Pohon) error {
 	if !isValidFasePohon(p.FasePohon) {
-		return errors.New("fase_pohon tidak valid: harus Vegetatif atau Generatif")
+		return errors.New("fase_pohon tidak valid: harus Pembibitan, Vegetatif, Generatif, Panen, atau Belum Produktif")
 	}
 	p.KodePohon = strings.ToUpper(strings.TrimSpace(p.KodePohon))
 	existing, err := u.repo.FindByKodePohon(ctx, p.KodePohon)
@@ -55,7 +57,7 @@ func (u *pohonUsecase) Create(ctx context.Context, p *domain.Pohon) error {
 
 func (u *pohonUsecase) Update(ctx context.Context, p *domain.Pohon) error {
 	if !isValidFasePohon(p.FasePohon) {
-		return errors.New("fase_pohon tidak valid: harus Vegetatif atau Generatif")
+		return errors.New("fase_pohon tidak valid: harus Pembibitan, Vegetatif, Generatif, Panen, atau Belum Produktif")
 	}
 	p.KodePohon = strings.ToUpper(strings.TrimSpace(p.KodePohon))
 	existing, err := u.repo.FindByID(ctx, p.IDPohon)

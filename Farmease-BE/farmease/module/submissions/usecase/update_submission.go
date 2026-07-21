@@ -9,6 +9,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
 )
 
+// UpdateSubmission updates submission attributes and updates the linked task status if the approval status shifts.
 func (u *useCase) UpdateSubmission(ctx context.Context, id string, patch *domain.Submission) error {
 	existing, err := u.repo.FindByID(ctx, id)
 	if err != nil {

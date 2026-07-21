@@ -30,8 +30,8 @@ function loadFromStorage<T>(key: string, fallback: T): T {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
     return JSON.parse(raw) as T;
-  } catch (e) {
-    console.warn('Failed to load', key, e);
+  } catch (error) {
+    console.warn('Failed to load', key, error);
     return fallback;
   }
 }
@@ -39,8 +39,8 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 function saveToStorage<T>(key: string, data: T) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.warn('Failed to save', key, e);
+  } catch (error) {
+    console.warn('Failed to save', key, error);
   }
 }
 
@@ -48,8 +48,8 @@ export const stocks = ref<StockItem[]>(loadFromStorage<StockItem[]>(STORAGE_KEY_
 export const events = ref<StockEvent[]>(loadFromStorage<StockEvent[]>(STORAGE_KEY_EVENTS, []));
 
 // Persist stocks and events automatically when they change
-watch(stocks, (v) => saveToStorage(STORAGE_KEY_STOCKS, v), { deep: true });
-watch(events, (v) => saveToStorage(STORAGE_KEY_EVENTS, v), { deep: true });
+watch(stocks, (value) => saveToStorage(STORAGE_KEY_STOCKS, value), { deep: true });
+watch(events, (value) => saveToStorage(STORAGE_KEY_EVENTS, value), { deep: true });
 
 export function addStock(item: Omit<StockItem, 'id'>) {
   const nameSafe = item.name || 'PK';
@@ -61,26 +61,26 @@ export function addStock(item: Omit<StockItem, 'id'>) {
 }
 
 export function consumeStock(id: string, amount: number) {
-  const i = stocks.value.find(s => s.id === id);
-  if (!i) return false;
-  const before = i.qty;
-  i.qty = Math.max(0, i.qty - amount);
-  recordEvent('consume_stock', { id, amount, before, after: i.qty });
+  const item = stocks.value.find(stock => stock.id === id);
+  if (!item) return false;
+  const before = item.qty;
+  item.qty = Math.max(0, item.qty - amount);
+  recordEvent('consume_stock', { id, amount, before, after: item.qty });
   return true;
 }
 
 export function adjustStock(id: string, qty: number) {
-  const i = stocks.value.find(s => s.id === id);
-  if (!i) return false;
-  const before = i.qty;
-  i.qty = qty;
+  const item = stocks.value.find(stock => stock.id === id);
+  if (!item) return false;
+  const before = item.qty;
+  item.qty = qty;
   recordEvent('adjust_stock', { id, before, after: qty });
   return true;
 }
 
 export function recordEvent(type: string, payload: any) {
-  const ev: StockEvent = { id: `EV-${Date.now().toString().slice(-6)}`, type, payload, timestamp: Date.now() };
-  events.value.unshift(ev);
+  const eventItem: StockEvent = { id: `EV-${Date.now().toString().slice(-6)}`, type, payload, timestamp: Date.now() };
+  events.value.unshift(eventItem);
   // cap history to 200 items to avoid unbounded growth
   if (events.value.length > 200) events.value.splice(200);
 }

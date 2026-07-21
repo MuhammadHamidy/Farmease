@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/pregnancies/domain"
 )
 
+// GetBirthHistory retrieves a list of births within the optional timeframe.
 func (u *useCase) GetBirthHistory(ctx context.Context, from, to *time.Time) ([]*domain.Birth, error) {
 	return u.repo.FindAllBirths(ctx, from, to)
 }

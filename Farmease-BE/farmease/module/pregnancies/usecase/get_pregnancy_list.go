@@ -6,19 +6,20 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/pregnancies/domain"
 )
 
+// GetPregnancyList retrieves all ongoing pregnancy records and calculates the remaining gestational days.
 func (u *useCase) GetPregnancyList(ctx context.Context, status string) ([]*domain.Pregnancy, error) {
-	list, err := u.repo.FindAllPregnancies(ctx, status)
+	pregnancyList, err := u.repo.FindAllPregnancies(ctx, status)
 	if err != nil {
 		return nil, err
 	}
 	
 	now := time.Now()
-	for _, p := range list {
-		if p.ExpectedBirthDate != nil {
-			hours := p.ExpectedBirthDate.Sub(now).Hours()
-			p.DaysRemaining = int((hours / 24.0) + 0.99)
+	for _, pregnancy := range pregnancyList {
+		if pregnancy.ExpectedBirthDate != nil {
+			hours := pregnancy.ExpectedBirthDate.Sub(now).Hours()
+			pregnancy.DaysRemaining = int((hours / 24.0) + 0.99)
 		}
 	}
 	
-	return list, nil
+	return pregnancyList, nil
 }

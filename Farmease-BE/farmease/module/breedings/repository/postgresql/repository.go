@@ -5,9 +5,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-
-
-
 type Repository struct {
 	db *pgxpool.Pool
 }
@@ -15,11 +12,6 @@ type Repository struct {
 func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
-
-
-
-
-
 
 func (r *Repository) getAncestorsRecursive(ctx context.Context, id string, currentGen int, maxGen int, result map[string][]int) {
 	if currentGen >= maxGen {

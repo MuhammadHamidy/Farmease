@@ -6,23 +6,26 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/breedings/domain"
 )
 
-func (u *useCase) CheckInbreeding(ctx context.Context, req domain.InbreedingCheckRequest) (*domain.InbreedingCheckResponse, error) {
-	// Resolve sheep codes to UUIDs if codes are passed
-	if req.IDSheepFemale != "" {
-		if s, err := u.sheepRepo.FindByCode(ctx, req.IDSheepFemale); err == nil && s != nil && s.IDSheep != "" {
-			req.IDSheepFemale = s.IDSheep
+// CheckInbreeding checks the coefficient of inbreeding between a male and a female sheep 
+// to calculate genetic risks and prevent inbreeding depression across 5 generations.
+func (u *useCase) CheckInbreeding(ctx context.Context, request domain.InbreedingCheckRequest) (*domain.InbreedingCheckResponse, error) {
+	// Resolve female sheep code to UUID if code is passed
+	if request.IDSheepFemale != "" {
+		if femaleSheep, err := u.sheepRepo.FindByCode(ctx, request.IDSheepFemale); err == nil && femaleSheep != nil && femaleSheep.IDSheep != "" {
+			request.IDSheepFemale = femaleSheep.IDSheep
 		}
 	}
-	if req.IDSheepMale != "" {
-		if s, err := u.sheepRepo.FindByCode(ctx, req.IDSheepMale); err == nil && s != nil && s.IDSheep != "" {
-			req.IDSheepMale = s.IDSheep
+	// Resolve male sheep code to UUID if code is passed
+	if request.IDSheepMale != "" {
+		if maleSheep, err := u.sheepRepo.FindByCode(ctx, request.IDSheepMale); err == nil && maleSheep != nil && maleSheep.IDSheep != "" {
+			request.IDSheepMale = maleSheep.IDSheep
 		}
 	}
 
-	if req.IDSheepMale == "" || req.IDSheepFemale == "" {
+	if request.IDSheepMale == "" || request.IDSheepFemale == "" {
 		return &domain.InbreedingCheckResponse{
-			IDMale:                  req.IDSheepMale,
-			IDFemale:                req.IDSheepFemale,
+			IDMale:                  request.IDSheepMale,
+			IDFemale:                request.IDSheepFemale,
 			CoefficientOfInbreeding: 0.0,
 			InbreedingPercentage:    0.0,
 			InbreedingFlag:          false,
@@ -32,82 +35,82 @@ func (u *useCase) CheckInbreeding(ctx context.Context, req domain.InbreedingChec
 		}, nil
 	}
 
-	// Traverse 5 generations
-	fatherAncestors, _ := u.repo.GetAncestors(ctx, req.IDSheepMale, 5)
-	motherAncestors, _ := u.repo.GetAncestors(ctx, req.IDSheepFemale, 5)
+	// Traverse 5 generations of ancestors
+	fatherAncestors, _ := u.repo.GetAncestors(ctx, request.IDSheepMale, 5)
+	motherAncestors, _ := u.repo.GetAncestors(ctx, request.IDSheepFemale, 5)
 
 	if fatherAncestors == nil {
 		fatherAncestors = make(map[string][]int)
 	}
-	fatherAncestors[req.IDSheepMale] = append(fatherAncestors[req.IDSheepMale], 0)
+	fatherAncestors[request.IDSheepMale] = append(fatherAncestors[request.IDSheepMale], 0)
 
 	if motherAncestors == nil {
 		motherAncestors = make(map[string][]int)
 	}
-	motherAncestors[req.IDSheepFemale] = append(motherAncestors[req.IDSheepFemale], 0)
+	motherAncestors[request.IDSheepFemale] = append(motherAncestors[request.IDSheepFemale], 0)
 
-	coi := 0.0
+	coefficientValue := 0.0
 	var commonAncestors []domain.CommonAncestor
 
-	for id, fatherGens := range fatherAncestors {
-		if motherGens, ok := motherAncestors[id]; ok {
+	for ancestorID, fatherGens := range fatherAncestors {
+		if motherGens, ok := motherAncestors[ancestorID]; ok {
 			// Found common ancestor
 			for _, fatherGen := range fatherGens {
 				for _, motherGen := range motherGens {
-					// Formula: (1/2)^(n+m+1)
-					coi += math.Pow(0.5, float64(fatherGen+motherGen+1))
+					// Formula: Fx = Sigma [ (1/2) ^ (n + m + 1) ]
+					coefficientValue += math.Pow(0.5, float64(fatherGen+motherGen+1))
 				}
 			}
-			// Fetch ancestor name
-			name := "Unknown"
-			if ancestorSheep, err := u.sheepRepo.FindByID(ctx, id); err == nil && ancestorSheep != nil {
+			// Fetch ancestor details
+			ancestorName := "Unknown"
+			if ancestorSheep, err := u.sheepRepo.FindByID(ctx, ancestorID); err == nil && ancestorSheep != nil {
 				if ancestorSheep.SheepName != "" {
-					name = ancestorSheep.SheepName
+					ancestorName = ancestorSheep.SheepName
 				} else {
-					name = ancestorSheep.SheepCode
+					ancestorName = ancestorSheep.SheepCode
 				}
 			}
 
 			commonAncestors = append(commonAncestors, domain.CommonAncestor{
-				IDSheep:   id,
-				SheepName: name,
-				Paths:     []string{"jalur bapak", "jalur ibu"}, // UI labels, can stay indonesian
+				IDSheep:   ancestorID,
+				SheepName: ancestorName,
+				Paths:     []string{"jalur bapak", "jalur ibu"},
 			})
 		}
 	}
 
-	res := &domain.InbreedingCheckResponse{
-		IDMale:                  req.IDSheepMale,
-		IDFemale:                req.IDSheepFemale,
-		CoefficientOfInbreeding: coi,
-		InbreedingPercentage:    coi * 100,
-		InbreedingFlag:          coi > 0,
+	response := &domain.InbreedingCheckResponse{
+		IDMale:                  request.IDSheepMale,
+		IDFemale:                request.IDSheepFemale,
+		CoefficientOfInbreeding: coefficientValue,
+		InbreedingPercentage:    coefficientValue * 100,
+		InbreedingFlag:          coefficientValue > 0,
 		CommonAncestors:         commonAncestors,
 	}
 
-	if coi >= 0.25 {
-		res.RiskCategory = "Sangat Tinggi"
-		res.RiskLevel = "high"
-		res.Recommendation = "Sangat dilarang (Induk-anak / Saudara kandung). Risiko cacat genetik sangat besar."
-	} else if coi >= 0.125 {
-		res.RiskCategory = "Tinggi"
-		res.RiskLevel = "high"
-		res.Recommendation = "Dilarang (Saudara tiri). Risiko inbreeding depression besar."
-	} else if coi >= 0.0625 {
-		res.RiskCategory = "Ambang Batas"
-		res.RiskLevel = "medium"
-		res.Recommendation = "Ambang batas (Sepupu pertama). Sebaiknya dihindari jika memungkinkan."
-	} else if coi >= 0.03125 {
-		res.RiskCategory = "Rendah"
-		res.RiskLevel = "low"
-		res.Recommendation = "Risiko rendah (Sepupu sekali lepas). Aman untuk dilanjutkan."
+	if coefficientValue >= 0.25 {
+		response.RiskCategory = "Sangat Tinggi"
+		response.RiskLevel = "high"
+		response.Recommendation = "Sangat dilarang (Induk-anak / Saudara kandung). Risiko cacat genetik sangat besar."
+	} else if coefficientValue >= 0.125 {
+		response.RiskCategory = "Tinggi"
+		response.RiskLevel = "high"
+		response.Recommendation = "Dilarang (Saudara tiri). Risiko inbreeding depression besar."
+	} else if coefficientValue >= 0.0625 {
+		response.RiskCategory = "Ambang Batas"
+		response.RiskLevel = "medium"
+		response.Recommendation = "Ambang batas (Sepupu pertama). Sebaiknya dihindari jika memungkinkan."
+	} else if coefficientValue >= 0.03125 {
+		response.RiskCategory = "Rendah"
+		response.RiskLevel = "low"
+		response.Recommendation = "Risiko rendah (Sepupu sekali lepas). Aman untuk dilanjutkan."
 	} else {
-		res.RiskCategory = "Sangat Rendah"
-		res.RiskLevel = "safe"
-		res.Recommendation = "Sangat aman. Hubungan kekerabatan jauh atau tidak ada."
+		response.RiskCategory = "Sangat Rendah"
+		response.RiskLevel = "safe"
+		response.Recommendation = "Sangat aman. Hubungan kekerabatan jauh atau tidak ada."
 	}
 	
-	res.InbreedingFlag = coi >= 0.0625
+	response.InbreedingFlag = coefficientValue >= 0.0625
 
-	return res, nil
+	return response, nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// GetMatingStatusData compiles mating maps (active matings, pending submissions, and latest estrus checks) to decide breeding readiness.
 func (r *Repository) GetMatingStatusData(ctx context.Context) (activeMatingFemales map[string]bool, pendingMatingSheeps map[string]bool, latestEstrusChecks map[string]string, err error) {
 	activeMatingFemales = make(map[string]bool)
 	pendingMatingSheeps = make(map[string]bool)
@@ -41,7 +42,7 @@ func (r *Repository) GetMatingStatusData(ctx context.Context) (activeMatingFemal
 		type PayloadData struct {
 			Items []SubmissionItem `json:"items"`
 		}
-
+		
 		type FullPayload struct {
 			Data PayloadData `json:"data"`
 		}

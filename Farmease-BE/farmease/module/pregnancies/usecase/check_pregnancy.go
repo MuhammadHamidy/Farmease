@@ -7,9 +7,11 @@ import (
 	tasksDomain "github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
-func (u *useCase) CheckPregnancy(ctx context.Context, req domain.PregnancyCheckRequest) error {
+// CheckPregnancy handles pregnancy check outcomes (confirming, waiting, failing, or miscarriage)
+// and dynamically creates related farm tasks or updates the mother sheep status.
+func (u *useCase) CheckPregnancy(ctx context.Context, request domain.PregnancyCheckRequest) error {
 	// 1. Resolve mating record
-	mating, err := u.matingRepo.FindByID(ctx, req.IDMating)
+	mating, err := u.matingRepo.FindByID(ctx, request.IDMating)
 	if err != nil {
 		return fmt.Errorf("mating record not found: %w", err)
 	}
@@ -23,15 +25,15 @@ func (u *useCase) CheckPregnancy(ctx context.Context, req domain.PregnancyCheckR
 	// Gestasi default: 148 days
 	expectedBirthDate := mating.MatingDate.AddDate(0, 0, 148)
 
-	switch req.Hasil {
+	switch request.Hasil {
 	case "bunting_terkonfirmasi":
 		// (a) Create or update breeding.pregnancies (pregnancy_status='dikandung', expected_birth_date = mating_date + 148 days)
 		pregnancy := &domain.Pregnancy{
 			IDMating:          mating.IDMating,
-			PregnancyDate:     req.TanggalPemeriksaan,
+			PregnancyDate:     request.TanggalPemeriksaan,
 			PregnancyStatus:   "dikandung",
 			ExpectedBirthDate: &expectedBirthDate,
-			Notes:             req.Catatan,
+			Notes:             request.Catatan,
 		}
 		err = u.repo.StorePregnancy(ctx, pregnancy)
 		if err != nil {
@@ -49,9 +51,9 @@ func (u *useCase) CheckPregnancy(ctx context.Context, req domain.PregnancyCheckR
 		if femaleSheep.SheepName != "" {
 			title += " (" + femaleSheep.SheepName + ")"
 		}
-		var cageID *string
+		var cageIDPtr *string
 		if femaleSheep.IDCage != "" {
-			cageID = &femaleSheep.IDCage
+			cageIDPtr = &femaleSheep.IDCage
 		}
 		birthTask := &tasksDomain.Task{
 			Title:       title,
@@ -61,38 +63,38 @@ func (u *useCase) CheckPregnancy(ctx context.Context, req domain.PregnancyCheckR
 			Priority:    "sedang",
 			Category:    "kelahiran",
 			Rincian:     "Pencatatan Kelahiran",
-			IDCage:      cageID,
+			IDCage:      cageIDPtr,
 			IDMating:    &mating.IDMating,
 		}
 		_ = u.taskRepo.StoreTask(ctx, birthTask)
 
 	case "masih_menunggu":
 		// Auto-generate task 'Kontrol Kebuntingan' baru lagi dengan offset 21 hari dari tanggal pemeriksaan ini
-		nextTaskDate := req.TanggalPemeriksaan.AddDate(0, 0, 21)
+		nextTaskDate := request.TanggalPemeriksaan.AddDate(0, 0, 21)
 		title := "Kontrol Kebuntingan - " + femaleSheep.SheepCode
 		if femaleSheep.SheepName != "" {
 			title += " (" + femaleSheep.SheepName + ")"
 		}
-		var cageID *string
+		var cageIDPtr *string
 		if femaleSheep.IDCage != "" {
-			cageID = &femaleSheep.IDCage
+			cageIDPtr = &femaleSheep.IDCage
 		}
 		nextCheckTask := &tasksDomain.Task{
 			Title:       title,
-			Description: fmt.Sprintf("Pemeriksaan kebuntingan berkala lanjutan setelah hasil masih menunggu pada %s", req.TanggalPemeriksaan.Format("2006-01-02")),
+			Description: fmt.Sprintf("Pemeriksaan kebuntingan berkala lanjutan setelah hasil masih menunggu pada %s", request.TanggalPemeriksaan.Format("2006-01-02")),
 			TaskDate:    nextTaskDate,
 			Status:      "pending",
 			Priority:    "sedang",
 			Category:    "perkawinan",
 			Rincian:     "Kontrol Kebuntingan",
-			IDCage:      cageID,
+			IDCage:      cageIDPtr,
 			IDMating:    &mating.IDMating,
 		}
 		_ = u.taskRepo.StoreTask(ctx, nextCheckTask)
 
 	case "gagal":
 		// (a) update breeding.matings.status = 'gagal'
-		err = u.matingRepo.UpdateStatus(ctx, mating.IDMating, "gagal", "Hasil pemeriksaan: gagal tidak bunting. "+req.Catatan)
+		err = u.matingRepo.UpdateStatus(ctx, mating.IDMating, "gagal", "Hasil pemeriksaan: gagal tidak bunting. "+request.Catatan)
 		if err != nil {
 			return fmt.Errorf("failed to update mating status: %w", err)
 		}
@@ -105,17 +107,17 @@ func (u *useCase) CheckPregnancy(ctx context.Context, req domain.PregnancyCheckR
 
 	case "keguguran":
 		// (a) update breeding.pregnancies.pregnancy_status = 'keguguran'
-		pregnancies, err := u.repo.FindAllPregnancies(ctx, "dikandung")
+		pregnancyList, err := u.repo.FindAllPregnancies(ctx, "dikandung")
 		if err == nil {
-			for _, p := range pregnancies {
-				if p.IDMating == mating.IDMating {
-					_ = u.repo.UpdatePregnancyStatus(ctx, p.IDPregnancy, "keguguran", "Keguguran pada pemeriksaan: "+req.Catatan)
+			for _, pregnancy := range pregnancyList {
+				if pregnancy.IDMating == mating.IDMating {
+					_ = u.repo.UpdatePregnancyStatus(ctx, pregnancy.IDPregnancy, "keguguran", "Keguguran pada pemeriksaan: "+request.Catatan)
 				}
 			}
 		}
 
 		// (b) update breeding.matings.status = 'gagal'
-		err = u.matingRepo.UpdateStatus(ctx, mating.IDMating, "gagal", "Keguguran. "+req.Catatan)
+		err = u.matingRepo.UpdateStatus(ctx, mating.IDMating, "gagal", "Keguguran. "+request.Catatan)
 		if err != nil {
 			return fmt.Errorf("failed to update mating status: %w", err)
 		}
@@ -128,8 +130,8 @@ func (u *useCase) CheckPregnancy(ctx context.Context, req domain.PregnancyCheckR
 	}
 
 	// 3. Mark current task (id_task) as completed ('selesai')
-	if req.IDTask != "" {
-		_ = u.taskRepo.UpdateTaskStatus(ctx, req.IDTask, "selesai")
+	if request.IDTask != "" {
+		_ = u.taskRepo.UpdateTaskStatus(ctx, request.IDTask, "selesai")
 	}
 
 	return nil

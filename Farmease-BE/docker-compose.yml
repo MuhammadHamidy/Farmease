@@ -1,0 +1,174 @@
+version: '3.9'
+
+services:
+  peternakan_postgres:
+    image: postgres:15-alpine
+    container_name: farmease_peternakan_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: farmease_peternakan
+    ports:
+      - "${PETERNAKAN_DB_PORT:-5436}:5432"
+    volumes:
+      - peternakan_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d farmease_peternakan"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  peternakan_redis:
+    image: redis:7-alpine
+    container_name: farmease_peternakan_redis
+    ports:
+      - "${PETERNAKAN_REDIS_PORT:-6382}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  peternakan_rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: farmease_peternakan_rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  peternakan_migrate:
+    image: migrate/migrate
+    container_name: farmease_peternakan_migrate
+    volumes:
+      - ./farmease/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@peternakan_postgres:5432/farmease_peternakan?sslmode=disable up || true"
+    depends_on:
+      peternakan_postgres:
+        condition: service_healthy
+    networks:
+      - farmease_network
+
+  peternakan_seeder:
+    image: postgres:15-alpine
+    container_name: farmease_peternakan_seeder
+    volumes:
+      - ./farmease/seeders:/peternakan_seeders:ro
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-pass}
+    command: >
+      sh -c "echo 'Seeding Peternakan...'; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/cages.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/sheep.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/breedings.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/feeds.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/healths.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/hpl_test_seed.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/manures.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/pencatatan.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/tasks.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/weights.sql || true; psql -h peternakan_postgres -U $${DB_USER:-user} -d farmease_peternakan -f /peternakan_seeders/notifications.sql || true;"
+    depends_on:
+      peternakan_migrate:
+        condition: service_completed_successfully
+    networks:
+      - farmease_network
+
+  peternakan_backend:
+    build:
+      context: .
+      dockerfile: farmease/Dockerfile
+      target: dev
+    container_name: farmease_peternakan_backend
+    depends_on:
+      peternakan_postgres:
+        condition: service_healthy
+      peternakan_redis:
+        condition: service_healthy
+      peternakan_rabbitmq:
+        condition: service_healthy
+      peternakan_migrate:
+        condition: service_completed_successfully
+      peternakan_seeder:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8081"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@peternakan_postgres:5432/farmease_peternakan?sslmode=disable
+      APP_REDIS_ADDRESS: peternakan_redis:6379
+      APP_REDIS_PASSWORD: ""
+      APP_REDIS_DB: "0"
+      APP_RABBITMQ_URL: amqp://guest:guest@peternakan_rabbitmq:5672/
+      APP_SSOAPIURL: http://farmease_sso_backend:8080
+      APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
+      APP_CORS_ALLOWED_ORIGINS: "*"
+      APP_LOG_LEVEL: debug
+      APP_LOG_FORMAT: console
+      APP_EXPORTER: none
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./framework:/app/framework
+      - ./libraries:/app/libraries
+      - ./farmease:/app/farmease
+      - ./go.work:/app/go.work
+      - peternakan_backend_logs:/app/logs
+      - peternakan_go_mod_cache:/go/pkg/mod
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/health/livez || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+
+  frontend_peternakan:
+    build:
+      context: ../Farmease
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        VITE_API_BASE_URL: http://localhost:8081
+    container_name: farmease_peternakan_frontend
+    depends_on:
+      peternakan_backend:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../Farmease:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  peternakan_postgres_data:
+    driver: local
+  peternakan_backend_logs:
+    driver: local
+  peternakan_go_mod_cache:
+    driver: local
+
+networks:
+  farmease_network:
+    name: farmease_shared_network
+    external: true

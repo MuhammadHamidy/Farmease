@@ -8,17 +8,18 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
 )
 
-func (u *useCase) CreateSubmission(ctx context.Context, s *domain.Submission) error {
-	if s.ApprovalStatus == "" {
-		s.ApprovalStatus = "pending"
+// CreateSubmission registers a new farm operations log (e.g. feeding, sanitization).
+func (u *useCase) CreateSubmission(ctx context.Context, submission *domain.Submission) error {
+	if submission.ApprovalStatus == "" {
+		submission.ApprovalStatus = "pending"
 	}
-	if s.SubmittedAt.IsZero() {
-		s.SubmittedAt = time.Now()
+	if submission.SubmittedAt.IsZero() {
+		submission.SubmittedAt = time.Now()
 	}
-	if s.SubmissionCode == "" {
-		s.SubmissionCode = fmt.Sprintf("SUB-%d", (time.Now().UnixNano()/1e6)%1000000)
+	if submission.SubmissionCode == "" {
+		submission.SubmissionCode = fmt.Sprintf("SUB-%d", (time.Now().UnixNano()/1e6)%1000000)
 	}
-	err := u.repo.Store(ctx, s)
+	err := u.repo.Store(ctx, submission)
 	if err != nil {
 		return err
 	}
@@ -27,12 +28,12 @@ func (u *useCase) CreateSubmission(ctx context.Context, s *domain.Submission) er
 	adminID := "11111111-1111-1111-1111-111111111101" // Default Admin account
 	notif := &notificationsDomain.Notification{
 		Title:        "Pencatatan Baru",
-		Message:      fmt.Sprintf("Pencatatan baru '%s' untuk Kandang %s diajukan oleh %s.", s.TypeLabel, s.CageCode, s.OperatorName),
+		Message:      fmt.Sprintf("Pencatatan baru '%s' untuk Kandang %s diajukan oleh %s.", submission.TypeLabel, submission.CageCode, submission.OperatorName),
 		IsRead:       false,
 		IDAccount:    adminID,
 		Type:         "submission",
-		SubmissionID: &s.ID,
-		TaskID:       s.TaskID,
+		SubmissionID: &submission.ID,
+		TaskID:       submission.TaskID,
 	}
 	_ = u.notificationRepo.StoreNotification(ctx, notif)
 	return nil

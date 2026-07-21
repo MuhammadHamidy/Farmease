@@ -22,8 +22,8 @@ func (u *useCase) GetFeedRecommendationByCage(ctx context.Context, idCage string
 	}
 
 	var totalForage, totalConcentrate float64
-	for _, s := range sheepList {
-		weight := s.LastWeight
+	for _, sheep := range sheepList {
+		weight := sheep.LastWeight
 		if weight <= 0 {
 			weight = 30.0
 		}

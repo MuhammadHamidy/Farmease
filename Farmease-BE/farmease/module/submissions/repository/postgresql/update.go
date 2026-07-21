@@ -6,8 +6,9 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
 )
 
-func (r *Repository) Update(ctx context.Context, s *domain.Submission) error {
-	payloadBytes, err := json.Marshal(s.Payload)
+// Update updates fields of an existing submission.
+func (r *Repository) Update(ctx context.Context, submission *domain.Submission) error {
+	payloadBytes, err := json.Marshal(submission.Payload)
 	if err != nil {
 		return err
 	}
@@ -19,9 +20,9 @@ func (r *Repository) Update(ctx context.Context, s *domain.Submission) error {
 	WHERE id_submission = $16`
 
 	_, err = r.db.Exec(ctx, query,
-		s.SubmissionCode, s.Type, s.TypeLabel, s.OperatorCode, s.OperatorName, s.CageCode, s.Scope, s.Summary,
-		payloadBytes, s.SubmittedAt, s.ApprovalStatus, s.ReviewedAt, s.ReviewedBy, s.ReviewNote, s.TaskID,
-		s.ID,
+		submission.SubmissionCode, submission.Type, submission.TypeLabel, submission.OperatorCode, submission.OperatorName, submission.CageCode, submission.Scope, submission.Summary,
+		payloadBytes, submission.SubmittedAt, submission.ApprovalStatus, submission.ReviewedAt, submission.ReviewedBy, submission.ReviewNote, submission.TaskID,
+		submission.ID,
 	)
 	return err
 }

@@ -13,7 +13,7 @@ Write-Host "==========================================================" -Foregro
 
 # 1. Pastikan Database & Redis di Docker sudah berjalan
 Write-Host "[1/4] Memastikan Postgres & Redis aktif di Docker..." -ForegroundColor Yellow
-docker compose up -d postgres redis rabbitmq
+docker compose up -d sso_postgres peternakan_postgres kebun_postgres sso_redis peternakan_rabbitmq sso_migrate sso_seeder peternakan_migrate peternakan_seeder kebun_migrate kebun_seeder
 
 Write-Host "Menunggu database siap..." -ForegroundColor Gray
 Start-Sleep -Seconds 3
@@ -41,7 +41,7 @@ Start-Process powershell -WorkingDirectory "$PSScriptRoot\sso-be\sso" -ArgumentL
 Write-Host "[3/4] Meluncurkan Peternakan Backend..." -ForegroundColor Yellow
 $TERNAC_CMD = @"
 `$env:APP_PORT='8081'; `
-`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5435/farmease_peternakan?sslmode=disable'; `
+`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5436/farmease_peternakan?sslmode=disable'; `
 `$env:APP_REDIS_ADDRESS='localhost:6381'; `
 `$env:APP_REDIS_PASSWORD=''; `
 `$env:APP_REDIS_DB='0'; `
@@ -61,7 +61,7 @@ Start-Process powershell -WorkingDirectory "$PSScriptRoot\Farmease-BE\farmease" 
 Write-Host "[4/4] Meluncurkan Perkebunan Backend..." -ForegroundColor Yellow
 $KEBUN_CMD = @"
 `$env:APP_PORT='8082'; `
-`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5435/farmease_kebun?sslmode=disable'; `
+`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5437/farmease_kebun?sslmode=disable'; `
 `$env:APP_REDIS_ADDRESS='localhost:6381'; `
 `$env:APP_REDIS_PASSWORD=''; `
 `$env:APP_REDIS_DB='0'; `

@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/cages/domain"
 )
 
+// VerifyCage verifies if a cage code exists and returns its structure.
 func (u *useCase) VerifyCage(ctx context.Context, code string) (*domain.Cage, error) {
 	cage, err := u.repo.FindByCode(ctx, code)
 	if err != nil {

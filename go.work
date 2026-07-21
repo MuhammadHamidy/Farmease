@@ -1,0 +1,13 @@
+go 1.25.5
+
+use (
+	./Farmease-BE/farmease
+	./Farmease-BE/framework
+	./Farmease-BE/libraries
+	./kebun-be/framework
+	./kebun-be/kebun
+	./kebun-be/libraries
+	./sso-be/framework
+	./sso-be/libraries
+	./sso-be/sso
+)

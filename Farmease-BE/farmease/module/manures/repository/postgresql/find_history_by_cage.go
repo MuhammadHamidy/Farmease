@@ -5,6 +5,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/manures/domain"
 )
 
+// FindHistoryByCage lists historical manure collections/distributions for a specific cage ID.
 func (r *Repository) FindHistoryByCage(ctx context.Context, idCage string) ([]*domain.Manure, error) {
 	// First resolve the cage code or ID to UUID
 	var resolvedCageID string
@@ -20,21 +21,21 @@ func (r *Repository) FindHistoryByCage(ctx context.Context, idCage string) ([]*d
 	}
 	defer rows.Close()
 
-	var list []*domain.Manure
+	var manureList []*domain.Manure
 	for rows.Next() {
-		var m domain.Manure
+		var manure domain.Manure
 		var idSheepStr, idCageStr, extDestStr, notesStr string
-		err := rows.Scan(&m.IDManure, &idSheepStr, &idCageStr, &m.ActivityType, &m.Amount, &m.Unit, &extDestStr, &m.DestinationType, &notesStr, &m.CreatedAt)
+		err := rows.Scan(&manure.IDManure, &idSheepStr, &idCageStr, &manure.ActivityType, &manure.Amount, &manure.Unit, &extDestStr, &manure.DestinationType, &notesStr, &manure.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		m.IDSheep = idSheepStr
-		m.IDCage = idCageStr
-		m.Notes = notesStr
+		manure.IDSheep = idSheepStr
+		manure.IDCage = idCageStr
+		manure.Notes = notesStr
 		if extDestStr != "" {
-			m.ExternalDestinationID = &extDestStr
+			manure.ExternalDestinationID = &extDestStr
 		}
-		list = append(list, &m)
+		manureList = append(manureList, &manure)
 	}
-	return list, nil
+	return manureList, nil
 }

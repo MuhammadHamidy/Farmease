@@ -37,7 +37,7 @@ export default defineComponent({
     const showLogModal = ref(false);
     const selectedConv = ref<any>(null);
     const formLog = ref({
-      status: 'fermentasi',
+      status: '',
       ph_level: '4.0',
       temperature: '30.0',
       physical_condition: '',
@@ -49,7 +49,7 @@ export default defineComponent({
     const openLogModal = async (conv: any) => {
       selectedConv.value = conv;
       formLog.value = {
-        status: conv.status || 'fermentasi',
+        status: '',
         ph_level: '4.0',
         temperature: '30.0',
         physical_condition: '',
@@ -89,6 +89,10 @@ export default defineComponent({
 
     const submitLog = async () => {
       if (!selectedConv.value) return;
+      if (!formLog.value.status) {
+        triggerAlert('Form Tidak Lengkap', 'Status kesiapan silase wajib dipilih', 'error');
+        return;
+      }
       try {
         const ph = parseFloat(formLog.value.ph_level);
         const temp = parseFloat(formLog.value.temperature);

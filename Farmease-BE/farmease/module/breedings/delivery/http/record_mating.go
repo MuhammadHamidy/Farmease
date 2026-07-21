@@ -9,23 +9,23 @@ import (
 )
 
 func (h *BreedingHandler) RecordMating(c *fiber.Ctx) error {
-	var p domain.Mating
-	if err := c.BodyParser(&p); err != nil {
+	var mating domain.Mating
+	if err := c.BodyParser(&mating); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
 
-	if p.Status == "" {
-		p.Status = "proses"
+	if mating.Status == "" {
+		mating.Status = "proses"
 	}
 
-	if appErr := validation.ValidateStruct(&p); appErr != nil {
+	if appErr := validation.ValidateStruct(&mating); appErr != nil {
 		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
-	err := h.useCase.RecordMating(c.Context(), &p)
+	err := h.useCase.RecordMating(c.Context(), &mating)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(p)
+	return c.Status(http.StatusCreated).JSON(mating)
 }

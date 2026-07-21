@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/healths/domain"
 )
 
+// FindAll queries all registered sheep health/checkup records with optional filters.
 func (r *Repository) FindAll(ctx context.Context, filter domain.HealthFilter) ([]*domain.Health, int, error) {
 	query := `SELECT id_health, id_sheep, checkup_date, diagnosis, action, medicine_given, inspector_name, notes, created_at, updated_at FROM livestock.healths WHERE 1=1`
 	args := []interface{}{}
@@ -33,14 +34,14 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.HealthFilter) ([
 	}
 	defer rows.Close()
 
-	var healths []*domain.Health
+	var healthList []*domain.Health
 	for rows.Next() {
-		var k domain.Health
-		err := rows.Scan(&k.IDHealth, &k.IDSheep, &k.CheckupDate, &k.Diagnosis, &k.Action, &k.MedicineGiven, &k.InspectorName, &k.Notes, &k.CreatedAt, &k.UpdatedAt)
+		var health domain.Health
+		err := rows.Scan(&health.IDHealth, &health.IDSheep, &health.CheckupDate, &health.Diagnosis, &health.Action, &health.MedicineGiven, &health.InspectorName, &health.Notes, &health.CreatedAt, &health.UpdatedAt)
 		if err != nil {
 			return nil, 0, err
 		}
-		healths = append(healths, &k)
+		healthList = append(healthList, &health)
 	}
 
 	var total int
@@ -52,5 +53,5 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.HealthFilter) ([
 		err = r.db.QueryRow(ctx, countQuery).Scan(&total)
 	}
 
-	return healths, total, err
+	return healthList, total, err
 }

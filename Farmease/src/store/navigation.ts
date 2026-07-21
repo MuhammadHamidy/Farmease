@@ -98,12 +98,12 @@ export async function fetchCagesList() {
   try {
     cagesLoading.value = true
     const list = await cagesApi.getList()
-    cagesList.value = list.map((c) => ({
-      id: c.id_cage,
-      code: c.cage_code,
-      name: c.cage_name || `Kandang ${c.cage_code}`,
-      type: c.cage_type || c.location || 'campuran',
-      capacity: c.capacity,
+    cagesList.value = list.map((cage) => ({
+      id: cage.id_cage,
+      code: cage.cage_code,
+      name: cage.cage_name || `Kandang ${cage.cage_code}`,
+      type: cage.cage_type || cage.location || 'campuran',
+      capacity: cage.capacity,
     }))
   } catch (err) {
     console.error('Failed to fetch cages list:', err)
@@ -116,15 +116,15 @@ export async function fetchLandsList() {
   try {
     landsLoading.value = true
     const list = await lahanApi.getList()
-    landsList.value = list.map((l) => {
+    landsList.value = list.map((land) => {
       return {
-        id: l.id,
-        code: l.kode_lahan,
-        name: l.nama_lahan || l.varietas || '',
-        area: String(l.luas_lahan || l.luas) + ' m²',
-        status: l.status || '',
-        capacity: l.kapasitas_maksimal || 50,
-        location: l.jenis_tanaman || l.lokasi || ''
+        id: land.id,
+        code: land.kode_lahan,
+        name: land.nama_lahan || land.varietas || '',
+        area: String(land.luas_lahan || land.luas) + ' m²',
+        status: land.status || '',
+        capacity: land.kapasitas_maksimal || 50,
+        location: land.jenis_tanaman || land.lokasi || ''
       }
     })
   } catch (err) {
@@ -141,15 +141,15 @@ export async function fetchCropsList() {
       await fetchLandsList()
     }
     const list = await pohonApi.getList()
-    cropsList.value = list.map((p) => {
-      const landObj = landsList.value.find((l) => l.id === p.id_lahan)
+    cropsList.value = list.map((crop) => {
+      const landObj = landsList.value.find((land) => land.id === crop.id_lahan)
       return {
-        id: p.id,
-        code: p.kode_pohon,
-        name: p.nama_pohon,
-        type: p.status,
-        land: landObj ? landObj.code : `Lahan #${p.id_lahan}`,
-        age: String(p.umur) + ' Tahun',
+        id: crop.id,
+        code: crop.kode_pohon,
+        name: crop.nama_pohon,
+        type: crop.status,
+        land: landObj ? landObj.code : `Lahan #${crop.id_lahan}`,
+        age: String(crop.umur) + ' Tahun',
       }
     })
   } catch (err) {

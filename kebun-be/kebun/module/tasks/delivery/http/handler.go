@@ -219,6 +219,9 @@ func (h *TaskHandler) UpdateTask(c *fiber.Ctx) error {
 
 	err := h.useCase.UpdateTask(c.Context(), id, &taskItem)
 	if err != nil {
+		if err.Error() == "task not found" {
+			return c.Status(http.StatusNotFound).JSON(responses.Fail("NOT_FOUND", err.Error()))
+		}
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 	return c.Status(http.StatusOK).JSON(taskItem)

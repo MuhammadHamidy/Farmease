@@ -195,7 +195,7 @@ export default defineComponent({
                     <PencatatanField label="Jenis Pencatatan" colClass="col-12">
                       <PencatatanSelect
                         modelValue={selectedType.value}
-                        options={recordTypeOptions.map((o) => ({ value: o.id, label: o.label }))}
+                        options={recordTypeOptions.map((optionItem) => ({ value: optionItem.id, label: optionItem.label }))}
                         placeholder="Pilih Jenis Pencatatan"
                         onUpdateModelValue={(v: string) => handleTypeChange(v)}
                       />

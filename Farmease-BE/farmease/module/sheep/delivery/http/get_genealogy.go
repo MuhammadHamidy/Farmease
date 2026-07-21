@@ -21,7 +21,7 @@ import (
 // @Router       /api/sheep/{id}/genealogy [get]
 func (h *SheepHandler) GetSheepGenealogy(c *fiber.Ctx) error {
 	id := c.Params("id")
-	generation := c.QueryInt("generation", 3)
+	generation := c.QueryInt("generation", 5)
 
 	res, err := h.useCase.GetSheepGenealogy(c.Context(), id, generation)
 	if err != nil {

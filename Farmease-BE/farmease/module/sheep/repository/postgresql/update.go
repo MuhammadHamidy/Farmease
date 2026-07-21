@@ -6,20 +6,21 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
 
-func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
+// Update updates descriptive properties of a sheep in the database, resolving associations beforehand.
+func (r *Repository) Update(ctx context.Context, sheep *domain.Sheep) error {
 	var resolvedCageID string
-	if s.IDCage != "" {
-		err := r.db.QueryRow(ctx, `SELECT id_cage FROM livestock.cages WHERE cage_code = $1 OR id_cage::text = $1 LIMIT 1`, s.IDCage).Scan(&resolvedCageID)
+	if sheep.IDCage != "" {
+		err := r.db.QueryRow(ctx, `SELECT id_cage FROM livestock.cages WHERE cage_code = $1 OR id_cage::text = $1 LIMIT 1`, sheep.IDCage).Scan(&resolvedCageID)
 		if err == nil && resolvedCageID != "" {
-			s.IDCage = resolvedCageID
+			sheep.IDCage = resolvedCageID
 		}
 	}
 
 	var resolvedTypeID string
-	if s.IDType != "" {
-		err := r.db.QueryRow(ctx, `SELECT id_type FROM livestock.sheep_types WHERE type_name = $1 OR id_type::text = $1 LIMIT 1`, s.IDType).Scan(&resolvedTypeID)
+	if sheep.IDType != "" {
+		err := r.db.QueryRow(ctx, `SELECT id_type FROM livestock.sheep_types WHERE type_name = $1 OR id_type::text = $1 LIMIT 1`, sheep.IDType).Scan(&resolvedTypeID)
 		if err == nil && resolvedTypeID != "" {
-			s.IDType = resolvedTypeID
+			sheep.IDType = resolvedTypeID
 		}
 	}
 
@@ -29,28 +30,30 @@ func (r *Repository) Update(ctx context.Context, s *domain.Sheep) error {
 		WHERE id_sheep = $13`
 	
 	var idCage, idType *string
-	if s.IDCage != "" {
-		idCage = &s.IDCage
+	if sheep.IDCage != "" {
+		idCage = &sheep.IDCage
 	}
-	if s.IDType != "" {
-		idType = &s.IDType
+	if sheep.IDType != "" {
+		idType = &sheep.IDType
 	}
 
-	_, err := r.db.Exec(ctx, query, s.SheepCode, s.SheepName, s.Gender, s.DateOfBirth, s.Status, s.Origin, idCage, idType, s.IDFather, s.IDMother, s.PhotoURL, s.Owner, s.IDSheep)
+	_, err := r.db.Exec(ctx, query, sheep.SheepCode, sheep.SheepName, sheep.Gender, sheep.DateOfBirth, sheep.Status, sheep.Origin, idCage, idType, sheep.IDFather, sheep.IDMother, sheep.PhotoURL, sheep.Owner, sheep.IDSheep)
 	return err
 }
 
+// UpdateStatus changes the active state/status of a sheep.
 func (r *Repository) UpdateStatus(ctx context.Context, id string, status string, notes string) error {
 	query := `UPDATE livestock.sheep SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id_sheep = $2`
 	_, err := r.db.Exec(ctx, query, status, id)
 	return err
 }
 
-func (r *Repository) UpdateType(ctx context.Context, id string, t *domain.SheepType) error {
+// UpdateType modifies the registration meta properties of a breed type.
+func (r *Repository) UpdateType(ctx context.Context, id string, sheepType *domain.SheepType) error {
 	query := `
 		UPDATE livestock.sheep_types
 		SET type_name = $1, type_description = $2, updated_at = CURRENT_TIMESTAMP
 		WHERE id_type = $3`
-	_, err := r.db.Exec(ctx, query, t.TypeName, t.TypeDescription, id)
+	_, err := r.db.Exec(ctx, query, sheepType.TypeName, sheepType.TypeDescription, id)
 	return err
 }

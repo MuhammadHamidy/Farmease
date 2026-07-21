@@ -47,6 +47,7 @@ const (
 	XGroupKey        = "X-Group"
 	XInstitutionId   = "X-Institution-Id"
 	XOperatorCategory = "X-Operator-Category"
+	XRoleName        = "X-Role-Name"
 	XFarmID          = "X-Farm-Id"
 )
 
@@ -87,7 +88,9 @@ func (a *AuthorizationMiddleware) Authenticate(scopes ...string) fiber.Handler {
 			c.Locals(XUserIdKey, userInfo.IDAccount)
 			c.Locals(XTokenKey, token)
 			c.Locals(XExternalSubject, userInfo.Username)
-			c.Locals(XOperatorCategory, userInfo.OperatorCategory)
+			if userInfo.Role != nil {
+				c.Locals(XRoleName, userInfo.Role.RoleName)
+			}
 			if userInfo.FarmID != nil {
 				c.Locals(XFarmID, *userInfo.FarmID)
 			}

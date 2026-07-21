@@ -8,6 +8,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
 
+// FindAll queries list of sheep with pagination and filters (cage ID, gender, status, search term).
 func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]*domain.Sheep, int, error) {
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
@@ -56,43 +57,56 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.SheepFilter) ([]
 
 	var sheepList []*domain.Sheep
 	for rows.Next() {
-		var s domain.Sheep
+		var sheep domain.Sheep
 		var weight, firstWeight *float64
 		var lastWeightDate, firstWeightDate *time.Time
 		var sheepName, origin, typeName *string
 		var idCage, idType *string
-
 		var photoURL, owner *string
 
 		err := rows.Scan(
-			&s.IDSheep, &s.SheepCode, &sheepName, &s.Gender, &s.DateOfBirth, &s.Status, &origin, &idCage, &idType,
-			&s.IDFather, &s.IDMother, &typeName, &photoURL, &owner, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
+			&sheep.IDSheep, &sheep.SheepCode, &sheepName, &sheep.Gender, &sheep.DateOfBirth, &sheep.Status, &origin, &idCage, &idType,
+			&sheep.IDFather, &sheep.IDMother, &typeName, &photoURL, &owner, &weight, &lastWeightDate, &firstWeight, &firstWeightDate,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		if sheepName != nil { s.SheepName = *sheepName }
-		if origin != nil { s.Origin = *origin }
-		if typeName != nil { s.TypeName = *typeName }
-		if idCage != nil { s.IDCage = *idCage }
-		if idType != nil { s.IDType = *idType }
-		if photoURL != nil { s.PhotoURL = *photoURL }
-		if owner != nil { s.Owner = *owner }
+		if sheepName != nil { 
+			sheep.SheepName = *sheepName 
+		}
+		if origin != nil { 
+			sheep.Origin = *origin 
+		}
+		if typeName != nil { 
+			sheep.TypeName = *typeName 
+		}
+		if idCage != nil { 
+			sheep.IDCage = *idCage 
+		}
+		if idType != nil { 
+			sheep.IDType = *idType 
+		}
+		if photoURL != nil { 
+			sheep.PhotoURL = *photoURL 
+		}
+		if owner != nil { 
+			sheep.Owner = *owner 
+		}
 
 		if weight != nil {
-			s.LastWeight = *weight
+			sheep.LastWeight = *weight
 		}
 		if lastWeightDate != nil {
-			s.LastWeightDate = lastWeightDate
+			sheep.LastWeightDate = lastWeightDate
 		}
 		if firstWeight != nil {
-			s.FirstWeight = *firstWeight
+			sheep.FirstWeight = *firstWeight
 		}
 		if firstWeightDate != nil {
-			s.FirstWeightDate = firstWeightDate
+			sheep.FirstWeightDate = firstWeightDate
 		}
-		sheepList = append(sheepList, &s)
+		sheepList = append(sheepList, &sheep)
 	}
 
 	var total int

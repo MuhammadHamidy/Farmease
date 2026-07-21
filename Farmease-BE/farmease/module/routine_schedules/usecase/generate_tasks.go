@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// GenerateTasks parses all active schedules and generates corresponding tasks up to windowDays.
 func (u *useCase) GenerateTasks(ctx context.Context, windowDays int) error {
 	localLoc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
@@ -19,8 +20,8 @@ func (u *useCase) GenerateTasks(ctx context.Context, windowDays int) error {
 		return err
 	}
 
-	for _, rs := range schedules {
-		u.generateForSchedule(ctx, rs, todayMidnight, windowDays, localLoc)
+	for _, routineSchedule := range schedules {
+		u.generateForSchedule(ctx, routineSchedule, todayMidnight, windowDays, localLoc)
 	}
 
 	return nil

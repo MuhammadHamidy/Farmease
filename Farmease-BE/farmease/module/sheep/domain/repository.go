@@ -101,6 +101,14 @@ type SheepFilter struct {
 	PerPage int
 }
 
+type Sibling struct {
+	IDSheep   string `json:"id_sheep"`
+	SheepCode string `json:"sheep_code"`
+	SheepName string `json:"sheep_name"`
+	Gender    string `json:"gender"`
+	Type      string `json:"type"` // "kandung", "tiri_bapak", "tiri_ibu"
+}
+
 type Genealogy struct {
 	IDSheep   string     `json:"id_sheep"`
 	SheepCode string     `json:"sheep_code"`
@@ -108,6 +116,7 @@ type Genealogy struct {
 	Gender    string     `json:"gender"`
 	Father    *Genealogy `json:"father,omitempty"`
 	Mother    *Genealogy `json:"mother,omitempty"`
+	Siblings  []Sibling  `json:"siblings,omitempty"`
 }
 
 type SheepType struct {

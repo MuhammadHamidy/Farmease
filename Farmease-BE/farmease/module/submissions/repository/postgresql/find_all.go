@@ -7,19 +7,25 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
 )
 
+// FindAll retrieves submissions from the database based on status and submission type filters.
 func (r *Repository) FindAll(ctx context.Context, status, submissionType string) ([]*domain.Submission, error) {
+	// Base query targeting pencatatan_submissions
 	query := `SELECT id_submission, submission_code, type, type_label, operator_code, operator_name, cage_code, scope, summary, payload, submitted_at, approval_status, reviewed_at, reviewed_by, review_note, task_id, created_at, updated_at 
 	FROM operations.pencatatan_submissions 
 	WHERE 1=1`
 	args := []interface{}{}
 	argIdx := 1
 
+	// Filter by approval_status (e.g. 'proses', 'selesai', 'ditolak')
 	if status != "" && status != "all" {
 		query += fmt.Sprintf(" AND approval_status = $%d", argIdx)
 		args = append(args, status)
 		argIdx++
 	}
 
+	// Filter by domain type:
+	// - "peternakan" includes livestock tasks (feed, health, manure, breeding, birth, weight)
+	// - "perkebunan" excludes livestock tasks, fallback matching for all plantation tasks (watering, pruning, etc.)
 	if submissionType != "" {
 		if submissionType == "peternakan" {
 			query += " AND LOWER(type) IN ('pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'berat_badan', 'stok_pakan', 'weighing')"
@@ -36,27 +42,27 @@ func (r *Repository) FindAll(ctx context.Context, status, submissionType string)
 	}
 	defer rows.Close()
 
-	var list []*domain.Submission
+	var submissionList []*domain.Submission
 	for rows.Next() {
-		var s domain.Submission
+		var submission domain.Submission
 		var payloadBytes []byte
 
 		err := rows.Scan(
-			&s.ID, &s.SubmissionCode, &s.Type, &s.TypeLabel, &s.OperatorCode, &s.OperatorName,
-			&s.CageCode, &s.Scope, &s.Summary, &payloadBytes, &s.SubmittedAt,
-			&s.ApprovalStatus, &s.ReviewedAt, &s.ReviewedBy, &s.ReviewNote,
-			&s.TaskID, &s.CreatedAt, &s.UpdatedAt,
+			&submission.ID, &submission.SubmissionCode, &submission.Type, &submission.TypeLabel, &submission.OperatorCode, &submission.OperatorName,
+			&submission.CageCode, &submission.Scope, &submission.Summary, &payloadBytes, &submission.SubmittedAt,
+			&submission.ApprovalStatus, &submission.ReviewedAt, &submission.ReviewedBy, &submission.ReviewNote,
+			&submission.TaskID, &submission.CreatedAt, &submission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(payloadBytes) > 0 {
-			_ = json.Unmarshal(payloadBytes, &s.Payload)
+			_ = json.Unmarshal(payloadBytes, &submission.Payload)
 		}
 
-		list = append(list, &s)
+		submissionList = append(submissionList, &submission)
 	}
 
-	return list, nil
+	return submissionList, nil
 }

@@ -10,6 +10,7 @@ import (
 	submissionsDomain "github.com/farmease/farmease-be/farmease/module/submissions/domain"
 )
 
+// CompleteTask marks a task as waiting approval (menunggu) and auto-generates a related submission for the admin.
 func (u *useCase) CompleteTask(ctx context.Context, id string) (string, string, error) {
 	task, err := u.repo.FindByID(ctx, id)
 	if err != nil {
@@ -24,19 +25,19 @@ func (u *useCase) CompleteTask(ctx context.Context, id string) (string, string, 
 		return "", "", err
 	}
 
-	// Cari submission terikat yang berstatus pending
+	// Find associated pending submissions
 	var existingSub *submissionsDomain.Submission
-	subs, err := u.submissionRepo.FindAll(ctx, "all", "")
+	submissionList, err := u.submissionRepo.FindAll(ctx, "all", "")
 	if err == nil {
-		for _, s := range subs {
-			if s.TaskID != nil && *s.TaskID == id {
-				existingSub = s
+		for _, submission := range submissionList {
+			if submission.TaskID != nil && *submission.TaskID == id {
+				existingSub = submission
 				break
 			}
 		}
 	}
 
-	// Jika belum ada submission yang terbuat, buat baru secara otomatis
+	// Create a new submission automatically if none exists
 	if existingSub == nil {
 		cageCode := "A"
 		if task.IDCage != nil && *task.IDCage != "" {
@@ -61,7 +62,7 @@ func (u *useCase) CompleteTask(ctx context.Context, id string) (string, string, 
 		_ = u.submissionRepo.Store(ctx, existingSub)
 	}
 
-	// Simpan log aktivitas ke tabel notifikasi
+	// Save notification log
 	notif := &notificationsDomain.Notification{
 		Title:        "Penyelesaian Tugas",
 		Message:      fmt.Sprintf("Tugas '%s' telah diselesaikan dan sedang menunggu persetujuan admin.", task.Title),

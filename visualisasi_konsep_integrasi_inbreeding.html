@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Interaktif & Animasi Konsep Peternakan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.3);
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.2);
+            --orange: #f59e0b;
+            --orange-glow: rgba(245, 158, 11, 0.2);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg-dark) 70%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #a5b4fc, #818cf8, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            background: rgba(31, 41, 55, 0.4);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem;
+            border-radius: 14px;
+            width: fit-content;
+            margin: 0 auto 3rem auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.8rem 1.8rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        /* Tab Content Panel */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Visual Card Wrapper */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+        }
+
+        /* Grid Layouts */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* TAB 1: INTEGRASI ANIMATION */
+        .integration-wrapper {
+            position: relative;
+            background: rgba(17, 24, 39, 0.4);
+            border-radius: 16px;
+            padding: 1rem;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        svg.flow-svg {
+            width: 100%;
+            height: auto;
+            max-height: 480px;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+        }
+
+        /* Animated Flow Lines */
+        .flow-line {
+            fill: none;
+            stroke-width: 3.5;
+            stroke-linecap: round;
+            stroke-dasharray: 8 12;
+            animation: flowDash 2.5s linear infinite;
+        }
+
+        .line-green {
+            stroke: var(--green);
+            filter: drop-shadow(0 0 3px var(--green));
+        }
+
+        .line-orange {
+            stroke: var(--orange);
+            filter: drop-shadow(0 0 3px var(--orange));
+            animation-duration: 2s;
+        }
+
+        .line-primary {
+            stroke: var(--primary);
+            filter: drop-shadow(0 0 3px var(--primary));
+            animation-duration: 3s;
+        }
+
+        @keyframes flowDash {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        /* Detail Card for Integrasi */
+        .info-sidebar {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1.2rem;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .info-box.active {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateX(5px);
+        }
+
+        .info-box h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-green { background: var(--green); }
+        .dot-orange { background: var(--orange); }
+        .dot-blue { background: var(--primary); }
+
+        /* TAB 2: INBREEDING CALCULATOR */
+        .calculator-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .calculator-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .gauge-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+        }
+
+        .gauge-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: #1f2937;
+            stroke-width: 8;
+        }
+
+        .gauge-progress {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 565;
+            stroke-dashoffset: 565;
+            transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.8s ease;
+        }
+
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .gauge-value h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            line-height: 1;
+        }
+
+        .gauge-value p {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* Status Badge Card */
+        .status-card {
+            margin-top: 1.5rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0px rgba(255,255,255,0.1); }
+            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0px rgba(255,255,255,0); }
+        }
+
+        .status-safe {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--orange);
+            border: 1px solid var(--orange);
+        }
+
+        .status-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        /* Controls Section */
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+            display: block;
+        }
+
+        /* Stylized Range Slider */
+        .slider-wrapper {
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #1f2937;
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-glow);
+            transition: transform 0.1s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Buttons selector */
+        .btn-select-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+        }
+
+        .btn-select {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-select:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .btn-select.active {
+            background: var(--primary-glow);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-select span.badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Descriptive Text Box */
+        .desc-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: #d1d5db;
+        }
+
+        .desc-box strong {
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Visualisasi Interaktif Konsep Peternakan</h1>
+            <p>Klik tombol atau tab di bawah untuk melihat animasi alur sirkular integrasi dan penentuan nilai koefisien inbreeding secara interaktif.</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'integrasi')">Integrasi Kebun & Ternak</button>
+            <button class="tab-btn" onclick="switchTab(event, 'inbreeding')">Penentuan Inbreeding (COI)</button>
+        </div>
+
+        <!-- TAB 1: INTEGRASI KEBUN DAN TERNAK -->
+        <div id="integrasi" class="tab-content active">
+            <div class="glass-card grid-2col">
+                <div class="integration-wrapper">
+                    <!-- SVG Diagram with animations -->
+                    <svg viewBox="0 0 600 500" class="flow-svg">
+                        <!-- Connection flows -->
+                        <!-- 1. Perkebunan (A) ke Pakan (P1) -->
+                        <path d="M 120 120 C 120 40, 280 40, 280 120" id="flow-pakan" class="flow-line line-orange" />
+                        <!-- 2. Pakan (P1) ke Ternak (D) -->
+                        <path d="M 320 120 C 320 40, 480 40, 480 120" id="flow-ternak" class="flow-line line-orange" />
+                        <!-- 3. Gulma (C) ke Ternak (D) secara langsung -->
+                        <path d="M 120 220 C 200 240, 400 240, 480 220" id="flow-grazing" class="flow-line line-green" />
+                        <!-- 4. Ternak (D) ke Kotoran (E) -->
+                        <path d="M 480 260 L 480 340" id="flow-kotoran" class="flow-line line-primary" />
+                        <!-- 5. Kotoran (E) ke Pupuk (P2) -->
+                        <path d="M 480 380 C 480 460, 320 460, 320 380" id="flow-pupuk" class="flow-line line-green" />
+                        <!-- 6. Pupuk (P2) ke Kebun (A) -->
+                        <path d="M 280 380 C 280 460, 120 460, 120 380" id="flow-ke-kebun" class="flow-line line-green" />
+                        <!-- 7. Kotoran (E) ke Biogas (F) -->
+                        <path d="M 440 380 L 160 380" id="flow-biogas" class="flow-line line-primary" />
+                        <!-- 8. Slurry Biogas ke Kebun (A) -->
+                        <path d="M 120 340 L 120 260" id="flow-slurry" class="flow-line line-green" />
+
+                        <!-- Nodes -->
+                        <!-- Sektor Kebun (Kiri Atas) -->
+                        <g class="node" id="node-kebun" onclick="highlightInfo('kebun')">
+                            <rect x="20" y="90" width="200" height="150" rx="14" fill="#14532d" stroke="#22c55e" stroke-width="2" />
+                            <text x="120" y="140" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">PERKEBUNAN</text>
+                            <text x="120" y="170" fill="#a3e635" font-size="12" text-anchor="middle">Hasil Panen & Sisa Biomasa</text>
+                            <text x="120" y="195" fill="#a3e635" font-size="12" text-anchor="middle">Gulma di Bawah Naungan</text>
+                        </g>
+
+                        <!-- Sektor Ternak (Kanan Atas) -->
+                        <g class="node" id="node-ternak" onclick="highlightInfo('ternak')">
+                            <rect x="380" y="90" width="200" height="150" rx="14" fill="#7c2d12" stroke="#ea580c" stroke-width="2" />
+                            <text x="480" y="140" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">PETERNAKAN</text>
+                            <text x="480" y="170" fill="#fdba74" font-size="12" text-anchor="middle">Sapi, Kambing, Domba</text>
+                            <text x="480" y="195" fill="#fdba74" font-size="12" text-anchor="middle">Produksi Daging/Susu</text>
+                        </g>
+
+                        <!-- Konversi Pakan (Tengah Atas) -->
+                        <g class="node" id="node-pakan" onclick="highlightInfo('pakan')">
+                            <circle cx="300" cy="120" r="35" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2" />
+                            <text x="300" y="125" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">PAKAN</text>
+                        </g>
+
+                        <!-- Konversi Pupuk (Tengah Bawah) -->
+                        <g class="node" id="node-pupuk-konv" onclick="highlightInfo('pupuk')">
+                            <circle cx="300" cy="380" r="35" fill="#14532d" stroke="#22c55e" stroke-width="2" />
+                            <text x="300" y="385" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">PUPUK</text>
+                        </g>
+
+                        <!-- Sektor Energi/Biogas (Kiri Bawah) -->
+                        <g class="node" id="node-biogas" onclick="highlightInfo('biogas')">
+                            <rect x="20" y="320" width="120" height="80" rx="10" fill="#581c87" stroke="#a855f7" stroke-width="2" />
+                            <text x="80" y="360" fill="#fff" font-size="14" font-weight="600" text-anchor="middle">BIOGAS</text>
+                            <text x="80" y="380" fill="#e9d5ff" font-size="10" text-anchor="middle">Metana & Slurry</text>
+                        </g>
+
+                        <!-- Sektor Kotoran (Kanan Bawah) -->
+                        <g class="node" id="node-kotoran" onclick="highlightInfo('kotoran')">
+                            <rect x="440" y="320" width="120" height="80" rx="10" fill="#4b5563" stroke="#9ca3af" stroke-width="2" />
+                            <text x="500" y="360" fill="#fff" font-size="14" font-weight="600" text-anchor="middle">LIMBAH</text>
+                            <text x="500" y="380" fill="#e5e7eb" font-size="10" text-anchor="middle">Feses & Urine</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="info-sidebar">
+                    <h2 style="font-family:'Outfit'; font-size:1.6rem; margin-bottom:0.5rem;">Alur Siklus</h2>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">Pilih bagian diagram di sebelah kiri untuk melihat deskripsi alur konsep integrasi.</p>
+                    
+                    <div class="info-box active" id="info-kebun">
+                        <h3><span class="dot dot-green"></span> Perkebunan & Tanaman</h3>
+                        <p>Menyediakan residu tanaman perkebunan (seperti pelepah sawit, jerami, kulit buah kopi) untuk diolah menjadi pakan ternak. Gulma liar di sela tanaman juga dimanfaatkan sebagai pakan alami.</p>
+                    </div>
+
+                    <div class="info-box" id="info-pakan">
+                        <h3><span class="dot dot-orange"></span> Pengolahan Pakan</h3>
+                        <p>Limbah padat perkebunan tidak langsung diberikan ke ternak melainkan dipotong (chaffing) lalu difermentasi atau dijadikan silase untuk meningkatkan nutrisi dan tingkat kecernaan ternak.</p>
+                    </div>
+
+                    <div class="info-box" id="info-ternak">
+                        <h3><span class="dot dot-orange"></span> Peternakan</h3>
+                        <p>Hewan ternak memakan pakan fermentasi dan membersihkan gulma kebun. Mengurangi biaya tenaga kerja penyiangan sekaligus mempercepat pertumbuhan bobot ternak secara optimal.</p>
+                    </div>
+
+                    <div class="info-box" id="info-kotoran">
+                        <h3><span class="dot dot-blue"></span> Limbah Kotoran</h3>
+                        <p>Kotoran ternak (feses dan urine) dikumpulkan setiap hari dari kandang. Limbah ini berpotensi merusak lingkungan jika tidak dikelola, tetapi menjadi bahan baku utama pupuk dan energi.</p>
+                    </div>
+
+                    <div class="info-box" id="info-biogas">
+                        <h3><span class="dot dot-blue"></span> Energi Biogas</h3>
+                        <p>Sebagian kotoran dialirkan ke kubah biogas anaerobik menghasilkan gas metana untuk energi. Ampas sisa biogas (bio-slurry) dikembalikan ke kebun sebagai pupuk cair kaya nitrogen.</p>
+                    </div>
+
+                    <div class="info-box" id="info-pupuk">
+                        <h3><span class="dot dot-green"></span> Pupuk Kompos</h3>
+                        <p>Kotoran padat diolah melalui metode pengomposan (dekomposisi) untuk menghasilkan pupuk organik berkualitas tinggi guna memulihkan kesehatan tanah dan meningkatkan hasil panen perkebunan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: INBREEDING CALCULATOR -->
+        <div id="inbreeding" class="tab-content">
+            <div class="glass-card calculator-layout">
+                <div class="gauge-section">
+                    <h3 style="font-family:'Outfit'; font-size:1.4rem; margin-bottom:1.5rem;">Visualisasi Risiko Inbreeding</h3>
+                    <div class="gauge-container">
+                        <svg class="gauge-svg" viewBox="0 0 200 200">
+                            <!-- Background ring -->
+                            <circle class="gauge-bg" cx="100" cy="100" r="90" />
+                            <!-- Progress ring -->
+                            <circle class="gauge-progress" id="coi-gauge" cx="100" cy="100" r="90" />
+                        </svg>
+                        <div class="gauge-value">
+                            <h2 id="coi-text">0.0%</h2>
+                            <p>Nilai COI (Fx)</p>
+                        </div>
+                    </div>
+
+                    <div class="status-card status-safe" id="status-badge">
+                        <span id="status-icon">✓</span> <span id="status-text">OUTBREEDING (AMAN)</span>
+                    </div>
+
+                    <div class="desc-box" id="recommendation-desc">
+                        Pilihan perkawinan luar kelompok (Outcrossing). Tidak ada leluhur bersama terdeteksi dalam 3-5 generasi terakhir. Sangat direkomendasikan untuk produksi komersial karena menjaga keragaman genetika dan stamina ternak.
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <h3 style="font-family:'Outfit'; font-size:1.4rem; margin-bottom:0.5rem;">Simulasi Hubungan Kekerabatan</h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">Pilih skenario perkawinan di bawah atau geser slider manual untuk melihat perubahan status bahaya inbreeding secara real-time.</p>
+
+                    <div class="control-group">
+                        <label class="control-label">Skenario Perkawinan</label>
+                        <div class="btn-select-grid">
+                            <button class="btn-select active" onclick="setScenario(0, this)">
+                                <span>Tidak Berkerabat (Outcrossing)</span>
+                                <span class="badge">COI: 0%</span>
+                            </button>
+                            <button class="btn-select" onclick="setScenario(3.125, this)">
+                                <span>Sepupu Setengah Kandung (Half-Cousins)</span>
+                                <span class="badge">COI: 3.125%</span>
+                            </button>
+                            <button class="btn-select" onclick="setScenario(6.25, this)">
+                                <span>Sepupu Kandung (First Cousins)</span>
+                                <span class="badge">COI: 6.25%</span>
+                            </button>
+                            <button class="btn-select" onclick="setScenario(12.5, this)">
+                                <span>Saudara Tiri / Kakek x Cucu</span>
+                                <span class="badge">COI: 12.5%</span>
+                            </button>
+                            <button class="btn-select" onclick="setScenario(25, this)">
+                                <span>Saudara Kandung / Induk x Anak</span>
+                                <span class="badge">COI: 25.0%</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Atur Koefisien Manual (0% - 30%)</label>
+                        <div class="slider-wrapper">
+                            <input type="range" min="0" max="30" step="0.25" value="0" class="slider" id="coi-slider" oninput="updateFromSlider(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(evt, tabName) {
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].classList.remove("active");
+            }
+            const tabBtns = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < tabBtns.length; i++) {
+                tabBtns[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            
+            if (tabName === 'inbreeding') {
+                // Trigger gauge update on switch to ensure it animates nicely
+                updateInbreedingVisuals(parseFloat(document.getElementById('coi-slider').value));
+            }
+        }
+
+        // Highlight info sidebar for integration nodes
+        function highlightInfo(nodeName) {
+            const boxes = document.getElementsByClassName("info-box");
+            for (let i = 0; i < boxes.length; i++) {
+                boxes[i].classList.remove("active");
+            }
+            document.getElementById("info-" + nodeName).classList.add("active");
+            
+            // Pulse the clicked node via scaling / filter
+            const nodeId = "node-" + (nodeName === 'pupuk' ? 'pupuk-konv' : nodeName);
+            const targetNode = document.getElementById(nodeId);
+            if (targetNode) {
+                targetNode.style.transform = "scale(1.08)";
+                setTimeout(() => {
+                    targetNode.style.transform = "";
+                }, 300);
+            }
+        }
+
+        // Inbreeding calculations & gauge updates
+        function updateInbreedingVisuals(coi) {
+            const gauge = document.getElementById('coi-gauge');
+            const text = document.getElementById('coi-text');
+            const statusBadge = document.getElementById('status-badge');
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            const desc = document.getElementById('recommendation-desc');
+
+            // Limit COI to max gauge display limit (30%)
+            const maxCOI = 30;
+            const displayCOI = Math.min(coi, maxCOI);
+            
+            // Gauge circumference is 2 * PI * r = 2 * 3.14159 * 90 = 565.48
+            const circumference = 565.48;
+            // Draw only a portion of the circle (e.g. 75% for speedo look, but we'll do full scale up to 30)
+            const fillRatio = displayCOI / maxCOI;
+            const strokeOffset = circumference - (fillRatio * circumference);
+
+            gauge.style.strokeDashoffset = strokeOffset;
+            text.innerText = coi.toFixed(2) + "%";
+
+            // Determine status, color, and recommendation text
+            if (coi === 0) {
+                gauge.style.stroke = "var(--green)";
+                statusBadge.className = "status-card status-safe";
+                statusIcon.innerText = "✓";
+                statusText.innerText = "OUTBREEDING (AMAN)";
+                desc.innerHTML = "<strong>Perkawinan Luar (Outcrossing):</strong> Tidak ada leluhur bersama yang terdeteksi dalam silsilah terdekat. Sangat aman dan direkomendasikan untuk menjaga produktivitas, daya hidup, dan resistensi penyakit.";
+            } else if (coi <= 6.25) {
+                gauge.style.stroke = "var(--green)";
+                statusBadge.className = "status-card status-safe";
+                statusIcon.innerText = "✓";
+                statusText.innerText = "INBREEDING RINGAN (AMAN)";
+                desc.innerHTML = `<strong>Inbreeding Terkendali (Toleransi Rendah):</strong> Nilai COI berada pada kisaran <strong>${coi.toFixed(2)}%</strong> (maksimal setara sepupu kandung). Tingkat risiko rendah, masih dapat ditoleransi dalam peternakan komersial biasa tanpa kekhawatiran signifikan akan penurunan stamina genetik.`;
+            } else if (coi <= 12.5) {
+                gauge.style.stroke = "var(--orange)";
+                statusBadge.className = "status-card status-warning";
+                statusIcon.innerText = "⚠";
+                statusText.innerText = "INBREEDING SEDANG (PERINGATAN)";
+                desc.innerHTML = `<strong>Peringatan Batas Kritis (Risiko Sedang):</strong> Nilai COI sebesar <strong>${coi.toFixed(2)}%</strong> (setara sepupu kandung dengan leluhur ekstra atau saudara tiri). Disarankan untuk <strong>menghindari perkawinan ini</strong> pada skala komersial. Risiko penurunan pertumbuhan lambat laun dan kemandulan kecil mulai muncul.`;
+            } else {
+                gauge.style.stroke = "var(--red)";
+                statusBadge.className = "status-card status-danger";
+                statusIcon.innerText = "✖";
+                statusText.innerText = "INBREEDING TINGGI (DITOLAK)";
+                desc.innerHTML = `<strong>Risiko Tinggi (Bahaya Inbreeding Depression):</strong> Nilai COI mencapai <strong>${coi.toFixed(2)}%</strong> (setara saudara kandung atau induk x anak). Perkawinan <strong>DILARANG KERAS</strong> karena menyebabkan cacat lahir fisik, penurunan drastis berat badan lahir, fertilitas drop, dan tingkat kematian anak ternak yang sangat tinggi.`;
+            }
+        }
+
+        function setScenario(coi, btn) {
+            // Update active state in scenario buttons
+            const btns = document.getElementsByClassName('btn-select');
+            for(let i=0; i<btns.length; i++) {
+                btns[i].classList.remove('active');
+            }
+            btn.classList.add('active');
+
+            // Sync range slider
+            document.getElementById('coi-slider').value = coi;
+
+            // Trigger animation
+            updateInbreedingVisuals(coi);
+        }
+
+        function updateFromSlider(coiVal) {
+            const coi = parseFloat(coiVal);
+            
+            // Deactivate scenario buttons because we are manually adjusting
+            const btns = document.getElementsByClassName('btn-select');
+            for(let i=0; i<btns.length; i++) {
+                btns[i].classList.remove('active');
+            }
+            
+            // If match exact scenario, activate that button
+            for(let i=0; i<btns.length; i++) {
+                const text = btns[i].innerText;
+                if ((coi === 0 && text.includes('0%')) ||
+                    (coi === 3.125 && text.includes('3.125%')) ||
+                    (coi === 6.25 && text.includes('6.25%')) ||
+                    (coi === 12.5 && text.includes('12.5%')) ||
+                    (coi === 25 && text.includes('25.0%'))) {
+                    btns[i].classList.add('active');
+                }
+            }
+
+            updateInbreedingVisuals(coi);
+        }
+
+        // Initialize first run animations
+        window.addEventListener('load', () => {
+            updateInbreedingVisuals(0);
+        });
+    </script>
+</body>
+</html>

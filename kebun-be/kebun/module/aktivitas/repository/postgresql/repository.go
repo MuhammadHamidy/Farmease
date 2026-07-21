@@ -66,8 +66,12 @@ func (r *aktivitasRepository) Store(ctx context.Context, a *domain.Aktivitas) er
 	if err != nil {
 		tTgl = time.Now()
 	}
+	var lahanID *string
+	if a.LahanIDLahan != "" {
+		lahanID = &a.LahanIDLahan
+	}
 	err = r.db.QueryRow(ctx, "INSERT INTO gardening.aktivitas (tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan) VALUES ($1, $2, $3, $4) RETURNING id_aktivitas",
-		tTgl, a.NamaJenisAktivitas, a.NamaRincianAktivitas, a.LahanIDLahan).Scan(&a.IDAktivitas)
+		tTgl, a.NamaJenisAktivitas, a.NamaRincianAktivitas, lahanID).Scan(&a.IDAktivitas)
 	if err != nil {
 		return err
 	}
@@ -80,8 +84,12 @@ func (r *aktivitasRepository) Update(ctx context.Context, a *domain.Aktivitas) e
 	if err != nil {
 		tTgl = time.Now()
 	}
+	var lahanID *string
+	if a.LahanIDLahan != "" {
+		lahanID = &a.LahanIDLahan
+	}
 	_, err = r.db.Exec(ctx, "UPDATE gardening.aktivitas SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4, updated_at = CURRENT_TIMESTAMP WHERE id_aktivitas = $5",
-		tTgl, a.NamaJenisAktivitas, a.NamaRincianAktivitas, a.LahanIDLahan, a.IDAktivitas)
+		tTgl, a.NamaJenisAktivitas, a.NamaRincianAktivitas, lahanID, a.IDAktivitas)
 	if err != nil {
 		return err
 	}

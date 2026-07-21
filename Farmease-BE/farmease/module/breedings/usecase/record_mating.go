@@ -9,16 +9,19 @@ import (
 	tasksDomain "github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
+// RecordMating logs a new breeding event (natural mating or artificial insemination)
+// and automatically schedules a follow-up pregnancy check (Kontrol Kebuntingan) 21 days later.
 func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) error {
-	// Resolve sheep codes to UUIDs if codes are passed
+	// Resolve female sheep code to UUID if code is passed
 	if matingData.IDSheepFemale != "" {
-		if s, err := u.sheepRepo.FindByCode(ctx, matingData.IDSheepFemale); err == nil && s != nil && s.IDSheep != "" {
-			matingData.IDSheepFemale = s.IDSheep
+		if femaleSheep, err := u.sheepRepo.FindByCode(ctx, matingData.IDSheepFemale); err == nil && femaleSheep != nil && femaleSheep.IDSheep != "" {
+			matingData.IDSheepFemale = femaleSheep.IDSheep
 		}
 	}
+	// Resolve male sheep code to UUID if code is passed
 	if matingData.IDSheepMale != "" {
-		if s, err := u.sheepRepo.FindByCode(ctx, matingData.IDSheepMale); err == nil && s != nil && s.IDSheep != "" {
-			matingData.IDSheepMale = s.IDSheep
+		if maleSheep, err := u.sheepRepo.FindByCode(ctx, matingData.IDSheepMale); err == nil && maleSheep != nil && maleSheep.IDSheep != "" {
+			matingData.IDSheepMale = maleSheep.IDSheep
 		}
 	}
 
@@ -68,10 +71,10 @@ func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) e
 		IDSheepMale:   matingData.IDSheepMale,
 		IDSheepFemale: matingData.IDSheepFemale,
 	}
-	inbreedingRes, err := u.CheckInbreeding(ctx, checkReq)
-	if err == nil && inbreedingRes != nil {
-		matingData.InbreedingFlag = inbreedingRes.InbreedingFlag
-		matingData.CoefficientOfInbreeding = inbreedingRes.CoefficientOfInbreeding
+	inbreedingResponse, err := u.CheckInbreeding(ctx, checkReq)
+	if err == nil && inbreedingResponse != nil {
+		matingData.InbreedingFlag = inbreedingResponse.InbreedingFlag
+		matingData.CoefficientOfInbreeding = inbreedingResponse.CoefficientOfInbreeding
 	} else {
 		matingData.InbreedingFlag = false
 		matingData.CoefficientOfInbreeding = 0.0
@@ -92,9 +95,9 @@ func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) e
 		title += " (" + femaleSheep.SheepName + ")"
 	}
 
-	var cageID *string
+	var cageIDPtr *string
 	if femaleSheep.IDCage != "" {
-		cageID = &femaleSheep.IDCage
+		cageIDPtr = &femaleSheep.IDCage
 	}
 
 	followUpTask := &tasksDomain.Task{
@@ -105,7 +108,7 @@ func (u *useCase) RecordMating(ctx context.Context, matingData *domain.Mating) e
 		Priority:    "sedang",
 		Category:    "perkawinan",
 		Rincian:     "Kontrol Kebuntingan",
-		IDCage:      cageID,
+		IDCage:      cageIDPtr,
 		IDMating:    &matingData.IDMating,
 	}
 

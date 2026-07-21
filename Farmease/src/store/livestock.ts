@@ -15,6 +15,14 @@ export interface SheepDetail extends ApiSheep {
   photo_url?: string
 }
 
+export interface Sibling {
+  id_sheep: string | number
+  sheep_code: string
+  sheep_name: string
+  gender: string
+  type: string // "kandung", "tiri_bapak", "tiri_ibu"
+}
+
 export interface Silsilah {
   id_sheep: string | number
   sheep_code: string
@@ -22,6 +30,7 @@ export interface Silsilah {
   gender: string
   father?: Partial<Silsilah>
   mother?: Partial<Silsilah>
+  siblings?: Sibling[]
 }
 
 export interface Sheep {
@@ -181,12 +190,12 @@ export async function fetchCages() {
     error.value = null
 
     const list = await cagesApi.getList()
-    cages.value = (list || []).map((c) => ({
-      id: String(c.id_cage),
-      code: c.cage_code,
-      name: c.cage_name || `Kandang ${c.cage_code}`,
-      type: c.cage_type || c.location || 'campuran',
-      capacity: c.capacity,
+    cages.value = (list || []).map((cage) => ({
+      id: String(cage.id_cage),
+      code: cage.cage_code,
+      name: cage.cage_name || `Kandang ${cage.cage_code}`,
+      type: cage.cage_type || cage.location || 'campuran',
+      capacity: cage.capacity,
     }))
     lastFetch.value = Date.now()
   } catch (err: unknown) {
@@ -204,27 +213,27 @@ export async function fetchHealthRecords(sheepId?: string) {
 
     if (sheepId) {
       const list = await healthApi.getList(String(sheepId))
-      healthRecords.value = (list || []).map((h) => ({
-        id: String((h as any).id_health || h.id),
-        sheep_id: String(h.id_sheep),
-        date: h.date_recorded || (h as any).checkup_date || '',
-        status: h.diagnosis || h.health_status || (h as any).action || '',
-        notes: h.notes || h.description || '',
-        action: (h as any).action || '',
-        medicine_given: (h as any).medicine_given || '',
-        inspector_name: (h as any).inspector_name || '',
+      healthRecords.value = (list || []).map((health) => ({
+        id: String((health as any).id_health || health.id),
+        sheep_id: String(health.id_sheep),
+        date: health.date_recorded || (health as any).checkup_date || '',
+        status: (health as any).diagnosis || health.health_status || (health as any).action || '',
+        notes: (health as any).notes || health.description || '',
+        action: (health as any).action || '',
+        medicine_given: (health as any).medicine_given || '',
+        inspector_name: (health as any).inspector_name || '',
       }))
     } else {
       const list = await healthApi.getGlobalList()
-      healthRecords.value = (list || []).map((h) => ({
-        id: String((h as any).id_health || h.id),
-        sheep_id: String(h.id_sheep),
-        date: h.date_recorded || (h as any).checkup_date || '',
-        status: h.diagnosis || h.health_status || (h as any).action || '',
-        notes: h.notes || h.description || '',
-        action: (h as any).action || '',
-        medicine_given: (h as any).medicine_given || '',
-        inspector_name: (h as any).inspector_name || '',
+      healthRecords.value = (list || []).map((health) => ({
+        id: String((health as any).id_health || health.id),
+        sheep_id: String(health.id_sheep),
+        date: health.date_recorded || (health as any).checkup_date || '',
+        status: (health as any).diagnosis || health.health_status || (health as any).action || '',
+        notes: (health as any).notes || health.description || '',
+        action: (health as any).action || '',
+        medicine_given: (health as any).medicine_given || '',
+        inspector_name: (health as any).inspector_name || '',
       }))
     }
   } catch (err: unknown) {
@@ -244,11 +253,11 @@ export async function fetchWeightRecords(sheepId?: string) {
       ? await weightApi.getSheepHistory(String(sheepId))
       : await weightApi.getList()
 
-    weightRecords.value = (list || []).map((w) => ({
-      id: String((w as any).id_weight || w.id),
-      sheep_id: String(w.id_sheep),
-      date: w.date_recorded || (w as any).weighing_date || '',
-      weight: w.weight || (w as any).weight_kg || 0,
+    weightRecords.value = (list || []).map((weight) => ({
+      id: String((weight as any).id_weight || weight.id),
+      sheep_id: String(weight.id_sheep),
+      date: weight.date_recorded || (weight as any).weighing_date || '',
+      weight: weight.weight || (weight as any).weight_kg || 0,
     }))
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Failed to fetch weight records'
@@ -268,12 +277,12 @@ export async function fetchFeedRecords(sheepId?: string) {
       feedRecords.value = (list as FeedRecord[]) ?? []
     } else {
       const list = await feedsApi.getList()
-      feedRecords.value = (list || []).map((f) => ({
-        id: String((f as any).id_feed || f.id),
+      feedRecords.value = (list || []).map((feed) => ({
+        id: String((feed as any).id_feed || feed.id),
         sheep_id: '',
-        type: f.feed_type || (f as any).category || '',
-        quantity: f.stock !== undefined && f.stock !== null ? f.stock : ((f as any).available_stock || 0),
-        date: f.created_at,
+        type: feed.feed_type || (feed as any).category || '',
+        quantity: feed.stock !== undefined && feed.stock !== null ? feed.stock : ((feed as any).available_stock || 0),
+        date: feed.created_at,
       }))
     }
   } catch (err: unknown) {
@@ -359,8 +368,8 @@ export async function addHealthRecord(sheepId: string, data: Record<string, unkn
       id: String((created as any).id_health || created.id),
       sheep_id: String(created.id_sheep),
       date: created.date_recorded || (created as any).checkup_date || '',
-      status: created.diagnosis || created.health_status || (created as any).action || '',
-      notes: created.notes || created.description || '',
+      status: (created as any).diagnosis || created.health_status || (created as any).action || '',
+      notes: (created as any).notes || created.description || '',
       action: (created as any).action || '',
       medicine_given: (created as any).medicine_given || '',
       inspector_name: (created as any).inspector_name || '',
@@ -431,8 +440,6 @@ export async function fetchSilsilah(id: string | number) {
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat silsilah'
     console.error('Error fetching silsilah/genealogy:', err)
-    // Create an empty structure so it doesn't show "Data silsilah tidak tersedia"
-    // The UI will just show "Tidak Diketahui" for empty parents
     currentSilsilah.value = { id_sheep: id, sheep_code: '', sheep_name: '', gender: '' }
   } finally {
     detailLoading.value = false
@@ -443,15 +450,15 @@ export async function fetchHealthForSheep(id: string | number) {
   try {
     detailError.value = null
     const list = await healthApi.getList(id)
-    currentHealthRecords.value = (list || []).map((h) => ({
-      id: String((h as any).id_health || h.id),
-      sheep_id: String(h.id_sheep),
-      date: h.date_recorded || (h as any).checkup_date || '',
-      status: h.diagnosis || h.health_status || (h as any).action || '',
-      notes: h.notes || h.description || '',
-      action: (h as any).action || '',
-      medicine_given: (h as any).medicine_given || '',
-      inspector_name: (h as any).inspector_name || '',
+    currentHealthRecords.value = (list || []).map((health) => ({
+      id: String((health as any).id_health || health.id),
+      sheep_id: String(health.id_sheep),
+      date: health.date_recorded || (health as any).checkup_date || '',
+      status: (health as any).diagnosis || health.health_status || (health as any).action || '',
+      notes: (health as any).notes || health.description || '',
+      action: (health as any).action || '',
+      medicine_given: (health as any).medicine_given || '',
+      inspector_name: (health as any).inspector_name || '',
     }))
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat riwayat kesehatan'
@@ -463,11 +470,11 @@ export async function fetchWeightForSheep(id: string | number) {
   try {
     detailError.value = null
     const list = await weightApi.getSheepHistory(id)
-    currentWeightRecords.value = (list || []).map((w) => ({
-      id: String((w as any).id_weight || w.id),
-      sheep_id: String(w.id_sheep),
-      date: w.date_recorded || (w as any).weighing_date || '',
-      weight: w.weight || (w as any).weight_kg || 0,
+    currentWeightRecords.value = (list || []).map((weight) => ({
+      id: String((weight as any).id_weight || weight.id),
+      sheep_id: String(weight.id_sheep),
+      date: weight.date_recorded || (weight as any).weighing_date || '',
+      weight: weight.weight || (weight as any).weight_kg || 0,
     }))
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat riwayat berat'
@@ -479,19 +486,19 @@ export async function fetchMatingForSheep(id: string | number) {
   try {
     detailError.value = null
     const list = await breedingApi.getMatingList()
-    currentMatingRecords.value = (list || []).filter((m: any) => 
-      m.id_female_sheep === id || m.id_male_sheep === id || 
-      m.id_sheep_female === id || m.id_sheep_male === id
-    ).map((m: any) => {
-      const isFemale = m.id_female_sheep === id || m.id_sheep_female === id;
+    currentMatingRecords.value = (list || []).filter((mating: any) => 
+      mating.id_female_sheep === id || mating.id_male_sheep === id || 
+      mating.id_sheep_female === id || mating.id_sheep_male === id
+    ).map((mating: any) => {
+      const isFemale = mating.id_female_sheep === id || mating.id_sheep_female === id;
       return {
-        id: m.id || m.id_mating,
-        date: m.mating_date,
-        partner_id: isFemale ? (m.id_male_sheep || m.id_sheep_male) : (m.id_female_sheep || m.id_sheep_female),
-        partner_name: isFemale ? m.male_sheep?.sheep_name : m.female_sheep?.sheep_name,
-        method: m.mating_method || 'alami',
-        status: m.status,
-        notes: m.notes || '',
+        id: mating.id || mating.id_mating,
+        date: mating.mating_date,
+        partner_id: isFemale ? (mating.id_male_sheep || mating.id_sheep_male) : (mating.id_female_sheep || mating.id_sheep_female),
+        partner_name: isFemale ? mating.male_sheep?.sheep_name : mating.female_sheep?.sheep_name,
+        method: mating.mating_method || 'alami',
+        status: mating.status,
+        notes: mating.notes || '',
       };
     })
   } catch (err: unknown) {

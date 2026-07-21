@@ -15,12 +15,12 @@ func (r *Repository) FindAllMaster(ctx context.Context) ([]*domain.Feed, error) 
 
 	var list []*domain.Feed
 	for rows.Next() {
-		var p domain.Feed
-		err := rows.Scan(&p.IDFeed, &p.FeedName, &p.Unit, &p.AvailableStock, &p.PricePerUnit, &p.Category, &p.Notes)
+		var feed domain.Feed
+		err := rows.Scan(&feed.IDFeed, &feed.FeedName, &feed.Unit, &feed.AvailableStock, &feed.PricePerUnit, &feed.Category, &feed.Notes)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &p)
+		list = append(list, &feed)
 	}
 	return list, nil
 }

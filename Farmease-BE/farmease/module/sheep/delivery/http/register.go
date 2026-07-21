@@ -68,7 +68,7 @@ func (h *SheepHandler) RegisterSheep(c *fiber.Ctx) error {
 		statusVal = "dijual"
 	}
 
-	s := domain.Sheep{
+	sheep := domain.Sheep{
 		SheepCode:   req.SheepCode,
 		SheepName:   req.SheepName,
 		Gender:      req.Gender,
@@ -85,12 +85,12 @@ func (h *SheepHandler) RegisterSheep(c *fiber.Ctx) error {
 		PhotoURL:    req.PhotoURL,
 	}
 
-	fmt.Printf("DEBUG: Parsed JSON: UmurMethod='%s', PoelLevel='%s'\n", s.UmurMethod, s.PoelLevel)
+	fmt.Printf("DEBUG: Parsed JSON: UmurMethod='%s', PoelLevel='%s'\n", sheep.UmurMethod, sheep.PoelLevel)
 
-	err = h.useCase.RegisterSheep(c.Context(), &s)
+	err = h.useCase.RegisterSheep(c.Context(), &sheep)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(s)
+	return c.Status(http.StatusCreated).JSON(sheep)
 }

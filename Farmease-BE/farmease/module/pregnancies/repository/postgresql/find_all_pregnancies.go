@@ -5,6 +5,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/pregnancies/domain"
 )
 
+// FindAllPregnancies lists all recorded pregnancies with optional status filter.
 func (r *Repository) FindAllPregnancies(ctx context.Context, status string) ([]*domain.Pregnancy, error) {
 	query := `
 		SELECT k.id_pregnancy, k.id_mating, k.pregnancy_date, k.pregnancy_status, k.expected_birth_date, k.notes,
@@ -27,17 +28,17 @@ func (r *Repository) FindAllPregnancies(ctx context.Context, status string) ([]*
 	}
 	defer rows.Close()
 
-	var list []*domain.Pregnancy
+	var pregnancyList []*domain.Pregnancy
 	for rows.Next() {
-		var k domain.Pregnancy
-		var d domain.SheepShort
-		err := rows.Scan(&k.IDPregnancy, &k.IDMating, &k.PregnancyDate, &k.PregnancyStatus, &k.ExpectedBirthDate, &k.Notes, &d.IDSheep, &d.SheepName, &k.IDFather)
+		var pregnancy domain.Pregnancy
+		var mother domain.SheepShort
+		err := rows.Scan(&pregnancy.IDPregnancy, &pregnancy.IDMating, &pregnancy.PregnancyDate, &pregnancy.PregnancyStatus, &pregnancy.ExpectedBirthDate, &pregnancy.Notes, &mother.IDSheep, &mother.SheepName, &pregnancy.IDFather)
 		if err != nil {
 			return nil, err
 		}
-		k.MotherSheep = &d
-		k.DamSheep = &d
-		list = append(list, &k)
+		pregnancy.MotherSheep = &mother
+		pregnancy.DamSheep = &mother
+		pregnancyList = append(pregnancyList, &pregnancy)
 	}
-	return list, nil
+	return pregnancyList, nil
 }

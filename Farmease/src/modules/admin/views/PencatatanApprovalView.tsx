@@ -248,12 +248,12 @@ export default defineComponent({
       const key = map[statusFilter.value] || 'all';
       let list = pencatatanSubmissions.value || [];
       if (key !== 'all') {
-        list = list.filter((s) => s.approvalStatus === key);
+        list = list.filter((submission) => submission.approvalStatus === key);
       }
 
       // Automatically filter out any perkebunan records (only show livestock/peternakan)
-      list = list.filter((s) => {
-        const typeLower = (s.type || '').toLowerCase();
+      list = list.filter((submission) => {
+        const typeLower = (submission.type || '').toLowerCase();
         const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman', 'stok obat', 'stok pupuk', 'stok_obat', 'stok_pupuk'].includes(typeLower);
         return !isPerkebunan;
       });
