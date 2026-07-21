@@ -25,7 +25,7 @@ func (h *CageHandler) GetCageList(c *fiber.Ctx) error {
 	filter := domain.CageFilter{
 		CageType: c.Query("cage_type"),
 		Page:     c.QueryInt("page", 1),
-		PerPage:  c.QueryInt("per_page", 20),
+		PerPage:  c.QueryInt("per_page", 100),
 	}
 
 	res, _, err := h.useCase.GetCageList(c.Context(), filter)

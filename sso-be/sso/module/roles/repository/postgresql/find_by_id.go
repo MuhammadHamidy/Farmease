@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/libraries/object"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/object"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 var queryFindById = `
@@ -75,3 +75,4 @@ func (r *Repository) FindByName(ctx context.Context, institutionId string, name 
 
 	return role, nil
 }
+

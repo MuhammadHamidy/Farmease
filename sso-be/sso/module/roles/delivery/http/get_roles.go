@@ -5,10 +5,10 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
-	"github.com/farmease/farmease-be/libraries/types"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/middleware"
+	"github.com/farmease/sso-be/libraries/responses"
+	"github.com/farmease/sso-be/libraries/types"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 type (
@@ -75,3 +75,4 @@ func (h *RoleHandler) GetRoles(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(responses.SuccessWithMeta(result, "Roles retrieved", meta))
 }
+

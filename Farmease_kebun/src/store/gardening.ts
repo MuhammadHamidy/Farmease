@@ -50,6 +50,8 @@ export interface Perawatan {
   type: string
   date: string
   notes: string
+  nama_jenis_aktivitas?: string
+  nama_rincian_aktivitas?: string
 }
 
 export interface Panen {
@@ -110,6 +112,8 @@ function mapPerawatan(row: ApiPerawatan): Perawatan {
     type: row.jenis_perawatan,
     date: row.tanggal_perawatan,
     notes: row.deskripsi,
+    nama_jenis_aktivitas: row.nama_jenis_aktivitas,
+    nama_rincian_aktivitas: row.nama_rincian_aktivitas,
   }
 }
 
@@ -126,8 +130,8 @@ function mapPanen(row: ApiPanen): Panen {
 function mapNotifikasi(row: ApiNotifikasi): Notifikasi {
   return {
     id: String(row.id),
-    type: row.judul,
-    message: row.pesan,
+    type: row.title,
+    message: row.message,
     date: row.created_at,
     read: row.is_read,
   }

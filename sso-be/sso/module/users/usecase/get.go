@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 // Get retrieves a user by ID.
@@ -33,3 +33,4 @@ func (u *UseCase) Get(ctx context.Context, id string) (*domain.User, error) {
 
 	return user, nil
 }
+

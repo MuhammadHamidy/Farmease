@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/libraries/object"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/object"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 // FindAll retrieves users based on filters.
@@ -66,3 +66,4 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.UserFilter) ([]*
 
 	return users, total, nil
 }
+

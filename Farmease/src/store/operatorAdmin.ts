@@ -1,6 +1,8 @@
+import { ref, computed } from 'vue';
 import { tasksApi, feedsApi, healthApi, manureApi, breedingApi, birthApi, weightApi, pregnancyApi, authApi, routineSchedulesApi, type ApiRoutineSchedule, type User, type MetadataEnums, type EnumChoice, submissionsApi, type ApiSubmission } from '@/shared/api';
-import { sheep } from '@/store/livestock';
-import { cagesList, landsList, fetchCagesList, fetchLandsList } from '@/store/navigation';
+import { pemangkasanApi } from '@/shared/api/perkebunan';
+import { sheep, fetchSheep } from '@/store/livestock';
+import { cagesList, landsList, fetchCagesList, fetchLandsList, activePencatatanForm, triggerGlobalAlert } from '@/store/navigation';
 
 export const accountsList = ref<User[]>([]);
 
@@ -48,7 +50,6 @@ export const metadataEnums = ref<MetadataEnums>({
     { value: 'Vaksinasi', label: 'Vaksinasi' },
     { value: 'Pemeriksaan Medis', label: 'Pemeriksaan Medis' },
     { value: 'Pembersihan Kandang', label: 'Pembersihan Kandang' },
-    { value: 'Fermentasi Kotoran', label: 'Fermentasi Kotoran' },
     { value: 'Kawin Alami', label: 'Kawin Alami' },
     { value: 'Inseminasi Buatan', label: 'Inseminasi Buatan' },
     { value: 'Pencatatan Kelahiran', label: 'Pencatatan Kelahiran' },
@@ -97,7 +98,6 @@ export const metadataEnums = ref<MetadataEnums>({
   ],
   manure_activity: [
     { value: 'collection', label: 'Pengumpulan' },
-    { value: 'fermentation', label: 'Fermentasi' },
     { value: 'distribution', label: 'Penyaluran' }
   ],
   manure_dest: [
@@ -118,6 +118,45 @@ export const metadataEnums = ref<MetadataEnums>({
     { value: 'pending', label: 'Pending' },
     { value: 'done', label: 'Selesai (Done)' },
     { value: 'menunggu', label: 'Menunggu Validasi' }
+  ],
+  health_actions: [
+    { value: 'Vaksin Enterotoxemia', label: 'Vaksin Enterotoxemia' },
+    { value: 'Vitamin', label: 'Vitamin' },
+    { value: 'Obat Cacing', label: 'Obat Cacing' },
+    { value: 'Antibiotik', label: 'Antibiotik' }
+  ],
+  medicines: [
+    { value: 'Clostridium Vaccine', label: 'Clostridium Vaccine (Vaksin)' },
+    { value: 'Vit B-Complex', label: 'Vit B-Complex (Vitamin)' },
+    { value: 'Albendazole', label: 'Albendazole (Obat Cacing)' },
+    { value: 'Vitamin ADE', label: 'Vitamin ADE' },
+    { value: 'Vitamin B12/PLEK', label: 'Vitamin B12/PLEK' },
+    { value: 'Antibiotik K', label: 'Antibiotik K' }
+  ],
+  manure_conditions: [
+    { value: 'basah', label: 'Basah' },
+    { value: 'kering', label: 'Kering' },
+    { value: 'campur', label: 'Campuran' }
+  ],
+  pregnancy_check_methods: [
+    { value: 'usg', label: 'Cek USG' },
+    { value: 'palpasi', label: 'Palpasi' },
+    { value: 'testpack', label: 'Testpack' }
+  ],
+  pregnancy_check_results: [
+    { value: 'masih_menunggu', label: 'Masih Menunggu (Perlu Pemeriksaan Ulang Nanti)' },
+    { value: 'bunting_terkonfirmasi', label: 'Bunting Terkonfirmasi' },
+    { value: 'gagal', label: 'Gagal / Tidak Bunting' },
+    { value: 'keguguran', label: 'Keguguran' }
+  ],
+  estrus_check_results: [
+    { value: 'birahi', label: 'Birahi (Siap Kawin)' },
+    { value: 'tidak_birahi', label: 'Tidak Birahi' }
+  ],
+  dam_conditions: [
+    { value: 'Sehat', label: 'Sehat' },
+    { value: 'Lemas', label: 'Lemas' },
+    { value: 'Perlu Penanganan', label: 'Perlu Penanganan' }
   ]
 });
 
@@ -147,7 +186,8 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export type TaskStatus = 'belum' | 'proses' | 'selesai' | 'terlambat';
 export type TaskPriority = 'rendah' | 'sedang' | 'tinggi';
 export type ScheduleFrequency = 'sekali' | 'harian' | 'mingguan' | 'bulanan';
-export type PencatatanCategory = 'pakan' | 'kesehatan' | 'kotoran' | 'perkawinan' | 'kelahiran' | 'umum';
+export type PencatatanCategory = 'pakan' | 'stok_pakan' | 'kesehatan' | 'kotoran' | 'perkawinan' | 'kelahiran' | 'berat_badan' | 'umum';
+
 
 export interface OperatorTask {
   id: string;
@@ -301,25 +341,40 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
     }
   }
 
+  const titleLower = (t.title || '').toLowerCase();
+
   // Parse title to guess category based on Role
   let category: PencatatanCategory = 'umum';
-  const titleLower = (t.title || '').toLowerCase();
-  
-  if (assigneeCode === 'OP001') {
-    // Ternak Tasks
-    if (titleLower.includes('pakan') || titleLower.includes('makan')) category = 'pakan';
-    else if (titleLower.includes('sehat') || titleLower.includes('sakit') || titleLower.includes('obat') || titleLower.includes('vitamin') || titleLower.includes('kesehatan')) category = 'kesehatan';
-    else if (titleLower.includes('kotoran') || titleLower.includes('kohe')) category = 'kotoran';
-    else if (titleLower.includes('kawin') || titleLower.includes('breeding')) category = 'perkawinan';
-    else if (titleLower.includes('lahir') || titleLower.includes('anak')) category = 'kelahiran';
-    else if (titleLower.includes('panen')) category = 'panen' as any;
-  } else if (assigneeCode === 'OP002') {
-    // Kebun Tasks
-    if (titleLower.includes('siram') || titleLower.includes('air') || titleLower.includes('penyiraman')) category = 'penyiraman' as any;
-    else if (titleLower.includes('pupuk') || titleLower.includes('pemupukan')) category = 'pemupukan' as any;
-    else if (titleLower.includes('bersih') || titleLower.includes('gulma')) category = 'pembersihan' as any;
-    else if (titleLower.includes('panen') || titleLower.includes('buah')) category = 'panen' as any;
-    else if (titleLower.includes('pangkas') || titleLower.includes('ranting')) category = 'pemangkasan' as any;
+  if (t.category) {
+    const rawCategory = t.category as string;
+    if (rawCategory === 'weighing') {
+      category = 'berat_badan';
+    } else if (rawCategory === 'pakan' && (t.rincian === 'Tambah Stok' || t.rincian === 'Konversi Pakan')) {
+      category = 'stok_pakan';
+    } else {
+      category = rawCategory as PencatatanCategory;
+    }
+  } else {
+    const rincianLower = (t.rincian || '').toLowerCase();
+    if (assigneeCode === 'OP001') {
+      // Ternak Tasks
+      if (titleLower.includes('stok_pakan') || titleLower.includes('stok pakan') || rincianLower.includes('tambah stok') || rincianLower.includes('konversi pakan')) category = 'stok_pakan';
+      else if (titleLower.includes('pakan') || titleLower.includes('makan')) category = 'pakan';
+      else if (titleLower.includes('sehat') || titleLower.includes('sakit') || titleLower.includes('obat') || titleLower.includes('vitamin') || titleLower.includes('kesehatan')) category = 'kesehatan';
+      else if (titleLower.includes('kotoran') || titleLower.includes('kohe')) category = 'kotoran';
+      else if (titleLower.includes('kawin') || titleLower.includes('breeding')) category = 'perkawinan';
+      else if (titleLower.includes('lahir') || titleLower.includes('anak')) category = 'kelahiran';
+      else if (titleLower.includes('berat badan') || titleLower.includes('timbang') || titleLower.includes('weighing') || titleLower.includes('berat_badan')) category = 'berat_badan';
+      else if (titleLower.includes('panen')) category = 'panen' as any;
+    } else if (assigneeCode === 'OP002') {
+      // Kebun Tasks
+      if (titleLower.includes('siram') || titleLower.includes('air') || titleLower.includes('penyiraman')) category = 'penyiraman' as any;
+      else if (titleLower.includes('olah pupuk') || titleLower.includes('pengolahan pupuk') || titleLower.includes('kompos') || titleLower.includes('pupuk kandang')) category = 'pengolahan_pupuk' as any;
+      else if (titleLower.includes('pupuk') || titleLower.includes('pemupukan')) category = 'pemupukan' as any;
+      else if (titleLower.includes('bersih') || titleLower.includes('gulma')) category = 'pembersihan' as any;
+      else if (titleLower.includes('panen') || titleLower.includes('buah')) category = 'panen' as any;
+      else if (titleLower.includes('pangkas') || titleLower.includes('ranting')) category = 'pemangkasan' as any;
+    }
   }
 
   // Resolve cage code from id_cage UUID using cagesList and landsList
@@ -494,7 +549,10 @@ export async function completeTask(id: string) {
   try {
     await tasksApi.markComplete(id);
     const task = operatorTasks.value.find((t) => t.id === id);
-    if (task) task.status = 'selesai';
+    if (task) {
+      task.status = 'proses';
+      task.rawStatus = 'menunggu';
+    }
   } catch (err) {
     console.error('Error completing task:', err);
     throw err;
@@ -526,8 +584,48 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
     const promises: Promise<unknown>[] = [];
 
     // Fetch lists from backend to resolve IDs dynamically if needed
+    if (cagesList.value.length === 0) {
+      await fetchCagesList();
+    }
+    if (sheep.value.length === 0) {
+      await fetchSheep();
+    }
     const feedsList = ['pakan', 'stok_pakan'].includes(input.type) ? await feedsApi.getList() : [];
     const pregnancyList = input.type === 'kelahiran' ? await pregnancyApi.getList() : [];
+
+    const resolveFeedId = async (name: string, category: string) => {
+      const itemName = (name || '').trim().toLowerCase();
+      if (!itemName) return null;
+      let matched = feedsList.find((f: any) => f.feed_name.toLowerCase() === itemName);
+      
+      // Jika tidak ketemu exact match, lakukan pencarian substring HANYA BILA BUKAN target silase
+      // (Karena silase seringkali merupakan produk baru dengan nama spesifik seperti "Silase Rumput Liar")
+      if (!matched && category !== 'silase') {
+        matched = feedsList.find(
+          (f: any) => f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
+        );
+      }
+      if (!matched) {
+        let mappedCategory = (category || 'hijauan').trim().toLowerCase();
+        if (mappedCategory === 'silase') {
+          mappedCategory = 'hijauan';
+        } else if (!['hijauan', 'konsentrat', 'pellet', 'greenery', 'vitamin'].includes(mappedCategory)) {
+          mappedCategory = 'hijauan';
+        }
+        try {
+          matched = await feedsApi.create({
+            feed_name: name,
+            feed_type: mappedCategory,
+            unit: 'kg',
+            stock: 1000
+          } as any);
+          feedsList.push(matched);
+        } catch (err) {
+          console.error('Failed to create missing feed:', err);
+        }
+      }
+      return matched ? String(matched.id || (matched as any).id_feed || '') : null;
+    };
 
     for (const item of items) {
       let sheepId: string | null = null;
@@ -535,74 +633,353 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         if (!isNaN(Number(item.targetId))) {
           sheepId = String(item.targetId);
         } else {
-          const found = sheep.value.find((s) => s.code.toUpperCase() === String(item.targetId).toUpperCase());
+          let found = sheep.value.find((s) => s.code.toUpperCase() === String(item.targetId).toUpperCase());
+          if (!found) {
+            found = sheep.value.find((s) => String(s.id) === String(item.targetId));
+          }
           if (found) sheepId = String(found.id);
         }
       }
 
-      if (input.type === 'pakan') {
-        // Catat pemberian pakan per domba (requires resolving id_feed from feed name)
-        if (sheepId) {
-          const itemName = (item.obat || item.name || '').toLowerCase();
-          const matchedFeed = feedsList.find(
-            (f) => f.feed_name.toLowerCase() === itemName || f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
-          );
-          
-          let feedId = matchedFeed ? matchedFeed.id : null;
+      // Resolve sheepIds (could be multiple if in cage scope)
+      let targetSheepIds: string[] = [];
+      const isCageScope = item.mode === 'kelompok' || input.scope === 'kandang';
 
-          if (!feedId && itemName) {
-            try {
-              const newFeed = await feedsApi.create({
-                feed_name: item.obat || item.name || 'Pakan Baru',
-                feed_type: 'Hijauan',
-                unit: item.unit || 'kg',
-                stock: 1000 // Beri stok default agar tidak insufficient stock
-              } as any);
-              feedId = newFeed.id;
-              feedsList.push(newFeed);
-            } catch (err) {
-              console.error('Failed to create missing feed:', err);
-              continue; // Skip if feed creation fails to avoid 422 invalid UUID
+      if (isCageScope) {
+        const cageCodeToFind = String(item.targetId || input.cageCode || '').toUpperCase();
+        const sheepsInCage = sheep.value.filter(
+          (s) => String(s.cage_code).toUpperCase() === cageCodeToFind &&
+                 s.status !== 'Mati' && s.status !== 'Terjual' && s.status !== 'Disembelih'
+        );
+        if (sheepsInCage.length > 0) {
+          targetSheepIds = sheepsInCage.map(s => String(s.id));
+        } else {
+          // fallback to proxy sheep
+          let fallbackId = '';
+          const activeSheep = sheep.value.find(s => s.status !== 'Mati' && s.status !== 'Terjual' && s.status !== 'Disembelih');
+          if (activeSheep) {
+            fallbackId = String(activeSheep.id);
+          } else if (sheep.value.length > 0) {
+            fallbackId = String(sheep.value[0]?.id || '1');
+          } else {
+            fallbackId = '1';
+          }
+          targetSheepIds = [fallbackId];
+        }
+      } else {
+        if (sheepId) {
+          targetSheepIds = [sheepId];
+        }
+      }
+
+      if (item.name === 'Konversi Pakan') {
+        const rawNames = (item.hijauan || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const energyNames = (item.energi || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const proteinNames = (item.protein || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const mineralNames = (item.mineral || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const targetName = item.obat;
+        const targetQty = parseFloat(item.qty) || 0;
+
+        const rawQtyTotal = targetQty * 0.7;
+        const energyQtyTotal = targetQty * 0.3 * (0.0180 / 0.0312);
+        const proteinQtyTotal = targetQty * 0.3 * (0.0108 / 0.0312);
+        const mineralQtyTotal = targetQty * 0.3 * (0.0024 / 0.0312);
+
+        const targetId = await resolveFeedId(targetName, 'silase');
+
+        const conversionDetails = [];
+
+        if (rawNames.length > 0) {
+          const qtyPerRaw = rawQtyTotal / rawNames.length;
+
+          // Ambil semua data pemangkasan sekali saja untuk efisiensi
+          let pruningList: any[] = [];
+          const hasPruningItems = rawNames.some(n => /^Pemangkasan\s+/i.test(n.trim()));
+          if (hasPruningItems) {
+            try { pruningList = await pemangkasanApi.getList(); } catch (e) {
+              console.warn('Gagal ambil data pemangkasan kebun:', e);
             }
           }
 
-          if (feedId) {
-            promises.push(
-              feedsApi.recordPemberianPakan(sheepId, {
-                id_feed: String(feedId),
-                amount: Number(item.qty) || 0,
-                unit: item.unit || 'kg',
-                notes: item.note || '',
-                feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
-              }),
-            );
+          for (const name of rawNames) {
+            // -------------------------------------------------------
+            // SINKRONISASI STOK: Jika bahan berasal dari kebun
+            // -------------------------------------------------------
+            if (/^Pemangkasan\s+/i.test(name.trim())) {
+              try {
+                const cleanName = name.trim().replace(/^Pemangkasan\s+/i, '').toLowerCase();
+
+                // Hitung total stok yang tersedia di kebun untuk bahan ini
+                const matchedEntries = pruningList.filter((p: any) => {
+                  const pName = ((p.nama_rincian_aktivitas || '').replace(/^Pemangkasan\s+/i, '')).toLowerCase().trim();
+                  return pName === cleanName && Number(p.jumlah) > 0;
+                });
+                const totalKebunStock = matchedEntries.reduce((sum: number, p: any) => sum + Number(p.jumlah), 0);
+
+                // Cek apakah entri sudah ada di feedsList (logistics.feeds)
+                const existingFeed = feedsList.find(
+                  (f: any) => f.feed_name.toLowerCase() === name.trim().toLowerCase()
+                );
+
+                if (existingFeed) {
+                  // Entri sudah ada: set stok menjadi total kebun yang sebenarnya
+                  const feedId = String(existingFeed.id || (existingFeed as any).id_feed);
+                  const currentStock = Number(existingFeed.stock || (existingFeed as any).available_stock || 0);
+                  const diff = totalKebunStock - currentStock;
+                  if (diff > 0) {
+                    await feedsApi.updateStok(feedId, diff, 'tambah');
+                    existingFeed.stock = totalKebunStock;
+                    (existingFeed as any).available_stock = totalKebunStock;
+                  } else if (diff < 0) {
+                    await feedsApi.updateStok(feedId, Math.abs(diff), 'kurang');
+                    existingFeed.stock = totalKebunStock;
+                    (existingFeed as any).available_stock = totalKebunStock;
+                  }
+                } else {
+                  // Entri belum ada: buat baru dengan stok yang tepat dari kebun
+                  try {
+                    const newFeed = await feedsApi.create({
+                      feed_name: name.trim(),
+                      feed_type: 'hijauan',
+                      unit: matchedEntries[0]?.satuan || 'kg',
+                      stock: totalKebunStock > 0 ? totalKebunStock : 0
+                    } as any);
+                    feedsList.push(newFeed);
+                  } catch (createErr) {
+                    console.error('Gagal buat entri feed dari kebun:', createErr);
+                  }
+                }
+
+                // Kurangi jumlah di kebun secara berurutan dari entri terbesar
+                let remaining = qtyPerRaw;
+                const sorted = [...matchedEntries].sort((a: any, b: any) => Number(b.jumlah) - Number(a.jumlah));
+                for (const entry of sorted) {
+                  if (remaining <= 0) break;
+                  const available = Number(entry.jumlah);
+                  const deduct = Math.min(available, remaining);
+                  const newQty = Math.max(0, available - deduct);
+                  await pemangkasanApi.update(entry.id_pemangkasan, { jumlah: newQty });
+                  remaining -= deduct;
+                }
+              } catch (kebunErr) {
+                console.warn('Gagal sinkronisasi stok kebun untuk:', name, kebunErr);
+              }
+            }
+
+            // Setelah stok tersinkron, resolve ID feed seperti biasa
+            // (sekarang feedsList sudah berisi entri dengan stok yang benar)
+            const rawId = await resolveFeedId(name, 'hijauan');
+            if (rawId && qtyPerRaw > 0) {
+              conversionDetails.push({ id_feed: rawId, amount: Number(qtyPerRaw.toFixed(2)) });
+            }
+          }
+        }
+
+        if (energyNames.length > 0) {
+          const qtyPerEnergy = energyQtyTotal / energyNames.length;
+          for (const name of energyNames) {
+            const energyId = await resolveFeedId(name, 'konsentrat');
+            if (energyId && qtyPerEnergy > 0) {
+              conversionDetails.push({ id_feed: energyId, amount: Number(qtyPerEnergy.toFixed(2)) });
+            }
+          }
+        }
+
+        if (proteinNames.length > 0) {
+          const qtyPerProtein = proteinQtyTotal / proteinNames.length;
+          for (const name of proteinNames) {
+            const proteinId = await resolveFeedId(name, 'konsentrat');
+            if (proteinId && qtyPerProtein > 0) {
+              conversionDetails.push({ id_feed: proteinId, amount: Number(qtyPerProtein.toFixed(2)) });
+            }
+          }
+        }
+
+        if (mineralNames.length > 0) {
+          const qtyPerMineral = mineralQtyTotal / mineralNames.length;
+          for (const name of mineralNames) {
+            const mineralId = await resolveFeedId(name, 'mineral');
+            if (mineralId && qtyPerMineral > 0) {
+              conversionDetails.push({ id_feed: mineralId, amount: Number(qtyPerMineral.toFixed(2)) });
+            }
+          }
+        }
+
+        if (targetId) {
+          promises.push(
+            feedsApi.recordSilageConversion({
+              id_target_feed: targetId,
+              conversion_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+              target_amount: targetQty,
+              unit: item.unit || 'kg',
+              notes: item.note || '',
+              details: conversionDetails
+            })
+          );
+        }
+      } else if (input.type === 'pakan') {
+        if (targetSheepIds.length > 0) {
+          const totalQty = Number(item.qty) || 0;
+          const qtyPerSheep = isCageScope ? (totalQty / targetSheepIds.length) : totalQty;
+          for (const sId of targetSheepIds) {
+            if (item.name === 'Pemberian Mineral') {
+              const mineralName = item.mineral || item.obat || 'Mineral';
+              const mineralId = await resolveFeedId(mineralName, 'vitamin');
+              if (mineralId) {
+                promises.push(
+                  feedsApi.recordPemberianPakan(sId, {
+                    id_feed: String(mineralId),
+                    amount: Number(qtyPerSheep.toFixed(2)),
+                    unit: item.unit || 'kg',
+                    notes: `Pemberian Mineral: ${mineralName}. ${item.note || ''}`,
+                    feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                  })
+                );
+              }
+            } else if (item.metoda === 'dadakan') {
+              // Pakan Dadakan - mixtures API
+              // Di pakan dadakan hanya ada Energi (62.5%) dan Protein (37.5%)
+              const energyAmt = qtyPerSheep * 0.625;
+              const proteinAmt = qtyPerSheep * 0.375;
+
+              const details = [];
+
+              if (item.energi) {
+                const energySources = item.energi.split(',').map((s: string) => s.trim()).filter(Boolean);
+                if (energySources.length > 0) {
+                  const energyAmtPerSource = energyAmt / energySources.length;
+                  for (const src of energySources) {
+                    const energyId = await resolveFeedId(src, 'konsentrat');
+                    if (energyId && energyAmtPerSource > 0) {
+                      details.push({ id_feed: energyId, amount: Number(energyAmtPerSource.toFixed(2)) });
+                    }
+                  }
+                }
+              }
+              if (item.protein) {
+                const proteinSources = item.protein.split(',').map((s: string) => s.trim()).filter(Boolean);
+                if (proteinSources.length > 0) {
+                  const proteinAmtPerSource = proteinAmt / proteinSources.length;
+                  for (const src of proteinSources) {
+                    const proteinId = await resolveFeedId(src, 'konsentrat');
+                    if (proteinId && proteinAmtPerSource > 0) {
+                      details.push({ id_feed: proteinId, amount: Number(proteinAmtPerSource.toFixed(2)) });
+                    }
+                  }
+                }
+              }
+
+              promises.push(
+                feedsApi.recordFeedingMixture({
+                  id_sheep: sId,
+                  feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                  total_amount: Number(qtyPerSheep.toFixed(2)),
+                  unit: item.unit || 'kg',
+                  notes: item.note || '',
+                  details: details
+                })
+              );
+            } else {
+              // Pakan Silase / Stok atau Pakan Hijauan Kebun
+              const itemName = (item.obat || item.name || '').toLowerCase();
+              const matchedFeed = feedsList.find(
+                (f) => f.feed_name.toLowerCase() === itemName || f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
+              );
+              
+              let feedId = matchedFeed ? (matchedFeed.id || (matchedFeed as any).id_feed) : null;
+
+              if (!feedId && itemName) {
+                try {
+                  const newFeed = await feedsApi.create({
+                    feed_name: item.obat || item.name || 'Pakan Baru',
+                    feed_type: item.metoda === 'silase' ? 'hijauan' : 'greenery',
+                    unit: item.unit || 'kg',
+                    stock: 1000
+                  } as any);
+                  feedId = newFeed.id || (newFeed as any).id_feed;
+                  feedsList.push(newFeed);
+                } catch (err) {
+                  console.error('Failed to create missing feed:', err);
+                }
+              }
+
+              if (feedId) {
+                promises.push(
+                  feedsApi.recordPemberianPakan(sId, {
+                    id_feed: String(feedId),
+                    amount: Number(qtyPerSheep.toFixed(2)),
+                    unit: item.unit || 'kg',
+                    notes: `${item.metoda === 'silase' ? 'Pakan Silase' : 'Pakan Hijauan Kebun'}. ${item.note || ''}`,
+                    feeding_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+                  }),
+                );
+              }
+            }
           }
         }
       } else if (input.type === 'kesehatan') {
         // Catat kesehatan per domba
-        if (sheepId) {
+        for (const sId of targetSheepIds) {
+          const isCheckup = item.name === 'Pemeriksaan Rutin' || item.name === 'Pemeriksaan Kesehatan';
           promises.push(
-            healthApi.create(sheepId, {
+            healthApi.create(sId, {
               checkup_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
-              diagnosis: item.note || 'Pemeriksaan Rutin',
-              action: item.tindakan || 'Pemeriksaan Rutin',
-              medicine_given: item.obat || '',
-              inspector_name: input.operatorName || 'Operator',
+              diagnosis: item.tindakan || item.note || 'Pemeriksaan Rutin',
+              action: isCheckup ? (item.obat || 'Observasi') : (item.tindakan || 'Pemeriksaan Rutin'),
+              medicine_given: isCheckup ? '' : (item.vitaminAmount && item.obat
+                ? `${item.obat} (${item.vitaminAmount} ml)`
+                : (item.obat || '')),
+              inspector_name: item.petugas || input.operatorName || 'Operator',
               notes: item.note || '',
             } as any),
           );
         }
       } else if (input.type === 'kotoran') {
         // Catat kotoran per domba/kandang
-        const targetId = sheepId || '1'; // fallback
-        promises.push(
-          manureApi.record(targetId, {
-            activity_type: 'collection',
-            amount: Number(item.qty) || 0,
-            unit: item.unit || 'kg',
-            notes: `Kondisi: ${item.kotoranState || 'campur'}. ${item.note || ''}`,
-          } as any),
-        );
+        if (input.scope === 'kandang') {
+          const cageId = item.targetId || input.cageCode || '';
+          promises.push(
+            manureApi.recordForCage(cageId, {
+              activity_type: 'collection',
+              amount: Number(item.qty) || 0,
+              unit: item.unit || 'kg',
+              notes: `Kondisi: ${item.kotoranState || 'campur'}. ${item.note || ''}`,
+            } as any),
+          );
+        } else {
+          let targetId = sheepId;
+          if (!targetId) {
+            // Because manure collection is cage-scoped, item.targetId is the cage code (e.g., 'K-INDUKAN-01').
+            // But the backend endpoint '/api/sheep/:id/manure' requires a valid sheep UUID.
+            // We look for any sheep currently in this cage.
+            const cageCodeToFind = String(item.targetId || input.cageCode || '').toUpperCase();
+            const sheepInCage = sheep.value.find(
+              (s) => String(s.cage_code).toUpperCase() === cageCodeToFind ||
+                     String(s.id).toUpperCase() === cageCodeToFind
+            );
+            if (sheepInCage) {
+              targetId = String(sheepInCage.id);
+            } else {
+              // Fallback to the first active/healthy sheep in the list
+              const activeSheep = sheep.value.find(s => s.status !== 'Mati' && s.status !== 'Terjual');
+              if (activeSheep) {
+                targetId = String(activeSheep.id);
+              } else if (sheep.value.length > 0) {
+                targetId = String(sheep.value[0]?.id || '1');
+              } else {
+                targetId = '1';
+              }
+            }
+          }
+          promises.push(
+            manureApi.record(targetId, {
+              activity_type: 'collection',
+              amount: Number(item.qty) || 0,
+              unit: item.unit || 'kg',
+              notes: `Kondisi: ${item.kotoranState || 'campur'}. ${item.note || ''}`,
+            } as any),
+          );
+        }
       } else if (input.type === 'perkawinan') {
         if (item.name === 'Kontrol Kebuntingan') {
           promises.push(
@@ -612,12 +989,14 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
               metode_pemeriksaan: item.metodePemeriksaan || 'manual',
               hasil: item.hasilPemeriksaan || 'masih_menunggu',
               catatan: item.note || '',
-              id_task: input.taskId || '',
             })
           );
+        } else if (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') {
+          // Cek Birahi / Pencatatan Birahi doesn't record a mating. The approved submission itself acts as the historical record.
+          promises.push(Promise.resolve());
         } else {
           // Catat perkawinan
-          const isIB = item.metoda === 'ib';
+          const isIB = item.metoda === 'ib' || item.metoda === 'inseminasi buatan';
           const notesStr = item.note || '';
         
           const matingPayload: any = {
@@ -630,6 +1009,14 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
             notes: notesStr,
           };
 
+          let maleId = item.idPejantan || '';
+          if (maleId) {
+            const foundMale = sheep.value.find((s) => s.code.toUpperCase() === String(maleId).toUpperCase() || String(s.id) === String(maleId));
+            if (foundMale) {
+              maleId = String(foundMale.id);
+            }
+          }
+
           if (isIB) {
             matingPayload.straw_code = item.asalSemen || '';
             matingPayload.inseminator = item.namaInseminator || '';
@@ -639,10 +1026,10 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
                 origin: item.donorOrigin || '',
               };
             } else {
-              matingPayload.id_sheep_male = item.idPejantan || '';
+              matingPayload.id_sheep_male = maleId;
             }
           } else {
-            matingPayload.id_sheep_male = item.idPejantan || '';
+            matingPayload.id_sheep_male = maleId;
           }
 
           promises.push(breedingApi.recordMating(matingPayload));
@@ -654,29 +1041,35 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         );
         const pregnancyId = matchedPregnancy ? (matchedPregnancy as any).id_pregnancy : '1';
 
-        const count = Number(item.jumlahAnak) || 1;
-        const offspringList = [];
-        for (let i = 1; i <= count; i++) {
-          offspringList.push({
-            sheep_code: `D-NEW-${Date.now()}-${i}`,
-            sheep_name: count > 1 ? `${item.namaAnak || 'Anak'} ${i}` : (item.namaAnak || 'Anak'),
-            gender: 'jantan',
-            id_cage: item.kandangAnak || input.cageCode || '',
-            birth_weight: Number(item.beratLahir) || 0,
-          });
-        }
+        if (item.name === 'Keguguran') {
+          promises.push(
+            pregnancyApi.updateStatus(String(pregnancyId), 'keguguran')
+          );
+        } else {
+          const count = Number(item.jumlahAnak) || 1;
+          const offspringList = [];
+          for (let i = 1; i <= count; i++) {
+            offspringList.push({
+              sheep_code: count > 1 ? `${item.sheepCode || 'A-001'}-${i}` : (item.sheepCode || 'A-001'),
+              sheep_name: count > 1 ? `${item.namaAnak || 'Anak'} ${i}` : (item.namaAnak || 'Anak'),
+              gender: item.genderAnak || 'jantan',
+              id_cage: item.kandangAnak || input.cageCode || '',
+              birth_weight: Number(item.beratLahir) || 0,
+            });
+          }
 
-        promises.push(
-          birthApi.recordBirth({
-            id_pregnancy: String(pregnancyId),
-            birth_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
-            number_of_offspring: count,
-            offspring_gender: 'campuran',
-            offspring_condition: item.kondisiAnak || 'sehat',
-            notes: `Kondisi Induk: ${item.kondisiInduk || 'Sehat'}. ${item.note || ''}`,
-            offspring_list: offspringList,
-          } as any),
-        );
+          promises.push(
+            birthApi.recordBirth({
+              id_pregnancy: String(pregnancyId),
+              birth_date: item.tanggal ? `${item.tanggal}T00:00:00Z` : new Date().toISOString(),
+              number_of_offspring: count,
+              offspring_gender: 'campuran',
+              offspring_condition: item.kondisiAnak || 'sehat',
+              notes: `Kondisi Induk: ${item.kondisiInduk || 'Sehat'}. ${item.note || ''}`,
+              offspring_list: offspringList,
+            } as any),
+          );
+        }
       } else if (input.type === 'berat_badan') {
         // Catat berat badan
         if (sheepId) {
@@ -689,58 +1082,25 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
           );
         }
       } else if (input.type === 'stok_pakan') {
-        if (item.name === 'Konversi Pakan') {
-          const rawName = item.obat;
-          const rawQty = parseFloat(item.qty) || 0;
-          const targetName = item.idPejantan;
-          const targetQty = parseFloat(item.vitaminAmount) || 0;
-
-          if (rawQty > 0) {
-            const existingRaw = feedsList.find(f => f.feed_name.toLowerCase() === rawName.toLowerCase());
-            if (existingRaw) {
-              promises.push(
-                feedsApi.updateStock(existingRaw.id, rawQty, 'kurang').catch(() => feedsApi.updateStok(existingRaw.id, rawQty, 'kurang'))
-              );
-            }
-          }
-
-          if (targetQty > 0) {
-            const existingTarget = feedsList.find(f => f.feed_name.toLowerCase() === targetName.toLowerCase());
-            if (existingTarget) {
-              promises.push(
-                feedsApi.updateStock(existingTarget.id, targetQty, 'tambah').catch(() => feedsApi.updateStok(existingTarget.id, targetQty, 'tambah'))
-              );
-            } else {
-              promises.push(
-                feedsApi.create({
-                  feed_name: targetName,
-                  feed_type: 'Hijauan',
-                  unit: 'kg',
-                  stock: targetQty
-                } as any)
-              );
-            }
-          }
-        } else {
-          // Tambah Stok
-          const name = item.obat;
-          const qty = parseFloat(item.qty) || 0;
-          if (qty > 0) {
-            const existing = feedsList.find(f => f.feed_name.toLowerCase() === name.toLowerCase());
-            if (existing) {
-              promises.push(
-                feedsApi.updateStock(existing.id, qty, 'tambah').catch(() => feedsApi.updateStok(existing.id, qty, 'tambah'))
-              );
-            } else {
-              promises.push(
-                feedsApi.create({
-                  feed_name: name,
-                  feed_type: 'Hijauan',
-                  unit: item.unit || 'kg',
-                  stock: qty
-                } as any)
-              );
-            }
+        // Tambah Stok
+        const name = item.obat;
+        const qty = parseFloat(item.qty) || 0;
+        if (qty > 0) {
+          const existing = feedsList.find(f => f.feed_name.toLowerCase() === name.toLowerCase());
+          if (existing) {
+            const fId = existing.id || (existing as any).id_feed;
+            promises.push(
+              feedsApi.updateStock(fId, qty, 'tambah').catch(() => feedsApi.updateStok(fId, qty, 'tambah'))
+            );
+          } else {
+            promises.push(
+              feedsApi.create({
+                feed_name: name,
+                feed_type: 'hijauan',
+                unit: item.unit || 'kg',
+                stock: qty
+              } as any)
+            );
           }
         }
       }
@@ -754,8 +1114,8 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         await tasksApi.markComplete(input.taskId);
         const task = operatorTasks.value.find((t) => t.id === input.taskId);
         if (task) {
-          task.status = 'selesai';
-          task.rawStatus = 'approved';
+          task.status = 'proses';
+          task.rawStatus = 'menunggu';
         }
       } catch {
         // Non-critical: task completion failure shouldn't block pencatatan
@@ -776,7 +1136,9 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
     panenApi, 
     perawatanApi, 
     aktivitasApi,
-    feedsApi
+    feedsApi,
+    pohonApi,
+    submissionsApi
   } = await import('@/shared/api');
   const items = (input.payload as any)?.data?.items ?? [];
 
@@ -791,12 +1153,15 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
       const foundLand = landsList.value.find(
         (l) => String(l.code).toUpperCase() === String(input.cageCode || '').toUpperCase()
       );
-      const landId = foundLand && foundLand.id ? String(foundLand.id) : 'b1111111-1111-1111-1111-111111111101';
+      const landId = foundLand && foundLand.id ? String(foundLand.id) : '11111111-1111-1111-1111-111111111111';
       const typeLower = (input.type || '').toLowerCase();
 
       if (typeLower === 'pemangkasan') {
         const weight = parseFloat(item.jumlahPemangkasan || item.qty || item.amount || 0);
         if (!isNaN(weight) && weight > 0) {
+          const rawUnit = item.satuanBerat || '';
+          const unitLower = rawUnit.toLowerCase();
+          const mappedUnit = (unitLower.includes('gram') && !unitLower.includes('kilo')) || unitLower === 'g' ? 'g' : 'kg';
           promises.push(
             pemangkasanApi.create({
               Aktivitas_id_aktivitas: '',
@@ -804,19 +1169,19 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
               nama_jenis_aktivitas: 'Pemangkasan',
               nama_rincian_aktivitas: item.selectedRincian || 'Pemangkasan',
               jumlah: String(weight),
-              satuan: 'kg',
+              satuan: mappedUnit,
               keterangan: item.deskripsiPemangkasan || 'Pemangkasan rutin',
               Lahan_id_lahan: landId,
             } as any)
           );
 
-          let feedName = 'Daun Alpukat (Mentah)';
+          let feedName = 'Hijauan Daun Alpukat';
           const rincian = (item.selectedRincian || '').toLowerCase();
           if (rincian.includes('gulma') || rincian.includes('rumput')) {
-            feedName = 'Gulma / Rumput Liar (Mentah)';
+            feedName = 'Hijauan Rumput / Gulma';
           } else if (rincian.includes('ranting') || rincian.includes('daun')) {
             if (rincian.includes('kelengkeng')) {
-              feedName = 'Daun Kelengkeng (Mentah)';
+              feedName = 'Hijauan Daun Kelengkeng';
             }
           }
 
@@ -826,10 +1191,11 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
                 const feedsList = await feedsApi.getList();
                 const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
                 if (existingFeed) {
+                  const fId = existingFeed.id || (existingFeed as any).id_feed;
                   try {
-                    await feedsApi.updateStock(existingFeed.id, weight, 'tambah');
+                    await feedsApi.updateStock(fId, weight, 'tambah');
                   } catch {
-                    await feedsApi.updateStok(existingFeed.id, weight, 'tambah');
+                    await feedsApi.updateStok(fId, weight, 'tambah');
                   }
                 } else {
                   await feedsApi.create({
@@ -880,6 +1246,15 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
         );
       } else if (typeLower === 'pemupukan') {
         const dosisVal = parseFloat(item.jumlahBeratPupuk || item.qty || item.amount || 0);
+        const rincian = (item.selectedRincian || '').toLowerCase();
+        let calculatedUnit = item.unit || 'kg';
+        if (rincian.includes('cair')) {
+          calculatedUnit = 'Liter';
+        } else if (rincian.includes('padat')) {
+          calculatedUnit = 'kg';
+        } else if (rincian.includes('kimia') || rincian.includes('anorganik')) {
+          calculatedUnit = 'g';
+        }
         promises.push(
           perawatanApi.create({
             Aktivitas_id_aktivitas: '',
@@ -889,7 +1264,7 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             jenis_bahan: 'pupuk',
             fase_pohon: item.fasePohon || 'Generatif',
             dosis: isNaN(dosisVal) ? 0 : dosisVal,
-            satuan: item.unit || 'kg',
+            satuan: calculatedUnit,
             bagian_pohon: item.bagianPohon || 'Akar',
             teknik_perawatan: item.teknikPemupukan || 'Tebar',
             nama_obat: item.jenisPupukDetail || item.jenisPupuk || 'Pupuk',
@@ -898,13 +1273,296 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
             Lahan_id_lahan: landId,
           } as any)
         );
+      } else if (typeLower === 'pembersihan') {
+        const weightVal = parseFloat(item.beratGulma || item.beratBahanPembumbun || item.beratLimbah || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pembersihan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pembersihan',
+            jenis_bahan: 'pembersihan',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(weightVal) ? 0 : weightVal,
+            satuan: item.satuanBerat || 'kg',
+            bagian_pohon: item.bagianPembersihan || 'Lahan',
+            teknik_perawatan: item.alatPembersihan || 'Manual',
+            nama_obat: item.jenisGulma || item.bahanPembumbun || '',
+            deskripsi: item.deskripsiPembersihan || 'Pembersihan rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+
+        let circularWeight = weightVal;
+        if (!isNaN(circularWeight) && circularWeight > 0 && item.tujuanPemanfaatan === 'Pakan Ternak') {
+          // Normalize to kg if unit is gram
+          const unitLower = (item.satuanBerat || '').toLowerCase();
+          if (unitLower.includes('gram') || unitLower === 'g') {
+            circularWeight = circularWeight / 1000;
+          }
+
+          let feedName = 'Gulma / Rumput Liar (Mentah)';
+          if (item.selectedRincian === 'Sanitasi Serasah & Ranting') {
+            const landName = (foundLand?.name || '').toLowerCase();
+            if (landName.includes('kelengkeng')) {
+              feedName = 'Daun Kelengkeng (Mentah)';
+            } else {
+              feedName = 'Daun Alpukat (Mentah)';
+            }
+          }
+
+          promises.push(
+            (async () => {
+              try {
+                const feedsList = await feedsApi.getList();
+                const existingFeed = feedsList.find((f: any) => f.feed_name.toLowerCase() === feedName.toLowerCase());
+                if (existingFeed) {
+                  const fId = existingFeed.id || (existingFeed as any).id_feed;
+                  try {
+                    await feedsApi.updateStock(fId, circularWeight, 'tambah');
+                  } catch {
+                    await feedsApi.updateStok(fId, circularWeight, 'tambah');
+                  }
+                } else {
+                  await feedsApi.create({
+                    feed_name: feedName,
+                    feed_type: 'Hijauan',
+                    unit: 'kg',
+                    stock: circularWeight
+                  } as any);
+                }
+              } catch (err) {
+                console.error('Failed to update feed stock for circular ecosystem from pembersihan:', err);
+              }
+            })()
+          );
+        }
+      } else if (typeLower === 'penyiraman') {
+        const volumeVal = parseFloat(item.volumeAir || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penyiraman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Penyiraman',
+            jenis_bahan: 'air',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: isNaN(volumeVal) ? 0 : volumeVal,
+            satuan: item.satuanVolumeAir || 'Liter',
+            bagian_pohon: 'Akar',
+            teknik_perawatan: item.teknikPenyiraman || 'Siram Manual',
+            nama_obat: item.sesiPenyiraman || '',
+            deskripsi: item.deskripsiPenyiraman || 'Penyiraman rutin',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'penanaman') {
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Penanaman',
+            nama_rincian_aktivitas: item.selectedRincian || 'Penanaman',
+            jenis_bahan: 'bibit',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: 1,
+            satuan: 'pohon',
+            bagian_pohon: 'Tanah',
+            teknik_perawatan: item.alasanPenanaman || 'Bibit Baru',
+            nama_obat: item.jenisBibit || 'Bibit',
+            deskripsi: item.deskripsiPenanaman || 'Penanaman bibit baru',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'pembuahan') {
+        const dosisVal = parseFloat(item.dosisPerangsang || item.jumlahBuahDibuang || item.jumlahBuahDibungkus || item.qty || item.amount || 0);
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pembuahan',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pembuahan',
+            jenis_bahan: 'hormon',
+            fase_pohon: item.fasePohon || 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: item.satuanDiameter || 'Unit',
+            bagian_pohon: 'Buah',
+            teknik_perawatan: item.jenisPerangsang || 'Perangsang',
+            nama_obat: item.bahanPembungkus || '',
+            deskripsi: item.deskripsiPembuahan || '',
+            detail_pohon: item.kodePohon || 'LA001',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk') {
+        const dosisVal = parseFloat(item.qty || 0);
+        // 1. Create a Perawatan activity record for the composting activity itself
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Pengolahan Pupuk',
+            nama_rincian_aktivitas: item.selectedRincian || 'Pupuk Kandang',
+            jenis_bahan: 'pupuk',
+            fase_pohon: 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: item.unit || 'kg',
+            bagian_pohon: 'Umum',
+            teknik_perawatan: 'Fermentasi',
+            nama_obat: item.dekomposer || '',
+            deskripsi: `Molase: ${item.molase || '-'}. Air: ${item.jumlahAir || 0} L. Bahan tambahan: ${item.bahanTambahan || '-'}. Bahan mentah: ${item.bahanMentahId || '-'}`,
+            detail_pohon: '',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+        // 2. Create a Stok Pupuk record to increase Perkebunan's fertilizer stock
+        if (item.selectedRincian === 'Pupuk Kandang' || item.selectedRincian === 'Pupuk Kompos') {
+          let obatName = '';
+          if (item.selectedRincian === 'Pupuk Kandang') {
+            obatName = 'Pupuk Kandang (Fermentasi)';
+          } else if (item.selectedRincian === 'Pupuk Kompos') {
+            obatName = 'Pupuk Kompos (Fermentasi)';
+          }
+
+          promises.push(
+            perawatanApi.create({
+              Aktivitas_id_aktivitas: '',
+              tanggal_aktivitas: new Date().toISOString().split('T')[0],
+              nama_jenis_aktivitas: 'Stok Pupuk',
+              nama_rincian_aktivitas: 'Tambah Pupuk',
+              jenis_bahan: 'pupuk',
+              fase_pohon: 'Generatif',
+              dosis: isNaN(dosisVal) ? 0 : dosisVal,
+              satuan: item.unit || 'kg',
+              bagian_pohon: 'Akar',
+              teknik_perawatan: 'Tebar',
+              nama_obat: obatName,
+              deskripsi: `Hasil pengolahan/fermentasi pupuk dari kotoran mentah/hasil pemangkasan.`,
+              detail_pohon: '',
+              Lahan_id_lahan: landId,
+            } as any)
+          );
+        } else if (item.selectedRincian === 'Cek Fermentasi' && (item.siapGuna === true || item.siapGuna === 'siap')) {
+          // If marked as ready to use, look up original Fermentasi Pupuk submission and add to stock
+          promises.push(
+            (async () => {
+              try {
+                const origSub = await submissionsApi.getById(item.batchFermentasiId);
+                const origItem = origSub?.payload?.data?.items?.[0] || {};
+                const origQty = parseFloat(origItem.qty || origItem.jumlahBeratPupuk || 0);
+                const origUnit = origItem.unit || 'kg';
+                const origHasil = origItem.hasilJadi || 'Pupuk Organik Padat Kandang';
+                
+                let baseName = origHasil;
+                if (origHasil === 'Pupuk Organik Padat Kandang') {
+                  baseName = 'Pupuk Kandang (Fermentasi)';
+                } else if (origHasil === 'Pupuk Organik Kompos') {
+                  baseName = 'Pupuk Kompos (Fermentasi)';
+                } else if (origHasil === 'Pupuk Organik Cair') {
+                  baseName = 'Pupuk Organik Cair (Fermentasi)';
+                }
+
+                let finalName = baseName;
+                if (origItem.bahanTambahan && origItem.bahanTambahan.toLowerCase() !== 'tidak ada' && origItem.bahanTambahan.trim() !== '') {
+                  finalName = `${baseName} (+ ${origItem.bahanTambahan})`;
+                }
+
+                await perawatanApi.create({
+                  Aktivitas_id_aktivitas: '',
+                  tanggal_aktivitas: new Date().toISOString().split('T')[0],
+                  nama_jenis_aktivitas: 'Stok Pupuk',
+                  nama_rincian_aktivitas: 'Tambah Pupuk',
+                  jenis_bahan: 'pupuk',
+                  fase_pohon: 'Generatif',
+                  dosis: isNaN(origQty) ? 0 : origQty,
+                  satuan: origUnit,
+                  bagian_pohon: 'Akar',
+                  teknik_perawatan: 'Tebar',
+                  nama_obat: finalName,
+                  deskripsi: `Hasil fermentasi batch ${item.batchFermentasiId} dinyatakan siap digunakan.`,
+                  detail_pohon: '',
+                  Lahan_id_lahan: landId,
+                } as any);
+              } catch (err) {
+                console.error('Failed to update fertilizer stock from Cek Fermentasi:', err);
+              }
+            })()
+          );
+        } else if (item.selectedRincian === 'Cek Fermentasi' && item.siapGuna === 'gagal') {
+          // If marked as failed, delete the original Fermentasi Pupuk submission so it no longer appears in dropdowns
+          promises.push(
+            (async () => {
+              try {
+                if (item.batchFermentasiId) {
+                  await submissionsApi.delete(item.batchFermentasiId);
+                }
+              } catch (err) {
+                console.error('Failed to delete failed fermentation batch:', err);
+              }
+            })()
+          );
+        }
+      } else if (typeLower === 'stok obat' || typeLower === 'stok_obat') {
+        const dosisVal = parseFloat(item.volumeObat || item.qty || item.amount || 0);
+        let calculatedUnit = item.satuanVolumeObat || item.unit || 'ml';
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Stok Obat',
+            nama_rincian_aktivitas: item.selectedRincian || 'Tambah Obat',
+            jenis_bahan: 'obat',
+            fase_pohon: 'Vegetatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: calculatedUnit,
+            bagian_pohon: 'Daun',
+            teknik_perawatan: item.teknikPemberianObat || 'Semprot',
+            nama_obat: item.namaObat || 'Obat',
+            deskripsi: item.catatanStok || '',
+            detail_pohon: item.volumeLarutan || '',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
+      } else if (typeLower === 'stok pupuk' || typeLower === 'stok_pupuk') {
+        const dosisVal = parseFloat(item.volumeObat || item.qty || item.amount || 0);
+        let calculatedUnit = item.satuanVolumeObat || item.unit || 'kg';
+        promises.push(
+          perawatanApi.create({
+            Aktivitas_id_aktivitas: '',
+            tanggal_aktivitas: new Date().toISOString().split('T')[0],
+            nama_jenis_aktivitas: 'Stok Pupuk',
+            nama_rincian_aktivitas: item.selectedRincian || 'Tambah Pupuk',
+            jenis_bahan: 'pupuk',
+            fase_pohon: 'Generatif',
+            dosis: isNaN(dosisVal) ? 0 : dosisVal,
+            satuan: calculatedUnit,
+            bagian_pohon: 'Akar',
+            teknik_perawatan: item.teknikPemberianObat || 'Tebar',
+            nama_obat: item.namaObat || 'Pupuk',
+            deskripsi: item.catatanStok || '',
+            detail_pohon: item.volumeLarutan || '',
+            Lahan_id_lahan: landId,
+          } as any)
+        );
       } else {
         promises.push(
-          aktivitasApi.create({
+          perawatanApi.create({
             Aktivitas_id_aktivitas: '',
             tanggal_aktivitas: new Date().toISOString().split('T')[0],
             nama_jenis_aktivitas: input.type.charAt(0).toUpperCase() + input.type.slice(1),
             nama_rincian_aktivitas: item.selectedRincian || 'Aktivitas rutin',
+            jenis_bahan: 'umum',
+            fase_pohon: item.fasePohon || 'Vegetatif',
+            dosis: 0,
+            satuan: 'unit',
+            bagian_pohon: 'Umum',
+            teknik_perawatan: 'Umum',
+            nama_obat: '',
+            deskripsi: item.deskripsi || item.note || 'Aktivitas rutin',
+            detail_pohon: item.kodePohon || 'LA001',
             Lahan_id_lahan: landId,
           } as any)
         );
@@ -962,9 +1620,13 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
     }
   }
 
-  const generatedId = `SUB-${Date.now().toString().slice(-6)}`;
+  const generatedId = crypto.randomUUID();
+  const randomSuffix = Math.floor(100000 + Math.random() * 900000); // 6-digit random number
+  const submissionCode = `SUB-${randomSuffix}`;
+
   const submissionData: any = {
-    id: generatedId,
+    id_submission: generatedId,
+    submission_code: submissionCode,
     type: input.type,
     typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
     operatorCode: input.operatorCode || 'OP001',
@@ -982,6 +1644,7 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
     const created = await submissionsApi.create(submissionData);
     const mapped = {
       ...submissionData,
+      id: generatedId, // keep alias
       submittedAt: new Date(created.submittedAt || submissionData.submittedAt).getTime(),
       approvalStatus: created.approvalStatus || 'pending'
     };
@@ -1004,7 +1667,9 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
 }
 
 export interface PencatatanSubmission {
-  id: string;
+  id_submission: string;
+  submission_code: string;
+  id: string; // fallback alias
   type: string;
   typeLabel: string;
   operatorCode: string;
@@ -1069,7 +1734,9 @@ export async function fetchSubmissions() {
     
     // Parse backend submissions
     const serverList = (list || []).map((s: any) => ({
-      id: s.id,
+      id_submission: s.id_submission || s.id,
+      submission_code: s.submission_code,
+      id: s.id_submission || s.id, // fallback alias
       type: s.type,
       typeLabel: s.typeLabel || s.type_label,
       operatorCode: s.operatorCode || s.operator_code,
@@ -1091,7 +1758,7 @@ export async function fetchSubmissions() {
     const offlineList = loadLocalOfflineSubmissions().map(item => ({ ...item, isOfflineDraft: true }));
     
     // De-duplicate: filter out any offline drafts that have already been synced (same ID)
-    const filteredOffline = offlineList.filter(off => !serverList.some(srv => srv.id === off.id));
+    const filteredOffline = offlineList.filter(off => !serverList.some(srv => (srv.id_submission || srv.id) === (off.id_submission || off.id)));
 
     pencatatanSubmissions.value = [...filteredOffline, ...serverList];
   } catch (err: any) {
@@ -1165,6 +1832,46 @@ export async function fetchRoutineSchedules() {
   }
 }
 
+const LOCAL_TO_DB_RINCIAN: Record<string, string> = {
+  'Pakan Pagi': 'Pakan Pagi',
+  'Pakan Siang': 'Pakan Pagi',
+  'Pakan Sore': 'Pakan Sore',
+  'Pemberian Mineral': 'Pakan Pagi',
+  'Tambah Stok': 'Konversi Pakan',
+  'Konversi Pakan': 'Konversi Pakan',
+  'Pemeriksaan Rutin': 'Pemeriksaan Medis',
+  'Vitamin': 'Pemberian Vitamin',
+  'Vaksin': 'Vaksinasi',
+  'Obat Cacing': 'Pemberian Obat',
+  'Kawin Alam': 'Kawin Alami',
+  'Inseminasi Buatan': 'Inseminasi Buatan',
+  'Pencatatan Birahi': 'Kawin Alami',
+  'Kontrol Kebuntingan': 'Kontrol Kebuntingan',
+  'Lahir Normal': 'Pencatatan Kelahiran',
+  'Kembar': 'Pencatatan Kelahiran',
+  'Lahir Cesar': 'Pencatatan Kelahiran',
+  'Panen Kotoran': 'Pembersihan Kandang',
+  'Pembersihan Lantai': 'Pembersihan Kandang',
+  'Timbang Rutin': '',
+};
+
+const DB_TO_LOCAL_RINCIAN: Record<string, string> = {
+  'Pakan Pagi': 'Pakan Pagi',
+  'Pakan Sore': 'Pakan Sore',
+  'Konversi Pakan': 'Konversi Pakan',
+  'Pemberian Obat': 'Obat Cacing',
+  'Pemberian Vitamin': 'Vitamin',
+  'Vaksinasi': 'Vaksin',
+  'Pemeriksaan Medis': 'Pemeriksaan Rutin',
+  'Pembersihan Kandang': 'Panen Kotoran',
+  'Fermentasi Kotoran': 'Panen Kotoran',
+  'Kawin Alami': 'Kawin Alam',
+  'Inseminasi Buatan': 'Inseminasi Buatan',
+  'Pencatatan Kelahiran': 'Lahir Normal',
+  'Pemeriksaan Anak & Induk': 'Lahir Normal',
+  'Kontrol Kebuntingan': 'Kontrol Kebuntingan',
+};
+
 export function mapApiScheduleToLocal(api: ApiRoutineSchedule): RoutineSchedule {
   const startDate = (api.start_date || '').split('T')[0];
   const time = api.start_time ? api.start_time.substring(0, 5) : '08:00';
@@ -1222,11 +1929,18 @@ export function mapApiScheduleToLocal(api: ApiRoutineSchedule): RoutineSchedule 
     }
   }
 
+  let category = api.category;
+  if (category === 'weighing') {
+    category = 'berat_badan' as any;
+  } else if (category === 'pakan' && (api.rincian === 'Tambah Stok' || api.rincian === 'Konversi Pakan')) {
+    category = 'stok_pakan' as any;
+  }
+
   return {
     id: api.id,
     title: api.title,
     description: api.description,
-    category: api.category,
+    category,
     cageCode,
     assigneeCode,
     assigneeName,
@@ -1238,7 +1952,7 @@ export function mapApiScheduleToLocal(api: ApiRoutineSchedule): RoutineSchedule 
     daysOfWeek: api.days_of_week || [],
     dayOfMonth: api.day_of_month || 1,
     active: api.is_active,
-    rincian: api.rincian,
+    rincian: api.rincian ? (DB_TO_LOCAL_RINCIAN[api.rincian] || api.rincian) : (api.category === 'weighing' ? 'Timbang Rutin' : ''),
     createdAt: api.created_at ? new Date(api.created_at).getTime() : Date.now(),
   };
 }
@@ -1289,17 +2003,24 @@ function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRout
     }
   }
 
+  let category = local.category;
+  if (category === 'stok_pakan') {
+    category = 'pakan' as any;
+  } else if (category === 'berat_badan') {
+    category = 'weighing' as any;
+  }
+
   const payload: Partial<ApiRoutineSchedule> = {
     title: local.title,
     description: local.description,
-    category: local.category,
+    category: category,
     frequency: local.frequency,
     days_of_week: local.daysOfWeek,
     day_of_month: local.dayOfMonth,
     priority: local.priority,
     id_cage: idCage,
     id_account: idAccount,
-    rincian: local.rincian,
+    rincian: local.rincian ? (LOCAL_TO_DB_RINCIAN[local.rincian] !== undefined ? LOCAL_TO_DB_RINCIAN[local.rincian] : local.rincian) : undefined,
     is_active: local.active,
   };
 
@@ -1336,9 +2057,9 @@ export async function addRoutineSchedule(schedule: Omit<RoutineSchedule, 'id' | 
     const status = err?.response?.status;
     const message = err?.response?.data?.error_message || err?.response?.data?.message;
     if (status === 409) {
-      alert(`Gagal: Jadwal dengan nama dan kandang yang sama sudah ada. Silakan ubah jadwal yang ada atau buat dengan nama berbeda.`);
+      triggerGlobalAlert('Gagal Menyimpan Jadwal', `Jadwal dengan nama dan kandang/lahan yang sama sudah ada. Silakan ubah jadwal yang ada atau buat dengan nama berbeda.`, 'error');
     } else {
-      alert(message ? `Gagal membuat jadwal: ${message}` : 'Gagal membuat jadwal rutin');
+      triggerGlobalAlert('Gagal Menyimpan Jadwal', message ? `Gagal membuat jadwal: ${message}` : 'Gagal membuat jadwal rutin', 'error');
     }
   }
 }
@@ -1355,7 +2076,7 @@ export async function updateRoutineSchedule(id: string, patch: Partial<Omit<Rout
     await fetchTasks();
   } catch (err) {
     console.error('Error updating routine schedule:', err);
-    alert('Gagal memperbarui jadwal rutin');
+    triggerGlobalAlert('Gagal Memperbarui', 'Gagal memperbarui jadwal rutin.', 'error');
   }
 }
 
@@ -1366,12 +2087,12 @@ export async function deleteRoutineSchedule(id: string) {
     await fetchTasks();
   } catch (err) {
     console.error('Error deleting routine schedule:', err);
-    alert('Gagal menghapus jadwal rutin');
+    triggerGlobalAlert('Gagal Menghapus', 'Gagal menghapus jadwal rutin.', 'error');
   }
 }
 
 export async function approveSubmission(id: string, reviewerName: string, note = '') {
-  const sub = pencatatanSubmissions.value.find((s) => s.id === id);
+  const sub = pencatatanSubmissions.value.find((s) => s.id === id || s.id_submission === id);
   if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
   
   // Call API depending on type - exclude peternakan types to handle all gardening types correctly
@@ -1410,10 +2131,10 @@ export async function approveSubmission(id: string, reviewerName: string, note =
       sub.reviewNote = note;
 
       if (sub.taskId) {
-        try {
-          await completeTask(sub.taskId);
-        } catch (err) {
-          console.error('Failed to complete task (might be mock task):', err);
+        const task = operatorTasks.value.find((t) => t.id === sub.taskId);
+        if (task) {
+          task.status = 'selesai';
+          task.rawStatus = 'selesai';
         }
       }
 
@@ -1428,7 +2149,7 @@ export async function approveSubmission(id: string, reviewerName: string, note =
 }
 
 export async function rejectSubmission(id: string, reviewerName: string, note: string) {
-  const sub = pencatatanSubmissions.value.find((s) => s.id === id);
+  const sub = pencatatanSubmissions.value.find((s) => s.id === id || s.id_submission === id);
   if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
   
   try {
@@ -1443,6 +2164,15 @@ export async function rejectSubmission(id: string, reviewerName: string, note: s
     sub.reviewedAt = Date.now();
     sub.reviewedBy = reviewerName;
     sub.reviewNote = note;
+
+    if (sub.taskId) {
+      const task = operatorTasks.value.find((t) => t.id === sub.taskId);
+      if (task) {
+        task.status = 'belum';
+        task.rawStatus = 'belum';
+      }
+    }
+
     return { success: true, message: 'Pencatatan berhasil ditolak.' };
   } catch (err: any) {
     console.error('Failed to reject submission on server:', err);
@@ -1544,7 +2274,7 @@ export async function addOperatorTask(task: any) {
       end_time: task.endTime || '',
       status: task.status,
       priority: task.priority,
-      category: task.category || 'umum'
+      category: task.category === 'stok_pakan' ? 'pakan' : (task.category === 'berat_badan' ? 'weighing' : (task.category || 'umum'))
     };
 
     const createdApiTask = await tasksApi.create(payload);
@@ -1590,7 +2320,7 @@ export async function updateOperatorTask(id: string, patch: any) {
       end_time: patch.endTime || '',
       status: patch.status || existingStatus,
       priority: patch.priority,
-      category: patch.category || 'umum'
+      category: patch.category === 'stok_pakan' ? 'pakan' : (patch.category === 'berat_badan' ? 'weighing' : (patch.category || 'umum'))
     };
 
     console.log('Updating task payload:', payload);

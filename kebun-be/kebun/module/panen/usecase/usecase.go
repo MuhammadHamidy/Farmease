@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/panen/domain"
+	"github.com/farmease/kebun-be/kebun/module/panen/domain"
 )
 
 type panenUsecase struct {
@@ -37,3 +37,4 @@ func (u *panenUsecase) Update(ctx context.Context, p *domain.Panen) error {
 func (u *panenUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
+

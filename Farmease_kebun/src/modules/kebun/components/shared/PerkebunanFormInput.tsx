@@ -5,7 +5,7 @@ export default defineComponent({
   props: {
     modelValue: { type: String, default: '' },
     placeholder: { type: String, default: '' },
-    type: { type: String as PropType<'text' | 'number' | 'textarea'>, default: 'text' },
+    type: { type: String as PropType<'text' | 'number' | 'textarea' | 'date'>, default: 'text' },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {

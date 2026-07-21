@@ -5,19 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/config"
-	"github.com/farmease/farmease-be/farmease/module/perawatan/domain"
+	"github.com/farmease/kebun-be/kebun/config"
+	"github.com/farmease/kebun-be/kebun/module/perawatan/domain"
+	"github.com/farmease/kebun-be/libraries/publisher"
+	"github.com/rs/zerolog/log"
 )
 
 type perawatanUsecase struct {
-	repo domain.PerawatanRepository
-	cfg  *config.InternalAppConfig
+	repo      domain.PerawatanRepository
+	cfg       *config.InternalAppConfig
+	publisher *publisher.Publisher
 }
 
-func NewPerawatanUsecase(repo domain.PerawatanRepository, cfg *config.InternalAppConfig) domain.PerawatanUsecase {
-	return &perawatanUsecase{repo: repo, cfg: cfg}
+func NewPerawatanUsecase(repo domain.PerawatanRepository, cfg *config.InternalAppConfig, pub *publisher.Publisher) domain.PerawatanUsecase {
+	return &perawatanUsecase{repo: repo, cfg: cfg, publisher: pub}
 }
 
 func (u *perawatanUsecase) FindAll(ctx context.Context) ([]domain.Perawatan, error) {
@@ -41,17 +45,76 @@ type ManureResponse struct {
 	Data    []ManureItem `json:"data"`
 }
 
+type cropResidueEvent struct {
+	ID        string    `json:"id_event"`
+	FeedName  string    `json:"feed_name"`
+	Amount    float64   `json:"amount"`
+	Unit      string    `json:"unit"`
+	Notes     string    `json:"notes"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func (e *cropResidueEvent) Exchange() string    { return "farmease.exchange" }
+func (e *cropResidueEvent) Topic() string       { return "gardening.crop_residue.distributed" }
+func (e *cropResidueEvent) MessageId() string   { return e.ID }
+func (e *cropResidueEvent) ContentType() string { return "application/json" }
+func (e *cropResidueEvent) Body() []byte {
+	bytes, _ := json.Marshal(e)
+	return bytes
+}
+
 func (u *perawatanUsecase) Create(ctx context.Context, p *domain.Perawatan) error {
 	// If technique is Pemupukan (Fertilization), integrate manure from external Livestock Web API
-	if p.NamaRincianAktivitas == "Pemupukan" {
+	if p.NamaJenisAktivitas == "Pemupukan" {
 		u.fetchManureFromLivestock()
 	}
 
-	return u.repo.Store(ctx, p)
+	err := u.repo.Store(ctx, p)
+	if err != nil {
+		return err
+	}
+
+	// Publish to RabbitMQ if this is a Pembersihan (cleaning) activity and intended as livestock feed
+	// We detect this if the description/notes contains "Pakan Ternak" (case-insensitive)
+	if p.NamaJenisAktivitas == "Pembersihan" && u.publisher != nil {
+		isFeed := strings.Contains(strings.ToLower(p.Deskripsi), "pakan ternak") || 
+			strings.Contains(strings.ToLower(p.NamaRincianAktivitas), "pakan")
+		
+		if isFeed {
+			feedName := "Gulma / Rumput Liar (Mentah)"
+			rincian := strings.ToLower(p.NamaRincianAktivitas)
+			if strings.Contains(rincian, "serasah") || strings.Contains(rincian, "ranting") {
+				// Detect tree leaf type based on description/notes if possible, default to avocado leaf
+				if strings.Contains(strings.ToLower(p.Deskripsi), "kelengkeng") {
+					feedName = "Daun Kelengkeng (Mentah)"
+				} else {
+					feedName = "Daun Alpukat (Mentah)"
+				}
+			}
+
+			// Publish event
+			evt := &cropResidueEvent{
+				ID:        p.IDPerawatan,
+				FeedName:  feedName,
+				Amount:    p.Dosis, // dosage represents quantity for cleaning/pemupukan
+				Unit:      p.Satuan,
+				Notes:     p.Deskripsi,
+				Timestamp: time.Now(),
+			}
+			log.Info().Str("feed_name", feedName).Msg("Publishing crop residue event from Pembersihan to RabbitMQ...")
+			if pubErr := u.publisher.Publish(ctx, evt); pubErr != nil {
+				log.Error().Err(pubErr).Str("feed_name", feedName).Msg("Failed to publish crop residue event")
+			} else {
+				log.Info().Str("feed_name", feedName).Msg("Successfully published crop residue event")
+			}
+		}
+	}
+
+	return nil
 }
 
 func (u *perawatanUsecase) Update(ctx context.Context, p *domain.Perawatan) error {
-	if p.NamaRincianAktivitas == "Pemupukan" {
+	if p.NamaJenisAktivitas == "Pemupukan" {
 		u.fetchManureFromLivestock()
 	}
 	return u.repo.Update(ctx, p)
@@ -59,6 +122,19 @@ func (u *perawatanUsecase) Update(ctx context.Context, p *domain.Perawatan) erro
 
 func (u *perawatanUsecase) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
+}
+
+func (u *perawatanUsecase) GetRekomendasiObat(ctx context.Context, varietas, fase, obat string) (string, error) {
+	if varietas == "" {
+		varietas = "Alpukat Aligator"
+	}
+	if fase == "" || fase == "Fase Pohon" {
+		fase = "Vegetatif"
+	}
+	if obat == "" {
+		obat = "Ekstrak Nimba"
+	}
+	return fmt.Sprintf("Varietas <strong>%s</strong> dengan fase <strong>%s</strong> menggunakan <strong>%s</strong> dengan dosesi sebanyak <strong>2-3 mL/Liter air</strong>.", varietas, fase, obat), nil
 }
 
 func (u *perawatanUsecase) fetchManureFromLivestock() {
@@ -85,3 +161,4 @@ func (u *perawatanUsecase) fetchManureFromLivestock() {
 
 	fmt.Printf("[Info] Successfully fetched %d manure records from Livestock API\n", len(apiRes.Data))
 }
+

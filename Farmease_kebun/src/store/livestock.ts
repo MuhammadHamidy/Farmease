@@ -38,6 +38,8 @@ export interface Sheep {
   origin?: string
   adg?: number
   adg_label?: string
+  id_mother?: string
+  id_father?: string
 }
 
 export interface Cage {
@@ -103,6 +105,8 @@ function mapSheep(row: ApiSheep): Sheep {
     origin: row.origin || '',
     adg: (row as any).adg,
     adg_label: (row as any).adg_label,
+    id_mother: row.id_mother ? String(row.id_mother) : undefined,
+    id_father: row.id_father ? String(row.id_father) : undefined,
   }
 }
 
@@ -133,7 +137,7 @@ export const mutationHistory = computed(() =>
 
 // Status domba yang didukung
 export const SHEEP_STATUS_OPTIONS = [
-  'Sehat', 'Hamil', 'Sakit', 'Siap Jual', 'Mati', 'Terjual', 'Disembelih',
+  'Sehat', 'Sakit', 'Hamil', 'Tidak Hamil', 'Birahi', 'Tidak Birahi', 'Mati',
 ] as const
 
 export async function fetchSheep(cageCode?: string) {

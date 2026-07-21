@@ -1,3 +1,1 @@
-DROP TABLE IF EXISTS breeding.births CASCADE;
-DROP TABLE IF EXISTS breeding.pregnancies CASCADE;
 DROP TABLE IF EXISTS breeding.matings CASCADE;

@@ -2,6 +2,7 @@ import { defineComponent, ref } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import { sheep } from '@/store/livestock';
 import { healthApi, weightApi, breedingApi } from '@/shared/api';
+import { pencatatanSubmissions, fetchSubmissions } from '@/store/operatorAdmin';
 
 // ── Helper: Generate & Download CSV ─────────────────────────────────────────
 function downloadCSV(filename: string, headers: string[], data: (string | number)[][]) {
@@ -37,9 +38,16 @@ export default defineComponent({
   setup(props) {
     const loadingKey = ref<string | null>(null);
     const successMsg = ref<string | null>(null);
+    const errorMsg = ref<string | null>(null);
 
     const exportRekapTernak = async () => {
+      if (sheep.value.length === 0) {
+        errorMsg.value = 'Gagal mengekspor karena tidak ada data domba aktif';
+        setTimeout(() => errorMsg.value = null, 4000);
+        return;
+      }
       loadingKey.value = 'rekap';
+      errorMsg.value = null;
       try {
         let allWeights: any[] = [];
         let allHealth: any[] = [];
@@ -138,6 +146,113 @@ export default defineComponent({
       }
     };
 
+    const exportLaporanPakan = async () => {
+      loadingKey.value = 'pakan';
+      errorMsg.value = null;
+      try {
+        await fetchSubmissions();
+        const headers = [
+          'No',
+          'Tanggal',
+          'Jenis Pakan',
+          'Metode Pemberian',
+          'Target (Kandang/Domba)',
+          'Jumlah/Volume',
+          'Satuan',
+          'Status Persetujuan',
+          'Catatan'
+        ];
+
+        const rows: (string | number)[][] = [];
+        let counter = 1;
+
+        pencatatanSubmissions.value.forEach((sub: any) => {
+          const sType = (sub.type || '').toLowerCase();
+          if (sType !== 'pakan') return;
+          
+          const payloadData = sub.payload?.data || sub.payload;
+          const items = payloadData?.items || [];
+          const approval = sub.approvalStatus === 'approved' ? 'Disetujui' : 
+                           sub.approvalStatus === 'rejected' ? 'Ditolak' : 'Menunggu';
+
+          items.forEach((item: any) => {
+            rows.push([
+              counter++,
+              item.tanggal || sub.submittedAt?.split('T')[0] || '—',
+              item.obat || '—',
+              item.metoda === 'ib' ? 'Inseminasi Buatan' : 
+              item.metoda === 'alami' ? 'Alami' : 
+              item.metoda === 'dadakan' ? 'Pakan Dadakan (Racikan)' : 
+              item.metoda === 'silase' ? 'Pakan Silase' : item.metoda || '—',
+              item.targetId || '—',
+              item.qty || 0,
+              item.unit || 'kg',
+              approval,
+              item.note || '—'
+            ]);
+          });
+        });
+
+        downloadCSV(`farmease_laporan_pakan_${todayStr()}.csv`, headers, rows);
+        successMsg.value = 'Laporan penggunaan pakan berhasil diunduh!';
+        setTimeout(() => successMsg.value = null, 4000);
+      } catch (err) {
+        console.error('Error exporting feed report:', err);
+        errorMsg.value = 'Terjadi kesalahan saat mengekspor laporan pakan';
+        setTimeout(() => errorMsg.value = null, 4000);
+      } finally {
+        loadingKey.value = null;
+      }
+    };
+
+    const exportRekapMedis = async () => {
+      if (sheep.value.length === 0) {
+        errorMsg.value = 'Gagal mengekspor karena tidak ada data domba aktif';
+        setTimeout(() => errorMsg.value = null, 4000);
+        return;
+      }
+      loadingKey.value = 'medis';
+      errorMsg.value = null;
+      try {
+        const allHealth = await healthApi.getGlobalList();
+        
+        const headers = [
+          'No',
+          'Kode Domba',
+          'Nama Domba',
+          'Tindakan/Diagnosa',
+          'Obat/Vitamin',
+          'Dosis/Jumlah',
+          'Tanggal Tindakan',
+          'Catatan/Keterangan'
+        ];
+
+        const rows = allHealth.map((h: any, index: number) => {
+          const s = sheep.value.find(x => String(x.id) === String(h.id_sheep));
+          return [
+            index + 1,
+            s ? s.code : '—',
+            s ? s.name : '—',
+            h.health_status || h.action || h.diagnosis || '—',
+            h.medicine || h.obat || '—',
+            h.vitaminAmount || h.dosis || '—',
+            h.checkup_date ? h.checkup_date.split('T')[0] : '—',
+            h.description || h.notes || '—'
+          ];
+        });
+
+        downloadCSV(`farmease_rekap_medis_${todayStr()}.csv`, headers, rows);
+        successMsg.value = 'Rekap laporan kesehatan medis berhasil diunduh!';
+        setTimeout(() => successMsg.value = null, 4000);
+      } catch (err) {
+        console.error('Error exporting medical report:', err);
+        errorMsg.value = 'Terjadi kegagalan koneksi, ekspor laporan ditolak';
+        setTimeout(() => errorMsg.value = null, 4000);
+      } finally {
+        loadingKey.value = null;
+      }
+    };
+
     return () => (
       <div class="p-3">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -158,27 +273,84 @@ export default defineComponent({
           </div>
         )}
 
+        {errorMsg.value && (
+          <div class="alert alert-danger py-2 px-3 rounded-4 mb-4" style={{ fontSize: '0.85rem', border: '1.5px solid #ef4444', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+            ⚠️ {errorMsg.value}
+          </div>
+        )}
+
         <div class="row g-3">
-          <div class="col-12">
-            <div class="p-4 rounded-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-outline-variant)' }}>
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="d-flex align-items-center justify-content-center rounded-3" style={{ width: '42px', height: '42px', backgroundColor: 'var(--color-primary-fixed)', flexShrink: 0 }}>
-                  <img src="/icon/domba.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} alt="" />
-                </div>
-                <div>
-                  <div class="fw-bold" style={{ fontSize: '0.9rem' }}>Rekap Laporan Data Ternak</div>
-                  <div class="text-secondary" style={{ fontSize: '0.75rem' }}>
-                    Satu file CSV terpadu yang memuat data seluruh populasi domba aktif beserta riwayat berat badan terakhir, riwayat kesehatan terakhir, dan data perkawinan terbaru.
+          {/* 1. Rekap Data Ternak */}
+          <div class="col-12 col-md-4">
+            <div class="p-4 rounded-4 h-100 d-flex flex-column justify-content-between" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-outline-variant)' }}>
+              <div>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="d-flex align-items-center justify-content-center rounded-3" style={{ width: '42px', height: '42px', backgroundColor: 'var(--color-primary-fixed)', flexShrink: 0 }}>
+                    <img src="/icon/domba.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} alt="" />
                   </div>
+                  <div class="fw-bold" style={{ fontSize: '0.9rem', color: '#3d2f24' }}>Rekap Laporan Data Ternak</div>
+                </div>
+                <div class="text-secondary mb-4" style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
+                  Satu file CSV terpadu yang memuat data seluruh populasi domba aktif beserta riwayat berat badan, kesehatan, dan perkawinan terbaru.
                 </div>
               </div>
               <button
-                class="btn w-100 rounded-3 fw-bold text-white"
+                class="btn w-100 rounded-3 fw-bold text-white mt-auto"
                 style={{ backgroundColor: 'var(--color-primary)', fontSize: '0.82rem', padding: '0.6rem' }}
                 onClick={exportRekapTernak}
                 disabled={loadingKey.value === 'rekap'}
               >
-                {loadingKey.value === 'rekap' ? '⏳ Menyiapkan Rekap...' : '📥 Unduh Rekap Laporan Ternak'}
+                {loadingKey.value === 'rekap' ? '⏳ Menyiapkan...' : '📥 Unduh Rekap Laporan Ternak'}
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Laporan Penggunaan Pakan */}
+          <div class="col-12 col-md-4">
+            <div class="p-4 rounded-4 h-100 d-flex flex-column justify-content-between" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-outline-variant)' }}>
+              <div>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="d-flex align-items-center justify-content-center rounded-3" style={{ width: '42px', height: '42px', backgroundColor: 'rgba(96, 108, 56, 0.15)', flexShrink: 0 }}>
+                    <img src="/icon/catat_pakan.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} alt="" />
+                  </div>
+                  <div class="fw-bold" style={{ fontSize: '0.9rem', color: '#3d2f24' }}>Laporan Penggunaan Pakan</div>
+                </div>
+                <div class="text-secondary mb-4" style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
+                  File CSV memuat log harian pemberian pakan untuk masing-masing kandang, jenis pakan, metode, jumlah volume, dan catatan logistik.
+                </div>
+              </div>
+              <button
+                class="btn w-100 rounded-3 fw-bold text-white mt-auto"
+                style={{ backgroundColor: '#606c38', fontSize: '0.82rem', padding: '0.6rem', borderColor: '#606c38' }}
+                onClick={exportLaporanPakan}
+                disabled={loadingKey.value === 'pakan'}
+              >
+                {loadingKey.value === 'pakan' ? '⏳ Menyiapkan...' : '📥 Unduh Laporan Pakan'}
+              </button>
+            </div>
+          </div>
+
+          {/* 3. Rekap Medis & Kesehatan */}
+          <div class="col-12 col-md-4">
+            <div class="p-4 rounded-4 h-100 d-flex flex-column justify-content-between" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-outline-variant)' }}>
+              <div>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="d-flex align-items-center justify-content-center rounded-3" style={{ width: '42px', height: '42px', backgroundColor: 'rgba(186, 26, 26, 0.12)', flexShrink: 0 }}>
+                    <img src="/icon/catat_sehat.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} alt="" />
+                  </div>
+                  <div class="fw-bold" style={{ fontSize: '0.9rem', color: '#3d2f24' }}>Rekap Medis & Kesehatan</div>
+                </div>
+                <div class="text-secondary mb-4" style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
+                  File CSV kronologis yang memuat riwayat medis lengkap, diagnosa penyakit, jenis obat/vitamin, dosis, dan petugas penanggung jawab.
+                </div>
+              </div>
+              <button
+                class="btn w-100 rounded-3 fw-bold text-white mt-auto"
+                style={{ backgroundColor: '#ba1a1a', fontSize: '0.82rem', padding: '0.6rem', borderColor: '#ba1a1a' }}
+                onClick={exportRekapMedis}
+                disabled={loadingKey.value === 'medis'}
+              >
+                {loadingKey.value === 'medis' ? '⏳ Menyiapkan...' : '📥 Unduh Rekap Medis'}
               </button>
             </div>
           </div>

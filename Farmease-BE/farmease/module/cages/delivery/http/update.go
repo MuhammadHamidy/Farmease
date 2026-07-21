@@ -5,6 +5,7 @@ import (
 
 	"github.com/farmease/farmease-be/farmease/module/cages/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/farmease-be/libraries/validation"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -26,6 +27,10 @@ func (h *CageHandler) UpdateCage(c *fiber.Ctx) error {
 	var k domain.Cage
 	if err := c.BodyParser(&k); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
+	}
+
+	if appErr := validation.ValidateStruct(&k); appErr != nil {
+		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
 	err := h.useCase.UpdateCage(c.Context(), id, &k)

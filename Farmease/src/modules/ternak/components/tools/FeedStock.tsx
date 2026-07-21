@@ -2,6 +2,7 @@ import { defineComponent, ref, computed, onMounted } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import { feedsApi, pemangkasanApi } from '@/shared/api';
+import CustomSelect from '@/shared/ui/admin/Select';
 import { weightRecords, sheep } from '@/store/livestock';
 import { cageSession } from '@/store/navigation';
 
@@ -208,13 +209,13 @@ export default defineComponent({
                 onInput={(e) => form.value.amount = (e.target as HTMLInputElement).value}
               />
             </div>
-            <div class="col-3 col-md-2">
-              <select class="form-select rounded-3" value={form.value.unit} onChange={(e) => form.value.unit = (e.target as HTMLSelectElement).value}>
-                <option>kg</option>
-                <option>ikat</option>
-                <option>liter</option>
-                <option>ton</option>
-              </select>
+            <div class="col-3 col-md-2 text-start">
+              <CustomSelect
+                options={['kg', 'ikat', 'liter', 'ton']}
+                modelValue={form.value.unit}
+                onUpdate:modelValue={(val: string) => form.value.unit = val}
+                theme="peternakan"
+              />
             </div>
             <div class="col-3 col-md-2">
               <button

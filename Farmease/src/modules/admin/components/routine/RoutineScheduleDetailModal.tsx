@@ -36,14 +36,16 @@ export default defineComponent({
       if (props.type === 'peternakan' && props.task) {
         switch (props.task.category) {
           case 'pakan': return '/icon/catat_pakan.png';
+          case 'stok_pakan': return '/icon/inventory.png';
           case 'kesehatan': return '/icon/catat_sehat.png';
           case 'kotoran': return '/icon/catat_kotoran.png';
           case 'perkawinan': return '/icon/catat_kawin.png';
           case 'kelahiran': return '/icon/catat_lahir.png';
+          case 'berat_badan': return '/icon/statistic.png';
           default: return '/icon/catat_jenis.png';
         }
       }
-      return '/icon/pohon.png';
+      return '/icon/catat_jenis.png';
     };
 
     return () => {
@@ -102,7 +104,9 @@ export default defineComponent({
                     </div>
                     <div class="col-6">
                       <span class="text-muted d-block small">Jenis Tugas:</span>
-                      <span class="fw-semibold text-dark text-capitalize">{task.category}</span>
+                      <span class="fw-semibold text-dark text-capitalize">
+                        {task.category === 'berat_badan' ? 'Berat Badan' : task.category === 'stok_pakan' ? 'Stok Pakan' : task.category}
+                      </span>
                     </div>
                     <div class="col-6">
                       <span class="text-muted d-block small">Prioritas:</span>

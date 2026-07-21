@@ -1,4 +1,4 @@
-import { defineComponent, ref, Fragment } from 'vue';
+import { defineComponent, ref, Fragment, watch, onUnmounted, Teleport, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { userSession } from '@/store/navigation';
 import { authenticateSso } from '../../data/ssoAccounts';
@@ -8,8 +8,9 @@ export default defineComponent({
   name: 'SsoHeroLogin',
   setup() {
     const router = useRouter();
-    const username = ref('');
-    const password = ref('');
+    const rememberMe = ref(localStorage.getItem('sso_remember_me') === 'true');
+    const username = ref(rememberMe.value ? localStorage.getItem('sso_username') || '' : '');
+    const password = ref(rememberMe.value ? localStorage.getItem('sso_password') || '' : '');
     const showPassword = ref(false);
     const error = ref('');
     const loading = ref(false);
@@ -18,6 +19,42 @@ export default defineComponent({
     const showRoleSelection = ref(false);
     const loggedInInfo = ref<{ token: string; user: any } | null>(null);
     const errorRole = ref('');
+
+    // Toast states
+    const toastMessage = ref('');
+    const toastType = ref<'success' | 'error'>('success');
+    const showToast = ref(false);
+
+    const triggerToast = (msg: string, type: 'success' | 'error' = 'success') => {
+      toastMessage.value = msg;
+      toastType.value = type;
+      showToast.value = true;
+      setTimeout(() => {
+        showToast.value = false;
+      }, 4000);
+    };
+
+    onMounted(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('logout') === 'true' || params.get('logout') === 'success') {
+        triggerToast('Logout berhasil! Silakan masuk kembali.', 'success');
+        // Clean URL parameter
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    });
+
+    watch(showRoleSelection, (val) => {
+      if (val) {
+        document.body.classList.add('sso-role-selection-active');
+      } else {
+        document.body.classList.remove('sso-role-selection-active');
+      }
+    });
+
+    onUnmounted(() => {
+      document.body.classList.remove('sso-role-selection-active');
+    });
 
     const selectRole = (targetService: 'ternak' | 'kebun', targetRole: string) => {
       errorRole.value = '';
@@ -87,7 +124,22 @@ export default defineComponent({
         role: targetRole,
       };
 
-      window.location.href = `http://localhost:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
+      triggerToast('Login berhasil! Mengalihkan ke sistem...', 'success');
+      setTimeout(() => {
+        window.location.href = `http://localhost:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
+      }, 1000);
+    };
+
+    const saveRememberMe = (user: string, pass: string) => {
+      if (rememberMe.value) {
+        localStorage.setItem('sso_remember_me', 'true');
+        localStorage.setItem('sso_username', user);
+        localStorage.setItem('sso_password', pass);
+      } else {
+        localStorage.removeItem('sso_remember_me');
+        localStorage.removeItem('sso_username');
+        localStorage.removeItem('sso_password');
+      }
     };
 
     const handleLogin = async () => {
@@ -105,6 +157,7 @@ export default defineComponent({
       try {
         const response = await authApi.login({ username: user, password: pass } as any);
         if (response && response.token) {
+          saveRememberMe(user, pass);
           authApi.setAuth(response.token, response.user);
           loggedInInfo.value = {
             token: response.token,
@@ -136,6 +189,7 @@ export default defineComponent({
         // If the server is offline (no response received or network error)
         if (!err.response || err.code === 'ERR_NETWORK') {
           error.value = 'Koneksi ke server gagal. Pastikan backend aktif.';
+          triggerToast('Koneksi ke server gagal. Pastikan backend aktif.', 'error');
           loading.value = false;
           return;
         }
@@ -145,6 +199,7 @@ export default defineComponent({
 
       if (!account) {
         error.value = 'Nama pengguna atau kata sandi salah.';
+        triggerToast('Login gagal! Nama pengguna atau kata sandi salah.', 'error');
         loading.value = false;
         return;
       }
@@ -159,6 +214,7 @@ export default defineComponent({
         id: account.session.role === 'Admin' ? '11111111-1111-1111-1111-111111111101' : '11111111-1111-1111-1111-111111111103'
       };
 
+      saveRememberMe(user, pass);
       loggedInInfo.value = {
         token: `mock-token-development:${mockUser.username}`,
         user: mockUser,
@@ -236,7 +292,7 @@ export default defineComponent({
                 
                 {/* Left Side: Brand Pane */}
                 <div class="sso-hero__brand-pane">
-                  <h1 class="sso-hero__farm-title">Sah Hi Agro Farm</h1>
+                  <h1 class="sso-hero__farm-title">Say Hi Agro Farm</h1>
                   <p class="sso-hero__strap-text">bersama</p>
                   <div class="sso-hero__brand-logo">
                     <img src="/icon/logo_farmease.png" alt="FARMease" />
@@ -291,11 +347,25 @@ export default defineComponent({
                         }}
                       >
                         <img
-                          src={showPassword.value ? '/icon/open-eye.png' : '/icon/hide-eye.png'}
+                          src={showPassword.value ? '/icon/open/grey-20.svg' : '/icon/hide/grey-20.svg'}
                           alt={showPassword.value ? 'Sembunyikan Kata Sandi' : 'Tampilkan Kata Sandi'}
                         />
                       </button>
                     </div>
+                  </div>
+
+                  <div class="sso-remember-me">
+                    <label class="sso-remember-me__label" for="sso-remember">
+                      <input
+                        id="sso-remember"
+                        type="checkbox"
+                        checked={rememberMe.value}
+                        onChange={(e) => {
+                          rememberMe.value = (e.target as HTMLInputElement).checked;
+                        }}
+                      />
+                      <span>Ingatkan Sandi</span>
+                    </label>
                   </div>
 
                   {error.value && <div class="sso-login-error">{error.value}</div>}
@@ -315,84 +385,97 @@ export default defineComponent({
           </section>
 
           {showRoleSelection.value && (
-            <div class="role-selection-overlay-new">
-              <div class="role-selection-container-new">
+            <div class="sso-role-selection-fullscreen">
+              {/* Header */}
+              <div class="sso-role-selection-header">
+                <button
+                  type="button"
+                  class="sso-role-selection-back"
+                  onClick={() => {
+                    showRoleSelection.value = false;
+                    errorRole.value = '';
+                  }}
+                >
+                  &larr; Kembali
+                </button>
+                <img src="/icon/logo_farmease.png" alt="FARMease" />
+              </div>
+
+              {/* Band */}
+              <div class="sso-role-selection-band">
+                <h2>Selamat Datang</h2>
+                <p>Silahkan pilih kategori yang ingin dikelola!</p>
+              </div>
+
+              {/* Error Message */}
+              {errorRole.value && <div class="sso-login-error sso-role-error">{errorRole.value}</div>}
+
+              {/* Cards Grid */}
+              <div class="sso-role-selection-grid">
                 
-                {/* Header */}
-                <div class="role-selection-header-new">
-                  <h2>Pilih Peran &amp; Layanan</h2>
-                  <p>
-                    Selamat datang kembali, <strong>{displayName}</strong>.<br />
-                    Silakan tentukan portal operasional yang ingin Anda kelola hari ini.
-                  </p>
-                  {errorRole.value && <div class="sso-login-error mt-3">{errorRole.value}</div>}
-                </div>
-
-                {/* Cards Grid */}
-                <div class="role-selection-grid-new">
-                  
-                  {/* Peternakan Portal Card */}
-                  <div class="portal-card">
-                    <div class="portal-card__badge-row">
-                      <span class="portal-badge portal-badge--ternak">
-                        <img src="/icon/domba.png" alt="Paw Icon Placeholder" class="portal-badge__icon-img" />
-                        <span class="portal-badge__text">MANAJEMEN TERNAK</span>
-                      </span>
-                    </div>
-
-                    <h3 class="portal-card__title">{ternakTitle}</h3>
-                    <p class="portal-card__desc">{ternakDesc}</p>
-
-                    <button
-                      type="button"
-                      class="portal-card__btn portal-card__btn--ternak"
-                      onClick={() => selectRole('ternak', ternakRole)}
-                    >
-                      Masuk Portal Peternakan &rarr;
-                    </button>
+                {/* Peternakan Portal Card */}
+                <button
+                  type="button"
+                  class="sso-role-card"
+                  onClick={() => selectRole('ternak', ternakRole)}
+                >
+                  <div class="sso-role-card-icon">
+                    <img src="/icon/domba.png" alt="Peternakan" />
                   </div>
+                  <h3 class="sso-role-card-title">Kelola Peternakan</h3>
+                  <p class="sso-role-card-desc">Masuk untuk memantau peternakan</p>
+                </button>
 
-                  {/* Perkebunan Portal Card */}
-                  <div class="portal-card">
-                    <div class="portal-card__badge-row">
-                      <span class="portal-badge portal-badge--kebun">
-                        <img src="/icon/lahan.png" alt="Plant Icon Placeholder" class="portal-badge__icon-img" />
-                        <span class="portal-badge__text">MANAJEMEN LAHAN</span>
-                      </span>
-                    </div>
-
-                    <h3 class="portal-card__title">{kebunTitle}</h3>
-                    <p class="portal-card__desc">{kebunDesc}</p>
-
-                    <button
-                      type="button"
-                      class="portal-card__btn portal-card__btn--kebun"
-                      onClick={() => selectRole('kebun', kebunRole)}
-                    >
-                      Masuk Portal Perkebunan &rarr;
-                    </button>
+                {/* Perkebunan Portal Card */}
+                <button
+                  type="button"
+                  class="sso-role-card"
+                  onClick={() => selectRole('kebun', kebunRole)}
+                >
+                  <div class="sso-role-card-icon">
+                    <img src="/icon/lahan.png" alt="Perkebunan" />
                   </div>
-
-                </div>
-
-                {/* Back Button */}
-                <div class="role-selection-footer-new">
-                  <button
-                    type="button"
-                    class="role-selection-back-btn-new"
-                    onClick={() => {
-                      showRoleSelection.value = false;
-                      errorRole.value = '';
-                    }}
-                  >
-                    <img src="/icon/logout.png" alt="Back Icon" class="role-selection-back-btn-new__icon" />
-                    <span>Kembali ke Login</span>
-                  </button>
-                </div>
+                  <h3 class="sso-role-card-title">Kelola Perkebunan</h3>
+                  <p class="sso-role-card-desc">Masuk untuk memantau perkebunan</p>
+                </button>
 
               </div>
             </div>
           )}
+          {showToast.value && (
+            <Teleport to="body">
+              <div 
+                style={{ 
+                  position: 'fixed', 
+                  top: '24px', 
+                  right: '24px', 
+                  zIndex: 9999, 
+                  backgroundColor: toastType.value === 'success' ? '#2e7d32' : '#d32f2f', 
+                  color: 'white', 
+                  padding: '16px 24px', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', 
+                  fontWeight: 'bold', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)' 
+                }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>{toastType.value === 'success' ? '✅' : '❌'}</span>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>{toastType.value === 'success' ? 'Berhasil' : 'Gagal'}</div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.9 }}>{toastMessage.value}</div>
+                </div>
+              </div>
+            </Teleport>
+          )}
+          <style>{`
+            @keyframes slideInRight {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          `}</style>
         </Fragment>
       );
     };

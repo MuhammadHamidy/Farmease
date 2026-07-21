@@ -21,6 +21,11 @@ export const kebunRoutes: RouteRecordRaw[] = [
         component: () => import('./views/DaftarPerkebunanPage'),
       },
       {
+        path: 'pohon/:code',
+        name: 'kebun-detail-pohon',
+        component: () => import('./views/DetailPohonPage'),
+      },
+      {
         path: 'riwayat',
         name: 'kebun-riwayat',
         component: () => import('./views/RiwayatPencatatanPage'),

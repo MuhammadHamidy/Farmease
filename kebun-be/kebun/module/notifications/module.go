@@ -1,10 +1,10 @@
 package notifications
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/notifications/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
-	"github.com/farmease/farmease-be/farmease/module/notifications/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/notifications/usecase"
+	"github.com/farmease/kebun-be/kebun/module/notifications/delivery/http"
+	"github.com/farmease/kebun-be/kebun/module/notifications/domain"
+	"github.com/farmease/kebun-be/kebun/module/notifications/repository/postgresql"
+	"github.com/farmease/kebun-be/kebun/module/notifications/usecase"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
 )
@@ -27,3 +27,4 @@ var Module = fx.Options(
 func registerRoutes(h *http.NotificationHandler, app *fiber.App) {
 	h.RegisterRoutes(app)
 }
+

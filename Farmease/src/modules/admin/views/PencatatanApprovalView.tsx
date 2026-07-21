@@ -12,6 +12,116 @@ import {
   type ApprovalStatus,
 } from '@/store/operatorAdmin';
 import { userSession } from '@/store/navigation';
+import { sheep } from '@/store/livestock';
+import { fetchStocks } from '@/modules/ternak/store/peternakan';
+
+const labelMappings: Record<string, string> = {
+  targetId: 'ID Domba',
+  qty: 'Jumlah/Volume',
+  unit: 'Satuan',
+  note: 'Catatan',
+  tindakan: 'Tindakan/Diagnosa',
+  obat: 'Obat/Pakan/Vitamin',
+  vitaminAmount: 'Jumlah Vitamin Masuk',
+  idPejantan: 'ID Pejantan',
+  metoda: 'Metode Kawin',
+  kotoranState: 'Jenis/Kondisi Kotoran',
+  jumlahAnak: 'Jumlah Anak',
+  kondisiInduk: 'Kondisi Induk',
+  kondisiAnak: 'Kondisi Anak',
+  tanggal: 'Tanggal',
+  kandangAnak: 'Kandang Anak',
+  namaAnak: 'Nama Anak',
+  beratLahir: 'Berat Lahir',
+  pemanfaatan: 'Pemanfaatan (Kotoran)',
+  waktuIB: 'Waktu Inseminasi Buatan (IB)',
+  sumberPejantan: 'Sumber Pejantan',
+  asalSemen: 'Kode Batch/ Straw Semen',
+  namaInseminator: 'Nama Inseminator',
+  donorName: 'Nama/ID Pejantan Donor',
+  donorOrigin: 'Instansi/Balai Asal Pejantan Donor',
+  idMating: 'ID Perkawinan',
+  metodePemeriksaan: 'Metode Pemeriksaan',
+  hasilPemeriksaan: 'Hasil Pemeriksaan',
+  hijauan: 'Pakan Mentah (Hijauan)',
+  energi: 'Pakan Tambahan (Energi)',
+  protein: 'Pakan Tambahan (Protein)',
+  mineral: 'Pakan Tambahan (Mineral)',
+  sheepCode: 'Kode Ear Tag Anak',
+  genderAnak: 'Jenis Kelamin Anak',
+
+  // Perkebunan Mappings
+  alatPembersihan: 'Alat Pembersihan',
+  bagianPembersihan: 'Bagian Pembersihan',
+  deskripsiPembersihan: 'Deskripsi Pembersihan',
+  beratGulma: 'Berat Gulma',
+  beratBahanPembumbun: 'Berat Bahan Pembumbun',
+  beratLimbah: 'Berat Limbah',
+  satuanBerat: 'Satuan Berat',
+  jenisGulma: 'Jenis Gulma',
+  bahanPembumbun: 'Bahan Pembumbun',
+  tujuanPemanfaatan: 'Tujuan Pemanfaatan',
+  teknikPenyiraman: 'Teknik Penyiraman',
+  sesiPenyiraman: 'Sesi Penyiraman',
+  deskripsiPenyiraman: 'Deskripsi Penyiraman',
+  volumeAir: 'Volume Air',
+  satuanVolumeAir: 'Satuan Volume Air',
+  jumlahLubangBiopori: 'Jumlah Lubang Biopori',
+  jenisBibit: 'Jenis Bibit',
+  alasanPenanaman: 'Alasan Penanaman',
+  deskripsiPenanaman: 'Deskripsi Penanaman',
+  jenisPerangsang: 'Jenis Perangsang',
+  dosisPerangsang: 'Dosis Perangsang',
+  deskripsiPembuahan: 'Deskripsi Pembuahan',
+  diameterBuah: 'Diameter Buah',
+  satuanDiameter: 'Satuan Diameter',
+  jumlahBuahDibuang: 'Jumlah Buah Dibuang',
+  sisaBuahPerTandan: 'Sisa Buah per Tandan',
+  bahanPembungkus: 'Bahan Pembungkus',
+  jumlahBuahDibungkus: 'Jumlah Buah Dibungkus',
+  jumlahPemangkasan: 'Jumlah Pemangkasan',
+  deskripsiPemangkasan: 'Deskripsi Pemangkasan',
+  metodePemangkasan: 'Metode Pemangkasan',
+  jumlahPanen: 'Jumlah Panen',
+  beratPanen: 'Berat Panen',
+  deskripsiPanen: 'Deskripsi Panen',
+  kondisiPanen: 'Kondisi Panen',
+  caraPanen: 'Cara Panen',
+  jenisObat: 'Jenis Obat',
+  kodePohonPerawatan: 'Kode Pohon Perawatan',
+  bagianPohon: 'Bagian Pohon',
+  teknikPemberian: 'Teknik Pemberian',
+  namaObat: 'Nama Obat/Bahan',
+  dosisObat: 'Dosis Obat',
+  deskripsiPerawatan: 'Deskripsi Perawatan',
+  teknikPengendalian: 'Teknik Pengendalian',
+  namaPestisida: 'Nama Pestisida',
+  dosisPestisida: 'Dosis Pestisida',
+  volumeLarutan: 'Volume Larutan',
+  satuanVolumeLarutan: 'Satuan Volume Larutan',
+  volumeObat: 'Volume Obat',
+  satuanVolumeObat: 'Satuan Volume Obat',
+  namaOPT: 'Nama OPT (Organisme Pengganggu)',
+  targetHama: 'Target Hama',
+  namaGejala: 'Nama Gejala',
+  jenisPupuk: 'Jenis Pupuk',
+  kodePohonPemupukan: 'Kode Pohon Pemupukan',
+  jumlahBeratPupuk: 'Jumlah Berat Pupuk',
+  deskripsiPemupukan: 'Deskripsi Pemupukan',
+  jenisPupukDetail: 'Detail Jenis Pupuk',
+  teknikPemupukan: 'Teknik Pemupukan',
+  jumlahStokMasuk: 'Jumlah Stok Masuk',
+  jumlahStokKeluar: 'Jumlah Stok Keluar',
+  catatanStok: 'Catatan Stok',
+  selectedRincian: 'Rincian Aktivitas',
+  kategoriPencatatan: 'Kategori Pencatatan',
+  selectedVarietas: 'Varietas Tanaman'
+};
+
+const camelToTitle = (text: string) => {
+  const result = text.replace(/([A-Z])/g, " $1");
+  return result.charAt(0).toUpperCase() + result.slice(1);
+};
 
 const shouldShowKey = (type: string, key: string, item: any): boolean => {
   const t = (type || '').toLowerCase();
@@ -21,6 +131,9 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
     if (formName === 'Kontrol Kebuntingan') {
       return ['targetId', 'idMating', 'metodePemeriksaan', 'hasilPemeriksaan', 'tanggal', 'note'].includes(key);
     }
+    if (formName === 'Cek Birahi' || formName === 'Pengecekan Birahi') {
+      return ['targetId', 'hasilPemeriksaan', 'tanggal', 'note'].includes(key);
+    }
     const baseKeys = ['targetId', 'idPejantan', 'metoda', 'tanggal', 'note'];
     if (baseKeys.includes(key)) {
       if (key === 'metoda' && (formName === 'IB' || formName === 'Inseminasi Buatan' || formName === 'Kawin Alam' || formName === 'Kawin Alami')) {
@@ -29,7 +142,7 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
       return true;
     }
     
-    const isIB = item.metoda === 'ib' || formName === 'IB' || formName === 'Inseminasi Buatan';
+    const isIB = item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || formName === 'IB' || formName === 'Inseminasi Buatan';
     if (isIB) {
       const ibKeys = ['waktuIB', 'sumberPejantan', 'asalSemen', 'namaInseminator'];
       if (ibKeys.includes(key)) return true;
@@ -42,24 +155,19 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
   
   if (t === 'kelahiran') {
     return [
-      'targetId', 'idPejantan', 'jumlahAnak', 'kondisiInduk', 
-      'kondisiAnak', 'kandangAnak', 'namaAnak', 'beratLahir', 
+      'targetId', 'idPejantan', 'sheepCode', 'namaAnak', 'genderAnak',
+      'jumlahAnak', 'kondisiInduk', 'kondisiAnak', 'kandangAnak', 'beratLahir', 
       'tanggal', 'note'
     ].includes(key);
   }
   
   if (t === 'pakan') {
-    const baseKeys = ['targetId', 'obat', 'qty', 'unit', 'tanggal', 'note'];
-    if (baseKeys.includes(key)) return true;
-    if (formName === 'Konversi Pakan') {
-      return ['idPejantan', 'vitaminAmount'].includes(key);
-    }
-    return false;
+    return ['targetId', 'metoda', 'obat', 'qty', 'unit', 'tanggal', 'note', 'hijauan', 'energi', 'protein', 'mineral'].includes(key);
   }
   
   if (t === 'stok_pakan') {
     if (formName === 'Konversi Pakan') {
-      return ['obat', 'qty', 'idPejantan', 'vitaminAmount', 'tanggal', 'note'].includes(key);
+      return ['obat', 'qty', 'unit', 'tanggal', 'note', 'hijauan', 'energi', 'protein', 'mineral'].includes(key);
     }
     return ['obat', 'qty', 'unit', 'tanggal', 'note'].includes(key);
   }
@@ -69,9 +177,6 @@ const shouldShowKey = (type: string, key: string, item: any): boolean => {
   }
   
   if (t === 'kotoran') {
-    if (formName === 'Fermentasi') {
-      return ['targetId', 'qty', 'unit', 'kotoranState', 'pemanfaatan', 'tanggal', 'note'].includes(key);
-    }
     return ['targetId', 'qty', 'unit', 'kotoranState', 'tanggal', 'note'].includes(key);
   }
   
@@ -87,7 +192,6 @@ export default defineComponent({
   setup() {
     fetchSubmissions();
     const statusFilter = ref('Menunggu Persetujuan');
-    const jenisFilter = ref('Pencatatan Peternakan');
     const selectedId = ref<string | null>(null);
     const reviewNote = ref('');
     const hoveredRowId = ref<string | null>(null);
@@ -129,15 +233,6 @@ export default defineComponent({
       alertModal.value.isOpen = false;
     };
 
-    // FR6-01: Kunci data yang sudah diverifikasi
-    const lockedIds = ref<Set<string>>(new Set());
-    const toggleLock = (id: string) => {
-      const next = new Set(lockedIds.value);
-      if (next.has(id)) { next.delete(id); } else { next.add(id); }
-      lockedIds.value = next;
-    };
-    const isLocked = (id: string) => lockedIds.value.has(id);
-
     const currentPage = ref(1);
     const itemsPerPage = 5;
 
@@ -151,18 +246,17 @@ export default defineComponent({
         Semua: 'all',
       };
       const key = map[statusFilter.value] || 'all';
-      let list = pencatatanSubmissions.value;
+      let list = pencatatanSubmissions.value || [];
       if (key !== 'all') {
         list = list.filter((s) => s.approvalStatus === key);
       }
 
-      if (jenisFilter.value !== 'Semua Jenis Pencatatan') {
-        const isPerkebunanTarget = jenisFilter.value === 'Pencatatan Perkebunan';
-        list = list.filter((s) => {
-          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((s.type || '').toLowerCase());
-          return isPerkebunan === isPerkebunanTarget;
-        });
-      }
+      // Automatically filter out any perkebunan records (only show livestock/peternakan)
+      list = list.filter((s) => {
+        const typeLower = (s.type || '').toLowerCase();
+        const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman', 'stok obat', 'stok pupuk', 'stok_obat', 'stok_pupuk'].includes(typeLower);
+        return !isPerkebunan;
+      });
 
       return list;
     });
@@ -180,12 +274,12 @@ export default defineComponent({
       return filtered.value.slice(start, start + itemsPerPage);
     });
 
-    const selected = computed(() =>
-      pencatatanSubmissions.value.find((s) => s.id === selectedId.value) || null,
+     const selected = computed(() =>
+      pencatatanSubmissions.value.find((s) => s.id_submission === selectedId.value) || null,
     );
 
     const openDetail = (sub: PencatatanSubmission) => {
-      selectedId.value = sub.id;
+      selectedId.value = sub.id_submission;
       reviewNote.value = sub.reviewNote || '';
     };
 
@@ -203,27 +297,37 @@ export default defineComponent({
             message: res.message,
             type: res.success ? 'success' : 'error'
           };
+          // Refresh stock data so operator sees updated stok after approval
+          if (res.success) {
+            fetchStocks().catch(() => {});
+          }
         }
       } finally {
         isSubmitting.value = false;
       }
     };
 
-    const handleRejectAction = (id: string, note: string) => {
-      const res = rejectSubmission(id, reviewerName(), note);
-      if (res) {
-        alertModal.value = {
-          isOpen: true,
-          title: 'Berhasil Ditolak',
-          message: res.message,
-          type: 'success'
-        };
+    const handleRejectAction = async (id: string, note: string) => {
+      if (isSubmitting.value) return;
+      isSubmitting.value = true;
+      try {
+        const res = await rejectSubmission(id, reviewerName(), note);
+        if (res) {
+          alertModal.value = {
+            isOpen: true,
+            title: res.success ? 'Berhasil Ditolak' : 'Gagal Menolak',
+            message: res.message,
+            type: res.success ? 'success' : 'error'
+          };
+        }
+      } finally {
+        isSubmitting.value = false;
       }
     };
 
     const handleApprove = async () => {
       if (!selected.value) return;
-      await handleApproveAction(selected.value.id, reviewNote.value);
+      await handleApproveAction(selected.value.id_submission, reviewNote.value);
       selectedId.value = null;
     };
 
@@ -233,7 +337,7 @@ export default defineComponent({
         alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: 'Mohon isi catatan penolakan', type: 'error' };
         return;
       }
-      handleRejectAction(selected.value.id, reviewNote.value);
+      handleRejectAction(selected.value.id_submission, reviewNote.value);
       selectedId.value = null;
     };
 
@@ -284,15 +388,6 @@ export default defineComponent({
               }}
             />
           </div>
-          <div class="admin-role-filter" style={{ minWidth: '250px' }}>
-            <Select
-              options={['Semua Jenis Pencatatan', 'Pencatatan Peternakan', 'Pencatatan Perkebunan']}
-              modelValue={jenisFilter.value}
-              onUpdate:modelValue={(v: string) => {
-                jenisFilter.value = v;
-              }}
-            />
-          </div>
         </div>
 
         <div class="row g-4">
@@ -304,8 +399,8 @@ export default defineComponent({
                   <thead>
                     <tr>
                       <th style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem' }}>Kode Pengguna</th>
+                      <th style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem' }}>Kode Pencatatan</th>
                       <th style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem' }}>Nama Pengguna</th>
-                      <th style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem' }}>Jenis Pencatatan</th>
                       <th style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem' }}>Status Pencatatan</th>
                       <th style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', textAlign: 'center' }}>Aksi</th>
                     </tr>
@@ -332,55 +427,47 @@ export default defineComponent({
                         }
                       } else {
                         paginatedItems.value.forEach((sub) => {
-                          const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
-                          const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
-
                           rows.push(
                             <tr
-                              key={sub.id}
-                              class={selectedId.value === sub.id ? 'table-active' : ''}
+                              key={sub.id_submission}
+                              class={selectedId.value === sub.id_submission ? 'table-active' : ''}
                               style={{ cursor: 'pointer', height: '58px' }}
                               onClick={() => openDetail(sub)}
                             >
                               <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}><code>{formatOperatorCode(sub.operatorCode, sub.operatorName)}</code></td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}><code>{sub.submission_code || '-'}</code></td>
                               <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}>
                                 <div class="fw-bold">{sub.operatorName}</div>
-                              </td>
-                              <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}>
-                                <span class={['role-badge', isPerkebunan ? 'operator-perkebunan' : 'operator-peternakan']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
-                                  {jenisText}
-                                </span>
                               </td>
                               <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', verticalAlign: 'middle', height: '58px' }}>
                                 <div class="d-flex align-items-center gap-1">
                                   <span class={['status-badge', sub.approvalStatus === 'approved' ? 'approved' : sub.approvalStatus === 'rejected' ? 'rejected' : 'pending']} style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}>
                                     {sub.approvalStatus === 'approved' ? 'Disetujui' : sub.approvalStatus === 'rejected' ? 'Ditolak' : 'Belum Disetujui'}
                                   </span>
-                                  {isLocked(sub.id) && <span title="Data Terkunci" style={{ fontSize: '0.85rem' }}>🔒</span>}
                                 </div>
                               </td>
                               <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem', textAlign: 'center', verticalAlign: 'middle', height: '58px' }}>
                                 <div class="d-flex justify-content-center gap-2">
-                                  {sub.approvalStatus === 'pending' && !isLocked(sub.id) && (
+                                  {sub.approvalStatus === 'pending' && (
                                     <>
                                       <button
                                         type="button"
-                                        class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
+                                        class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white border-0"
                                         disabled={isSubmitting.value}
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleApproveAction(sub.id, 'Disetujui via panel aksi');
+                                          handleApproveAction(sub.id_submission, 'Disetujui via panel aksi');
                                         }}
                                       >
                                         {isSubmitting.value ? 'Loading...' : 'Setujui'}
                                       </button>
                                       <button
                                         type="button"
-                                        class="btn btn-sm btn-danger px-3 rounded-pill fw-bold text-white"
+                                        class="btn btn-sm btn-danger px-3 rounded-pill fw-bold text-white border-0"
                                         disabled={isSubmitting.value}
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          openRejectModal(sub.id);
+                                          openRejectModal(sub.id_submission);
                                         }}
                                       >
                                         Tolak
@@ -388,34 +475,25 @@ export default defineComponent({
                                     </>
                                   )}
                                   {sub.approvalStatus === 'approved' && (
-                                    <>
-                                      {!isLocked(sub.id) && (
-                                        <button
-                                          type="button"
-                                          class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRejectAction(sub.id, 'Batal disetujui');
-                                          }}
-                                        >
-                                          Batal Setuju
-                                        </button>
-                                      )}
-                                      <button
-                                        type="button"
-                                        class={['btn btn-sm px-3 rounded-pill fw-bold', isLocked(sub.id) ? 'btn-warning' : 'btn-outline-secondary']}
-                                        onClick={(e) => { e.stopPropagation(); toggleLock(sub.id); }}
-                                        title={isLocked(sub.id) ? 'Buka Kunci Data' : 'Kunci Data Terverifikasi'}
-                                      >
-                                        {isLocked(sub.id) ? '🔓 Terkunci' : '🔒 Kunci'}
-                                      </button>
-                                    </>
+                                    <button
+                                      type="button"
+                                      class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRejectAction(sub.id_submission, 'Batal disetujui');
+                                      }}
+                                    >
+                                      Batal Setuju
+                                    </button>
                                   )}
-                                  {sub.approvalStatus === 'rejected' && !isLocked(sub.id) && (
+                                  {sub.approvalStatus === 'rejected' && (
                                       <button
                                         type="button"
-                                        class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white"
-                                        onClick={() => handleApproveAction(sub.id, 'Disetujui kembali')}
+                                        class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white border-0"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleApproveAction(sub.id_submission, 'Disetujui kembali');
+                                        }}
                                       >
                                         Setujui
                                       </button>
@@ -423,7 +501,10 @@ export default defineComponent({
                                   <button
                                     type="button"
                                     class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-bold"
-                                    onClick={() => openDetail(sub)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openDetail(sub);
+                                    }}
                                   >
                                     Detail
                                   </button>
@@ -455,13 +536,10 @@ export default defineComponent({
               <div class="d-block d-md-none p-3">
                 <div class="mobile-card-list">
                   {paginatedItems.value.map((sub) => {
-                    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((sub.type || '').toLowerCase());
-                    const jenisText = isPerkebunan ? 'Perkebunan' : 'Peternakan';
-
                     return (
                       <div
-                        key={sub.id}
-                        class={['admin-mobile-card', selectedId.value === sub.id ? 'border-primary' : '']}
+                        key={sub.id_submission}
+                        class={['admin-mobile-card', selectedId.value === sub.id_submission ? 'border-primary' : '']}
                         onClick={() => openDetail(sub)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -470,13 +548,13 @@ export default defineComponent({
                             <span class="card-name">{sub.operatorName}</span>
                             <span class="card-sub">
                               <code>{formatOperatorCode(sub.operatorCode, sub.operatorName)}</code>
+                              {sub.submission_code && <code class="ms-2 text-primary">{sub.submission_code}</code>}
                             </span>
                           </div>
                           <div class="d-flex align-items-center gap-1">
-                            <span class={['role-badge', isPerkebunan ? 'operator-perkebunan' : 'operator-peternakan']} style={{ fontSize: '0.65rem', padding: '0.25rem 0.5rem' }}>
-                              {jenisText}
+                            <span class="role-badge operator-peternakan" style={{ fontSize: '0.65rem', padding: '0.25rem 0.5rem' }}>
+                              Peternakan
                             </span>
-                            {isLocked(sub.id) && <span title="Data Terkunci" style={{ fontSize: '0.85rem' }}>🔒</span>}
                           </div>
                         </div>
 
@@ -498,13 +576,13 @@ export default defineComponent({
                           </div>
 
                           <div class="d-flex flex-wrap gap-2 justify-content-end mt-2">
-                            {sub.approvalStatus === 'pending' && !isLocked(sub.id) && (
+                            {sub.approvalStatus === 'pending' && (
                               <>
                                 <button
                                   type="button"
                                   class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white border-0"
                                   disabled={isSubmitting.value}
-                                  onClick={() => handleApproveAction(sub.id, 'Disetujui via panel aksi')}
+                                  onClick={(e) => { e.stopPropagation(); handleApproveAction(sub.id_submission, 'Disetujui via panel aksi'); }}
                                 >
                                   {isSubmitting.value ? '...' : 'Setujui'}
                                 </button>
@@ -512,37 +590,26 @@ export default defineComponent({
                                   type="button"
                                   class="btn btn-sm btn-danger px-3 rounded-pill fw-bold text-white border-0"
                                   disabled={isSubmitting.value}
-                                  onClick={() => openRejectModal(sub.id)}
+                                  onClick={(e) => { e.stopPropagation(); openRejectModal(sub.id_submission); }}
                                 >
                                   Tolak
                                 </button>
                               </>
                             )}
                             {sub.approvalStatus === 'approved' && (
-                              <>
-                                {!isLocked(sub.id) && (
-                                  <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
-                                    onClick={() => handleRejectAction(sub.id, 'Batal disetujui')}
-                                  >
-                                    Batal
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  class={['btn btn-sm px-3 rounded-pill fw-bold', isLocked(sub.id) ? 'btn-warning border-warning' : 'btn-outline-secondary']}
-                                  onClick={() => toggleLock(sub.id)}
-                                >
-                                  {isLocked(sub.id) ? 'Buka Kunci' : 'Kunci'}
-                                </button>
-                              </>
+                              <button
+                                type="button"
+                                class="btn btn-sm btn-outline-danger px-3 rounded-pill fw-bold"
+                                onClick={(e) => { e.stopPropagation(); handleRejectAction(sub.id_submission, 'Batal disetujui'); }}
+                              >
+                                Batal
+                              </button>
                             )}
-                            {sub.approvalStatus === 'rejected' && !isLocked(sub.id) && (
+                            {sub.approvalStatus === 'rejected' && (
                               <button
                                 type="button"
                                 class="btn btn-sm btn-success px-3 rounded-pill fw-bold text-white border-0"
-                                onClick={() => handleApproveAction(sub.id, 'Disetujui kembali')}
+                                onClick={(e) => { e.stopPropagation(); handleApproveAction(sub.id_submission, 'Disetujui kembali'); }}
                               >
                                 Setujui
                               </button>
@@ -550,7 +617,7 @@ export default defineComponent({
                             <button
                               type="button"
                               class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-bold"
-                              onClick={() => openDetail(sub)}
+                              onClick={(e) => { e.stopPropagation(); openDetail(sub); }}
                             >
                               Detail
                             </button>
@@ -652,11 +719,16 @@ export default defineComponent({
                 </div>
 
                 <div class="approval-detail-list mb-4">
-                  <DetailRow label="ID" value={selected.value.id} />
+                  <DetailRow label="Kode Pencatatan" value={selected.value.submission_code || '-'} />
+                  <DetailRow label="ID Sistem" value={selected.value.id_submission} />
                   <DetailRow label="Operator" value={`${selected.value.operatorName} (${formatOperatorCode(selected.value.operatorCode, selected.value.operatorName)})`} />
                   <DetailRow label="Jenis" value={selected.value.typeLabel} />
-                  <DetailRow label="Kandang/Lahan" value={selected.value.cageCode} />
-                  <DetailRow label="Mode" value={selected.value.scope === 'kandang' ? 'Per Kandang/Lahan' : 'Per Domba/Pohon'} />
+                  {selected.value.type !== 'stok_pakan' && (
+                    <DetailRow label="Kandang" value={selected.value.cageCode} />
+                  )}
+                  {selected.value.type !== 'stok_pakan' && (
+                    <DetailRow label="Mode" value={selected.value.scope === 'kandang' ? 'Per Kandang' : 'Per Domba'} />
+                  )}
                   <DetailRow label="Ringkasan" value={selected.value.summary} />
                   <DetailRow label="Waktu Kirim" value={formatDate(selected.value.submittedAt)} />
                   {selected.value.reviewedBy && (
@@ -691,58 +763,88 @@ export default defineComponent({
                           {Object.entries(item).map(([key, val]) => {
                             if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode') return null;
                             if (!shouldShowKey(selected.value?.type || '', key, item)) return null;
-                            
                             const formName = item.name || '';
-                            let displayLabel = key;
+                            let displayLabel = labelMappings[key] || camelToTitle(key);
                             if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
+                            const subType = (selected.value?.type || '').toLowerCase();
+                            if (subType === 'stok pupuk' || subType === 'stok_pupuk') {
+                              if (key === 'jenisObat') displayLabel = 'Jenis Pupuk';
+                              else if (key === 'namaObat') displayLabel = 'Nama Pupuk';
+                              else if (key === 'volumeObat') displayLabel = 'Jumlah Stok Pupuk';
+                              else if (key === 'satuanVolumeObat') displayLabel = 'Satuan Volume Pupuk';
+                              else if (key === 'teknikPemberianObat') displayLabel = 'Teknik Pemupukan';
+                            }
                             if (key === 'qty') {
-                               if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Jumlah Diolah';
-                               else if (selected.value?.type === 'kotoran') displayLabel = 'Jumlah Produksi';
-                               else if (selected.value?.type === 'berat_badan' || selected.value?.type === 'weighing') displayLabel = 'Berat Badan';
-                               else displayLabel = 'Jumlah/Volume';
+                              if (subType === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Target Hasil Konversi';
+                              else if (subType === 'pakan') displayLabel = 'Jumlah Pemberian';
+                              else if (subType === 'kotoran') displayLabel = 'Jumlah Produksi';
+                              else if (subType === 'berat_badan' || subType === 'weighing') displayLabel = 'Berat Badan';
+                              else displayLabel = labelMappings['qty'] || 'Jumlah/Volume';
+                            }
+                            if (key === 'obat') {
+                              if (subType === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Hasil Konversi Jadi';
+                              else if (subType === 'stok_pakan' && formName === 'Tambah Stok') displayLabel = 'Nama Pakan/Sumber';
+                              else if (subType === 'pakan') displayLabel = 'Nama Pakan';
+                              else displayLabel = labelMappings['obat'] || 'Obat/Pakan/Vitamin';
+                            }
+                            if (key === 'vitaminAmount') {
+                              if (subType === 'kesehatan') displayLabel = 'Jumlah Vitamin/Dosis';
+                              else displayLabel = labelMappings['vitaminAmount'] || 'Jumlah/Dosis';
+                            }
+                            if (key === 'hijauan') {
+                              if (subType === 'stok_pakan') displayLabel = 'Pakan Mentah Asal';
+                              else if (subType === 'pakan') displayLabel = 'Hijauan';
+                            }
+                            if (key === 'energi') {
+                              if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Sumber Energi)';
+                              else if (subType === 'pakan') displayLabel = 'Sumber Energi';
+                            }
+                            if (key === 'protein') {
+                              if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Sumber Protein)';
+                              else if (subType === 'pakan') displayLabel = 'Sumber Protein';
+                            }
+                            if (key === 'mineral') {
+                              if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Pemberian Mineral)';
+                              else if (subType === 'pakan') displayLabel = 'Pemberian Mineral';
+                            }
+                            if (key === 'metoda') {
+                              if (subType === 'pakan') displayLabel = 'Metode Pemberian Pakan';
+                              else displayLabel = 'Metode Kawin';
+                            }
+                             
+                             let displayValue = String(val);
+                             if (key === 'hasilPemeriksaan') {
+                               if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi' || formName === 'Pengecekan Birahi') {
+                                 displayValue = val === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi';
+                               } else {
+                                 displayValue = val === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' :
+                                                val === 'masih_menunggu' ? 'Masih Menunggu' :
+                                                val === 'gagal' ? 'Gagal' :
+                                                val === 'keguguran' ? 'Keguguran' : String(val);
+                               }
+                             } else if (key === 'targetId') {
+                               const s = sheep.value.find(x => String(x.id) === String(val) || String(x.code) === String(val));
+                               if (s) displayValue = `[${s.code}] ${s.name}`;
+                             } else if (key === 'idPejantan') {
+                               const s = sheep.value.find(x => String(x.id) === String(val) || String(x.code) === String(val));
+                               if (s) displayValue = `[${s.code}] ${s.name}`;
+                             } else if (key === 'metodePemeriksaan') {
+                               displayValue = val === 'usg' ? 'Cek USG' :
+                                              val === 'palpasi' ? 'Palpasi' :
+                                              val === 'testpack' ? 'Testpack' : String(val);
+                             } else if (key === 'metoda') {
+                               displayValue = val === 'ib' ? 'Inseminasi Buatan (IB)' :
+                                              val === 'alami' ? 'Alami' :
+                                              val === 'dadakan' ? 'Pakan Dadakan (Racikan Sendiri)' :
+                                              val === 'silase' ? 'Pakan Silase / Stok' : String(val);
+                             } else if (key === 'genderAnak') {
+                               displayValue = val === 'jantan' ? 'Jantan' : val === 'betina' ? 'Betina' : String(val);
                              }
-                             if (key === 'unit') displayLabel = 'Satuan';
-                             if (key === 'note') displayLabel = 'Catatan';
-                             if (key === 'tindakan') displayLabel = 'Tindakan/Diagnosa';
-                             if (key === 'obat') {
-                               if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Pakan Mentah Asal';
-                               else if (selected.value?.type === 'stok_pakan' && formName === 'Tambah Stok') displayLabel = 'Nama Pakan/Sumber';
-                               else if (selected.value?.type === 'pakan') displayLabel = 'Jenis Pakan';
-                               else displayLabel = 'Obat/Pakan/Vitamin';
-                             }
-                             if (key === 'vitaminAmount') {
-                               if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Jumlah Hasil Jadi';
-                               else if (selected.value?.type === 'kesehatan') displayLabel = 'Jumlah Vitamin/Dosis';
-                               else displayLabel = 'Jumlah/Dosis';
-                             }
-                             if (key === 'idPejantan') {
-                               if (selected.value?.type === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Hasil Cacah Jadi';
-                               else displayLabel = 'ID Pejantan';
-                             }
-                             if (key === 'metoda') displayLabel = 'Metode Kawin';
-                             if (key === 'kotoranState') displayLabel = 'Jenis/Kondisi Kotoran';
-                             if (key === 'jumlahAnak') displayLabel = 'Jumlah Anak';
-                             if (key === 'kondisiInduk') displayLabel = 'Kondisi Induk';
-                             if (key === 'kondisiAnak') displayLabel = 'Kondisi Anak';
-                             if (key === 'tanggal') displayLabel = 'Tanggal';
-                             if (key === 'kandangAnak') displayLabel = 'Kandang Anak';
-                             if (key === 'namaAnak') displayLabel = 'Nama Anak';
-                             if (key === 'beratLahir') displayLabel = 'Berat Lahir';
-                             if (key === 'pemanfaatan') displayLabel = 'Pemanfaatan (Kotoran)';
-                             if (key === 'waktuIB') displayLabel = 'Waktu IB';
-                             if (key === 'sumberPejantan') displayLabel = 'Sumber Pejantan';
-                             if (key === 'asalSemen') displayLabel = 'Kode Batch / Nomor Straw Semen';
-                             if (key === 'namaInseminator') displayLabel = 'Nama Inseminator';
-                             if (key === 'donorName') displayLabel = 'Nama / ID Pejantan Donor';
-                             if (key === 'donorOrigin') displayLabel = 'Instansi / Balai Asal Pejantan Donor';
-                             if (key === 'idMating') displayLabel = 'ID Perkawinan';
-                             if (key === 'metodePemeriksaan') displayLabel = 'Metode Pemeriksaan';
-                             if (key === 'hasilPemeriksaan') displayLabel = 'Hasil Pemeriksaan';
                             
                             return (
                               <div key={key} class="col-6 col-sm-4">
                                 <span class="d-block text-muted mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{displayLabel}</span>
-                                <span class="d-block fw-bold text-dark text-truncate" style={{ fontSize: '0.9rem' }} title={String(val)}>{String(val)}</span>
+                                <span class="d-block fw-bold text-dark text-truncate" style={{ fontSize: '0.9rem' }} title={displayValue}>{displayValue}</span>
                               </div>
                             );
                           })}

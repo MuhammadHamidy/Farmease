@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/farmease/farmease-be/libraries/object"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/object"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 var queryFindById = `
@@ -33,3 +33,4 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.User, err
 
 	return object.Parse[*UserEntity, *domain.User](object.TagDB, object.TagObject, record)
 }
+

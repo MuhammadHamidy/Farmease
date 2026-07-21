@@ -13,6 +13,7 @@ export default defineComponent({
       required: true,
     },
     placeholder: { type: String, default: '' },
+    disabled: { type: Boolean, default: false },
     onUpdateModelValue: { type: Function as PropType<(v: string) => void>, default: null },
   },
   emits: ['update:modelValue'],
@@ -28,6 +29,7 @@ export default defineComponent({
         onUpdate:modelValue={onUpdate}
         options={props.options}
         placeholder={props.placeholder}
+        disabled={props.disabled}
       />
     );
   },

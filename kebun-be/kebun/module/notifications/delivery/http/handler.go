@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/farmease/farmease-be/farmease/module/notifications/domain"
-	"github.com/farmease/farmease-be/libraries/middleware"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/kebun-be/kebun/module/notifications/domain"
+	"github.com/farmease/kebun-be/libraries/middleware"
+	"github.com/farmease/kebun-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -73,3 +73,4 @@ func (h *NotificationHandler) ReadNotification(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success"})
 }
+

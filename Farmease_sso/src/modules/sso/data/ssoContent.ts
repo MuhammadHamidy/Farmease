@@ -54,7 +54,7 @@ export const perkebunanItems: Array<{
   {
     title: 'Kelengkeng',
     description:
-      'Buah tropis manis dengan permukaan kulit kasar, banyak dibudidayakan di lahan kebun Sah Hi Agro Farm.',
+      'Buah tropis manis dengan permukaan kulit kasar, banyak dibudidayakan di lahan kebun Say Hi Agro Farm.',
     placeholder: 'longan',
   },
   {

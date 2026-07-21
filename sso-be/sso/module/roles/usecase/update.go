@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 // Update modifies an existing role.
@@ -48,3 +48,4 @@ func (u *UseCase) Update(ctx context.Context, role *domain.Role) error {
 
 	return nil
 }
+

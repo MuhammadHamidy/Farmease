@@ -9,7 +9,7 @@ export default defineComponent({
         <section class="sso-footer__content">
           <div class="sso-footer__container">
             <div class="sso-footer__intro">
-              <h3 class="sso-footer__brand">Sah Hi Agro Farm</h3>
+              <h3 class="sso-footer__brand">Say Hi Agro Farm</h3>
               <p class="sso-footer__subtitle">Informasi lebih lanjut</p>
             </div>
 

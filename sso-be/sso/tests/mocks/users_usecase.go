@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -44,3 +44,4 @@ func (m *UsersUseCaseMock) AssignRole(ctx context.Context, cmd domain.AssignRole
 	args := m.Called(ctx, cmd)
 	return args.String(0), args.Error(1)
 }
+

@@ -1,4 +1,4 @@
-import { defineComponent, computed, onMounted } from 'vue';
+import { defineComponent, computed, onMounted, ref } from 'vue';
 import { cagesList, fetchCagesList } from '@/store/navigation';
 import { sheep, fetchSheep, weightRecords, fetchWeightRecords } from '@/store/livestock';
 import { pendingApprovalCount } from '@/store/operatorAdmin';
@@ -6,21 +6,41 @@ import Typography from '@/shared/ui/Typography';
 import StatCard from '@/shared/ui/StatCard';
 import Badge from '@/shared/ui/Badge';
 import ReportsExport from '@/modules/admin/components/tools/ReportsExport';
+import { feedsApi, manureApi, birthApi } from '@/shared/api';
+import { FeedStockChart, ManureProductionChart, BirthCountChart } from '@/shared/ui/DashboardCharts';
 
 export default defineComponent({
   name: 'DasborPeternakanView',
   setup() {
+    const feedsData = ref<any[]>([]);
+    const manuresData = ref<any[]>([]);
+    const birthsData = ref<any[]>([]);
+
     onMounted(async () => {
       await Promise.all([
         fetchCagesList(),
         fetchSheep(),
         fetchWeightRecords(),
       ]);
+      try {
+        const [f, m, b] = await Promise.all([
+          feedsApi.getList(),
+          manureApi.getList(),
+          birthApi.getHistory()
+        ]);
+        feedsData.value = f || [];
+        manuresData.value = m || [];
+        birthsData.value = b || [];
+      } catch (err) {
+        console.error('Failed to load chart data:', err);
+      }
     });
 
-    const totalSheep = computed(() => sheep.value.length);
+    const activeSheep = computed(() => sheep.value.filter(s => !['Mati', 'Terjual', 'Disembelih'].includes(s.status)));
+    const totalSheep = computed(() => activeSheep.value.length);
     const totalCages = computed(() => cagesList.value.length);
-    const healthyCount = computed(() => sheep.value.filter(s => s.status === 'Sehat').length);
+    const sickCount = computed(() => activeSheep.value.filter(s => s.status === 'Sakit').length);
+    const healthyCount = computed(() => totalSheep.value - sickCount.value);
     const healthyPct = computed(() => totalSheep.value > 0 ? Math.round((healthyCount.value / totalSheep.value) * 100) : 100);
 
     // FR8-01: Mortalitas 30 hari terakhir
@@ -70,95 +90,163 @@ export default defineComponent({
           </div>
         </div>
 
-        {/* Stat Cards Row */}
-        <div class="row g-3 mb-4">
-          <div class="col-12 col-sm-6 col-lg-3">
-            <StatCard
-              label="Total Populasi"
-              value={`${totalSheep.value} Ekor`}
-              sub="Seluruh domba aktif"
-              color="primary"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                </svg>
-              )}
-            />
+        {/* Main Dashboard Grid */}
+        {/* Row 1: Populasi dan Kandang (Dua Card Terpisah) */}
+        <div class="row g-4 mb-4 text-start">
+          <div class="col-12 col-md-6">
+            <div class="card p-4 bg-white border rounded-5 shadow-sm">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 bg-light d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px', border: '1px solid #e2dfd8' }}>
+                  <img src="/icon/domba.png" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
+                </div>
+                <div>
+                  <span class="text-secondary small fw-bold d-block text-uppercase" style={{ letterSpacing: '0.5px' }}>Total Populasi</span>
+                  <strong class="text-dark" style={{ fontSize: '1.8rem', lineHeight: '1.2' }}>{totalSheep.value} Ekor</strong>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-12 col-sm-6 col-lg-3">
-            <StatCard
-              label="Jumlah Kandang"
-              value={`${totalCages.value} Kandang`}
-              sub="Kandang terdaftar"
-              color="light"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                </svg>
-              )}
-            />
+          <div class="col-12 col-md-6">
+            <div class="card p-4 bg-white border rounded-5 shadow-sm">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 bg-light d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px', border: '1px solid #e2dfd8' }}>
+                  <img src="/icon/kandang.png" style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
+                </div>
+                <div>
+                  <span class="text-secondary small fw-bold d-block text-uppercase" style={{ letterSpacing: '0.5px' }}>Jumlah Kandang</span>
+                  <strong class="text-dark" style={{ fontSize: '1.8rem', lineHeight: '1.2' }}>{totalCages.value} Kandang</strong>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-12 col-sm-6 col-lg-3">
-            <StatCard
-              label="Status Sehat"
-              value={`${healthyCount.value} Ekor`}
-              sub={`${healthyPct.value}% dari total populasi`}
-              color="primary"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              )}
-            />
-          </div>
-          <div class="col-12 col-sm-6 col-lg-3">
-            <StatCard
-              label="Menunggu Review"
-              value={`${pendingApprovalCount.value} Catatan`}
-              sub="Perlu persetujuan admin"
-              color="accent"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              )}
-            />
+        </div>
+
+        {/* Row 2: Asymmetric 2 Columns Layout for Main & Secondary Health Indicators */}
+        {/* 
+          DOKUMENTASI TUGAS AKHIR (BAB IV - ANALISIS SUB-LAYOUT STAT CARD):
+          Status Kesehatan ditempatkan sebagai indikator utama di kolom kiri dengan ukuran penuh (tinggi penuh), 
+          sedangkan pertumbuhan (ADG) dan penyusutan (Mutasi Keluar) diletakkan di kolom kanan sebagai indikator pendukung.
+          Kolom kiri memiliki visualisasi donut chart yang diperbesar untuk monitoring cepat kesehatan populasi secara real-time.
+        */}
+        <div class="row g-4 mb-4 text-start align-items-stretch">
+          {/* Kolom Kiri: Status Kesehatan (Tinggi Penuh, lebar 50% di lg) */}
+          <div class="col-12 col-lg-6 d-flex">
+            <div class="card p-4 bg-white border rounded-5 shadow-sm w-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <img src="/icon/catat_sehat.png" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                  <span class="text-secondary small fw-bold text-uppercase" style={{ letterSpacing: '0.5px', margin: 0 }}>STATUS KESEHATAN (INDIKATOR UTAMA)</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-center flex-grow-1 py-2" style={{ gap: '30px' }}>
+                  <div class="position-relative" style={{ width: '160px', height: '160px', flexShrink: 0 }}>
+                    <svg viewBox="0 0 80 80" width="160" height="160">
+                      <circle cx="40" cy="40" r="30" fill="transparent" stroke="#dc3545" stroke-width="8" />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="30"
+                        fill="transparent"
+                        stroke="#198754"
+                        stroke-width="8"
+                        stroke-dasharray="188.4"
+                        stroke-dashoffset={String(188.4 - (healthyPct.value / 100) * 188.4)}
+                        stroke-linecap="round"
+                        transform="rotate(-90 40 40)"
+                        style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                      />
+                    </svg>
+                    <div class="position-absolute top-50 start-50 translate-middle text-center">
+                      <strong style={{ fontSize: '1.7rem', color: '#111', lineHeight: '1' }}>{healthyPct.value}%</strong>
+                      <span class="d-block text-muted" style={{ fontSize: '0.7rem', fontWeight: '800', marginTop: '4px', letterSpacing: '0.5px' }}>SEHAT</span>
+                    </div>
+                  </div>
+                  
+                  <div class="text-start" style={{ fontSize: '0.95rem' }}>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                      <span style={{ display: 'inline-block', width: '12px', height: '12px', backgroundColor: '#198754', borderRadius: '50%' }}></span>
+                      <span class="text-muted">Sehat: <strong>{healthyCount.value} Ekor</strong></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span style={{ display: 'inline-block', width: '12px', height: '12px', backgroundColor: '#dc3545', borderRadius: '50%' }}></span>
+                      <span class="text-muted">Sakit: <strong>{sickCount.value} Ekor</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* FR8-01: ADG Rata-Rata */}
-          <div class="col-12 col-sm-6 col-lg-3">
-            <StatCard
-              label="ADG Rata-Rata"
-              value={rataRataADG.value !== null ? `${rataRataADG.value} gr/hr` : '—'}
-              sub={rataRataADG.value !== null ? (rataRataADG.value >= 100 ? '✅ Pertumbuhan Baik' : rataRataADG.value >= 50 ? '⚠️ Perlu Perhatian' : '🔴 Di Bawah Target') : 'Belum ada data berat'}
-              color="light"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              )}
-            />
-          </div>
+          {/* Kolom Kanan: ADG + Mutasi Keluar (Stacked, lebar 50% di lg) */}
+          <div class="col-12 col-lg-6 d-flex flex-column gap-3 justify-content-between">
+            {/* Card 1: Rata-Rata ADG */}
+            <div class="card p-4 bg-white border rounded-5 shadow-sm flex-grow-1 d-flex flex-column justify-content-center">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <img src="/icon/bar-chart.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                  <span class="text-secondary small fw-bold text-uppercase" style={{ letterSpacing: '0.5px', margin: 0 }}>RATA-RATA ADG (INDIKATOR PERTUMBUHAN)</span>
+                </div>
+                <strong style={{ fontSize: '0.9rem', color: rataRataADG.value !== null && rataRataADG.value >= 100 ? '#198754' : '#ff9800' }}>
+                  {rataRataADG.value !== null ? `${rataRataADG.value} gr/hr` : '—'}
+                </strong>
+              </div>
+              <div class="progress mb-2" style={{ height: '8px', backgroundColor: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
+                <div
+                  class={['progress-bar', rataRataADG.value !== null && rataRataADG.value >= 100 ? 'bg-success' : 'bg-warning']}
+                  style={{ width: `${Math.min(((rataRataADG.value || 0) / 150) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <span class="text-muted d-block" style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>Target pertumbuhan domba: 150 gr/hari</span>
+            </div>
 
-          {/* FR8-01: Mortalitas */}
-          <div class="col-12 col-sm-6 col-lg-3">
-            <StatCard
-              label="Mutasi Keluar"
-              value={`${mortalitas30Hari.value} Ekor`}
-              sub="Mati / Terjual / Disembelih"
-              color={mortalitas30Hari.value > 0 ? 'accent' : 'light'}
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
+            {/* Card 2: Mutasi Keluar & Pending Review */}
+            <div class="card p-4 bg-white border rounded-5 shadow-sm flex-grow-1 d-flex flex-column justify-content-center">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <img src="/icon/warning.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                    <span class="text-secondary small fw-bold text-uppercase" style={{ letterSpacing: '0.5px', margin: 0 }}>MUTASI KELUAR (INDIKATOR PENYUSUTAN)</span>
+                  </div>
+                  <strong class={mortalitas30Hari.value > 0 ? 'text-danger' : 'text-success'} style={{ fontSize: '0.85rem' }}>
+                    {mortalitas30Hari.value} Ekor
+                  </strong>
+                </div>
+                <div class="progress mb-2" style={{ height: '8px', backgroundColor: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    class="progress-bar bg-danger"
+                    style={{ width: `${Math.min((mortalitas30Hari.value / 10) * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <span class="text-muted d-block" style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>Mati / terjual / potong (30 hari)</span>
+              </div>
+              
+              {pendingApprovalCount.value > 0 && (
+                <div class="d-flex align-items-center gap-2 mt-2 px-2 py-1 rounded bg-danger bg-opacity-10 border border-danger-subtle" style={{ fontSize: '0.7rem' }}>
+                  <img src="/icon/warning.png" style={{ width: '12px', height: '12px', objectFit: 'contain' }} />
+                  <span class="fw-bold text-danger">{pendingApprovalCount.value} Catatan Menunggu Review</span>
+                </div>
               )}
-            />
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Chart Tren Produksi Pupuk Kandang per Bulan (Full Width) */}
+        <div class="row g-4 mb-4">
+          <div class="col-12">
+            <ManureProductionChart manures={manuresData.value} sheepList={sheep.value} />
+          </div>
+        </div>
+
+        {/* Row 4: Distribusi Kelahiran Anak Domba per Bulan Berdasarkan Jenis/Ras (Full Width) */}
+        <div class="row g-4 mb-4">
+          <div class="col-12">
+            <BirthCountChart births={birthsData.value} sheepList={sheep.value} />
+          </div>
+        </div>
+
+        {/* Row 5: Status Ketersediaan Stok Pakan Berdasarkan Kategori Nutrisi (Full Width) */}
+        <div class="row g-4 mb-4">
+          <div class="col-12">
+            <FeedStockChart feeds={feedsData.value} sheepList={sheep.value} />
           </div>
         </div>
 

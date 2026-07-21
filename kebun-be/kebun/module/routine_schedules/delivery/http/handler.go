@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/routine_schedules/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/kebun-be/kebun/module/routine_schedules/domain"
+	"github.com/farmease/kebun-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -181,3 +181,4 @@ func (h *RoutineScheduleHandler) Generate(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(fiber.Map{"status": "success", "message": "Tasks generated successfully"})
 }
+

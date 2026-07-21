@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { adminRoutes } from '@/modules/admin/router';
 import { ternakRoutes } from '@/modules/ternak/router';
+import { pemilikTernakRoutes } from '@/modules/pemilik/router';
 import { userSession } from '@/store/navigation';
 import { authApi } from '@/shared/api';
 
@@ -9,6 +10,7 @@ const router = createRouter({
   routes: [
     ...adminRoutes,
     ...ternakRoutes,
+    ...pemilikTernakRoutes,
     {
       path: '/:pathMatch(.*)*',
       redirect: '/ternak',
@@ -53,12 +55,25 @@ router.beforeEach((to, from) => {
     delete query.role;
     delete query.username;
     delete query.code;
+
+    // Redirect Owner/Pemilik ke halaman pemilik tersendiri
+    const isOwner = role === 'Owner' || role === 'Pemilik';
+    if (isOwner && to.path !== '/pemilik') {
+      return { path: '/pemilik', query };
+    }
     
     return { path: to.path, query };
   }
 
   // Restore session if not loaded but token exists in localStorage
-  if (!userSession.value && authApi.getToken()) {
+  const rawToken = authApi.getToken();
+  const hasToken = rawToken && rawToken !== 'null' && rawToken !== 'undefined' && rawToken.trim() !== '';
+
+  if (!hasToken) {
+    userSession.value = null;
+  }
+
+  if (hasToken && !userSession.value) {
     const user = authApi.getCurrentUser();
     if (user) {
       userSession.value = {
@@ -72,9 +87,19 @@ router.beforeEach((to, from) => {
 
   // Redirect to SSO if no token is present in localStorage/session
   const publicPaths = ['/login', '/sso'];
-  if (!authApi.getToken() && !publicPaths.includes(to.path)) {
+  if (!hasToken && !publicPaths.includes(to.path)) {
+    console.warn('[Auth Guard] No valid token found, redirecting to SSO...');
     window.location.href = 'http://localhost:3000/';
     return false;
+  }
+
+  // Enforce Owner/Pemilik always lands on /pemilik and non-owners cannot enter /pemilik
+  const isOwner = userSession.value?.role === 'Owner' || userSession.value?.role === 'Pemilik';
+  if (isOwner && to.path !== '/pemilik' && !publicPaths.includes(to.path)) {
+    return '/pemilik';
+  }
+  if (!isOwner && to.path === '/pemilik') {
+    return userSession.value?.role === 'Admin' ? '/admin' : '/ternak';
   }
 
   return true;

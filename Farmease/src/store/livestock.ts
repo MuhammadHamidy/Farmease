@@ -40,6 +40,9 @@ export interface Sheep {
   adg?: number
   adg_label?: string
   photo_url?: string
+  mating_status?: string
+  owner?: string
+  is_ready_to_mate?: boolean
 }
 
 export interface Cage {
@@ -57,6 +60,9 @@ export interface HealthRecord {
   date: string
   status: string
   notes: string
+  action?: string
+  medicine_given?: string
+  inspector_name?: string
 }
 
 export interface WeightRecord {
@@ -74,7 +80,7 @@ export interface FeedRecord {
   date: string
 }
 
-import { cagesList } from './navigation'
+import { cagesList, fetchCagesList } from './navigation'
 
 function mapSheep(row: ApiSheep): Sheep {
   const cage = cagesList.value.find((c) => c.id === row.id_cage)
@@ -106,6 +112,9 @@ function mapSheep(row: ApiSheep): Sheep {
     adg: (row as any).adg,
     adg_label: (row as any).adg_label,
     photo_url: row.photo_url || '',
+    mating_status: (row as any).mating_status || '',
+    owner: row.owner || '',
+    is_ready_to_mate: !!(row as any).is_ready_to_mate,
   }
 }
 
@@ -136,7 +145,7 @@ export const mutationHistory = computed(() =>
 
 // Status domba yang didukung
 export const SHEEP_STATUS_OPTIONS = [
-  'Sehat', 'Hamil', 'Sakit', 'Siap Jual', 'Mati', 'Terjual', 'Disembelih',
+  'Sehat', 'Produktif', 'Hamil', 'Sakit', 'Siap Jual', 'Mati', 'Terjual', 'Disembelih',
 ] as const
 
 export async function fetchSheep(cageCode?: string) {
@@ -145,6 +154,10 @@ export async function fetchSheep(cageCode?: string) {
   try {
     loading.value = true
     error.value = null
+
+    if (cagesList.value.length === 0) {
+      await fetchCagesList().catch(() => {});
+    }
 
     const list = await sheepApi.getList()
     const mapped = (list || []).map(mapSheep)
@@ -156,7 +169,7 @@ export async function fetchSheep(cageCode?: string) {
     error.value = err instanceof Error ? err.message : 'Failed to fetch sheep'
     console.error('Error fetching sheep:', err)
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
@@ -195,8 +208,11 @@ export async function fetchHealthRecords(sheepId?: string) {
         id: String((h as any).id_health || h.id),
         sheep_id: String(h.id_sheep),
         date: h.date_recorded || (h as any).checkup_date || '',
-        status: h.health_status || (h as any).action || (h as any).diagnosis || '',
-        notes: h.description || (h as any).notes || '',
+        status: h.diagnosis || h.health_status || (h as any).action || '',
+        notes: h.notes || h.description || '',
+        action: (h as any).action || '',
+        medicine_given: (h as any).medicine_given || '',
+        inspector_name: (h as any).inspector_name || '',
       }))
     } else {
       const list = await healthApi.getGlobalList()
@@ -204,8 +220,11 @@ export async function fetchHealthRecords(sheepId?: string) {
         id: String((h as any).id_health || h.id),
         sheep_id: String(h.id_sheep),
         date: h.date_recorded || (h as any).checkup_date || '',
-        status: h.health_status || (h as any).action || (h as any).diagnosis || '',
-        notes: h.description || (h as any).notes || '',
+        status: h.diagnosis || h.health_status || (h as any).action || '',
+        notes: h.notes || h.description || '',
+        action: (h as any).action || '',
+        medicine_given: (h as any).medicine_given || '',
+        inspector_name: (h as any).inspector_name || '',
       }))
     }
   } catch (err: unknown) {
@@ -340,8 +359,11 @@ export async function addHealthRecord(sheepId: string, data: Record<string, unkn
       id: String((created as any).id_health || created.id),
       sheep_id: String(created.id_sheep),
       date: created.date_recorded || (created as any).checkup_date || '',
-      status: created.health_status || (created as any).action || (created as any).diagnosis || '',
-      notes: created.description || (created as any).notes || '',
+      status: created.diagnosis || created.health_status || (created as any).action || '',
+      notes: created.notes || created.description || '',
+      action: (created as any).action || '',
+      medicine_given: (created as any).medicine_given || '',
+      inspector_name: (created as any).inspector_name || '',
     }
     healthRecords.value.push(record)
     return record
@@ -425,8 +447,11 @@ export async function fetchHealthForSheep(id: string | number) {
       id: String((h as any).id_health || h.id),
       sheep_id: String(h.id_sheep),
       date: h.date_recorded || (h as any).checkup_date || '',
-      status: h.health_status || (h as any).action || (h as any).diagnosis || '',
-      notes: h.description || (h as any).notes || '',
+      status: h.diagnosis || h.health_status || (h as any).action || '',
+      notes: h.notes || h.description || '',
+      action: (h as any).action || '',
+      medicine_given: (h as any).medicine_given || '',
+      inspector_name: (h as any).inspector_name || '',
     }))
   } catch (err: unknown) {
     detailError.value = err instanceof Error ? err.message : 'Gagal memuat riwayat kesehatan'

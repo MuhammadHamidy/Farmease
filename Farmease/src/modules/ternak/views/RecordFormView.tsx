@@ -1,11 +1,11 @@
 import { defineComponent, ref, computed, watch, onMounted } from 'vue';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
-import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession, cagesList } from '@/store/navigation';
+import '@/assets/css/modules/peternakan/RecordForm.css';
+import { activePencatatanForm, selectedPencatatanPayload, cageSession, userSession, cagesList, fetchCagesList, prefilledPencatatanSheepId, prefilledPencatatanCageCode } from '@/store/navigation';
 import { operatorTasks, submitPencatatanSubmission } from '@/store/operatorAdmin';
-import { pencatatanSubmissions } from '@/modules/ternak/store/operatorAdmin';
+import { pencatatanSubmissions, fetchSubmissions } from '@/modules/ternak/store/operatorAdmin';
 import { stocks, fetchStocks } from '@/modules/ternak/store/peternakan';
-import { sheep } from '@/store/livestock';
-import { feedsApi, breedingApi } from '@/shared/api';
+import { sheep, fetchSheep } from '@/store/livestock';
+import { feedsApi, breedingApi, pregnancyApi, pemangkasanApi } from '@/shared/api';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import Button from '@/shared/ui/Button';
@@ -14,12 +14,12 @@ import BackButton from '@/shared/ui/BackButton';
 import PencatatanTypeFields, { type PencatatanFormItem } from '@/modules/ternak/components/pencatatan/PencatatanTypeFields';
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import { useRouter } from 'vue-router';
-import CustomAlertModal, { type AlertModalState } from '../components/shared/CustomAlertModal';
+import CustomAlertModal, { type AlertModalState } from '@/shared/ui/CustomAlertModal';
 
 const JENIS_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
   stok_pakan: '/icon/inventory.png',
-  kesehatan: '/icon/catat_sehat.png',
+  kesehatan: '/icon/sheep_kesehatan.png',
   perkawinan: '/icon/catat_kawin.png',
   kelahiran: '/icon/catat_lahir.png',
   kotoran: '/icon/catat_kotoran.png',
@@ -41,43 +41,74 @@ export default defineComponent({
     const recapPayload = ref<any | null>(null);
 
     const initForms = () => {
-      forms.value = rincianItems.value.map((item: { id: string; name: string; mode?: string }) => ({
-        id: item.id,
-        name: item.name,
-        mode: (selectedScope.value === 'kandang' ? 'kelompok' : 'individu') as PencatatanMode,
-        targetId: '',
-        qty: '',
-        unit: 'kg',
-        note: '',
-        tindakan: '',
-        obat: '',
-        vitaminAmount: '',
-        kotoranState: 'campur',
-        idPejantan: '',
-        metoda: (item.name === 'IB' || item.name === 'Inseminasi Buatan') ? 'ib' : 'alami',
-        jumlahAnak: '',
-        kondisiInduk: 'Sehat',
-        kondisiAnak: 'sehat',
-        tanggal: new Date().toISOString().split('T')[0],
-        pemanfaatan: 'Pupuk Organik Kebun',
-        kandangAnak: '',
-        namaAnak: '',
-        beratLahir: '',
-        asalSemen: '',
-        namaInseminator: '',
-        waktuIB: new Date().toISOString().slice(0, 16), // local datetime string format
-        sumberPejantan: 'internal',
-        donorName: '',
-        donorOrigin: '',
-        idMating: activePencatatanForm.value?.idMating || '',
-        metodePemeriksaan: 'manual',
-        hasilPemeriksaan: 'masih_menunggu',
-      }));
+      forms.value = rincianItems.value.map((item: { id: string; name: string; mode?: string }) => {
+        let forcedMode = selectedScope.value === 'kandang' ? 'kelompok' : 'individu';
+        const jenisId = activePencatatanForm.value?.jenis?.id;
+        if (jenisId === 'kotoran') {
+          forcedMode = 'kelompok';
+        } else if (['berat_badan', 'perkawinan', 'kelahiran'].includes(jenisId)) {
+          forcedMode = 'individu';
+        }
+
+        return {
+          id: item.id,
+          name: item.name,
+          mode: forcedMode as PencatatanMode,
+          targetId: prefilledPencatatanSheepId.value || '',
+          qty: '',
+          unit: 'kg',
+          note: '',
+          tindakan: '',
+          obat: '',
+          vitaminAmount: '',
+          kotoranState: 'campur',
+          idPejantan: '',
+          metoda: jenisId === 'pakan' ? 'dadakan' : (((item.name === 'IB' || item.name === 'Inseminasi Buatan') ? 'ib' : 'alami')),
+          jumlahAnak: '',
+          kondisiInduk: 'Sehat',
+          kondisiAnak: 'sehat',
+          tanggal: new Date().toISOString().split('T')[0],
+          pemanfaatan: 'Pupuk Organik Kebun',
+          kandangAnak: '',
+          namaAnak: '',
+          sheepCode: '',
+          genderAnak: 'jantan',
+          beratLahir: '',
+          asalSemen: '',
+          namaInseminator: '',
+          waktuIB: new Date().toISOString().slice(0, 16), // local datetime string format
+          sumberPejantan: 'internal',
+          donorName: '',
+          donorOrigin: '',
+          idMating: activePencatatanForm.value?.idMating || '',
+          metodePemeriksaan: 'manual',
+          hasilPemeriksaan: 'masih_menunggu',
+          hijauan: '',
+          energi: '',
+          protein: '',
+          mineral: '',
+          selectedCageCode: prefilledPencatatanCageCode.value || '',
+          petugas: '',
+        };
+      });
+
+      // Clear prefilled values after mapping
+      prefilledPencatatanSheepId.value = null;
+      prefilledPencatatanCageCode.value = null;
 
       forms.value.forEach((f) => {
         if (f.mode === 'kelompok' || activePencatatanForm.value?.jenis?.id === 'kotoran') {
-          if (cageSession.value?.code) {
+          const linkedTask = activePencatatanForm.value?.taskId 
+            ? operatorTasks.value.find(t => String(t.id) === String(activePencatatanForm.value.taskId)) 
+            : null;
+          if (linkedTask && linkedTask.cageCode) {
+            f.targetId = linkedTask.cageCode;
+          } else if (cageSession.value?.code) {
             f.targetId = cageSession.value.code;
+          }
+        } else {
+          if (cageSession.value?.code) {
+            f.selectedCageCode = cageSession.value.code;
           }
         }
       });
@@ -102,14 +133,120 @@ export default defineComponent({
       }
     };
 
+    const pruningOptions = ref<any[]>([]);
+    const fetchPruningOptions = async () => {
+      try {
+        const res = await pemangkasanApi.getList();
+        const grouped: Record<string, { jumlah: number; satuan: string }> = {};
+        (res || []).filter((p: any) => Number(p.jumlah) > 0).forEach((p: any) => {
+          const rawName = (p.nama_rincian_aktivitas || 'Daun').trim();
+          const cleanName = rawName.replace(/^Pemangkasan\s+/i, '');
+          const key = cleanName.toLowerCase();
+          if (!grouped[key]) {
+            grouped[key] = { jumlah: 0, satuan: p.satuan || 'kg' };
+          }
+          grouped[key].jumlah += Number(p.jumlah);
+        });
+        pruningOptions.value = Object.entries(grouped).map(([, item], idx) => {
+          const allEntries = (res || []).filter((p: any) => {
+            const rawName = (p.nama_rincian_aktivitas || 'Daun').trim();
+            const cleanName = rawName.replace(/^Pemangkasan\s+/i, '');
+            return cleanName.toLowerCase() === Object.keys(grouped)[idx];
+          });
+          const displayName = allEntries.length > 0
+            ? (allEntries[0]?.nama_rincian_aktivitas || 'Daun').trim().replace(/^Pemangkasan\s+/i, '')
+            : Object.keys(grouped)[idx];
+          return {
+            id: `pruning-${idx}`,
+            name: `Pemangkasan ${displayName}`,
+            qty: item.jumlah,
+            unit: item.satuan,
+            category: 'greenery',
+            notes: 'Hasil pemangkasan kebun'
+          };
+        });
+      } catch (err) {
+        console.error('Failed to load pruning in RecordFormView', err);
+      }
+    };
+
+    const pregnancies = ref<any[]>([]);
+    const fetchPregnancies = async () => {
+      try {
+        const res = await pregnancyApi.getList();
+        pregnancies.value = res || [];
+      } catch (err) {
+        console.error('Failed to fetch pregnancies:', err);
+      }
+    };
+
+    const pregnantCageSheepList = computed(() => {
+      const activeCode = forms.value[0]?.selectedCageCode || cageSession.value?.code || '';
+      if (!activeCode) return [];
+      
+      return sheep.value
+        .filter(s => s.cage_code === activeCode && s.gender === 'betina' && s.status === 'Hamil')
+        .map(s => {
+          const targetIdStr = String(s.id);
+          const foundPreg = pregnancies.value.find((p: any) => {
+            const idMother = String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || '');
+            const statusStr = (p.status || p.pregnancy_status || '').toLowerCase();
+            const isActive = statusStr === 'dikandung' || statusStr === 'hamil' || statusStr === 'aktif';
+            return idMother === targetIdStr && isActive;
+          });
+          
+          // Gunakan expected_birth_date langsung dari DB jika tersedia
+          let hpl: Date;
+          if (foundPreg?.expected_birth_date) {
+            hpl = new Date(foundPreg.expected_birth_date);
+          } else if (foundPreg?.pregnancy_date) {
+            hpl = new Date(new Date(foundPreg.pregnancy_date).getTime() + 150 * 24 * 60 * 60 * 1000);
+          } else {
+            // Fallback: estimasi 60 hari dari sekarang
+            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+          }
+          if (isNaN(hpl.getTime())) {
+            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+          }
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          hpl.setHours(0,0,0,0);
+          const diffTime = hpl.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          let countdownText = '';
+          if (diffDays > 0) countdownText = `H-${diffDays} Hari`;
+          else if (diffDays === 0) countdownText = 'HPL Hari Ini';
+          else countdownText = `Lewat HPL ${Math.abs(diffDays)} Hari`;
+
+          return {
+            id: s.id,
+            code: s.code,
+            name: s.name,
+            countdownText,
+            hpl: hpl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
+            cage_code: s.cage_code
+          };
+        });
+    });
+
     // Fetch stocks when form opens
     watch(
       () => activePencatatanForm.value?.jenis?.id,
       (jenisId) => {
         if (jenisId) {
           fetchStocks();
+          if (jenisId === 'pakan' || jenisId === 'stok_pakan' || jenisId === 'perkawinan') {
+            fetchSubmissions();
+          }
+          if (jenisId === 'pakan') {
+            fetchPruningOptions();
+          }
           if (jenisId === 'perkawinan') {
             fetchActiveMatings();
+          }
+          if (jenisId === 'kelahiran') {
+            fetchPregnancies();
           }
         }
       },
@@ -120,6 +257,14 @@ export default defineComponent({
       if (!activePencatatanForm.value) {
         router.push({ name: 'ternak-pencatatan' });
       }
+      if (cagesList.value.length === 0) {
+        fetchCagesList();
+      }
+      if (sheep.value.length === 0) {
+        fetchSheep();
+      }
+      fetchPregnancies();
+      fetchPruningOptions();
     });
 
     const handleModeChange = (form: PencatatanFormItem, mode: PencatatanMode) => {
@@ -139,6 +284,8 @@ export default defineComponent({
       if (alertModal.value.type === 'success') {
         activePencatatanForm.value = null;
         selectedPencatatanPayload.value = null;
+        recapPayload.value = null;
+        showRecap.value = false;
         router.push({ name: 'ternak-pencatatan' });
       }
     };
@@ -155,33 +302,19 @@ export default defineComponent({
         payload: recapPayload.value,
         operatorCode: userSession.value?.code,
         operatorName: userSession.value?.name,
-        cageCode: cageSession.value?.code,
+        cageCode: cageSession.value?.code || displayCageCode.value,
         taskId: activePencatatanForm.value?.taskId,
       });
 
       isSubmitting.value = false;
 
       if (result.success) {
-        pencatatanSubmissions.value.unshift({
-          id: `SUB-${Date.now().toString().slice(-6)}`,
-          type: activePencatatanForm.value?.jenis?.id || 'pencatatan',
-          typeLabel: activePencatatanForm.value?.jenis?.name || 'Pencatatan',
-          operatorCode: userSession.value?.code || 'OP001',
-          operatorName: userSession.value?.name || 'Operator Ternak',
-          cageCode: cageSession.value?.code || 'A',
-          scope: selectedScope.value,
-          summary: recapPayload.value.data.summary,
-          payload: recapPayload.value,
-          submittedAt: Date.now(),
-          approvalStatus: 'pending',
-          taskId: activePencatatanForm.value?.taskId,
-        } as any);
-
-        selectedPencatatanPayload.value = null;
-        activePencatatanForm.value = null;
-        recapPayload.value = null;
-        showRecap.value = false;
-        router.push({ name: 'ternak-pencatatan' });
+        alertModal.value = {
+          isOpen: true,
+          title: 'Berhasil',
+          message: result.message,
+          type: 'success',
+        };
       } else {
         alertModal.value = {
           isOpen: true,
@@ -214,14 +347,56 @@ export default defineComponent({
         let insufficientMessage = '';
 
         for (const f of forms.value) {
-          const feedName = f.obat; // dropdown value for Jenis Pakan
           const requestedQty = parseFloat(f.qty) || 0;
-          if (feedName && requestedQty > 0) {
-            const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === feedName.toLowerCase());
-            if (!stockItem || stockItem.qty < requestedQty) {
-              isStockInsufficient = true;
-              insufficientMessage = `Stok pakan "${feedName}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty : 0} kg\nDibutuhkan: ${requestedQty} kg.`;
-              break;
+          if (requestedQty <= 0) continue;
+
+          if (f.metoda === 'dadakan') {
+            // Pakan Dadakan (Validate only selected feeds)
+            const feedsToCheck = [];
+            const scale = f.hijauan ? 0.104 : 0.0312;
+            if (f.energi) feedsToCheck.push({ name: f.energi, pct: 0.018 / scale, label: 'Energi' });
+            if (f.protein) feedsToCheck.push({ name: f.protein, pct: 0.0108 / scale, label: 'Protein' });
+            if (f.mineral) feedsToCheck.push({ name: f.mineral, pct: 0.0024 / scale, label: 'Mineral' });
+            if (f.hijauan) feedsToCheck.push({ name: f.hijauan, pct: 0.0728 / scale, label: 'Hijauan' });
+
+            for (const item of feedsToCheck) {
+              const reqAmount = requestedQty * item.pct;
+              const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
+              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === item.name.toLowerCase());
+              const available = stockItem ? stockItem.qty : (pruningItem ? pruningItem.qty : null);
+              if (available === null || available < reqAmount) {
+                isStockInsufficient = true;
+                insufficientMessage = `Stok pakan ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${available !== null ? Number(available).toFixed(2) : 0} kg\nDibutuhkan (proporsional): ${reqAmount.toFixed(2)} kg.`;
+                break;
+              }
+            }
+            if (isStockInsufficient) break;
+          } else if (f.metoda === 'hijauan_kebun') {
+            // Pakan Hijauan Kebun — cek pruningOptions dulu, lalu DB stok
+            const feedName = f.obat;
+            if (feedName) {
+              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === feedName.toLowerCase());
+              if (pruningItem) {
+                // Stok dari kebun tersedia, lewati validasi DB
+              } else {
+                const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === feedName.toLowerCase());
+                if (!stockItem || stockItem.qty < requestedQty) {
+                  isStockInsufficient = true;
+                  insufficientMessage = `Stok hijauan kebun "${feedName}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty : 0} kg\nDibutuhkan: ${requestedQty} kg.`;
+                  break;
+                }
+              }
+            }
+          } else {
+            // Pakan Silase / Stok
+            const feedName = f.obat;
+            if (feedName) {
+              const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === feedName.toLowerCase());
+              if (!stockItem || stockItem.qty < requestedQty) {
+                isStockInsufficient = true;
+                insufficientMessage = `Stok pakan "${feedName}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty : 0} kg\nDibutuhkan: ${requestedQty} kg.`;
+                break;
+              }
             }
           }
         }
@@ -231,6 +406,55 @@ export default defineComponent({
             isOpen: true,
             title: 'Stok Tidak Mencukupi',
             message: `${insufficientMessage}\n\nMohon catat penambahan stok pakan terlebih dahulu sebelum melakukan pencatatan pemberian pakan ini.`,
+            type: 'error'
+          };
+          return;
+        }
+      }
+
+      if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
+        let isStockInsufficient = false;
+        let insufficientMessage = '';
+
+        for (const f of forms.value) {
+          if (f.name === 'Konversi Pakan') {
+            const rawFeed = f.hijauan;
+            const energyFeed = f.energi;
+            const proteinFeed = f.protein;
+            const mineralFeed = f.mineral;
+            const targetQty = parseFloat(f.qty) || 0;
+
+            if (rawFeed && energyFeed && proteinFeed && mineralFeed && targetQty > 0) {
+              const reqRaw = targetQty * 0.7;
+              const reqEnergy = targetQty * 0.3 * (0.0180 / 0.0312);
+              const reqProtein = targetQty * 0.3 * (0.0108 / 0.0312);
+              const reqMineral = targetQty * 0.3 * (0.0024 / 0.0312);
+
+              const checkItems = [
+                { name: rawFeed, req: reqRaw, label: 'Pakan Mentah', pct: '70%' },
+                { name: energyFeed, req: reqEnergy, label: 'Pakan Energi (Additive)', pct: '17.3%' },
+                { name: proteinFeed, req: reqProtein, label: 'Pakan Protein', pct: '10.4%' },
+                { name: mineralFeed, req: reqMineral, label: 'Pakan Mineral', pct: '2.3%' }
+              ];
+
+              for (const item of checkItems) {
+                const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
+                if (!stockItem || stockItem.qty < item.req) {
+                  isStockInsufficient = true;
+                  insufficientMessage = `Stok ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty.toFixed(2) : 0} kg\nDibutuhkan (${item.pct}): ${item.req.toFixed(2)} kg.`;
+                  break;
+                }
+              }
+              if (isStockInsufficient) break;
+            }
+          }
+        }
+
+        if (isStockInsufficient) {
+          alertModal.value = {
+            isOpen: true,
+            title: 'Stok Tidak Mencukupi',
+            message: `${insufficientMessage}\n\nMohon sesuaikan target atau tambahkan stok terlebih dahulu.`,
             type: 'error'
           };
           return;
@@ -263,19 +487,60 @@ export default defineComponent({
           }
         }
         
-        if (categoryId === 'pakan' && (!formItem.obat || !formItem.qty)) return showError('Jenis pakan dan jumlah pakan wajib diisi.');
+        if (categoryId === 'pakan') {
+          if (formItem.metoda === 'dadakan') {
+            const hasIngredients = formItem.hijauan || formItem.energi || formItem.protein || formItem.mineral;
+            if (!hasIngredients) {
+              return showError('Minimal satu jenis pakan wajib dipilih untuk pakan dadakan.');
+            }
+            if (!formItem.qty) {
+              return showError('Total jumlah pakan wajib diisi.');
+            }
+          } else {
+            if (!formItem.obat || !formItem.qty) {
+              return showError('Jenis pakan dan jumlah pakan wajib diisi.');
+            }
+          }
+        }
         if (categoryId === 'stok_pakan') {
           const isConversion = formItem.name === 'Konversi Pakan';
           if (!isConversion && (!formItem.obat || !formItem.qty)) return showError('Nama pakan sumber dan jumlah masuk wajib diisi.');
-          if (isConversion && (!formItem.obat || !formItem.qty || !formItem.idPejantan || !formItem.vitaminAmount)) return showError('Semua field konversi pakan wajib diisi.');
+          if (isConversion && (
+            !(formItem.hijauan || '').trim() ||
+            !(formItem.energi || '').trim() ||
+            !(formItem.protein || '').trim() ||
+            !(formItem.mineral || '').trim() ||
+            !formItem.qty
+          )) {
+            return showError('Semua kelompok bahan baku konversi pakan (Serat, Energi, Protein, Aktivator) dan target kuantitas wajib diisi.');
+          }
         }
-        if (categoryId === 'kesehatan' && (!formItem.tindakan || !formItem.obat)) return showError('Tindakan/Diagnosa dan Obat/Vitamin wajib diisi.');
+        if (categoryId === 'kesehatan') {
+          const isCheckup = formItem.name === 'Pemeriksaan Rutin' || formItem.name === 'Pemeriksaan Kesehatan';
+          if (isCheckup) {
+            if (!formItem.tindakan || !formItem.tindakan.trim()) {
+              return showError('Kolom Diagnosa wajib diisi.');
+            }
+            if (!formItem.obat || !formItem.obat.trim()) {
+              return showError('Kolom Tindakan wajib diisi.');
+            }
+          } else {
+            if (!formItem.tindakan || !formItem.tindakan.trim()) {
+              return showError('Kolom tindakan penanganan medis wajib diisi.');
+            }
+            if (!formItem.obat || !formItem.obat.trim() || !formItem.vitaminAmount || Number(formItem.vitaminAmount) <= 0) {
+              return showError('Nama obat/vitamin dan dosis realisasi wajib diisi.');
+            }
+          }
+        }
         if (categoryId === 'kotoran' && !formItem.qty) return showError('Jumlah produksi kotoran wajib diisi.');
         if (categoryId === 'perkawinan') {
           if (formItem.name === 'Kontrol Kebuntingan') {
             if (!formItem.idMating) return showError('Data Perkawinan wajib dipilih.');
             if (!formItem.metodePemeriksaan) return showError('Metode Pemeriksaan wajib dipilih.');
             if (!formItem.hasilPemeriksaan) return showError('Hasil Pemeriksaan wajib dipilih.');
+          } else if (formItem.name === 'Cek Birahi' || formItem.name === 'Pencatatan Birahi' || formItem.name === 'Pengecekan Birahi') {
+            if (!formItem.hasilPemeriksaan) return showError('Hasil Cek Birahi wajib dipilih.');
           } else {
             const isExternalIB = formItem.metoda === 'ib' && formItem.sumberPejantan === 'eksternal';
             if (!isExternalIB && !formItem.idPejantan) return showError('ID Pejantan wajib diisi.');
@@ -288,7 +553,49 @@ export default defineComponent({
             }
           }
         }
-        if (categoryId === 'kelahiran' && (!formItem.jumlahAnak || !formItem.idPejantan || !formItem.namaAnak || !formItem.kandangAnak || !formItem.tanggal || !formItem.beratLahir)) return showError('Seluruh data kelahiran anak (ID Pejantan, Nama Anak, Kandang Anak, Tanggal Lahir, Berat, dan Jumlah) wajib diisi.');
+        if (categoryId === 'kelahiran') {
+          if (formItem.name === 'Keguguran') {
+            if (!formItem.tanggal) {
+              return showError('Tanggal keguguran wajib diisi.');
+            }
+          } else {
+            const sheepCode = formItem.sheepCode;
+            if (!formItem.jumlahAnak || !formItem.idPejantan || !formItem.namaAnak || !sheepCode || !formItem.kandangAnak || !formItem.tanggal || !formItem.beratLahir) {
+              return showError('Seluruh data kelahiran anak (ID Pejantan, Nama Anak, Kode Ear Tag Anak, Kandang Anak, Tanggal Lahir, Berat, dan Jumlah) wajib diisi.');
+            }
+            const numAnak = Number(formItem.jumlahAnak) || 0;
+            const numBerat = Number(formItem.beratLahir) || 0;
+            if (numAnak < 1 || numBerat <= 0) {
+              return showError('Jumlah anak dan berat lahir harus bernilai positif.');
+            }
+            // Check if mother and father are the same sheep
+            const motherClean = formItem.targetId.trim().toUpperCase();
+            const fatherClean = formItem.idPejantan.trim().toUpperCase();
+            const motherSheep = sheep.value.find(s => s.code.toUpperCase() === motherClean || String(s.id) === motherClean);
+            const fatherSheep = sheep.value.find(s => s.code.toUpperCase() === fatherClean || String(s.id) === fatherClean);
+            if (motherClean === fatherClean || (motherSheep && fatherSheep && motherSheep.id === fatherSheep.id)) {
+              return showError('Induk jantan dan induk betina tidak boleh domba yang sama.');
+            }
+            // Check if code / ear tag already exists in active sheep list
+            const codeExists = sheep.value.some(s => s.code.toUpperCase() === sheepCode.trim().toUpperCase() && !['Mati', 'Terjual', 'Disembelih'].includes(s.status));
+            if (codeExists) {
+              return showError(`Kode Ear Tag Anak "${sheepCode}" sudah terdaftar untuk domba lain yang masih aktif.`);
+            }
+            // Validate cage capacity
+            const cage = cagesList.value.find(c => c.code === formItem.kandangAnak);
+            const capacity = cage?.capacity || 50;
+            const currentSheepCount = sheep.value.filter(s => s.cage_code === formItem.kandangAnak && !['Mati', 'Terjual', 'Disembelih'].includes(s.status)).length;
+            if (currentSheepCount >= capacity) {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Kandang Penuh',
+                message: `Gagal mencatat kelahiran. Kandang "${formItem.kandangAnak}" sudah penuh (${currentSheepCount}/${capacity} ekor). Silakan pindahkan sebagian domba atau pilih kandang lain.`,
+                type: 'error'
+              };
+              return;
+            }
+          }
+        }
         if (categoryId === 'berat_badan' && !formItem.qty) return showError('Berat badan wajib diisi.');
       }
 
@@ -296,18 +603,107 @@ export default defineComponent({
         let isInbreedingRisk = false;
         let inbreedingMessage = '';
 
+        const getAgeInMonths = (birthDateStr?: string) => {
+          if (!birthDateStr) return 0;
+          const bd = new Date(birthDateStr);
+          if (isNaN(bd.getTime())) return 0;
+          const now = new Date();
+          return (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
+        };
+
         for (const formEntry of forms.value) {
-          if (formEntry.name === 'Kontrol Kebuntingan') continue;
+          if (formEntry.name === 'Kontrol Kebuntingan' || formEntry.name === 'Cek Birahi' || formEntry.name === 'Pencatatan Birahi' || formEntry.name === 'Pengecekan Birahi') continue;
           const id1Str = String(formEntry.targetId || '').trim().toUpperCase();
           const id2Str = String(formEntry.idPejantan || '').trim().toUpperCase();
           
           if (id1Str && id2Str) {
-            const male = sheep.value.find(sheepItem => String(sheepItem.id) === id2Str);
-            const female = sheep.value.find(sheepItem => String(sheepItem.id) === id1Str);
+            const s1 = sheep.value.find(s => String(s.id).toUpperCase() === id1Str || String(s.code).toUpperCase() === id1Str);
+            const s2 = sheep.value.find(s => String(s.id).toUpperCase() === id2Str || String(s.code).toUpperCase() === id2Str);
             
-            if (!male || !female) {
+            if (!s1 || !s2) {
               alertModal.value = {
                 isOpen: true, title: 'Validasi Gagal', message: 'ID Domba pejantan atau induk tidak ditemukan di database.', type: 'error'
+              };
+              return;
+            }
+
+            const male = s1.gender === 'jantan' ? s1 : (s2.gender === 'jantan' ? s2 : null);
+            const female = s1.gender === 'betina' ? s1 : (s2.gender === 'betina' ? s2 : null);
+
+            if (!male || !female) {
+              alertModal.value = {
+                isOpen: true, title: 'Validasi Gagal', message: 'Harus memilih satu domba jantan dan satu domba betina untuk perkawinan.', type: 'error'
+              };
+              return;
+            }
+
+            // check if female has been estrus-checked
+            if (female.mating_status === 'Belum Cek Birahi' || female.mating_status === 'Belum Pencatatan Birahi') {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Belum Pencatatan Birahi',
+                message: `Domba betina ${female.code} belum dicatat birahinya.\nSilakan lakukan Pencatatan Birahi terlebih dahulu sebelum mencatat perkawinan.`,
+                type: 'error'
+              };
+              return;
+            }
+
+            // check if female weight has been inputted (robust check: 0, empty, or no unit)
+            const femaleWeightVal = female.weight ? parseFloat(String(female.weight).replace(/[^0-9.]/g, '')) : 0;
+            if (isNaN(femaleWeightVal) || femaleWeightVal <= 0) {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Validasi Gagal',
+                message: `Gagal mencatat perkawinan. Domba betina ${female.code} (${female.name}) belum di-inputkan berat badan. Silakan catat berat badan terlebih dahulu.`,
+                type: 'error'
+              };
+              return;
+            }
+
+            // check if female is underage
+            const femaleAgeMonths = getAgeInMonths(female.birth_date);
+            if (female.mating_status === 'Tidak (Belum Cukup Umur)' || (femaleAgeMonths > 0 && femaleAgeMonths < 8)) {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Gagal Menyimpan',
+                message: `Gagal menyimpan data perkawinan.\nInduk Betina ${female.code} masih di bawah umur.\nStatus: Belum Cukup Umur (umur: ${female.age || 'di bawah 8 bulan'}).`,
+                type: 'error'
+              };
+              return;
+            }
+
+            // check if male is underage
+            const maleAgeMonths = getAgeInMonths(male.birth_date);
+            if (male.mating_status === 'Tidak (Belum Cukup Umur)' || (maleAgeMonths > 0 && maleAgeMonths < 12)) {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Gagal Menyimpan',
+                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} masih di bawah umur.\nStatus: Belum Cukup Umur (umur: ${male.age || 'di bawah 12 bulan'}).`,
+                type: 'error'
+              };
+              return;
+            }
+
+            // check other readiness restrictions for female
+            // Also accept if local submission shows birahi (even if not yet admin-approved)
+            const femaleHasLocalBirahi = checkIsSheepBirahi(female);
+            if (!femaleHasLocalBirahi && !female.is_ready_to_mate && female.mating_status && female.mating_status !== 'Siap Kawin' && !female.mating_status.includes('Birahi') && female.mating_status !== 'Belum Pencatatan Birahi') {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Gagal Menyimpan',
+                message: `Gagal menyimpan data perkawinan.\nInduk Betina ${female.code} (${female.name}) tidak dapat dikawinkan.\nStatus: ${female.mating_status}.`,
+                type: 'error'
+              };
+              return;
+            }
+
+            // check other readiness restrictions for male
+            if (!male.is_ready_to_mate && male.mating_status && male.mating_status !== 'Siap Kawin') {
+              alertModal.value = {
+                isOpen: true,
+                title: 'Gagal Menyimpan',
+                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} tidak siap kawin.\nStatus: ${male.mating_status}.`,
+                type: 'error'
               };
               return;
             }
@@ -316,7 +712,7 @@ export default defineComponent({
               const breedingCheckResult = await breedingApi.checkInbreeding(male.id, female.id);
               if (breedingCheckResult?.inbreeding_flag) {
                 isInbreedingRisk = true;
-                inbreedingMessage = `Perkawinan antara betina ${id1Str} dan pejantan ${id2Str} memiliki risiko inbreeding tinggi.\nKategori: ${breedingCheckResult.risk_category || 'Tinggi'} (${breedingCheckResult.inbreeding_percentage?.toFixed(2)}%).`;
+                inbreedingMessage = `Perkawinan antara betina ${female.code} (${female.name}) dan pejantan ${male.code} (${male.name}) memiliki risiko inbreeding tinggi.\nKategori: ${breedingCheckResult.risk_category || 'Tinggi'} (${breedingCheckResult.inbreeding_percentage?.toFixed(2)}%).`;
                 break;
               }
             } catch (error) {
@@ -353,22 +749,100 @@ export default defineComponent({
     };
 
     const goBack = () => {
+      showRecap.value = false;
+      recapPayload.value = null;
       activePencatatanForm.value = null;
-      if (window.history.length > 1) {
-        router.back();
-      } else {
-        router.push({ name: 'ternak-pencatatan' });
-      }
+      router.push({ name: 'ternak-pencatatan' });
     };
 
     const matchedStocks = computed(() => {
       const type = activePencatatanForm.value?.jenis?.id || '';
-      return stocks.value.filter(
-        (s) =>
-          ((type === 'pakan' || type === 'stok_pakan') && (s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery')) ||
-          (type === 'kesehatan' && s.category === 'vitamin') ||
-          (type === 'kotoran' && s.category === 'kotoran'),
-      );
+      // For pakan, filter by the current form's metoda
+      const currentMetoda = forms.value[0]?.metoda || 'dadakan';
+
+      if (type === 'pakan') {
+        if (currentMetoda === 'silase') {
+          // Only show silase-type stocks when silase method selected
+          return stocks.value
+            .filter(s => s.category === 'silase' || s.name.toLowerCase().includes('silase') || s.name.toLowerCase().includes('cacah'))
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name));
+        } else if (currentMetoda === 'hijauan_kebun') {
+          // Show hijauan DB stocks + raw garden clippings/greenery + orchard pruning
+          const dbGreenery = stocks.value.filter(s =>
+            s.category === 'hijauan' ||
+            s.category === 'greenery' ||
+            s.name.toLowerCase().includes('mentah') ||
+            s.name.toLowerCase().includes('kebun') ||
+            s.name.toLowerCase().includes('pemangkasan')
+          );
+          const combined = [...dbGreenery, ...pruningOptions.value];
+          const unique: Record<string, any> = {};
+          combined.forEach(item => {
+            const key = item.name.toLowerCase();
+            if (!unique[key] || (item.id && !item.id.toString().startsWith('pruning-'))) {
+              unique[key] = item;
+            }
+          });
+          return Object.values(unique).sort((a: any, b: any) => a.name.localeCompare(b.name));
+        } else {
+          // dadakan: show hijauan + konsentrat + pellet + greenery + pruning
+          const dbStocks = stocks.value.filter(s => s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery');
+          const combined = [...dbStocks, ...pruningOptions.value];
+          const unique: Record<string, any> = {};
+          combined.forEach(item => {
+            const key = item.name.toLowerCase();
+            if (!unique[key] || (item.id && !item.id.toString().startsWith('pruning-'))) {
+              unique[key] = item;
+            }
+          });
+          return Object.values(unique).sort((a: any, b: any) => a.name.localeCompare(b.name));
+        }
+      }
+
+      if (type === 'stok_pakan') {
+        // Show all pakan stocks (raw materials for konversi, and silase for tambah stok)
+        return stocks.value
+          .filter(s => s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery' || s.category === 'silase')
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      return stocks.value
+        .filter(
+          (s) =>
+            (type === 'kesehatan' && s.category === 'vitamin') ||
+            (type === 'kotoran' && s.category === 'kotoran'),
+        )
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    const selectedFeedNames = computed(() => {
+      const names = new Set<string>();
+      forms.value.forEach(f => {
+        if (activePencatatanForm.value?.jenis?.id === 'pakan') {
+          if (f.metoda === 'silase' || f.metoda === 'hijauan_kebun') {
+            if (f.obat) names.add(f.obat.toLowerCase());
+          } else {
+            if (f.hijauan) names.add(f.hijauan.toLowerCase());
+            if (f.energi) names.add(f.energi.toLowerCase());
+            if (f.protein) names.add(f.protein.toLowerCase());
+            if (f.mineral) names.add(f.mineral.toLowerCase());
+          }
+        } else if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
+          if (f.name === 'Konversi Pakan') {
+            if (f.hijauan) names.add(f.hijauan.toLowerCase());
+            if (f.energi) names.add(f.energi.toLowerCase());
+            if (f.protein) names.add(f.protein.toLowerCase());
+            if (f.mineral) names.add(f.mineral.toLowerCase());
+            if (f.obat) names.add(f.obat.toLowerCase());
+          } else {
+            if (f.obat) names.add(f.obat.toLowerCase());
+          }
+        }
+      });
+      return names;
     });
 
     const getCageName = (code: string) => {
@@ -376,34 +850,105 @@ export default defineComponent({
       return cage ? cage.name : `Kandang ${code}`;
     };
 
-    const siapKawinBetina = computed(() => {
-      return sheep.value.filter((s) => {
-        if (s.gender !== 'betina' || s.status !== 'Sehat') return false;
-        if (s.birth_date) {
-          const birthDate = new Date(s.birth_date);
-          const now = new Date();
-          const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
-          return ageInMonths >= 8;
+    const displayCageCode = computed(() => {
+      if (cageSession.value?.code) return cageSession.value.code;
+      if (forms.value.length > 0) {
+        const firstForm = forms.value[0];
+        if (firstForm) {
+          if (firstForm.mode === 'kelompok' && firstForm.targetId) {
+            return firstForm.targetId;
+          } else if (firstForm.targetId) {
+            const targetClean = firstForm.targetId.trim().toUpperCase();
+            const sheepObj = sheep.value.find(s => s.code.toUpperCase() === targetClean || String(s.id) === targetClean);
+            if (sheepObj && sheepObj.cage_code) {
+              return sheepObj.cage_code;
+            }
+          }
         }
-        return true;
+      }
+      return undefined;
+    });
+
+    const displayCageName = computed(() => {
+      if (cageSession.value?.name) return cageSession.value.name;
+      if (cageSession.value?.code) return getCageName(cageSession.value.code);
+      const codeFallback = displayCageCode.value;
+      if (codeFallback) {
+        return getCageName(codeFallback);
+      }
+      return '—';
+    });
+
+    const currentSelectedCageCode = computed(() => {
+      const perkawinanForm = forms.value.find(f => f.selectedCageCode || (f.mode === 'kelompok' && f.targetId));
+      if (perkawinanForm) {
+        return perkawinanForm.selectedCageCode || (perkawinanForm.mode === 'kelompok' ? perkawinanForm.targetId : '');
+      }
+      return cageSession.value?.code || '';
+    });
+
+    const checkIsSheepBirahi = (s: any) => {
+      if (!s) return false;
+      // Check local submissions first (works even if pending admin approval)
+      for (const sub of pencatatanSubmissions.value) {
+        if (sub.approvalStatus === 'rejected') continue;
+        const dataObj: any = (sub.payload as any)?.data || sub.payload;
+        const items = dataObj?.items || [];
+        for (const item of items) {
+          const isEstrusCheck = item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi';
+          if (isEstrusCheck && (String(item.targetId) === String(s.code) || String(item.targetId) === String(s.id))) {
+            // If there's any birahi submission for this sheep, check the result
+            if (item.hasilPemeriksaan === 'birahi') return true;
+            if (item.hasilPemeriksaan && item.hasilPemeriksaan !== 'birahi') return false;
+          }
+        }
+      }
+      // Fallback to backend flag (for fully approved submissions)
+      return !!s.is_ready_to_mate;
+    };
+
+    const siapKawinBetina = computed(() => {
+      const cageCode = currentSelectedCageCode.value;
+      
+      const hasSelectedMale = forms.value.some((f) => {
+        if (!f.idPejantan) return false;
+        const sh = sheep.value.find(s => String(s.id) === String(f.idPejantan) || String(s.code).toUpperCase() === String(f.idPejantan).trim().toUpperCase());
+        return sh && sh.gender === 'jantan';
+      });
+
+      return sheep.value.filter((s) => {
+        if (s.gender !== 'betina') return false;
+        if (!hasSelectedMale && cageCode && s.cage_code !== cageCode) return false;
+        
+        // Exclude already mated or pending mating sheeps
+        const isActiveMated = activeMatings.value.some(m => String(m.id_sheep_female) === String(s.id));
+        const isPendingMated = pencatatanSubmissions.value.some(sub => {
+          if (sub.approvalStatus === 'rejected') return false;
+          const dataObj: any = (sub.payload as any)?.data || sub.payload;
+          const items = dataObj?.items || [];
+          return items.some((item: any) => {
+            if (item.name === 'Kawin Alam' || item.name === 'Kawin Alami' || item.name === 'IB' || item.name === 'Inseminasi Buatan') {
+              const targetVal = item.targetId || item.idSheepFemale || item.id_sheep_female;
+              return String(targetVal) === String(s.id) || String(targetVal) === String(s.code);
+            }
+            return false;
+          });
+        });
+        if (isActiveMated || isPendingMated) return false;
+
+        return checkIsSheepBirahi(s);
       });
     });
 
     const siapKawinJantan = computed(() => {
       return sheep.value.filter((s) => {
-        if (s.gender !== 'jantan' || s.status !== 'Sehat') return false;
-        if (s.birth_date) {
-          const birthDate = new Date(s.birth_date);
-          const now = new Date();
-          const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
-          return ageInMonths >= 12;
-        }
-        return true;
+        if (s.gender !== 'jantan') return false;
+        return checkIsSheepBirahi(s);
       });
     });
 
     const cageActiveMatings = computed(() => {
-      const activeCage = cageSession.value?.code;
+      const activeCage = currentSelectedCageCode.value;
       if (!activeCage) return activeMatings.value;
       return activeMatings.value.filter((m) => {
         const female = sheep.value.find((s) => String(s.id) === String(m.id_sheep_female));
@@ -433,9 +978,9 @@ export default defineComponent({
                 }}>
                   <img src={jenisIcon} style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block', margin: '0', padding: '0', verticalAlign: 'middle' }} alt="" />
                 </div>
-                <Typography variant="h3" weight="extrabold" className="m-0 text-almond-beige">Rekap Pencatatan</Typography>
+                <Typography variant="h3" weight="extrabold" className="m-0 text-almond-beige">Konfirmasi Kirim Persetujuan</Typography>
                 <Typography variant="p" size="text-sm" color="secondary" className="mt-2 mb-0">
-                  Periksa data berikut sebelum mengirim ke admin untuk disetujui.
+                  Harap periksa dan pastikan seluruh rincian form pencatatan di bawah ini telah sesuai sebelum dikirim ke Admin untuk disetujui.
                 </Typography>
               </div>
 
@@ -469,7 +1014,7 @@ export default defineComponent({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                     <span style={{ color: '#6C757D' }}>Kandang</span>
-                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{cageSession.value?.name || cageSession.value?.code || '—'}</span>
+                    <span style={{ fontWeight: '700', color: '#1a1a1a' }}>{displayCageName.value}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                     <span style={{ color: '#6C757D' }}>Waktu</span>
@@ -522,7 +1067,13 @@ export default defineComponent({
                       {item.targetId && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>{targetLabel}</span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.targetId}</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                            : {(() => {
+                              if (item.mode === 'kelompok') return item.targetId;
+                              const s = sheep.value.find(x => String(x.id) === String(item.targetId) || String(x.code) === String(item.targetId));
+                              return s ? `[${s.code}] ${s.name}` : item.targetId;
+                            })()}
+                          </span>
                         </div>
                       )}
                       {item.qty && (
@@ -531,19 +1082,65 @@ export default defineComponent({
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.qty} {item.unit || ''}</span>
                         </div>
                       )}
-                      {item.tindakan && (
-                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tindakan</span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tindakan}</span>
-                        </div>
-                      )}
-                      {item.obat && (
-                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>
-                            {jenis.id === 'pakan' ? 'Jenis Pakan' : 'Obat / Vitamin'}
-                          </span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
-                        </div>
+                      {jenis.id === 'pakan' && item.metoda !== 'silase' ? (
+                        <>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hijauan</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.hijauan}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Energi</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.energi}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Protein</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.protein}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pemberian Mineral</span>
+                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.mineral}</span>
+                          </div>
+                        </>
+                      ) : item.name === 'Konversi Pakan' ? (
+                        <>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Sumber Serat Kasar</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.hijauan}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Energi / Karbohidrat</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.energi}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Protein / Konsentrat</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.protein}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Aktivator & Mineral</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.mineral}</span>
+                          </div>
+                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                            <span style={{ color: 'var(--color-gray-600)', width: '140px', flexShrink: 0 }}>Hasil Konversi Jadi</span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-on-surface)' }}>: {item.obat}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {item.tindakan && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tindakan</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tindakan}</span>
+                            </div>
+                          )}
+                          {item.obat && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>
+                                {jenis.id === 'pakan' ? 'Jenis Pakan' : 'Obat / Vitamin'}
+                              </span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                       {item.vitaminAmount && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
@@ -563,17 +1160,40 @@ export default defineComponent({
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.pemanfaatan}</span>
                         </div>
                       )}
-                      {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && (
+                      {item.idPejantan && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && item.name !== 'Pengecekan Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>ID Pejantan</span>
-                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.idPejantan}</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                            : {(() => {
+                              const s = sheep.value.find(x => String(x.id) === String(item.idPejantan) || String(x.code) === String(item.idPejantan));
+                              return s ? `[${s.code}] ${s.name}` : item.idPejantan;
+                            })()}
+                          </span>
                         </div>
                       )}
-                      {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && (
+                      {item.metoda && jenis.id === 'perkawinan' && item.name !== 'Kontrol Kebuntingan' && item.name !== 'Cek Birahi' && item.name !== 'Pencatatan Birahi' && item.name !== 'Pengecekan Birahi' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Metode Kawin</span>
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">: {item.metoda === 'ib' ? 'Inseminasi Buatan (IB)' : item.metoda}</span>
                         </div>
+                      )}
+                      {(item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') && (
+                        <>
+                          {item.hasilPemeriksaan && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hasil Cek Birahi</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">
+                                : {item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'}
+                              </span>
+                            </div>
+                          )}
+                          {item.tanggal && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Tgl Periksa</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.tanggal}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                       {item.metoda === 'ib' && item.asalSemen && item.name !== 'Kontrol Kebuntingan' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
@@ -625,10 +1245,22 @@ export default defineComponent({
                           )}
                         </>
                       )}
+                      {item.sheepCode && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Ear Tag Anak</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.sheepCode}</span>
+                        </div>
+                      )}
                       {item.namaAnak && jenis.id === 'kelahiran' && (
                         <div style={{ display: 'flex', fontSize: '0.82rem' }}>
                           <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Nama Anak</span>
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.namaAnak}</span>
+                        </div>
+                      )}
+                      {item.genderAnak && jenis.id === 'kelahiran' && (
+                        <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                          <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Kelamin Anak</span>
+                          <span style={{ fontWeight: '700', color: '#1a1a1a' }} class="text-capitalize">: {item.genderAnak}</span>
                         </div>
                       )}
                       {item.kandangAnak && jenis.id === 'kelahiran' && (
@@ -675,12 +1307,12 @@ export default defineComponent({
               {/* Actions */}
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
                 <BackButton
-                  onClick={() => { showRecap.value = false; }}
+                  onClick={() => { showRecap.value = false; initForms(); }}
                   label="Ubah Data"
                   style={{ flex: 1 }}
                 />
                 <SubmitButton
-                  label="Kirim Pencatatan"
+                  label="Kirim Persetujuan"
                   loading={isSubmitting.value}
                   onClick={handleFinalSubmit}
                   style={{ flex: 2 }}
@@ -750,7 +1382,7 @@ export default defineComponent({
             )}
 
             <div class="row g-4">
-              <div class={jenis.id === 'pakan' || jenis.id === 'stok_pakan' || jenis.id === 'perkawinan' ? 'col-lg-8' : 'col-lg-12'}>
+              <div class={jenis.id === 'pakan' || jenis.id === 'stok_pakan' || jenis.id === 'perkawinan' || jenis.id === 'kelahiran' ? 'col-lg-8' : 'col-lg-12'}>
                 <div class="d-flex flex-column gap-4">
                   {forms.value.map((form, index) => (
                     <div key={index} class="pencatatan-form-card">
@@ -778,7 +1410,7 @@ export default defineComponent({
                 </div>
               </div>
 
-              {(jenis.id === 'pakan' || jenis.id === 'stok_pakan' || jenis.id === 'perkawinan') && (
+              {(jenis.id === 'pakan' || jenis.id === 'stok_pakan' || jenis.id === 'perkawinan' || jenis.id === 'kelahiran') && (
                 <div class="col-lg-4">
                   <div class="sticky-top" style={{ top: '2rem' }}>
                     
@@ -788,21 +1420,36 @@ export default defineComponent({
                         <div class="d-flex align-items-center gap-2 mb-4">
                           <img src="/icon/inventory.png" style={{ width: '20px', height: '20px', opacity: 0.6 }} alt="" />
                           <Typography variant="h5" weight="extrabold" className="m-0">
-                            Informasi Stok Terkait
+                            {(() => {
+                              if (jenis.id === 'pakan') {
+                                if (forms.value[0]?.metoda === 'silase') return 'Stok Silase Tersedia';
+                                if (forms.value[0]?.metoda === 'hijauan_kebun') return 'Stok Hijauan Kebun Tersedia';
+                              }
+                              return 'Informasi Stok Terkait';
+                            })()}
                           </Typography>
                         </div>
 
                         <div class="stock-list-compact">
                           {matchedStocks.value.length === 0 ? (
                             <div class="text-center py-4 rounded-2xl bg-surface-container-low text-on-surface-variant small">
-                              Tidak ada stok yang sesuai
+                              {(() => {
+                                if (jenis.id === 'pakan') {
+                                  if (forms.value[0]?.metoda === 'silase') return 'Belum ada stok silase. Lakukan Konversi Pakan terlebih dahulu.';
+                                  if (forms.value[0]?.metoda === 'hijauan_kebun') return 'Belum ada stok hijauan kebun (mentah) tersedia.';
+                                }
+                                return 'Tidak ada stok yang sesuai';
+                              })()}
                             </div>
                           ) : (
-                            matchedStocks.value.map((s) => (
-                              <div
-                                class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
-                                key={s.id}
-                              >
+                            matchedStocks.value.map((s) => {
+                              const isSelected = selectedFeedNames.value.has(s.name.toLowerCase());
+                              return (
+                                <div
+                                  class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
+                                  style={isSelected ? { borderLeft: '4px solid var(--color-primary, #bc6c25)', borderTop: '1px solid rgba(188, 108, 37, 0.2)', borderBottom: '1px solid rgba(188, 108, 37, 0.2)', borderRight: '1px solid rgba(188, 108, 37, 0.2)' } : {}}
+                                  key={s.id}
+                                >
                                 <div class="min-w-0">
                                   <Typography
                                     variant="p"
@@ -827,8 +1474,9 @@ export default defineComponent({
                                   </Badge>
                                 </div>
                               </div>
-                            ))
-                          )}
+                            );
+                          })
+                        )}
                         </div>
                       </div>
                     )}
@@ -844,33 +1492,7 @@ export default defineComponent({
                         </div>
 
                         <div class="stock-list-compact">
-                          {/* Indukan Betina */}
-                          <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-1 px-2">
-                            Betina (Sudah Waktunya Kawin / Birahi)
-                          </Typography>
-                          {siapKawinBetina.value.length === 0 ? (
-                            <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small mb-3">
-                              Tidak ada betina
-                            </div>
-                          ) : (
-                            siapKawinBetina.value.slice(0, 5).map((s) => (
-                              <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
-                                <div class="min-w-0">
-                                  <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                    {s.name}
-                                  </Typography>
-                                  <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                    {s.code} • {getCageName(s.cage_code)}
-                                  </Typography>
-                                </div>
-                                <div class="text-end ps-3">
-                                  <Badge variant="solid-primary" className="px-2 py-1">
-                                    Betina
-                                  </Badge>
-                                </div>
-                              </div>
-                            ))
-                          )}
+
 
                           {/* Pejantan Dewasa vs Data Perkawinan Tercatat */}
                           {(() => {
@@ -883,6 +1505,9 @@ export default defineComponent({
                                   <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
                                     Data Perkawinan Tercatat
                                   </Typography>
+                                  <div class="px-2 py-1.5 mb-2 rounded-3 bg-light text-muted border" style={{ fontSize: '0.72rem' }}>
+                                    💡 <em>Metode Kontrol Kebuntingan tersedia: Cek USG, Palpasi, atau Testpack.</em>
+                                  </div>
                                   {cageActiveMatings.value.length === 0 ? (
                                     <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
                                       Tidak ada perkawinan tercatat
@@ -902,7 +1527,7 @@ export default defineComponent({
                                               {female ? female.name : `Domba #${m.id_sheep_female}`}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                              {female ? female.code : '—'} • {m.mating_method === 'ib' ? 'IB' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
+                                              {female ? female.code : '—'} • {(m.mating_method === 'ib' || m.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.6rem' }} className="text-primary d-block mt-1">
                                               Kawin: {dateStr} ({diffDays} hari lalu)
@@ -922,6 +1547,33 @@ export default defineComponent({
                             } else {
                               return (
                                 <>
+                                  <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
+                                    Betina Siap Kawin (Birahi)
+                                  </Typography>
+                                  {siapKawinBetina.value.length === 0 ? (
+                                    <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
+                                      Tidak ada betina siap kawin
+                                    </div>
+                                  ) : (
+                                    siapKawinBetina.value.slice(0, 5).map((s) => (
+                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                        <div class="min-w-0">
+                                          <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
+                                            {s.name}
+                                          </Typography>
+                                          <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                            {s.code} • {getCageName(s.cage_code)}
+                                          </Typography>
+                                        </div>
+                                        <div class="text-end ps-3">
+                                          <Badge variant="solid-primary" className="px-2 py-1">
+                                            Betina
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+
                                   <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
                                     Pejantan Dewasa (Siap Kawin)
                                   </Typography>
@@ -952,6 +1604,47 @@ export default defineComponent({
                               );
                             }
                           })()}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Panel Kelahiran */}
+                    {jenis.id === 'kelahiran' && (
+                      <div class="pencatatan-form-card">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                          <img src="/icon/catat_lahir.png" style={{ width: '20px', height: '20px', opacity: 0.6 }} alt="" />
+                          <Typography variant="h5" weight="extrabold" className="m-0">
+                            Info Daftar Ternak
+                          </Typography>
+                        </div>
+
+                        <div class="stock-list-compact">
+                          <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
+                            Indukan Siap Melahirkan (Hamil)
+                          </Typography>
+                          {pregnantCageSheepList.value.length === 0 ? (
+                            <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
+                              Tidak ada indukan hamil di kandang terpilih
+                            </div>
+                          ) : (
+                            pregnantCageSheepList.value.map((s) => (
+                              <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                <div class="min-w-0">
+                                  <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block text-dark">
+                                    {s.name}
+                                  </Typography>
+                                  <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                    {s.code} • HPL: {s.hpl}
+                                  </Typography>
+                                </div>
+                                <div class="text-end ps-3">
+                                  <Badge variant="solid-primary" className="px-2 py-1">
+                                    {s.countdownText}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     )}

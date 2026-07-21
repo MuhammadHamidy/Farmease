@@ -1,12 +1,10 @@
 package http
 
 import (
-	"net/http"
-
 	"github.com/farmease/farmease-be/farmease/module/healths/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
+
 
 type HealthHandler struct {
 	useCase domain.UseCase
@@ -47,7 +45,6 @@ func (h *HealthHandler) registerRecordGroup(group fiber.Router) {
 	group.Put("/", h.UpdateHealth)
 }
 
-
 // GetHealthList godoc
 // @Summary      Get list of all health records
 // @Description  Retrieve all health records across the system with filtering and pagination
@@ -61,20 +58,6 @@ func (h *HealthHandler) registerRecordGroup(group fiber.Router) {
 // @Success      200            {array}   domain.Health
 // @Failure      500            {object}  responses.Response[any]
 // @Router       /api/healths [get]
-func (h *HealthHandler) GetHealthList(c *fiber.Ctx) error {
-	filter := domain.HealthFilter{
-		IDSheep: c.Query("id_sheep"),
-		Page:    c.QueryInt("page", 1),
-		PerPage: c.QueryInt("per_page", 20),
-	}
-
-	res, _, err := h.useCase.GetHealthList(c.Context(), filter)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // GetHealthHistory godoc
 // @Summary      Get health history
@@ -87,14 +70,6 @@ func (h *HealthHandler) GetHealthList(c *fiber.Ctx) error {
 // @Success      200  {array}   domain.Health
 // @Failure      500  {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/health [get]
-func (h *HealthHandler) GetHealthHistory(c *fiber.Ctx) error {
-	id := c.Params("id")
-	res, err := h.useCase.GetHealthHistory(c.Context(), id)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
 
 // RecordHealth godoc
 // @Summary      Record health check
@@ -109,19 +84,6 @@ func (h *HealthHandler) GetHealthHistory(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/sheep/{id}/health [post]
-func (h *HealthHandler) RecordHealth(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var k domain.Health
-	if err := c.BodyParser(&k); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-	k.IDSheep = id
-	err := h.useCase.RecordHealth(c.Context(), &k)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusCreated).JSON(k)
-}
 
 // UpdateHealth godoc
 // @Summary      Update health record
@@ -136,15 +98,3 @@ func (h *HealthHandler) RecordHealth(c *fiber.Ctx) error {
 // @Failure      400     {object}  responses.Response[any]
 // @Failure      500     {object}  responses.Response[any]
 // @Router       /api/healths/{id} [put]
-func (h *HealthHandler) UpdateHealth(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var k domain.Health
-	if err := c.BodyParser(&k); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
-	}
-	err := h.useCase.UpdateHealth(c.Context(), id, &k)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
-	}
-	return c.Status(http.StatusOK).JSON(k)
-}

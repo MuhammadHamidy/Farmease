@@ -8,7 +8,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog/log"
-	"github.com/farmease/farmease-be/framework/bunnymq"
+	"github.com/farmease/kebun-be/framework/bunnymq"
 )
 
 // Event represents a message to be published to RabbitMQ.
@@ -134,3 +134,4 @@ func (p *Publisher) resetChannel() {
 	defer p.mu.Unlock()
 	p.ch = nil
 }
+

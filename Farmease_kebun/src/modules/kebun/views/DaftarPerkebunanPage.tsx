@@ -1,99 +1,325 @@
 import { defineComponent, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '@/modules/kebun/assets/css/PerkebunanDetailPages.css'
+import { pohonApi } from '@/shared/api'
 import PerkebunanBackButton from '../components/shared/PerkebunanBackButton'
-import { cropsList, fetchCropsList } from '@/store/navigation'
+import { landSession, userSession, cropsList, fetchCropsList } from '@/store/navigation'
+import PerkebunanFormSelect from '@/modules/kebun/components/shared/PerkebunanFormSelect'
 
 export default defineComponent({
   name: 'DaftarPerkebunanPage',
   setup() {
     const router = useRouter()
     const query = ref('')
-    const currentDateText = new Intl.DateTimeFormat('id-ID', {
-      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
-    }).format(new Date())
+    const selectedPhase = ref('Semua Fase')
+    const selectedStatus = ref('Semua Status')
+    const activeTreeDetail = ref<any | null>(null)
+    const isModalOpen = ref(false)
 
     onMounted(async () => {
       await fetchCropsList()
     })
 
-    const filtered = computed(() => {
-      const value = query.value.trim().toLowerCase()
-      return cropsList.value.filter((item) => (
-        item.name.toLowerCase().includes(value) ||
-        item.code.toLowerCase().includes(value) ||
-        item.type.toLowerCase().includes(value) ||
-        item.land.toLowerCase().includes(value)
-      ))
+    const activeLandCode = computed(() => landSession.value?.code || 'L001')
+    const activeLandName = computed(() => landSession.value?.name || 'Lahan Alpukat')
+    const isAlpukat = computed(() => activeLandName.value.toLowerCase().includes('alpukat'))
+
+    const operatorName = computed(() => userSession.value?.name || 'Operator Kebun')
+    const operatorCode = computed(() => userSession.value?.code || 'PK001')
+
+    // Filter crops matching this land
+    const landCrops = computed(() => {
+      return cropsList.value.filter(c => c.land === activeLandCode.value)
     })
 
+    // Filter by query search, phase dropdown and status dropdown
+    const filteredCrops = computed(() => {
+      const q = query.value.trim().toLowerCase()
+      const phase = selectedPhase.value
+      const status = selectedStatus.value
+
+      return landCrops.value.filter(item => {
+        const matchesQuery = !q || [item.name, item.code, item.type].some(field => field.toLowerCase().includes(q))
+        const matchesPhase = phase === 'Semua Fase' || item.type.toLowerCase() === phase.toLowerCase()
+        const matchesStatus = status === 'Semua Status' || (item.status_pohon || 'aktif').toLowerCase() === status.toLowerCase()
+        return matchesQuery && matchesPhase && matchesStatus
+      })
+    })
+
+    const openTreeDetail = (tree: any) => {
+      router.push({ name: 'kebun-detail-pohon', params: { code: tree.code } })
+    }
+
     return () => (
-      <div class="detail-page">
-        <div class="detail-shell">
-          {/* Topbar back button */}
-          <header class="detail-topbar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.5rem 0;">
-            <PerkebunanBackButton onClick={() => router.push({ name: 'kebun' })} />
+      <div class="detail-page" style="background: #ffffff; min-height: 100vh; font-family: 'Outfit', sans-serif; padding: 1.5rem; box-sizing: border-box; width: 100%;">
+        <div class="detail-shell" style="max-width: 1200px; margin: 0 auto; width: 100%;">
+          
+          {/* Topbar Back button */}
+          <header class="detail-topbar" style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+            <button
+              onClick={() => router.push({ name: 'kebun' })}
+              style="
+                background: #38431f;
+                color: #ffffff;
+                border: none;
+                border-radius: 0.45rem;
+                padding: 0.45rem 1rem;
+                font-weight: 700;
+                font-size: 0.85rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+              "
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+              </svg>
+              Kembali
+            </button>
           </header>
 
-          {/* Main Card */}
-          <div class="perkebunan-card-wrapper">
-            <div class="perkebunan-card-header" style="background: linear-gradient(180deg, #38431f 0%, #2f3b1d 100%);">
-              <div>
-                <span class="card-subtitle">Daftar Perkebunan</span>
-                <h3 class="card-title">Daftar Perkebunan</h3>
-              </div>
-            </div>
+          {/* Green Title Header Banner */}
+          <div
+            style="
+              background: #38431f;
+              color: #ffffff;
+              border-radius: 0.75rem;
+              padding: 1.5rem;
+              display: flex;
+              flex-direction: column;
+              gap: 1.25rem;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <h2 style="margin: 0; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.01em; text-align: center;">
+              Informasi Perkebunan
+            </h2>
 
-            <div class="perkebunan-card-body" style="padding: 1.25rem;">
-              {/* Lahan Card with sprout icon */}
-              <div class="form-group" style="margin-bottom: 1.25rem;">
-                <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Kode Lahan</span>
-                <div class="perkebunan-record-form-card" style="display: flex; align-items: center; gap: 0.85rem; border: 1.5px solid #cfd7bb; border-radius: 0.55rem; padding: 0.75rem; background: #ffffff;">
-                  <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <img src="/icon/lahan.png" alt="Lahan" style="width: 1.3rem; height: 1.3rem;" />
-                  </div>
-                  <div>
-                    <span style="font-size: 0.72rem; color: #6b7280; display: block;">Kode Lahan</span>
-                    <strong style="font-size: 1rem; color: #111827;">L001</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pilih Pohon Label & Search Input */}
-              <div class="form-group" style="margin-bottom: 1.25rem;">
-                <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Pohon</span>
-                <div class="selection-search-pill-wrap" style="width: 100%;">
-                  <img src="/icon/search.png" alt="Search" class="selection-search-icon" style="position: absolute; left: 0.95rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; opacity: 0.6;" />
-                  <input
-                    class="selection-search-pill"
-                    type="text"
-                    placeholder="Cari Pohon"
-                    value={query.value}
-                    onInput={(e) => { query.value = (e.target as HTMLInputElement).value }}
-                    style="width: 100%; border: 1.5px solid #cfd7bb; border-radius: 9999px; padding: 0.55rem 1rem 0.55rem 2.5rem; outline: none; background: #ffffff;"
+            {/* Sub-cards Row */}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+              {/* Card 1: Active Land */}
+              <div
+                style="
+                  background: #ffffff;
+                  border-radius: 0.65rem;
+                  padding: 1rem;
+                  display: flex;
+                  align-items: center;
+                  gap: 0.75rem;
+                  color: #111827;
+                "
+              >
+                <div style="width: 2.5rem; height: 2.5rem; background: #f4f5f0; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <img
+                    src={isAlpukat.value ? '/icon/alpukat.png' : '/icon/kelengkeng.png'}
+                    alt="Land Icon"
+                    style="width: 1.75rem; height: 1.75rem; object-fit: contain;"
                   />
                 </div>
+                <div>
+                  <strong style="font-size: 0.95rem; color: #111827; display: block; font-weight: 800;">
+                    {activeLandName.value}
+                  </strong>
+                  <span style="font-size: 0.75rem; color: #6b7280; font-weight: 600;">
+                    ID Lahan: {activeLandCode.value}
+                  </span>
+                </div>
               </div>
 
-              {/* Grid List Cards */}
-              <div class="list-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
-                {filtered.value.map((item) => (
-                  <article class="list-card" style="border: 1.5px solid #dfe4d4; border-radius: 0.75rem; padding: 0.85rem; display: flex; align-items: center; justify-content: space-between; background: #ffffff; cursor: pointer; transition: all 0.2s ease;">
-                    <div style="display: flex; align-items: center; gap: 0.85rem;">
-                      <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <img src="/icon/alpukat.png" alt="Tree" style="width: 1.3rem; height: 1.3rem;" />
-                      </div>
-                      <div style="display: flex; flex-direction: column;">
-                        <strong style="font-size: 1rem; color: #2f3b1d; font-weight: 700;">{item.name}</strong>
-                        <span style="font-size: 0.76rem; color: #6b7280;">Kode {item.code} • {item.type} • {item.land}</span>
-                      </div>
-                    </div>
-                    <div class="list-card-arrow" style="color: #4f5d2e; font-size: 1.25rem; font-weight: bold;">›</div>
-                  </article>
-                ))}
+              {/* Card 2: Operator Info */}
+              <div
+                style="
+                  background: #ffffff;
+                  border-radius: 0.65rem;
+                  padding: 1rem;
+                  display: flex;
+                  align-items: center;
+                  gap: 0.75rem;
+                  color: #111827;
+                "
+              >
+                <div style="width: 2.5rem; height: 2.5rem; background: #f4f5f0; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <img
+                    src="/icon/operator.png"
+                    alt="Operator"
+                    style="width: 1.75rem; height: 1.75rem; object-fit: contain;"
+                  />
+                </div>
+                <div>
+                  <strong style="font-size: 0.95rem; color: #111827; display: block; font-weight: 800;">
+                    {operatorName.value}
+                  </strong>
+                  <span style="font-size: 0.75rem; color: #6b7280; font-weight: 600;">
+                    ID Pengguna: {operatorCode.value}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
+           {/* Search Box & Dropdown */}
+           <div style="display: flex; gap: 1rem; margin-bottom: 2rem; align-items: center; flex-wrap: wrap;">
+             <div style="position: relative; flex: 1; display: flex; align-items: center; min-width: 240px;">
+               <svg
+                 width="16"
+                 height="16"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="2.5"
+                 style="position: absolute; left: 1rem; color: #9ca3af; pointer-events: none;"
+               >
+                 <circle cx="11" cy="11" r="8"></circle>
+                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+               </svg>
+               <input
+                 type="text"
+                 placeholder="Cari pohon"
+                 value={query.value}
+                 onInput={(e) => { query.value = (e.target as HTMLInputElement).value }}
+                 style="
+                   width: 100%;
+                   height: 42px;
+                   border: 1px solid #e5e7eb;
+                   border-radius: 999px;
+                   padding: 0 1rem 0 2.75rem;
+                   outline: none;
+                   font-size: 0.9rem;
+                   font-weight: 600;
+                   color: #374151;
+                   box-sizing: border-box;
+                 "
+               />
+             </div>
+             
+             <PerkebunanFormSelect
+                modelValue={selectedPhase.value}
+                onUpdate:modelValue={(val: string) => selectedPhase.value = val}
+                options={[
+                  { value: 'Semua Fase', label: 'Semua Fase' },
+                  { value: 'Vegetatif', label: 'Vegetatif' },
+                  { value: 'Generatif', label: 'Generatif' },
+                ]}
+                style="max-width: 180px;"
+              />
+
+              <PerkebunanFormSelect
+                modelValue={selectedStatus.value}
+                onUpdate:modelValue={(val: string) => selectedStatus.value = val}
+                options={[
+                  { value: 'Semua Status', label: 'Semua Status' },
+                  { value: 'Aktif', label: 'Aktif' },
+                  { value: 'Tidak Aktif', label: 'Tidak Aktif' },
+                ]}
+                style="max-width: 180px;"
+              />
+          </div>
+
+          {/* Heading */}
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #111827; margin: 0 0 1rem 0;">
+            Daftar Pohon
+          </h3>
+
+          {/* Grid List Cards */}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            {filteredCrops.value.map((item) => {
+              const isGen = (item.type || '').toLowerCase() === 'generatif'
+              return (
+                <div
+                  key={item.code}
+                  style="
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 0.75rem;
+                    padding: 1rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.85rem;
+                    box-sizing: border-box;
+                  "
+                >
+                  {/* Card Top: Date & Phase Badges */}
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    {/* Status Pohon */}
+                    <span
+                      style={`
+                        font-size: 0.7rem;
+                        font-weight: 800;
+                        text-transform: capitalize;
+                        color: ${(item.status_pohon || 'aktif').toLowerCase() === 'aktif' ? '#000000' : '#ef4444'};
+                      `}
+                    >
+                      {(item.status_pohon || 'aktif')}
+                    </span>
+                    {/* Phase */}
+                    <span
+                      style={`
+                        font-size: 0.7rem;
+                        font-weight: 800;
+                        padding: 0.25rem 0.65rem;
+                        border-radius: 6px;
+                        ${
+                          (item.type || '').toLowerCase() === 'generatif'
+                            ? 'background: #fde8e8; color: #e11d48;'
+                            : (item.type || '').toLowerCase() === 'vegetatif'
+                            ? 'background: #7a8857; color: #ffffff;'
+                            : 'background: #f3f4f6; color: #4b5563;'
+                        }
+                      `}
+                    >
+                      {item.type}
+                    </span>
+                  </div>
+
+                  {/* Divider line */}
+                  <div style="height: 1px; background: #e5e7eb;"></div>
+
+                  {/* Card Middle: Icon, Title & Code, Button */}
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <div style="width: 2.5rem; height: 2.5rem; background: #f4f5f0; border-radius: 0.4rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <img
+                          src={isAlpukat.value ? '/icon/alpukat.png' : '/icon/kelengkeng.png'}
+                          alt="Tree"
+                          style="width: 1.75rem; height: 1.75rem; object-fit: contain;"
+                        />
+                      </div>
+                      <div>
+                        <strong style="font-size: 0.9rem; color: #111827; font-weight: 800; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">
+                          {item.name}
+                        </strong>
+                        <span style="font-size: 0.75rem; color: #6b7280; font-weight: 700; display: block; margin-top: 2px;">
+                          {item.code}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => openTreeDetail(item)}
+                      style="
+                        background: #2e3b1f;
+                        color: #ffffff;
+                        border: none;
+                        border-radius: 0.45rem;
+                        padding: 0.45rem 0.75rem;
+                        font-weight: 700;
+                        font-size: 0.75rem;
+                        cursor: pointer;
+                        white-space: nowrap;
+                      "
+                    >
+                      Lihat Pohon
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+
+
         </div>
       </div>
     )

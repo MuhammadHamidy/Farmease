@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/sso-be/libraries/idp/client"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -18,3 +18,4 @@ func (m *IDPProviderMock) GetIDP(ctx context.Context, institutionId string) (cli
 	}
 	return args.Get(0).(client.IDP), args.Error(1)
 }
+

@@ -1,2 +1,1 @@
 DROP TABLE IF EXISTS livestock.weights CASCADE;
-DROP TABLE IF EXISTS livestock.healths CASCADE;

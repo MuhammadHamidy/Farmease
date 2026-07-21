@@ -3,7 +3,7 @@ package usecase
 import (
 
 	// Note: Previous `cmd/serve.go` used `github.com/beruang/framework/common/logger`.
-	// But `templates` used `github.com/farmease/farmease-be/libraries/helper` for trace ID and `zerolog` for logging.
+	// But `templates` used `github.com/farmease/sso-be/libraries/helper` for trace ID and `zerolog` for logging.
 	// I should be consistent with the detected `cmd/serve.go` or `rules`.
 	// The `rules` say "MUST use zerolog". `github.com/beruang/framework/common/logger` is likely a wrapper.
 	// `templates` use `zerolog.Ctx(ctx)`. I will use `zerolog` and `otel`.
@@ -11,7 +11,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 var _ domain.UseCase = (*UseCase)(nil)
@@ -29,3 +29,4 @@ func NewUseCase(repository domain.RoleRepository) *UseCase {
 		tracer:     otel.Tracer("roles"),
 	}
 }
+

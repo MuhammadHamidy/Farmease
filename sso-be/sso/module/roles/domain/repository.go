@@ -3,7 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/libraries/types"
+	"github.com/farmease/sso-be/libraries/types"
 )
 
 // Role represents the domain object for a Role.
@@ -59,3 +59,4 @@ type RoleRepository interface {
 	GetPermissions(ctx context.Context, roleId string) ([]string, error)
 	FindAllPermissions(ctx context.Context, filter PermissionFilter) ([]*Permission, error)
 }
+

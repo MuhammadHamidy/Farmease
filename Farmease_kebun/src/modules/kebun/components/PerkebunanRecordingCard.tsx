@@ -65,7 +65,7 @@ export default defineComponent({
           isDark={true}
         >
           {/* Lahan & Operator Info Boxes */}
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 0;">
             {/* Lahan info */}
             <div style="border: 1.5px solid #dce1d0; border-radius: 0.65rem; background: #fff; padding: 0.75rem 0.85rem; display: flex; align-items: center; gap: 0.65rem;">
               <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -93,41 +93,41 @@ export default defineComponent({
               </div>
             </div>
           </div>
-
-          {/* Nested White Box for Pencatatan Selector */}
-          <div style="background: #ffffff; border-radius: 0.85rem; padding: 1.25rem 1rem; border: 1.5px solid #dce1d0; margin-top: 1rem;">
-            <span style="font-weight: 800; color: #111827; display: block; margin-bottom: 0.75rem; font-size: 1rem;">Pencatatan</span>
-            
-            <PerkebunanSelectorCard
-              label="Pilih jenis pencatatan"
-              value={props.selectedJenis}
-              iconSrc="/icon/jenis_kebun.png"
-              onClick={() => emit('openJenis')}
-            />
-
-            <PerkebunanSelectorCard
-              label="Pilih rincian pencatatan"
-              value={props.selectedRincian}
-              iconSrc="/icon/rincian_kebun.png"
-              onClick={() => emit('openRincian')}
-              disabled={props.selectedJenis === 'Jenis Pencatatan'}
-            />
-
-            {/* Selanjutnya Button */}
-            {hasSelectedJenis() && hasSelectedRincian() && (
-              <button
-                class="perkebunan-next-btn"
-                onClick={() => emit('next')}
-                style="margin-top: 0.75rem; margin-bottom: 0;"
-              >
-                Selanjutnya
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </button>
-            )}
-          </div>
         </PerkebunanCardWrapper>
+
+        {/* Nested White Box for Pencatatan Selector */}
+        <div style="background: #ffffff; border-radius: 0.85rem; padding: 1.25rem 1rem; border: 1.5px solid #dce1d0; margin-top: 1rem; box-shadow: 0 4px 15px rgba(40, 54, 24, 0.03);">
+          <span style="font-weight: 800; color: #111827; display: block; margin-bottom: 0.75rem; font-size: 1rem;">Pencatatan</span>
+          
+          <PerkebunanSelectorCard
+            label="Pilih jenis pencatatan"
+            value={props.selectedJenis}
+            iconSrc="/icon/jenis_kebun.png"
+            onClick={() => emit('openJenis')}
+          />
+
+          <PerkebunanSelectorCard
+            label="Pilih rincian pencatatan"
+            value={props.selectedRincian}
+            iconSrc="/icon/rincian_kebun.png"
+            onClick={() => emit('openRincian')}
+            disabled={props.selectedJenis === 'Jenis Pencatatan'}
+          />
+
+          {/* Selanjutnya Button */}
+          {hasSelectedJenis() && hasSelectedRincian() && (
+            <button
+              class="perkebunan-next-btn"
+              onClick={() => emit('next')}
+              style="margin-top: 0.75rem; margin-bottom: 0; border-radius: 2rem;"
+            >
+              Selanjutnya
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
     )
   },

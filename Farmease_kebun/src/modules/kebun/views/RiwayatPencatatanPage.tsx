@@ -1,132 +1,754 @@
-import { defineComponent, computed, ref } from 'vue'
+import { defineComponent, computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '@/modules/kebun/assets/css/PerkebunanDetailPages.css'
 import PerkebunanBackButton from '../components/shared/PerkebunanBackButton'
-import { getJenisIcon } from '../components/shared/pencatatanIcons'
-
-const riwayatData = [
-  { id: 'R-001', jenis: 'Perawatan', judul: 'Alpukat', tanggal: '10 April 2026', detail: 'A001 • Mingguan • L1001' },
-  { id: 'R-002', jenis: 'Pemangkasan', judul: 'Kelengkeng', tanggal: '09 April 2026', detail: 'K001 • 3 x sehari • L2002' },
-  { id: 'R-003', jenis: 'Pemangkasan', judul: 'Kelengkeng', tanggal: '09 April 2026', detail: 'K002 • 3 x sehari • L2002' },
-  { id: 'R-004', jenis: 'Pemangkasan', judul: 'Kelengkeng', tanggal: '09 April 2026', detail: 'K003 • 3 x sehari • L2002' },
-  { id: 'R-005', jenis: 'Pemangkasan', judul: 'Kelengkeng', tanggal: '09 April 2026', detail: 'K004 • 3 x sehari • L2002' },
-  { id: 'R-006', jenis: 'Perawatan', judul: 'Alpukat', tanggal: '09 April 2026', detail: 'A002 • 2 x Bulanan • L1001' },
-]
+import { landSession, userSession, fetchCropsList, cropsList } from '@/store/navigation'
+import { perawatan, panen, aktivitas, fetchPerawatan, fetchPanen, fetchAktivitas } from '@/store/gardening'
+import { pencatatanSubmissions, fetchSubmissions } from '@/store/operatorAdmin'
+import PerkebunanFormSelect from '@/modules/kebun/components/shared/PerkebunanFormSelect'
 
 export default defineComponent({
   name: 'RiwayatPencatatanPage',
   setup() {
     const router = useRouter()
     const query = ref('')
-    const activeJenis = ref('')
-    const currentDateText = new Intl.DateTimeFormat('id-ID', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date())
+    const selectedCategory = ref('Semua Pencatatan')
+    const selectedStatus = ref('Semua Status')
+    const statusFilterOptions = ['Semua Status', 'Disetujui', 'Ditolak', 'Menunggu Persetujuan']
+    const activeHistoryDetail = ref<any | null>(null)
+    const isModalOpen = ref(false)
 
-    const filtered = computed(() => {
+    onMounted(async () => {
+      await Promise.all([
+        fetchCropsList(),
+        fetchPerawatan(),
+        fetchPanen(),
+        fetchAktivitas(),
+        fetchSubmissions()
+      ])
+    })
+
+    const activeLandCode = computed(() => landSession.value?.code || 'L001')
+    const activeLandId = computed(() => String(landSession.value?.id || ''))
+    const activeLandName = computed(() => landSession.value?.name || 'Lahan Alpukat')
+    const isAlpukat = computed(() => activeLandName.value.toLowerCase().includes('alpukat'))
+
+    const operatorName = computed(() => userSession.value?.name || 'Operator Kebun')
+    const operatorCode = computed(() => userSession.value?.code || 'PK001')
+
+    // Unified history items mapped from gardening store + fallbacks
+    const historyItems = computed(() => {
+      const list: any[] = []
+      const activeLandTrees = cropsList.value.filter(c => c.land === activeLandCode.value)
+      const activeTreeIds = activeLandTrees.map(c => String(c.id))
+      const activeTreeCodes = activeLandTrees.map(c => String(c.code))
+
+      // 1. Map Perawatan
+      perawatan.value
+        .filter(p => activeTreeIds.includes(String(p.pohon_id)) || activeTreeCodes.includes(String(p.pohon_id)) || !p.pohon_id)
+        .forEach(p => {
+          const lowerType = (p.type || '').toLowerCase()
+          if (lowerType === 'stok pupuk' || lowerType === 'stok obat') return
+
+          list.push({
+            id: p.id,
+            jenis: p.type || 'Perawatan',
+            judul: isAlpukat.value ? 'Alpukat' : 'Kelengkeng',
+            tanggal: new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(p.date || Date.now())),
+            detail: `${p.type} • Catatan: ${p.notes || '-'}`,
+            rawDate: p.date,
+            status: 'Disetujui',
+            pohonId: p.pohon_id
+          })
+        })
+
+      // 2. Map Panen
+      panen.value
+        .filter(pa => String(pa.pohon_id) === activeLandId.value || String(pa.pohon_id) === activeLandCode.value || !pa.pohon_id)
+        .forEach(pa => {
+          list.push({
+            id: pa.id,
+            jenis: 'Panen',
+            judul: isAlpukat.value ? 'Alpukat' : 'Kelengkeng',
+            tanggal: new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(pa.date || Date.now())),
+            detail: `Panen Buah • Jumlah: ${pa.quantity} kg • Status: ${pa.quality || 'Bagus'}`,
+            rawDate: pa.date,
+            status: 'Disetujui',
+            pohonId: pa.pohon_id
+          })
+        })
+
+      // 3. Map Aktivitas
+      aktivitas.value
+        .filter(a => String(a.pohon_id) === activeLandId.value || String(a.pohon_id) === activeLandCode.value || !a.pohon_id)
+        .forEach(a => {
+          const lowerName = (a.name || '').toLowerCase()
+          if (lowerName === 'stok pupuk' || lowerName === 'stok obat') return
+
+          list.push({
+            id: a.id,
+            jenis: a.name || 'Aktivitas',
+            judul: isAlpukat.value ? 'Alpukat' : 'Kelengkeng',
+            tanggal: new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(a.date || Date.now())),
+            detail: `${a.name} • Deskripsi: ${a.type || '-'}`,
+            rawDate: a.date,
+            status: 'Disetujui',
+            pohonId: a.pohon_id
+          })
+        })
+
+      // 4. Map Pencatatan Submissions (pending, rejected, and approved stock records)
+      pencatatanSubmissions.value
+        .filter(s => s.cageCode === activeLandCode.value)
+        .forEach(s => {
+          const type = (s.type || '').toLowerCase()
+          const isStock = type === 'stok pupuk' || type === 'stok obat'
+          
+          if (s.approvalStatus === 'pending' || s.approvalStatus === 'rejected' || isStock) {
+            let displayStatus = 'Disetujui'
+            if (s.approvalStatus === 'pending') {
+              displayStatus = 'Menunggu Persetujuan'
+            } else if (s.approvalStatus === 'rejected') {
+              displayStatus = 'Ditolak'
+            }
+
+            let displayJenis = s.typeLabel || s.type
+            if (type === 'stok pupuk') {
+              displayJenis = 'Stok Pupuk'
+            } else if (type === 'stok obat') {
+              displayJenis = 'Stok Obat'
+            } else if (type === 'pemupukan') {
+              displayJenis = 'Pemupukan'
+            } else if (type === 'panen') {
+              displayJenis = 'Panen'
+            } else if (type === 'pemangkasan') {
+              displayJenis = 'Pemangkasan'
+            } else if (type === 'pembersihan') {
+              displayJenis = 'Pembersihan'
+            }
+
+            const item = (s.payload as any)?.data?.items?.[0] || {}
+            let detail = s.summary || ''
+            
+            if (type === 'stok pupuk' || type === 'stok obat') {
+              detail = `Stok Baru: ${item.namaObat || item.namaPupuk || '-'} • Vol: ${item.volumeObat || item.volumePupuk || '-'} ${item.satuanVolumeObat || item.satuanVolumePupuk || ''}`
+            } else if (type === 'pemupukan') {
+              detail = `Pemupukan • Jenis: ${item.jenisPupuk || '-'} • Berat: ${item.jumlahBeratPupuk || '-'} kg`
+            } else if (type === 'panen') {
+              detail = `Panen Buah • Jumlah: ${item.jumlahPanen || '-'} kg`
+            }
+
+            list.push({
+              id: s.id,
+              jenis: displayJenis,
+              judul: isAlpukat.value ? 'Alpukat' : 'Kelengkeng',
+              tanggal: new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(s.submittedAt || Date.now())),
+              detail: detail,
+              rawDate: s.submittedAt,
+              status: displayStatus,
+              pohonId: item.kodePohon || '',
+              reviewNote: s.reviewNote
+            })
+          }
+        })
+
+      // Sort by date descending
+      list.sort((a, b) => {
+        const da = a.rawDate ? new Date(a.rawDate).getTime() : 0
+        const db = b.rawDate ? new Date(b.rawDate).getTime() : 0
+        return db - da
+      })
+
+      return list
+    })
+
+    const filteredHistory = computed(() => {
       const q = query.value.trim().toLowerCase()
-      return riwayatData.filter((item) => {
-        const matchesQuery = !q || [item.jenis, item.judul, item.tanggal, item.detail].some((field) => field.toLowerCase().includes(q))
-        const matchesJenis = !activeJenis.value || item.jenis === activeJenis.value
-        return matchesQuery && matchesJenis
+      const category = selectedCategory.value
+      const statusF = selectedStatus.value
+
+      return historyItems.value.filter(item => {
+        const matchesQuery = !q || [item.jenis, item.judul, item.detail].some(field => field.toLowerCase().includes(q))
+        const matchesCategory = category === 'Semua Pencatatan' || item.jenis.toLowerCase() === category.toLowerCase()
+        const matchesStatus = statusF === 'Semua Status' || item.status.toLowerCase() === statusF.toLowerCase()
+        return matchesQuery && matchesCategory && matchesStatus
       })
     })
 
-    const jenisOptions = ['Perawatan', 'Pemangkasan']
+    const categoryOptions = computed(() => {
+      const categories = new Set(historyItems.value.map(item => item.jenis))
+      return ['Semua Pencatatan', ...Array.from(categories)]
+    })
+
+    const openHistoryDetail = (item: any) => {
+      activeHistoryDetail.value = item
+      isModalOpen.value = true
+    }
+
+    const closeHistoryDetail = () => {
+      activeHistoryDetail.value = null
+      isModalOpen.value = false
+    }
+
+    const activeCrop = computed(() => {
+      if (!activeHistoryDetail.value || !activeHistoryDetail.value.pohonId) return null
+      const target = String(activeHistoryDetail.value.pohonId)
+      return cropsList.value.find(c => String(c.id) === target || String(c.code).toLowerCase() === target.toLowerCase())
+    })
+
+    const getDetailRincian = (detail: string) => {
+      if (!detail) return '-'
+      const parts = detail.split('•')
+      if (parts.length > 1) {
+        const rincianPart = parts.find(p => p.includes('Jenis:') || p.includes('Jumlah:') || p.includes('Deskripsi:') || p.includes('Volume:'))
+        if (rincianPart) {
+          return rincianPart.split(':')[1]?.trim() || rincianPart.trim()
+        }
+        return parts[1]?.trim() || ''
+      }
+      return detail
+    }
 
     return () => (
-      <div class="detail-page">
-        <div class="detail-shell">
-          {/* Topbar back button */}
-          <header class="detail-topbar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.5rem 0;">
-            <PerkebunanBackButton onClick={() => router.push({ name: 'kebun' })} />
+      <div class="detail-page" style="background: #ffffff; min-height: 100vh; font-family: 'Outfit', sans-serif; padding: 1.5rem; box-sizing: border-box; width: 100%;">
+        <div class="detail-shell" style="max-width: 1200px; margin: 0 auto; width: 100%;">
+          
+          {/* Topbar Back button */}
+          <header class="detail-topbar" style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+            <button
+              onClick={() => router.push({ name: 'kebun' })}
+              style="
+                background: #38431f;
+                color: #ffffff;
+                border: none;
+                border-radius: 0.45rem;
+                padding: 0.45rem 1rem;
+                font-weight: 700;
+                font-size: 0.85rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+              "
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+              </svg>
+              Kembali
+            </button>
           </header>
 
-          {/* Main Card with inner search pill as in Mockup 1 */}
-          <div class="perkebunan-card-wrapper" style="margin-bottom: 1.25rem;">
-            <div class="selection-gradient-header" style="border-radius: 1rem 1rem 0 0; margin: 0; padding: 1.5rem 1.25rem;">
-              <h2 style="margin: 0 0 1rem; font-size: 1.35rem; font-weight: 700; color: #ffffff;">Riwayat Pencatatan</h2>
-              <div class="selection-search-pill-wrap" style="width: 100%;">
-                <img src="/icon/search.png" alt="Search" class="selection-search-icon" style="position: absolute; left: 0.95rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; opacity: 0.6;" />
-                <input
-                  class="selection-search-pill"
-                  type="text"
-                  placeholder="Cari riwayat pencatatan"
-                  value={query.value}
-                  onInput={(e) => { query.value = (e.target as HTMLInputElement).value }}
-                  style="width: 100%; border: none; border-radius: 9999px; padding: 0.55rem 1rem 0.55rem 2.5rem; outline: none; background: #ffffff; color: #374151;"
-                />
-              </div>
-            </div>
+          {/* Green Title Header Banner */}
+          <div
+            style="
+              background: #38431f;
+              color: #ffffff;
+              border-radius: 0.75rem;
+              padding: 1.5rem;
+              display: flex;
+              flex-direction: column;
+              gap: 1.25rem;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <h2 style="margin: 0; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.01em; text-align: center;">
+              Riwayat Pencatatan
+            </h2>
 
-            <div class="perkebunan-card-body" style="padding: 1.25rem;">
-              {/* Filter Label */}
-              <div class="history-filter-label" style="font-weight: bold; color: #2f3b1d; margin-top: 0; margin-bottom: 0.55rem; font-size: 1.05rem;">Pilih Riwayat Pencatatan</div>
-              
-              {/* Filter Row */}
-              <div class="history-filter-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
-                <button
-                  class={['history-filter-chip', !activeJenis.value ? 'active' : '']}
-                  onClick={() => activeJenis.value = ''}
-                  style={`border-radius: 9999px; padding: 0.4rem 1.15rem; font-size: 0.82rem; font-weight: bold; cursor: pointer; transition: all 0.2s; ${
-                    !activeJenis.value ? 'background: #38431f; color: #fff; border-color: #38431f;' : 'background: #fff; border: 1.5px solid #dce1d0; color: #374151;'
-                  }`}
-                >
-                  Semua
-                </button>
-                {jenisOptions.map((jenis) => (
-                  <button
-                    key={jenis}
-                    class={['history-filter-chip', activeJenis.value === jenis ? 'active' : '']}
-                    onClick={() => activeJenis.value = jenis}
-                    style={`border-radius: 9999px; padding: 0.4rem 1.15rem; font-size: 0.82rem; font-weight: bold; cursor: pointer; transition: all 0.2s; ${
-                      activeJenis.value === jenis ? 'background: #38431f; color: #fff; border-color: #38431f;' : 'background: #fff; border: 1.5px solid #dce1d0; color: #374151;'
-                    }`}
-                  >
-                    {jenis}
-                  </button>
-                ))}
-              </div>
-
-              {/* Grid Riwayat Cards */}
-              <div class="history-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
-                {filtered.value.map((item) => (
-                  <article class="history-card" style="border: 1.5px solid #dce1d0; border-radius: 0.75rem; padding: 1rem; background: #ffffff; display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.2s ease;">
-                    <div class="history-chip-row" style="display: flex; justify-content: flex-start;">
-                      <span
-                        class="reminder-tag"
-                        style="background: #38431f; color: #ffffff; padding: 0.22rem 0.65rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;"
-                      >
-                        {item.jenis}
-                      </span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-                      <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="width: 2.2rem; height: 2.2rem; border-radius: 0.4rem; background: #f4f5f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                          <img src={getJenisIcon(item.jenis)} alt={item.jenis} style="width: 1.3rem; height: 1.3rem;" />
-                        </div>
-                        <div style="display: flex; flex-direction: column;">
-                          <strong style="font-size: 1rem; color: #111827; font-weight: 700; display: block;">{item.judul}</strong>
-                          <span style="font-size: 0.78rem; color: #6b7280; display: block; margin-top: 0.1rem;">{item.tanggal}</span>
-                          <small style="font-size: 0.75rem; color: #9ca3af; display: block; margin-top: 0.1rem;">{item.detail}</small>
-                        </div>
-                      </div>
-
-                      <button class="history-arrow-btn" style="border: none; background: none; color: #4f5d2e; font-size: 1.5rem; font-weight: bold; cursor: pointer; padding: 0.25rem;">›</button>
-                    </div>
-                  </article>
-                ))}
+            {/* Sub-cards Row */}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+              {/* Card 1: Active Land */}
+              <div
+                style="
+                  background: #ffffff;
+                  border-radius: 0.65rem;
+                  padding: 1rem;
+                  display: flex;
+                  align-items: center;
+                  gap: 0.75rem;
+                  color: #111827;
+                "
+              >
+                <div style="width: 2.5rem; height: 2.5rem; background: #f4f5f0; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <img
+                    src={isAlpukat.value ? '/icon/alpukat.png' : '/icon/kelengkeng.png'}
+                    alt="Land Icon"
+                    style="width: 1.75rem; height: 1.75rem; object-fit: contain;"
+                  />
+                </div>
+                <div>
+                  <strong style="font-size: 0.95rem; color: #111827; display: block; font-weight: 800;">
+                    {activeLandName.value}
+                  </strong>
+                  <span style="font-size: 0.75rem; color: #6b7280; font-weight: 600;">
+                    ID Lahan: {activeLandCode.value}
+                  </span>
+                </div>
               </div>
 
-              {filtered.value.length === 0 && (
-                <div class="history-empty" style="text-align: center; color: #6b7280; padding: 2rem 0;">Tidak ada riwayat ditemukan.</div>
-              )}
+              {/* Card 2: Operator Info */}
+              <div
+                style="
+                  background: #ffffff;
+                  border-radius: 0.65rem;
+                  padding: 1rem;
+                  display: flex;
+                  align-items: center;
+                  gap: 0.75rem;
+                  color: #111827;
+                "
+              >
+                <div style="width: 2.5rem; height: 2.5rem; background: #f4f5f0; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <img
+                    src="/icon/operator.png"
+                    alt="Operator"
+                    style="width: 1.75rem; height: 1.75rem; object-fit: contain;"
+                  />
+                </div>
+                <div>
+                  <strong style="font-size: 0.95rem; color: #111827; display: block; font-weight: 800;">
+                    {operatorName.value}
+                  </strong>
+                  <span style="font-size: 0.75rem; color: #6b7280; font-weight: 600;">
+                    ID Pengguna: {operatorCode.value}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Search Box & Dropdown Filter */}
+          <div style="display: flex; gap: 1rem; margin-bottom: 2rem; align-items: center; flex-wrap: wrap;">
+            <div style="position: relative; flex: 1; display: flex; align-items: center; min-width: 240px;">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                style="position: absolute; left: 1rem; color: #9ca3af; pointer-events: none;"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="text"
+                placeholder="Cari pohon"
+                value={query.value}
+                onInput={(e) => { query.value = (e.target as HTMLInputElement).value }}
+                style="
+                  width: 100%;
+                  height: 42px;
+                  border: 1px solid #e5e7eb;
+                  border-radius: 999px;
+                  padding: 0 1rem 0 2.75rem;
+                  outline: none;
+                  font-size: 0.9rem;
+                  font-weight: 600;
+                  color: #374151;
+                  box-sizing: border-box;
+                "
+              />
+            </div>
+            
+            <PerkebunanFormSelect
+              modelValue={selectedCategory.value}
+              onUpdate:modelValue={(val: string) => selectedCategory.value = val}
+              options={categoryOptions.value}
+              style="max-width: 220px;"
+            />
+
+            <PerkebunanFormSelect
+              modelValue={selectedStatus.value}
+              onUpdate:modelValue={(val: string) => selectedStatus.value = val}
+              options={statusFilterOptions}
+              style="max-width: 220px;"
+            />
+          </div>
+
+          {/* Heading */}
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #111827; margin: 0 0 1rem 0;">
+            Riwayat Pencatatan
+          </h3>
+
+          {/* Grid List Cards */}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            {filteredHistory.value.map((item) => {
+              const isApproved = item.status === 'Disetujui'
+              return (
+                <div
+                  key={item.id}
+                  style="
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 0.75rem;
+                    padding: 1rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.85rem;
+                    box-sizing: border-box;
+                  "
+                >
+                  {/* Card Top: Status & Date Badges */}
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    {/* Status */}
+                    <span
+                      style={`
+                        font-size: 0.7rem;
+                        font-weight: 800;
+                        padding: 0.22rem 0.65rem;
+                        border-radius: 6px;
+                        ${isApproved ? 'background: #7a8857; color: #ffffff;' : item.status === 'Ditolak' ? 'background: #dc3545; color: #ffffff;' : 'background: #e29c33; color: #ffffff;'}
+                      `}
+                    >
+                      {item.status}
+                    </span>
+                    {/* Date */}
+                    <div style="display: flex; align-items: center; gap: 0.25rem; border: 1px solid #e5e7eb; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: #6b7280;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                      {item.tanggal}
+                    </div>
+                  </div>
+
+                  {/* Divider line */}
+                  <div style="height: 1px; background: #e5e7eb;"></div>
+
+                  {/* Card Middle: Icon, Title & Detail, Button */}
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <div style="width: 2.5rem; height: 2.5rem; background: #f4f5f0; border-radius: 0.4rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <img
+                          src={isAlpukat.value ? '/icon/alpukat.png' : '/icon/kelengkeng.png'}
+                          alt="Activity Icon"
+                          style="width: 1.75rem; height: 1.75rem; object-fit: contain;"
+                        />
+                      </div>
+                      <div>
+                        <strong style="font-size: 0.9rem; color: #111827; font-weight: 800; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">
+                          {item.jenis}
+                        </strong>
+                        <span style="font-size: 0.75rem; color: #6b7280; font-weight: 700; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">
+                          {item.detail.split('•')[0].trim()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => openHistoryDetail(item)}
+                      style="
+                        background: #2e3b1f;
+                        color: #ffffff;
+                        border: none;
+                        border-radius: 0.45rem;
+                        padding: 0.45rem 0.75rem;
+                        font-weight: 700;
+                        font-size: 0.75rem;
+                        cursor: pointer;
+                        white-space: nowrap;
+                      "
+                    >
+                      Lihat Riwayat
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Modal Popup Overlay */}
+          {isModalOpen.value && activeHistoryDetail.value && (
+            <div
+              style="
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                backdrop-filter: blur(2px);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+              "
+            >
+              {/* Modal Container */}
+              <div
+                style="
+                  background: #ffffff;
+                  border-radius: 1rem;
+                  width: 100%;
+                  max-width: 460px;
+                  padding: 1.5rem;
+                  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                  position: relative;
+                  box-sizing: border-box;
+                "
+              >
+                {/* Close Button X at top left */}
+                <div style="display: flex; justify-content: flex-start; margin-bottom: 0.5rem; width: 100%;">
+                  <button
+                    onClick={closeHistoryDetail}
+                    style="
+                      background: none;
+                      border: none;
+                      cursor: pointer;
+                      font-size: 1.6rem;
+                      font-weight: bold;
+                      color: #000000;
+                      padding: 0.25rem;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      line-height: 1;
+                    "
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Modal Title inside green pill banner */}
+                <div
+                  style="
+                    background: #233512;
+                    color: #ffffff;
+                    text-align: center;
+                    padding: 0.65rem 1rem;
+                    border-radius: 0.5rem;
+                    font-weight: 800;
+                    font-size: 1.15rem;
+                    letter-spacing: 0.01em;
+                    margin-bottom: 1rem;
+                    width: 100%;
+                    box-sizing: border-box;
+                  "
+                >
+                  Rincian Riwayat Pencatatan
+                </div>
+
+                {/* Status Badge in Modal */}
+                <div style="display: flex; justify-content: center; margin-bottom: 1.25rem;">
+                  <span
+                    style={`
+                      font-size: 0.8rem;
+                      font-weight: 800;
+                      padding: 0.35rem 1.25rem;
+                      border-radius: 6px;
+                      text-transform: capitalize;
+                      ${
+                        activeHistoryDetail.value.status === 'Disetujui'
+                          ? 'background: #ecfdf5; color: #047857;'
+                          : activeHistoryDetail.value.status === 'Ditolak'
+                          ? 'background: #fde8e8; color: #e11d48;'
+                          : 'background: #fffbeb; color: #d97706;'
+                      }
+                    `}
+                  >
+                    {activeHistoryDetail.value.status}
+                  </span>
+                </div>
+
+                {/* Detail Times */}
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 1.25rem; padding: 0 1.5rem;">
+                  <span style="color: #374151;">Waktu Mulai: <span style="font-weight: 800;">22 : 00 WIB</span></span>
+                  <span style="color: #ef4444;">Waktu Tenggat: <span style="font-weight: 800;">22 : 00 WIB</span></span>
+                </div>
+
+                {/* Vertical Land & Operator cards */}
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+                  {/* Land Info */}
+                  <div
+                    style="
+                      border: 1px solid #e5e7eb;
+                      border-radius: 0.65rem;
+                      padding: 0.75rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.75rem;
+                      background: #ffffff;
+                    "
+                  >
+                    <div style="width: 2.2rem; height: 2.2rem; background: #f4f5f0; border-radius: 0.4rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                      <img
+                        src={isAlpukat.value ? '/icon/alpukat.png' : '/icon/kelengkeng.png'}
+                        alt="Land"
+                        style="width: 1.5rem; height: 1.5rem; object-fit: contain;"
+                      />
+                    </div>
+                    <div>
+                      <strong style="font-size: 0.85rem; color: #111827; display: block; font-weight: 800;">
+                        {activeLandName.value}
+                      </strong>
+                      <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">
+                        ID Lahan: {activeLandCode.value}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Operator Info */}
+                  <div
+                    style="
+                      border: 1px solid #e5e7eb;
+                      border-radius: 0.65rem;
+                      padding: 0.75rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.75rem;
+                      background: #ffffff;
+                    "
+                  >
+                    <div style="width: 2.2rem; height: 2.2rem; background: #f4f5f0; border-radius: 0.4rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                      <img
+                        src="/icon/operator.png"
+                        alt="Operator"
+                        style="width: 1.5rem; height: 1.5rem; object-fit: contain;"
+                      />
+                    </div>
+                    <div>
+                      <strong style="font-size: 0.85rem; color: #111827; display: block; font-weight: 800;">
+                        {operatorName.value}
+                      </strong>
+                      <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">
+                        ID Pengguna: {operatorCode.value}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informasi Lengkap Heading */}
+                <h4 style="font-size: 0.9rem; font-weight: 800; color: #111827; margin: 0 0 0.75rem 0;">
+                  Informasi Lengkap
+                </h4>
+
+                {/* Table Data */}
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1.25rem; font-size: 0.8rem; font-weight: 700; color: #374151;">
+                  {/* Tanggal */}
+                  <div style="display: flex; justify-content: space-between; padding: 0.6rem 0.85rem; border-bottom: 1px solid #e5e7eb; background: #fafafa;">
+                    <span style="color: #6b7280;">Tanggal</span>
+                    <span>{activeHistoryDetail.value.tanggal}</span>
+                  </div>
+
+                  {/* Fase Pohon */}
+                  <div style="display: flex; justify-content: space-between; padding: 0.6rem 0.85rem; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #6b7280;">Fase Pohon</span>
+                    <span>{activeCrop.value ? activeCrop.value.type : 'Vegetatif'}</span>
+                  </div>
+
+                  {/* Varietas */}
+                  <div style="display: flex; justify-content: space-between; padding: 0.6rem 0.85rem; border-bottom: 1px solid #e5e7eb; background: #fafafa;">
+                    <span style="color: #6b7280;">Varietas</span>
+                    <span>{activeCrop.value ? activeCrop.value.name : (isAlpukat.value ? 'Alpukat Aligator' : 'Kelengkeng Bangkok')}</span>
+                  </div>
+
+                  {/* Jenis Pencatatan */}
+                  <div style="display: flex; justify-content: space-between; padding: 0.6rem 0.85rem; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #6b7280;">Jenis Pencatatan</span>
+                    <span>{activeHistoryDetail.value.jenis}</span>
+                  </div>
+
+                  {/* Rincian */}
+                  <div style="display: flex; justify-content: space-between; padding: 0.6rem 0.85rem; border-bottom: 1px solid #e5e7eb; background: #fafafa;">
+                    <span style="color: #6b7280;">Rincian</span>
+                    <span>{getDetailRincian(activeHistoryDetail.value.detail)}</span>
+                  </div>
+
+                  {/* Rutinitas */}
+                  <div style="display: flex; justify-content: space-between; padding: 0.6rem 0.85rem;">
+                    <span style="color: #6b7280;">Rutinitas</span>
+                    <span>{activeHistoryDetail.value.rutinitas || 'Bulanan'}</span>
+                  </div>
+                </div>
+
+                {/* Deskripsi Heading */}
+                <h4 style="font-size: 0.9rem; font-weight: 800; color: #111827; margin: 0 0 0.5rem 0;">
+                  Deskripsi
+                </h4>
+
+                {/* Deskripsi Area */}
+                <div
+                  style="
+                    border: 1px solid #e5e7eb;
+                    border-radius: 0.5rem;
+                    padding: 0.75rem;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: #374151;
+                    min-height: 48px;
+                    margin-bottom: 1.5rem;
+                    background: #ffffff;
+                  "
+                >
+                  {(() => {
+                    const detail = activeHistoryDetail.value.detail
+                    if (detail.includes('Catatan:')) {
+                      return detail.split('Catatan:')[1].trim()
+                    }
+                    if (detail.includes('Deskripsi:')) {
+                      return detail.split('Deskripsi:')[1].trim()
+                    }
+                    return detail || 'Pekerjaan selesai dengan baik.'
+                  })()}
+                </div>
+
+                {/* Admin Note Section */}
+                {activeHistoryDetail.value.status === 'Ditolak' && (
+                  <div style="margin-bottom: 1.5rem;">
+                    <h4 style="font-size: 0.9rem; font-weight: 800; color: #e11d48; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.35rem;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      Catatan Penolakan Admin
+                    </h4>
+                    <div
+                      style="
+                        border: 1px solid #fecaca;
+                        border-radius: 0.5rem;
+                        padding: 0.75rem;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        color: #991b1b;
+                        background: #fef2f2;
+                        min-height: 48px;
+                      "
+                    >
+                      {activeHistoryDetail.value.reviewNote || 'Tidak ada catatan penolakan dari admin.'}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selanjutnya/Close Button */}
+                <button
+                  onClick={closeHistoryDetail}
+                  style="
+                    width: 100%;
+                    height: 42px;
+                    background: #233512;
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 2rem;
+                    font-weight: 700;
+                    font-size: 0.88rem;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                  "
+                >
+                  Selanjutnya
+                </button>
+
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     )

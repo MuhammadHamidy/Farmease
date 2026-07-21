@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 // Create persists a new role record.
@@ -38,3 +38,4 @@ func (u *UseCase) Create(ctx context.Context, role *domain.Role) error {
 
 	return nil
 }
+

@@ -10,14 +10,17 @@ import (
 
 	internalConfig "github.com/farmease/farmease-be/farmease/config"
 	_ "github.com/farmease/farmease-be/farmease/docs"
+	"github.com/farmease/farmease-be/framework/bunnymq"
 	"github.com/farmease/farmease-be/framework/common/logger"
 	"github.com/farmease/farmease-be/framework/config"
 	"github.com/farmease/farmease-be/framework/fiber"
 	"github.com/farmease/farmease-be/framework/otel"
 	"github.com/farmease/farmease-be/framework/postgres"
 	"github.com/farmease/farmease-be/framework/redis"
+	"github.com/farmease/farmease-be/libraries/consumer"
 	"github.com/farmease/farmease-be/libraries/idp"
 	"github.com/farmease/farmease-be/libraries/middleware"
+	"github.com/farmease/farmease-be/libraries/publisher"
 	gofiber "github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	filterSwagger "github.com/swaggo/fiber-swagger"
@@ -38,6 +41,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/weights"
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules"
 	"github.com/farmease/farmease-be/farmease/module/submissions"
+	"github.com/farmease/farmease-be/farmease/module/fermentations"
 )
 
 // @title           Farmease API
@@ -72,6 +76,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		otel.Module,
 		postgres.Module,
 		redis.Module,
+		bunnymq.Module,
 
 		// supply config source & resolvers
 		fx.Supply(
@@ -98,10 +103,13 @@ func serveE(cmd *cobra.Command, args []string) error {
 			config.ProvideConfig[internalConfig.ApplicationConfig](),
 			internalConfig.Postgres,
 			internalConfig.Redis,
+			internalConfig.RabbitMQ,
 			internalConfig.Fiber,
 			internalConfig.Otel,
 			internalConfig.Logger,
 			internalConfig.InternalApp,
+			publisher.New,
+			consumer.New,
 			func(idpProvider idp.IDPProvider, appCfg *internalConfig.InternalAppConfig) *middleware.AuthorizationMiddleware {
 				return middleware.NewAuthorizationMiddlewareWithSSO(idpProvider, nil, nil, appCfg.SsoApiUrl)
 			},
@@ -124,6 +132,7 @@ func serveE(cmd *cobra.Command, args []string) error {
 		notifications.Module,
 		upload.Module,
 		submissions.Module,
+		fermentations.Module,
 
 		fx.Provide(
 			fx.Annotate(
@@ -147,6 +156,12 @@ func serveE(cmd *cobra.Command, args []string) error {
 						bgCtx := context.Background()
 						log.Println("DB_UPGRADE: starting database enums and table updates in background")
 						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'eksternal'"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'produktif'"); err != nil {
+							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
+						}
+						if _, err := db.Exec(bgCtx, "ALTER TYPE livestock.sheep_status_enum ADD VALUE IF NOT EXISTS 'sakit'"); err != nil {
 							log.Printf("DB_UPGRADE_ERROR: failed to alter sheep_status_enum: %v", err)
 						}
 						if _, err := db.Exec(bgCtx, "ALTER TYPE operations.task_rincian_enum ADD VALUE IF NOT EXISTS 'Kontrol Kebuntingan'"); err != nil {

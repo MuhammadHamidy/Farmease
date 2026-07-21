@@ -9,7 +9,7 @@ type Weight struct {
 	IDWeight     string    `json:"id_weight" db:"id_weight"`
 	IDSheep      string    `json:"id_sheep" db:"id_sheep"`
 	WeighingDate time.Time `json:"weighing_date" db:"weighing_date"`
-	WeightKg     float64   `json:"weight_kg" db:"weight_kg"`
+	WeightKg     float64   `json:"weight_kg" db:"weight_kg" validate:"required,gt=0"`
 	Notes        string    `json:"notes" db:"notes"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 }

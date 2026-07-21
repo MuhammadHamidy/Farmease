@@ -7,11 +7,11 @@ import (
 
 type Feed struct {
 	IDFeed           string    `json:"id_feed" db:"id_feed"`
-	FeedName         string    `json:"feed_name" db:"feed_name"`
-	Unit             string    `json:"unit" db:"unit"`
-	AvailableStock   float64   `json:"available_stock" db:"available_stock"`
-	PricePerUnit     float64   `json:"price_per_unit" db:"price_per_unit"`
-	Category         string    `json:"category" db:"category"`
+	FeedName         string    `json:"feed_name" db:"feed_name" validate:"required"`
+	Unit             string    `json:"unit" db:"unit" validate:"required"`
+	AvailableStock   float64   `json:"available_stock" db:"available_stock" validate:"required,min=0"`
+	PricePerUnit     float64   `json:"price_per_unit" db:"price_per_unit" validate:"min=0"`
+	Category         string    `json:"category" db:"category" validate:"required"`
 	ExternalSourceID *string   `json:"external_source_id,omitempty" db:"external_source_id"`
 	SourceType       string    `json:"source_type" db:"source_type"`
 	SourceAPIURL     *string   `json:"source_api_url,omitempty" db:"source_api_url"`
@@ -23,10 +23,10 @@ type Feed struct {
 type Feeding struct {
 	IDFeeding   string    `json:"id_feeding" db:"id_feeding"`
 	IDSheep     string    `json:"id_sheep" db:"id_sheep"`
-	IDFeed      string    `json:"id_feed" db:"id_feed"`
+	IDFeed      string    `json:"id_feed" db:"id_feed" validate:"required"`
 	FeedingDate time.Time `json:"feeding_date" db:"feeding_date"`
-	Amount      float64   `json:"amount" db:"amount"`
-	Unit        string    `json:"unit" db:"unit"`
+	Amount      float64   `json:"amount" db:"amount" validate:"required,gt=0"`
+	Unit        string    `json:"unit" db:"unit" validate:"required"`
 	Notes       string    `json:"notes" db:"notes"`
 	FeedName    string    `json:"feed_name,omitempty" db:"feed_name"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
@@ -60,6 +60,46 @@ type FeedingFilter struct {
 	PerPage int
 }
 
+type FeedingMixture struct {
+	IDFeedingMixture string                 `json:"id_feeding_mixture" db:"id_feeding_mixture"`
+	IDSheep          string                 `json:"id_sheep" db:"id_sheep" validate:"required"`
+	FeedingDate      time.Time              `json:"feeding_date" db:"feeding_date"`
+	TotalAmount      float64                `json:"total_amount" db:"total_amount" validate:"required,gt=0"`
+	Unit             string                 `json:"unit" db:"unit" validate:"required"`
+	Notes            string                 `json:"notes" db:"notes"`
+	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
+	Details          []FeedingMixtureDetail `json:"details" validate:"required,min=1,dive"`
+}
+
+type FeedingMixtureDetail struct {
+	IDDetail         string  `json:"id_detail" db:"id_detail"`
+	IDFeedingMixture string  `json:"id_feeding_mixture" db:"id_feeding_mixture"`
+	IDFeed           string  `json:"id_feed" db:"id_feed" validate:"required"`
+	Amount           float64 `json:"amount" db:"amount" validate:"required,gt=0"`
+	FeedName         string  `json:"feed_name,omitempty"`
+}
+
+type SilageConversion struct {
+	IDConversion   string                   `json:"id_conversion" db:"id_conversion"`
+	IDTargetFeed   string                   `json:"id_target_feed" db:"id_target_feed"`
+	ConversionDate time.Time                `json:"conversion_date" db:"conversion_date"`
+	TargetAmount   float64                  `json:"target_amount" db:"target_amount"`
+	Unit           string                   `json:"unit" db:"unit"`
+	Notes          string                   `json:"notes" db:"notes"`
+	CreatedAt      time.Time                `json:"created_at" db:"created_at"`
+	TargetFeedName string                   `json:"target_feed_name,omitempty" db:"target_feed_name"`
+	Status         string                   `json:"status" db:"status"`
+	Details        []SilageConversionDetail `json:"details"`
+}
+
+type SilageConversionDetail struct {
+	IDDetail     string  `json:"id_detail" db:"id_detail"`
+	IDConversion string  `json:"id_conversion" db:"id_conversion"`
+	IDFeed       string  `json:"id_feed" db:"id_feed"`
+	Amount       float64 `json:"amount" db:"amount"`
+	FeedName     string  `json:"feed_name,omitempty"`
+}
+
 type FeedRepository interface {
 	FindAllMaster(ctx context.Context) ([]*Feed, error)
 	FindMasterByID(ctx context.Context, id string) (*Feed, error)
@@ -68,16 +108,22 @@ type FeedRepository interface {
 	StoreFeeding(ctx context.Context, f *Feeding) error
 	FindFeedingHistory(ctx context.Context, idSheep string) ([]*Feeding, error)
 	FindAllFeedings(ctx context.Context, filter FeedingFilter) ([]*Feeding, int, error)
+	StoreFeedingMixture(ctx context.Context, fm *FeedingMixture) error
+	StoreSilageConversion(ctx context.Context, sc *SilageConversion) error
+	FindAllSilageConversions(ctx context.Context) ([]*SilageConversion, error)
 }
 
 type UseCase interface {
 	GetMasterFeedList(ctx context.Context) ([]*Feed, error)
 	AddMasterFeed(ctx context.Context, p *Feed) error
-	UpdateFeedStock(ctx context.Context, id string, amount float64, actionType string) error
+	UpdateFeedStock(ctx context.Context, id string, amount float64, actionType string) (*Feed, error)
 	GetFeedRecommendation(ctx context.Context, idSheep string) (*FeedRecommendation, error)
 	GetFeedRecommendationByCage(ctx context.Context, idCage string) (*CageFeedRecommendation, error)
 	RecordFeeding(ctx context.Context, f *Feeding) error
 	GetFeedingHistory(ctx context.Context, idSheep string) ([]*Feeding, error)
 	GetFeedingList(ctx context.Context, filter FeedingFilter) ([]*Feeding, int, error)
+	RecordFeedingMixture(ctx context.Context, fm *FeedingMixture) error
+	RecordSilageConversion(ctx context.Context, sc *SilageConversion) error
+	GetSilageConversions(ctx context.Context) ([]*SilageConversion, error)
 }
 

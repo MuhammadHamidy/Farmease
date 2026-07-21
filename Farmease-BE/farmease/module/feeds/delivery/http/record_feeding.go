@@ -5,6 +5,7 @@ import (
 
 	"github.com/farmease/farmease-be/farmease/module/feeds/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/farmease-be/libraries/validation"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -28,6 +29,11 @@ func (h *FeedHandler) RecordFeeding(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
 	feedingData.IDSheep = id
+
+	if appErr := validation.ValidateStruct(&feedingData); appErr != nil {
+		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
+	}
+
 	err := h.useCase.RecordFeeding(c.Context(), &feedingData)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(responses.Fail("UNPROCESSABLE_ENTITY", err.Error()))

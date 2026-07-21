@@ -5,6 +5,7 @@ import (
 
 	"github.com/farmease/farmease-be/farmease/module/feeds/domain"
 	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/farmease-be/libraries/validation"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -52,6 +53,10 @@ func (h *FeedHandler) AddMasterFeed(c *fiber.Ctx) error {
 		feedData.Category = req.Category
 	} else {
 		feedData.Category = req.FeedType
+	}
+
+	if appErr := validation.ValidateStruct(&feedData); appErr != nil {
+		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
 	err := h.useCase.AddMasterFeed(c.Context(), &feedData)

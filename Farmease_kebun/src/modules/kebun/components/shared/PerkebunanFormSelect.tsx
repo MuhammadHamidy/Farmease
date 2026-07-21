@@ -4,8 +4,9 @@ export default defineComponent({
   name: 'PerkebunanFormSelect',
   props: {
     modelValue: { type: String, default: '' },
-    options: { type: Array as PropType<string[]>, default: () => [] },
+    options: { type: Array as PropType<any[]>, default: () => [] },
     placeholder: { type: String, default: 'Pilih' },
+    disabled: { type: Boolean, default: false },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -15,6 +16,15 @@ export default defineComponent({
     const displayValue = () => {
       const val = props.modelValue
       if (!val || val === props.placeholder) return props.placeholder
+      const found = props.options.find(opt => {
+        if (typeof opt === 'object' && opt !== null) {
+          return String((opt as any).value) === String(val)
+        }
+        return String(opt) === String(val)
+      })
+      if (found && typeof found === 'object' && found !== null) {
+        return (found as any).label
+      }
       return val
     }
 
@@ -31,8 +41,13 @@ export default defineComponent({
       <div ref={containerRef} class="kebun-form-select">
         <button
           type="button"
-          class="kebun-form-select__trigger"
-          onClick={() => { isOpen.value = !isOpen.value }}
+          class={`kebun-form-select__trigger ${props.disabled ? 'is-disabled' : ''}`}
+          disabled={props.disabled}
+          onClick={() => {
+            if (!props.disabled) {
+              isOpen.value = !isOpen.value
+            }
+          }}
         >
           <span class={displayValue() === props.placeholder ? 'kebun-form-select__placeholder' : ''}>
             {displayValue()}
@@ -45,21 +60,26 @@ export default defineComponent({
         </button>
         {isOpen.value && (
           <ul class="kebun-form-select__menu">
-            {props.options.map(opt => (
-              <li
-                key={opt}
-                class={`kebun-form-select__item ${props.modelValue === opt ? 'is-selected' : ''}`}
-                onClick={() => {
-                  emit('update:modelValue', opt)
-                  isOpen.value = false
-                }}
-              >
-                {opt}
-              </li>
-            ))}
+            {props.options.map(opt => {
+              const itemVal = typeof opt === 'object' && opt !== null ? String((opt as any).value) : String(opt)
+              const itemLabel = typeof opt === 'object' && opt !== null ? String((opt as any).label) : String(opt)
+              return (
+                <li
+                  key={itemVal}
+                  class={`kebun-form-select__item ${props.modelValue === itemVal ? 'is-selected' : ''}`}
+                  onClick={() => {
+                    emit('update:modelValue', itemVal)
+                    isOpen.value = false
+                  }}
+                >
+                  {itemLabel}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
     )
   },
 })
+

@@ -26,12 +26,37 @@ export const userSession = ref<UserSession | null>(null)
 export const cageSession = ref<CageSession | null>(null)
 export const landSession = ref<LandSession | null>(null)
 
+export interface GlobalAlertState {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  type: 'error' | 'success';
+}
+
+export const globalAlertState = ref<GlobalAlertState>({
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'success',
+})
+
+export function triggerGlobalAlert(title: string, message: string, type: 'error' | 'success' = 'success') {
+  globalAlertState.value = {
+    isOpen: true,
+    title,
+    message,
+    type,
+  }
+}
+
 export const selectedTernakId = ref<string | null>(null)
 export const selectedPencatatanPayload = ref<any | null>(null)
 export const activePencatatanForm = ref<any | null>(null)
 export const prefilledPencatatanType = ref<string | null>(null)
 export const prefilledPencatatanRincian = ref<string | null>(null)
 export const prefilledPencatatanTaskId = ref<string | null>(null)
+export const prefilledPencatatanSheepId = ref<string | null>(null)
+export const prefilledPencatatanCageCode = ref<string | null>(null)
 
 // ── Shared Data Stores (fetched from BE) ──
 export interface CageInfo {

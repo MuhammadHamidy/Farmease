@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 // AssignRole assigns a role to a user.
@@ -43,3 +43,4 @@ func (u *UseCase) AssignRole(ctx context.Context, cmd domain.AssignRoleCommand) 
 
 	return userRole.Id, nil
 }
+

@@ -1,13 +1,13 @@
 package config
 
 import (
-	"github.com/farmease/farmease-be/framework/bunnymq"
-	"github.com/farmease/farmease-be/framework/common/logger"
-	"github.com/farmease/farmease-be/framework/fiber"
-	"github.com/farmease/farmease-be/framework/otel"
-	"github.com/farmease/farmease-be/framework/postgres"
-	"github.com/farmease/farmease-be/framework/redis"
-	"github.com/farmease/farmease-be/libraries/consumer"
+	"github.com/farmease/sso-be/framework/bunnymq"
+	"github.com/farmease/sso-be/framework/common/logger"
+	"github.com/farmease/sso-be/framework/fiber"
+	"github.com/farmease/sso-be/framework/otel"
+	"github.com/farmease/sso-be/framework/postgres"
+	"github.com/farmease/sso-be/framework/redis"
+	"github.com/farmease/sso-be/libraries/consumer"
 )
 
 type ApplicationConfig struct {
@@ -58,3 +58,4 @@ func Logger(app *ApplicationConfig) *logger.Config {
 func InternalApp(app *ApplicationConfig) *InternalAppConfig {
 	return &app.AppConfig
 }
+

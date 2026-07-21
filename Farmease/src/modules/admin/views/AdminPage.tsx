@@ -1,13 +1,15 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import '@/modules/admin/assets/css/modules/AdminPage.css';
-import { userSession, cageSession } from '@/store/navigation';
+import '@/assets/css/modules/admin/AdminPage.css';
+import { userSession, cageSession, globalAlertState } from '@/store/navigation';
 import { pendingApprovalCount } from '@/store/operatorAdmin';
 import Typography from '@/shared/ui/Typography';
 import DasborPeternakanView from './DasborPeternakanView.tsx';
 import RoutineScheduleView from './RoutineScheduleView.tsx';
 import PencatatanApprovalView from './PencatatanApprovalView.tsx';
 import CageManagementView from './CageManagementView.tsx';
+import CustomConfirmModal from '@/shared/ui/CustomConfirmModal';
+import CustomAlertModal from '@/shared/ui/CustomAlertModal';
 
 export default defineComponent({
   name: 'AdminPage',
@@ -16,12 +18,19 @@ export default defineComponent({
     const activeTab = ref<string>('dasbor_ternak');
     const isSidebarOpen = ref(false);
 
+    const isLogoutConfirmOpen = ref(false);
+
     const handleLogout = () => {
+      isLogoutConfirmOpen.value = true;
+    };
+
+    const confirmLogout = () => {
+      isLogoutConfirmOpen.value = false;
       userSession.value = null;
       cageSession.value = null;
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/';
+      window.location.href = 'http://localhost:3000/?logout=true';
     };
 
     return () => {
@@ -49,75 +58,75 @@ export default defineComponent({
                   <span class="profile-name">{adminName}</span>
                   <span class="profile-role">{userSession.value?.role || 'Admin'}</span>
                 </div>
-            </div>
-
-            <hr class="sidebar-divider" />
-
-            {/* Navigation Menu */}
-            <div class="sidebar-menu-wrapper">
-              
-              {/* Utama Category */}
-              <div class="menu-category">
-                <span class="category-label">Utama</span>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'dasbor_ternak' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'dasbor_ternak'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/dashboard/green-24.svg" alt="Dasbor Peternakan" class="menu-icon" />
-                  <span>Dasbor Peternakan</span>
-                </button>
               </div>
 
-              {/* Peternakan Category */}
-              <div class="menu-category">
-                <span class="category-label">Peternakan</span>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'kandang' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'kandang'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/kandang.png" alt="Kandang" class="menu-icon" />
-                  <span>Manajemen Kandang</span>
-                </button>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'jadwal_ternak' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'jadwal_ternak'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/schedule/green-24.svg" alt="Jadwal" class="menu-icon" />
-                  <span>Jadwal Rutin Peternakan</span>
-                </button>
+              <hr class="sidebar-divider" />
+
+              {/* Navigation Menu */}
+              <div class="sidebar-menu-wrapper">
+                
+                {/* Utama Category */}
+                <div class="menu-category">
+                  <span class="category-label">Utama</span>
+                  <button 
+                    type="button" 
+                    class={['menu-item', activeTab.value === 'dasbor_ternak' ? 'active' : '']}
+                    onClick={() => { activeTab.value = 'dasbor_ternak'; isSidebarOpen.value = false; }}
+                  >
+                    <img src="/icon/dashboard/green-24.svg" alt="Dasbor Peternakan" class="menu-icon" />
+                    <span>Dasbor Peternakan</span>
+                  </button>
+                </div>
+
+                {/* Peternakan Category */}
+                <div class="menu-category">
+                  <span class="category-label">Peternakan</span>
+                  <button 
+                    type="button" 
+                    class={['menu-item', activeTab.value === 'kandang' ? 'active' : '']}
+                    onClick={() => { activeTab.value = 'kandang'; isSidebarOpen.value = false; }}
+                  >
+                    <img src="/icon/kandang.png" alt="Kandang" class="menu-icon" />
+                    <span>Manajemen Kandang</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    class={['menu-item', activeTab.value === 'jadwal_ternak' ? 'active' : '']}
+                    onClick={() => { activeTab.value = 'jadwal_ternak'; isSidebarOpen.value = false; }}
+                  >
+                    <img src="/icon/schedule/green-24.svg" alt="Jadwal" class="menu-icon" />
+                    <span>Jadwal Rutin Peternakan</span>
+                  </button>
+                </div>
+
+                {/* Sistem Category */}
+                <div class="menu-category">
+                  <span class="category-label">Sistem & Operator</span>
+                  <button 
+                    type="button" 
+                    class={['menu-item', activeTab.value === 'persetujuan' ? 'active' : '']}
+                    onClick={() => { activeTab.value = 'persetujuan'; isSidebarOpen.value = false; }}
+                  >
+                    <img src="/icon/security.png" alt="Approval" class="menu-icon" />
+                    <span>Persetujuan Pencatatan</span>
+                    {pendingApprovalCount.value > 0 && (
+                      <span class="admin-tab-badge ms-auto" style={{ marginLeft: 'auto' }}>{pendingApprovalCount.value}</span>
+                    )}
+                  </button>
+                </div>
               </div>
 
-              {/* Sistem Category */}
-              <div class="menu-category">
-                <span class="category-label">Sistem & Operator</span>
-                <button 
-                  type="button" 
-                  class={['menu-item', activeTab.value === 'persetujuan' ? 'active' : '']}
-                  onClick={() => { activeTab.value = 'persetujuan'; isSidebarOpen.value = false; }}
-                >
-                  <img src="/icon/security.png" alt="Approval" class="menu-icon" />
-                  <span>Persetujuan Pencatatan</span>
-                  {pendingApprovalCount.value > 0 && (
-                    <span class="admin-tab-badge ms-auto" style={{ marginLeft: 'auto' }}>{pendingApprovalCount.value}</span>
-                  )}
+              {/* Sidebar Footer Logout */}
+              <div class="sidebar-footer">
+                <button type="button" class="sidebar-logout-btn" onClick={handleLogout}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Keluar Panel</span>
                 </button>
               </div>
-            </div>
-
-            {/* Sidebar Footer Logout */}
-            <div class="sidebar-footer">
-              <button type="button" class="sidebar-logout-btn" onClick={handleLogout}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                <span>Keluar Panel</span>
-              </button>
-            </div>
             </aside>
 
             {/* ── Mobile Hamburger Header ── */}
@@ -152,6 +161,21 @@ export default defineComponent({
               </div>
             </div>
 
+            
+            <CustomConfirmModal
+              isOpen={isLogoutConfirmOpen.value}
+              title="Konfirmasi Keluar"
+              message="Apakah Anda yakin ingin keluar dari panel admin?"
+              confirmLabel="Keluar"
+              cancelLabel="Batal"
+              onConfirm={confirmLogout}
+              onCancel={() => isLogoutConfirmOpen.value = false}
+            />
+
+            <CustomAlertModal
+              alert={globalAlertState.value}
+              onClose={() => { globalAlertState.value.isOpen = false; }}
+            />
           </div>
         </div>
       );

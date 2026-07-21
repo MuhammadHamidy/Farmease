@@ -1,27 +1,18 @@
 package usecase
 
 import (
-	"context"
-
 	"github.com/farmease/farmease-be/farmease/module/manures/domain"
+	"github.com/farmease/farmease-be/libraries/publisher"
 )
 
 type useCase struct {
-	repo domain.ManureRepository
+	repo      domain.ManureRepository
+	publisher *publisher.Publisher
 }
 
-func NewUseCase(repo domain.ManureRepository) domain.UseCase {
-	return &useCase{repo: repo}
-}
-
-func (u *useCase) GetManureList(ctx context.Context, filter domain.ManureFilter) ([]*domain.Manure, int, error) {
-	return u.repo.FindAll(ctx, filter)
-}
-
-func (u *useCase) GetManureHistory(ctx context.Context, idSheep string) ([]*domain.Manure, error) {
-	return u.repo.FindHistoryBySheep(ctx, idSheep)
-}
-
-func (u *useCase) RecordManure(ctx context.Context, m *domain.Manure) error {
-	return u.repo.Store(ctx, m)
+func NewUseCase(repo domain.ManureRepository, pub *publisher.Publisher) domain.UseCase {
+	return &useCase{
+		repo:      repo,
+		publisher: pub,
+	}
 }

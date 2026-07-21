@@ -1,0 +1,685 @@
+{
+	"info": {
+		"_postman_id": "8b9e6931-1577-4b68-b80c-7b003cb0a845",
+		"name": "Farmease Kebun Integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "SSO Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+									"} else if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"operator_perkebunan\",\n  \"password\": \"operator123\"\n}"
+						},
+						"url": "{{base_url}}/api/auth/login"
+					}
+				},
+				{
+					"name": "Login Operator (Passwordless)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+									"} else if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"operator_perkebunan\"\n}"
+						},
+						"url": "{{base_url}}/api/auth/login-operator"
+					}
+				}
+			]
+		},
+		{
+			"name": "Lahan (Lands)",
+			"item": [
+				{
+					"name": "Get All Lands",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/lahan"
+					}
+				},
+				{
+					"name": "Create Land",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id_lahan) {",
+									"    pm.collectionVariables.set(\"latest_lahan_id\", jsonData.data.id_lahan);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"kode_lahan\": \"L003\",\n  \"nama_lahan\": \"Lahan Alpukat Baru\",\n  \"jenis_tanaman\": \"Alpukat\",\n  \"status_lahan\": 1,\n  \"luas_lahan\": 5.5\n}"
+						},
+						"url": "{{base_url}}/api/v1/lahan"
+					}
+				},
+				{
+					"name": "Get Land by ID",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/lahan/{{latest_lahan_id}}"
+					}
+				},
+				{
+					"name": "Update Land",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"kode_lahan\": \"L001\",\n  \"nama_lahan\": \"Lahan Alpukat Premium\",\n  \"jenis_tanaman\": \"Alpukat\",\n  \"status_lahan\": 1,\n  \"luas_lahan\": 12.0\n}"
+						},
+						"url": "{{base_url}}/api/v1/lahan/{{latest_lahan_id}}"
+					}
+				},
+				{
+					"name": "Delete Land",
+					"request": {
+						"method": "DELETE",
+						"url": "{{base_url}}/api/v1/lahan/{{latest_lahan_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Pohon (Trees)",
+			"item": [
+				{
+					"name": "Get All Trees",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/pohon"
+					}
+				},
+				{
+					"name": "Create Tree",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id_pohon) {",
+									"    pm.collectionVariables.set(\"latest_pohon_id\", jsonData.data.id_pohon);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"kode_pohon\": \"LA012\",\n  \"tanggal_tanam\": \"2024-05-17T00:00:00Z\",\n  \"varietas\": \"Alpukat Markus\",\n  \"fase_pohon\": \"Vegetatif\",\n  \"Lahan_id_lahan\": \"{{latest_lahan_id}}\",\n  \"status_pohon\": \"aktif\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/pohon"
+					}
+				},
+				{
+					"name": "Get Tree by ID",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/pohon/{{latest_pohon_id}}"
+					}
+				},
+				{
+					"name": "Update Tree",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"kode_pohon\": \"LA001\",\n  \"tanggal_tanam\": \"2021-01-15T00:00:00Z\",\n  \"varietas\": \"Alpukat Aligator Super\",\n  \"fase_pohon\": \"Generatif\",\n  \"Lahan_id_lahan\": \"{{latest_lahan_id}}\",\n  \"status_pohon\": \"aktif\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/pohon/{{latest_pohon_id}}"
+					}
+				},
+				{
+					"name": "Delete Tree",
+					"request": {
+						"method": "DELETE",
+						"url": "{{base_url}}/api/v1/pohon/{{latest_pohon_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Aktivitas (Activities)",
+			"item": [
+				{
+					"name": "Get All Activities",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/aktivitas"
+					}
+				},
+				{
+					"name": "Get Activity by ID",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/aktivitas/{{latest_aktivitas_id}}"
+					}
+				},
+				{
+					"name": "Create Activity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id_aktivitas) {",
+									"    pm.collectionVariables.set(\"latest_aktivitas_id\", jsonData.data.id_aktivitas);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal_aktivitas\": \"2026-07-10 10:00:00\",\n  \"nama_jenis_aktivitas\": \"Penyiraman\",\n  \"nama_rincian_aktivitas\": \"Siram Manual\",\n  \"Lahan_id_lahan\": \"{{latest_lahan_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/aktivitas"
+					}
+				},
+				{
+					"name": "Update Activity",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal_aktivitas\": \"2026-07-10 10:00:00\",\n  \"nama_jenis_aktivitas\": \"Penyiraman\",\n  \"nama_rincian_aktivitas\": \"Siram Manual Update\",\n  \"Lahan_id_lahan\": \"{{latest_lahan_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/aktivitas/{{latest_aktivitas_id}}"
+					}
+				},
+				{
+					"name": "Delete Activity",
+					"request": {
+						"method": "DELETE",
+						"url": "{{base_url}}/api/v1/aktivitas/{{latest_aktivitas_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Fermentasi (Fermentation)",
+			"item": [
+				{
+					"name": "Get All Fermentations",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/fermentasi"
+					}
+				},
+				{
+					"name": "Create Fermentation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_pupuk\": \"Pupuk Organik Cair\",\n  \"jumlah_dibuat\": 100,\n  \"satuan\": \"liter\",\n  \"status\": \"Masih Proses Fermentasi\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/fermentasi"
+					}
+				},
+				{
+					"name": "Get Fermentation by ID",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/fermentasi/1"
+					}
+				},
+				{
+					"name": "Add Fermentation Log",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_fermentasi\": 1,\n  \"suhu\": 32.5,\n  \"kelembapan\": 65,\n  \"ph\": 6.8,\n  \"kondisi_fisik\": \"Aroma asam manis khas fermentasi, warna cokelat tua\",\n  \"keterangan\": \"Pengecekan rutin hari ke-5\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/fermentasi/log"
+					}
+				},
+				{
+					"name": "Update Fermentation Status",
+					"request": {
+						"method": "PATCH",
+						"url": "{{base_url}}/api/v1/fermentasi/1/status?status=Siap+Digunakan"
+					}
+				}
+			]
+		},
+		{
+			"name": "Pemupukan (Fertilization)",
+			"item": [
+				{
+					"name": "Get All Fertilizations",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/pemupukan"
+					}
+				},
+				{
+					"name": "Create Fertilization",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal_pemupukan\": \"2026-07-10T08:00:00Z\",\n  \"jenis_pupuk\": \"Pupuk Organik Cair\",\n  \"dosis\": 5.0,\n  \"satuan\": \"liter\",\n  \"teknik_pemupukan\": \"Kocor\",\n  \"keterangan\": \"Aplikasi POC fermentasi\",\n  \"Pohon_id_pohon\": \"{{latest_pohon_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/pemupukan"
+					}
+				}
+			]
+		},
+		{
+			"name": "Pengobatan (Medicine)",
+			"item": [
+				{
+					"name": "Get All Treatments",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/pengobatan"
+					}
+				},
+				{
+					"name": "Create Treatment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal_pengobatan\": \"2026-07-10T09:00:00Z\",\n  \"nama_obat\": \"Mankozeb\",\n  \"dosis\": 50.0,\n  \"satuan\": \"ml\",\n  \"bagian_pohon\": \"Daun\",\n  \"deskripsi\": \"Aplikasi fungisida Mankozeb untuk karat daun\",\n  \"detail_pohon\": \"LA001\",\n  \"Lahan_id_lahan\": \"{{latest_lahan_id}}\",\n  \"Aktivitas_id_aktivitas\": \"{{latest_aktivitas_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/pengobatan"
+					}
+				},
+				{
+					"name": "Get Treatment Recommendation",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/pengobatan/rekomendasi?varietas=Alpukat+Aligator&fase=Vegetatif&opt=Jamur+Daun"
+					}
+				}
+			]
+		},
+		{
+			"name": "Stok (Inventory)",
+			"item": [
+				{
+					"name": "Get All Bahan (Raw Materials)",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/stok/bahan"
+					}
+				},
+				{
+					"name": "Get All Pupuk (Fertilizers)",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/stok/pupuk"
+					}
+				},
+				{
+					"name": "Get All Obat (Medicines)",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/stok/obat"
+					}
+				},
+				{
+					"name": "Update Pupuk Stock",
+					"request": {
+						"method": "PATCH",
+						"url": "{{base_url}}/api/v1/stok/pupuk/1?amount=50&type=tambah"
+					}
+				},
+				{
+					"name": "Update Obat Stock",
+					"request": {
+						"method": "PATCH",
+						"url": "{{base_url}}/api/v1/stok/obat/1?amount=10&type=kurang"
+					}
+				}
+			]
+		},
+		{
+			"name": "Routine Schedules",
+			"item": [
+				{
+					"name": "Get All Routine Schedules",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/routine-schedules"
+					}
+				},
+				{
+					"name": "Create Routine Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Penyiraman Rutin Lahan Alpukat\",\n  \"description\": \"Penyiraman rutin pagi hari\",\n  \"category\": \"penyiraman\",\n  \"frequency\": \"harian\",\n  \"days_of_week\": [1,2,3,4,5,6,7],\n  \"start_date\": \"2026-07-06T00:00:00Z\",\n  \"start_time\": \"08:00:00\",\n  \"end_time\": \"09:00:00\",\n  \"priority\": \"tinggi\",\n  \"id_cage\": \"11111111-1111-1111-1111-111111111111\",\n  \"id_account\": \"11111111-1111-1111-1111-111111111105\",\n  \"rincian\": \"Penyiraman Rutin\"\n}"
+						},
+						"url": "{{base_url}}/api/routine-schedules"
+					}
+				},
+				{
+					"name": "Generate Tasks from Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"window_days\": 7\n}"
+						},
+						"url": "{{base_url}}/api/routine-schedules/generate"
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks & Submissions",
+			"item": [
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/tasks"
+					}
+				},
+				{
+					"name": "Create Task",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Penyiraman Sore Lahan Alpukat\",\n  \"description\": \"Penyiraman sore hari jam 4\",\n  \"task_date\": \"2026-07-10T16:00:00Z\",\n  \"priority\": \"tinggi\",\n  \"category\": \"penyiraman\",\n  \"id_account\": \"11111111-1111-1111-1111-111111111105\",\n  \"id_cage\": \"11111111-1111-1111-1111-111111111111\",\n  \"start_time\": \"16:00:00\",\n  \"rincian\": \"Penyiraman Rutin\"\n}"
+						},
+						"url": "{{base_url}}/api/tasks"
+					}
+				},
+				{
+					"name": "Complete Task",
+					"request": {
+						"method": "PATCH",
+						"url": "{{base_url}}/api/tasks/e0000000-0000-0000-0000-000000000102/complete"
+					}
+				},
+				{
+					"name": "Get All Submissions",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/submissions"
+					}
+				},
+				{
+					"name": "Submit Pencatatan (Operator Activity)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"penyiraman\",\n  \"approvalStatus\": \"pending\",\n  \"payload\": {\n    \"data\": {\n      \"items\": [\n        {\n          \"id_pohon\": \"22222222-2222-2222-2222-222222220002\",\n          \"kode_pohon\": \"LA002\",\n          \"rincian\": \"Penyiraman Rutin\",\n          \"status\": \"aktif\"\n        }\n      ]\n    }\n  }\n}"
+						},
+						"url": "{{base_url}}/api/submissions"
+					}
+				}
+			]
+		},
+		{
+			"name": "Panen (Harvest)",
+			"item": [
+				{
+					"name": "Get All Harvests",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/panen"
+					}
+				},
+				{
+					"name": "Create Harvest",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jumlah\": 150.5,\n  \"satuan\": \"kg\",\n  \"keterangan\": \"Panen raya Alpukat Miki\",\n  \"Lahan_id_lahan\": \"{{latest_lahan_id}}\",\n  \"Aktivitas_id_aktivitas\": \"{{latest_aktivitas_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/panen"
+					}
+				},
+				{
+					"name": "Get Harvest Recap",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/v1/panen/rekap"
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/notifications"
+					}
+				},
+				{
+					"name": "Mark Notification Read",
+					"request": {
+						"method": "PATCH",
+						"url": "{{base_url}}/api/notifications/notif-uuid-goes-here/read"
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8082",
+			"type": "string"
+		},
+		{
+			"key": "latest_lahan_id",
+			"value": "11111111-1111-1111-1111-111111111111",
+			"type": "string"
+		},
+		{
+			"key": "latest_pohon_id",
+			"value": "22222222-2222-2222-2222-222222220001",
+			"type": "string"
+		},
+		{
+			"key": "latest_aktivitas_id",
+			"value": "a1111111-1111-1111-1111-111111110001",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

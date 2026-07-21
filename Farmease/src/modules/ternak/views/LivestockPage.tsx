@@ -1,6 +1,6 @@
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
+import '@/assets/css/modules/peternakan/PeternakanPage.css';
 import { userSession, cageSession, cagesList, fetchCagesList, cagesLoading, selectedTernakId } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
 import { useNotifications } from '@/shared/composables/useNotifications';
@@ -8,9 +8,11 @@ import DashboardView from './DashboardView';
 import RecordView from './RecordView';
 import HistoryView from './HistoryView';
 import LivestockDetailView from './LivestockDetailView';
+import CustomConfirmModal from '@/shared/ui/CustomConfirmModal';
 
 const tabs = [
-  { id: 'dasbor',      label: 'Dasbor & Ternak' },
+  { id: 'dasbor',      label: 'Dasbor' },
+  { id: 'daftar',      label: 'Daftar Ternak' },
   { id: 'pencatatan',  label: 'Pencatatan' },
   { id: 'riwayat',     label: 'Riwayat' },
 ];
@@ -34,6 +36,11 @@ export default defineComponent({
     const { notifications, unreadCount, fetchNotifications, markRead } = useNotifications();
     const isNotificationOpen = ref(false);
     const selectedNotification = ref<any>(null);
+
+    const formatNotificationMessage = (msg: string) => {
+      if (!msg) return '';
+      return msg.replace(/\b([a-f0-9]{8})-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b/gi, 'TSK-$1');
+    };
 
     const handleDocumentClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -60,12 +67,19 @@ export default defineComponent({
       };
     };
 
+    const isLogoutConfirmOpen = ref(false);
+
     const goBackToLogin = () => {
+      isLogoutConfirmOpen.value = true;
+    };
+
+    const confirmLogout = () => {
+      isLogoutConfirmOpen.value = false;
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       userSession.value = null;
       cageSession.value = null;
-      window.location.href = 'http://localhost:3000/';
+      window.location.href = 'http://localhost:3000/?logout=true';
     };
 
     const getCageBadgeClass = (type: string) => {
@@ -84,13 +98,13 @@ export default defineComponent({
             <div class="header-left-group">
               <div 
                 class="peternakan-logo-container" 
-                onClick={() => { window.location.href = 'http://localhost:3000/'; }} 
+                onClick={goBackToLogin} 
                 style={{ cursor: 'pointer' }}
               >
                 <img src="/icon/logo_farmease.png" alt="FARMease" style={{ height: '44px', objectFit: 'contain' }} />
               </div>
               <div class="header-divider d-none d-sm-block"></div>
-              <h1 class="peternakan-header-title d-none d-sm-block">Sah Hi Agro Farm</h1>
+              <h1 class="peternakan-header-title d-none d-sm-block">Say Hi Agro Farm</h1>
             </div>
 
             <div class="header-right-group position-relative">
@@ -137,7 +151,7 @@ export default defineComponent({
                             </div>
                             <div class="grow" style={{ minWidth: 0 }}>
                               <div class="fw-bold text-dark text-truncate" style={{ fontSize: '0.8rem' }}>{item.title}</div>
-                              <div class="text-secondary small mt-0.5" style={{ fontSize: '0.72rem', lineHeight: '1.3' }}>{item.message}</div>
+                              <div class="text-secondary small mt-0.5" style={{ fontSize: '0.72rem', lineHeight: '1.3' }}>{formatNotificationMessage(item.message)}</div>
                               <div class="text-muted" style={{ fontSize: '0.65rem', marginTop: '4px' }}>
                                 {new Date(item.created_at).toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                               </div>
@@ -150,11 +164,10 @@ export default defineComponent({
                 )}
               </div>
 
-              {/* Logout Button */}
               <button 
                 class="header-logout-btn" 
-                onClick={() => { cageSession.value = null; router.push({ name: 'ternak-pilih-kandang' }) }}
-                title="Keluar ke Pilih Kandang"
+                onClick={goBackToLogin}
+                title="Keluar / Logout"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -165,17 +178,22 @@ export default defineComponent({
             </div>
           </header>
 
-          {/* ── Pill Tab Navigation ──────────────────────── */}
           <nav class="peternakan-nav-container">
             <div class="peternakan-tab-pills">
               <router-link to={{ name: 'ternak-dasbor' }} class="peternakan-tab-pill" activeClass="active">
-                Dasbor & Ternak
+                Dasbor
+              </router-link>
+              <router-link to={{ name: 'ternak-daftar' }} class="peternakan-tab-pill" activeClass="active">
+                Daftar Ternak
               </router-link>
               <router-link to={{ name: 'ternak-pencatatan' }} class="peternakan-tab-pill" activeClass="active">
                 Pencatatan
               </router-link>
               <router-link to={{ name: 'ternak-riwayat' }} class="peternakan-tab-pill" activeClass="active">
                 Riwayat
+              </router-link>
+              <router-link to={{ name: 'ternak-gudang' }} class="peternakan-tab-pill" activeClass="active">
+                Gudang
               </router-link>
             </div>
           </nav>
@@ -191,34 +209,44 @@ export default defineComponent({
           {selectedNotification.value && (
             <div class="modal fade show d-block" style={{ zIndex: 1055 }} onClick={() => selectedNotification.value = null}>
               <div class="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-                <div class="modal-content rounded-5 border-0 shadow-lg">
+                <div class="modal-content rounded-5 border-0 shadow-lg" style={{ backgroundColor: '#FCFAF7' }}>
                   <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-extrabold text-on-surface">Detail Notifikasi</h5>
+                    <h5 class="modal-title fw-extrabold text-on-surface" style={{ color: '#3d2f24' }}>Detail Notifikasi</h5>
                     <button type="button" class="btn-close" onClick={() => selectedNotification.value = null}></button>
                   </div>
                   <div class="modal-body py-4">
                     <div class="d-flex align-items-start gap-3 mb-3">
-                      <div class="notification-item-icon rounded-circle d-flex align-items-center justify-content-center bg-primary-subtle text-primary" style={{ width: '48px', height: '48px', flexShrink: 0 }}>
-                        <span style={{ fontSize: '1.5rem' }}>🔔</span>
+                      <div class="notification-item-icon rounded-circle d-flex align-items-center justify-content-center border" style={{ width: '48px', height: '48px', flexShrink: 0, backgroundColor: 'rgba(212, 196, 176, 0.25)', borderColor: '#3d2f24', color: '#3d2f24' }}>
+                        <span style={{ fontSize: '1.4rem' }}>🔔</span>
                       </div>
                       <div>
-                        <h4 class="fw-bold m-0 mb-1" style={{ fontSize: '1.1rem' }}>{selectedNotification.value.title}</h4>
+                        <h4 class="fw-bold m-0 mb-1" style={{ fontSize: '1.1rem', color: '#3d2f24' }}>{selectedNotification.value.title}</h4>
                         <div class="text-muted small">
                           {new Date(selectedNotification.value.created_at).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}
                         </div>
                       </div>
                     </div>
-                    <div class="p-3 bg-light rounded-4 text-dark" style={{ lineHeight: '1.6' }}>
-                      {selectedNotification.value.message}
+                    <div class="p-3 rounded-4 text-dark border" style={{ lineHeight: '1.6', backgroundColor: '#FAF6F0', borderColor: '#E6D9CE' }}>
+                      {formatNotificationMessage(selectedNotification.value.message)}
                     </div>
                   </div>
                   <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onClick={() => selectedNotification.value = null}>Tutup</button>
+                    <button type="button" class="btn rounded-pill px-4 py-2 fw-bold text-white shadow-sm border-0" style={{ backgroundColor: '#3d2f24' }} onClick={() => selectedNotification.value = null}>Tutup</button>
                   </div>
                 </div>
               </div>
             </div>
           )}
+          
+          <CustomConfirmModal
+            isOpen={isLogoutConfirmOpen.value}
+            title="Konfirmasi Keluar"
+            message="Apakah Anda yakin ingin keluar dari halaman peternakan?"
+            confirmLabel="Keluar"
+            cancelLabel="Batal"
+            onConfirm={confirmLogout}
+            onCancel={() => isLogoutConfirmOpen.value = false}
+          />
         </div>
       );
     };

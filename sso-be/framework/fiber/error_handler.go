@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	libErrors "github.com/farmease/farmease-be/libraries/errors"
+	libErrors "github.com/farmease/sso-be/libraries/errors"
 )
 
 func CustomErrorHandler(c *fiber.Ctx, err error) error {
@@ -39,3 +39,4 @@ func CustomErrorHandler(c *fiber.Ctx, err error) error {
 		"timestamp": time.Now().Format(time.RFC3339),
 	})
 }
+

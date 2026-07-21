@@ -2,15 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 :root {
-  --admin-primary: var(--color-primary, #3d2f24);
-  --admin-primary-dark: var(--color-primary-container, #5d4e41);
-  --admin-beige: var(--color-surface-container-low, #f5f2ed);
-  --admin-beige-light: var(--color-surface-container, #ede8e0);
-  --admin-border: var(--color-outline-variant, #ccc0b4);
-  --admin-text-dark: var(--color-on-surface, #1a1a1a);
-  --admin-text-brown: var(--color-on-surface-variant, #4a423a);
-  --admin-text-grey: var(--color-outline, #7a6f65);
-  --admin-bg: var(--color-surface-container-lowest, #ffffff);
+  /* Admin colors - updated to match kebun (green/olive palette) */
+  --admin-primary: #38431f;
+  --admin-primary-dark: #2d3b1d;
+  --admin-beige: #FAFAF8;
+  --admin-beige-light: #f4f5f0;
+  --admin-border: #cfd7bb;
+  --admin-text-dark: #111827;
+  --admin-text-brown: #374151;
+  --admin-text-grey: #6B7280;
+  --admin-bg: #ffffff;
 }
 
 .admin-page {
@@ -241,7 +242,7 @@ code {
   text-transform: uppercase;
 }
 
-.role-badge.admin { background: var(--color-primary); color: var(--color-on-primary); }
+.role-badge.admin { background: #3d2f24; color: #ffffff; }
 .role-badge.operator-peternakan { background: var(--color-secondary); color: var(--color-on-secondary); }
 .role-badge.operator-perkebunan { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
 
@@ -979,7 +980,7 @@ code {
 
 .admin-sidebar {
   width: 280px;
-  background: radial-gradient(circle at 10% 20%, #3d2f24 0%, #291c10 100%);
+  background: #2D3B1D;
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -1032,14 +1033,14 @@ code {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: var(--color-primary-fixed, #e1d4c2);
-  color: #3d2f24;
+  background: #ffffff;
+  color: #2D3B1D;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 .sidebar-profile .profile-info {
@@ -1055,13 +1056,13 @@ code {
 
 .sidebar-profile .profile-role {
   font-size: 0.75rem;
-  color: #b5a18c;
+  color: #a5b892;
   font-weight: 600;
 }
 
 .sidebar-divider {
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   margin: 0;
 }
 
@@ -1087,8 +1088,7 @@ code {
 .category-label {
   font-size: 0.7rem;
   font-weight: 800;
-  color: #b5a18c;
-  text-transform: uppercase;
+  color: #a5b892;
   letter-spacing: 0.1em;
   margin-bottom: 0.5rem;
   padding-left: 0.5rem;
@@ -1102,7 +1102,7 @@ code {
   border-radius: 12px;
   background: transparent;
   border: none;
-  color: #d4c4b0;
+  color: #e8ece1;
   font-size: 0.9rem;
   font-weight: 700;
   text-align: left;
@@ -1112,12 +1112,12 @@ code {
 }
 
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
 
 .menu-item.active {
-  background: var(--color-primary-container, #5d4e41);
+  background: #38431F;
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -1148,9 +1148,9 @@ code {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: rgba(220, 38, 38, 0.1);
-  color: #f87171;
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: #B91C1C;
+  color: #ffffff;
+  border: none;
   padding: 0.75rem;
   border-radius: 12px;
   font-weight: 700;
@@ -1161,9 +1161,8 @@ code {
 }
 
 .sidebar-logout-btn:hover {
-  background: rgba(220, 38, 38, 0.2);
+  background: #991B1B;
   color: #ffffff;
-  border-color: rgba(220, 38, 38, 0.4);
 }
 
 .mobile-header {
@@ -1187,7 +1186,7 @@ code {
 
 .admin-main-content {
   flex: 1;
-  background: #FAF8F5;
+  background: #FAFAF8;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -1355,3 +1354,192 @@ code {
   width: 48px !important;
   height: 48px !important;
 }
+
+/* ── Pemilik Perkebunan Dashboard ─────────────────────── */
+.pemilik-kebun-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pemilik-kebun-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(48, 54, 14, 0.07);
+}
+
+/* Header dark green banner */
+.pks-header {
+  background: linear-gradient(135deg, #2d3a0e 0%, #3d500f 50%, #30360E 100%);
+  color: #ffffff;
+  padding: 1.25rem 1.5rem 1rem;
+}
+
+.pks-header-inner { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.pks-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.pks-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.pks-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 0.75rem;
+}
+
+.pks-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.pks-info-card {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pks-info-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pks-info-icon svg { stroke: #ffffff; }
+
+.pks-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pks-info-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pks-info-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.65);
+}
+
+/* Stat Cards row */
+.pks-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.pks-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.25rem 0.75rem;
+  border-right: 1px solid #f3f4f6;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.pks-stat-card:last-child { border-right: none; }
+.pks-stat-card:hover { background: #fafdf5; }
+
+.pks-stat-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #1a2e05;
+  line-height: 1.1;
+}
+
+.pks-stat-unit {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #606C38;
+}
+
+.pks-stat-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Charts row */
+.pks-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.pks-chart-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pks-chart-card:first-child {
+  border-right: 1px solid #f3f4f6;
+}
+
+.pks-chart-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a2e05;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pks-chart-sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .pks-info-row { grid-template-columns: 1fr; }
+  .pks-charts-row { grid-template-columns: 1fr; }
+  .pks-chart-card:first-child { border-right: none; border-bottom: 1px solid #f3f4f6; }
+  .pks-stats-row { grid-template-columns: 1fr; }
+  .pks-stat-card { border-right: none; border-bottom: 1px solid #f3f4f6; }
+  .pks-stat-card:last-child { border-bottom: none; }
+  .pks-stat-value { font-size: 1.25rem; }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .pks-charts-row { grid-template-columns: 1fr; }
+  .pks-chart-card:first-child { border-right: none; border-bottom: 1px solid #f3f4f6; }
+}
+

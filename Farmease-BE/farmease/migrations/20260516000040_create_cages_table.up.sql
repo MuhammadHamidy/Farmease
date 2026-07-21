@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS master.cages (
+CREATE SCHEMA IF NOT EXISTS livestock;
+
+CREATE TABLE IF NOT EXISTS livestock.cages (
     id_cage UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cage_code VARCHAR(20) UNIQUE NOT NULL,
     capacity INT NOT NULL,
@@ -9,4 +11,4 @@ CREATE TABLE IF NOT EXISTS master.cages (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_cages_farm_id ON master.cages(farm_id);
+CREATE INDEX IF NOT EXISTS idx_cages_farm_id ON livestock.cages(farm_id);

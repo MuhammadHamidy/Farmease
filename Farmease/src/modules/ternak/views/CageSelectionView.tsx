@@ -2,7 +2,8 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { userSession, cageSession, cagesList, fetchCagesList, cagesLoading } from '@/store/navigation';
 import BackButton from '@/shared/ui/BackButton';
-import '@/modules/ternak/assets/css/modules/PeternakanPage.css';
+import CustomConfirmModal from '@/shared/ui/CustomConfirmModal';
+import '@/assets/css/modules/peternakan/PeternakanPage.css';
 
 export default defineComponent({
   name: 'CageSelectionView',
@@ -32,12 +33,19 @@ export default defineComponent({
       router.push({ name: 'ternak-dasbor' });
     };
 
+    const isLogoutConfirmOpen = ref(false);
+
     const goBackToLogin = () => {
+      isLogoutConfirmOpen.value = true;
+    };
+
+    const confirmLogout = () => {
+      isLogoutConfirmOpen.value = false;
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       userSession.value = null;
       cageSession.value = null;
-      window.location.href = 'http://localhost:3000/';
+      window.location.href = 'http://localhost:3000/?logout=true';
     };
 
     const getCageBadgeClass = (type: string) => {
@@ -131,6 +139,16 @@ export default defineComponent({
               label="Kembali ke Login (Keluar)"
             />
           </div>
+          
+          <CustomConfirmModal
+            isOpen={isLogoutConfirmOpen.value}
+            title="Konfirmasi Keluar"
+            message="Apakah Anda yakin ingin keluar dari halaman peternakan?"
+            confirmLabel="Keluar"
+            cancelLabel="Batal"
+            onConfirm={confirmLogout}
+            onCancel={() => isLogoutConfirmOpen.value = false}
+          />
         </div>
       </div>
     );

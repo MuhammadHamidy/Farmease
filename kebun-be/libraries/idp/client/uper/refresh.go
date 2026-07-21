@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/kebun-be/libraries/idp/client"
 )
 
 type RefreshResponse struct {
@@ -42,3 +42,4 @@ func (i *Idp) Refresh(ctx context.Context, token string) (*client.AuthSession, e
 		ExpiresIn:   responses.ExpiresIn,
 	}, nil
 }
+

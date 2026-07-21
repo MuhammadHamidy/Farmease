@@ -1,8 +1,8 @@
 package fertilizers
 
 import (
-	http "github.com/farmease/farmease-be/farmease/module/fertilizers/delivery"
-	"github.com/farmease/farmease-be/farmease/module/fertilizers/usecase"
+	http "github.com/farmease/kebun-be/kebun/module/fertilizers/delivery"
+	"github.com/farmease/kebun-be/kebun/module/fertilizers/usecase"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/fx"
 )
@@ -20,3 +20,4 @@ func registerRoutes(app *fiber.App, handler *http.FertilizersHandler) {
 	
 	api.Get("/recommendation", handler.GetRecommendation)
 }
+

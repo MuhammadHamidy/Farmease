@@ -49,6 +49,13 @@ export interface MetadataEnums {
   manure_dest: EnumChoice[]
   priority: EnumChoice[]
   task_status: EnumChoice[]
+  health_actions: EnumChoice[]
+  medicines: EnumChoice[]
+  manure_conditions: EnumChoice[]
+  pregnancy_check_methods: EnumChoice[]
+  pregnancy_check_results: EnumChoice[]
+  estrus_check_results: EnumChoice[]
+  dam_conditions: EnumChoice[]
 }
 
 export const authApi = {

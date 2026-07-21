@@ -10,10 +10,14 @@ export default defineComponent({
     selected: { type: String, default: '' },
     search: { type: String, default: '' },
   },
-  emits: ['close', 'save', 'update:selected', 'update:search'],
+  emits: ['close', 'save', 'update:selected', 'update:search', 'add'],
   setup(props, { emit }) {
     return () => {
       if (!props.show) return null
+
+      const filtered = props.search
+        ? props.options.filter(o => o.toLowerCase().includes(props.search.toLowerCase()))
+        : props.options
 
       return (
         <Teleport to="body">
@@ -21,107 +25,147 @@ export default defineComponent({
             class="rincian-sheet-overlay"
             onClick={(e: MouseEvent) => { if (e.target === e.currentTarget) emit('close') }}
           >
-            <div class="rincian-sheet" onClick={(e: MouseEvent) => e.stopPropagation()}>
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:0.85rem 1rem 0;">
+            <div
+              class="rincian-sheet"
+              onClick={(e: MouseEvent) => e.stopPropagation()}
+              style="
+                position: relative;
+                width: min(100%, 380px);
+                border-radius: 1.25rem;
+                padding: 0 0 1.25rem;
+                overflow-y: auto;
+                background: #ffffff;
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                box-sizing: border-box;
+              "
+            >
+              {/* Close button */}
+              <div style="padding: 1rem 1.25rem 0.5rem; display: flex; justify-content: flex-start; flex-shrink: 0; width: 100%; box-sizing: border-box;">
                 <button
                   type="button"
                   onClick={() => emit('close')}
-                  style="background:none; border:none; font-size:1.4rem; color:#374151; cursor:pointer; line-height:1; padding:0.1rem 0.3rem;"
+                  style="background:none; border:none; cursor:pointer; padding:0.25rem; display:flex; align-items:center; justify-content:center;"
                 >
-                  ×
+                  <img src="/icon/close-cancel/black-24.svg" alt="Tutup" style="width: 24px; height: 24px; object-fit: contain;" />
                 </button>
               </div>
 
-              <div style="background:#38431f; margin:0.5rem 0.85rem; border-radius:0.85rem; padding:1rem 1.1rem;">
-                <h3 style="margin:0 0 0.7rem; color:#fff; font-size:1.1rem; font-weight:800; text-align:center;">Rincian Pencatatan</h3>
-                <div style="position:relative; margin-bottom:0.65rem;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); pointer-events:none;">
-                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              {/* Dark green header with search */}
+              <div style="background:#38431f; margin:0 1.25rem; border-radius:1.25rem; padding:1.25rem 1rem; box-sizing:border-box;">
+                <h3 style="margin:0 0 0.85rem; color:#fff; font-size:1.35rem; font-weight:800; text-align:center; letter-spacing: -0.01em;">Rincian Pencatatan</h3>
+                <div style="position:relative; margin-bottom:0.85rem; width: 100%;">
+                  <svg
+                    style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); opacity: 0.75; pointer-events: none;"
+                    width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
                   <input
                     type="text"
                     placeholder="Cari rincian pencatatan"
                     value={props.search}
                     onInput={(e: Event) => emit('update:search', (e.target as HTMLInputElement).value)}
-                    style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.25rem; border-radius:9999px; border:none; background:rgba(255,255,255,0.15); color:#fff; font-size:0.85rem; font-weight:600; outline:none; box-sizing:border-box;"
+                    style="width:100%; padding:0.6rem 0.9rem 0.6rem 2.35rem; border-radius:0.5rem; border:none; background:#ffffff; color:#1f2937; font-size:0.9rem; outline:none; box-sizing:border-box;"
                   />
                 </div>
-                <div style="background:#fff; border-radius:0.55rem; overflow:hidden;">
-                  <div style="padding:0.4rem 0.75rem; font-size:0.77rem; font-weight:800; color:#374151; border-bottom:1px solid #f3f4f6;">
-                    Rincian Pencatatan
-                  </div>
-                  <div style="display:flex; align-items:center; gap:0.6rem; padding:0.65rem 0.75rem;">
-                    <div style="width:2rem; height:2rem; background:#f6f8ee; border-radius:0.4rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38431f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
-                      </svg>
+
+                {/* Selected Jenis Preview Card */}
+                <div
+                  style="
+                    background: #ffffff;
+                    border-radius: 0.85rem;
+                    padding: 0.85rem 1rem;
+                    border: 1.5px solid #111827;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.45rem;
+                    width: 100%;
+                    box-sizing: border-box;
+                  "
+                >
+                  <span style="font-size: 0.85rem; font-weight: 800; color: #111827; text-align: left;">Rincian Pencatatan</span>
+                  <div
+                    style="
+                      border: 1.5px solid #111827;
+                      border-radius: 0.6rem;
+                      padding: 0.65rem 0.85rem;
+                      background: #fff;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.75rem;
+                      width: 100%;
+                      box-sizing: border-box;
+                    "
+                  >
+                    <div
+                      style="
+                        width: 2.2rem;
+                        height: 2.2rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                      "
+                    >
+                      <img src="/icon/calender.png" alt="Jenis" style="width: 1.5rem; height: 1.5rem; object-fit: contain;" />
                     </div>
-                    <div>
-                      <div style="font-size:0.72rem; color:#9ca3af; font-weight:600;">Jenis Pencatatan</div>
-                      <div style="font-size:0.92rem; font-weight:800; color:#1f2937;">{props.jenisLabel}</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.1rem; text-align: left;">
+                      <span style="font-size: 0.7rem; color: #6b7280; font-weight: 600;">Jenis Pencatatan</span>
+                      <strong style="font-size: 1.1rem; color: #111827; font-weight: 800;">
+                        {props.jenisLabel.replace(/^Pencatatan\s+/u, '')}
+                      </strong>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div style="padding:0 0.85rem; flex:1; overflow-y:auto;">
-                {props.jenisLabel !== 'Panen' && (
-                  <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem; margin-bottom: 0.5rem;">
-                    <button
-                      type="button"
-                      onClick={() => alert('Fitur tambah rincian baru hanya dapat diakses oleh Admin Utama.')}
-                      style="
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 0.4rem;
-                        background: #38431f;
-                        color: #fff;
-                        border: none;
-                        border-radius: 0.5rem;
-                        padding: 0.5rem 1rem;
-                        font-size: 0.85rem;
-                        font-weight: 700;
-                        cursor: pointer;
-                        transition: all 0.18s ease;
-                      "
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                      </svg>
-                      Tambah Rincian
-                    </button>
-                  </div>
-                )}
-                <div style="margin-bottom:0.35rem;">
-                  <h4 style="font-size:0.92rem; font-weight:800; color:#1f2937; margin:0 0 0.1rem;">Pilih Rincian Pencatatan</h4>
-                  <p style="font-size:0.75rem; color:#9ca3af; margin:0;">Maksimal pilih 1</p>
+              {/* List */}
+              <div style="padding:1rem 1.25rem; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; width:100%; box-sizing:border-box;">
+                <div style="text-align:left;">
+                  <span style="font-weight: 800; color: #111827; font-size: 1.1rem; display: block;">Pilih Rincian Pencatatan</span>
+                  <span style="font-size: 0.78rem; color: #6b7280; display: block; margin-top: 0.15rem; font-weight: 600;">Maksimal pilih 1</span>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:0.55rem; padding:0.65rem 0;">
-                  {props.options.length === 0 ? (
+                <div style="display:flex; flex-direction:column; gap:0.75rem; width:100%;">
+                  {filtered.length === 0 ? (
                     <p style="text-align:center; color:#9ca3af; font-size:0.85rem; padding:1rem 0;">
                       {props.search ? 'Tidak ditemukan' : 'Tidak ada rincian tersedia'}
                     </p>
-                  ) : props.options.map(opt => (
+                  ) : filtered.map(opt => (
                     <div
                       key={opt}
                       onClick={() => emit('update:selected', opt)}
-                      style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border:1.5px solid #e5e7eb; border-radius:0.75rem; cursor:pointer; background:#fff;"
+                      style={`display:flex; align-items:center; justify-content:space-between; padding:1rem 1.15rem; border:1.5px solid ${props.selected === opt ? '#38431f' : '#e5e7eb'}; border-radius:0.75rem; cursor:pointer; background:${props.selected === opt ? '#fafcf2' : '#fff'}; transition:all 0.15s; box-sizing:border-box; width:100%;`}
                     >
-                      <div>
-                        <div style="font-size:0.92rem; font-weight:800; color:#1f2937;">{opt}</div>
-                        <div style="font-size:0.72rem; color:#9ca3af; font-weight:600;">Rincian Pencatatan</div>
+                      <div style="display:flex; flex-direction:column; gap:0.15rem; text-align:left; flex:1; min-width:0;">
+                        <strong style="font-size:1.15rem; color:#111827; font-weight:800; line-height:1.2;">{opt}</strong>
+                        <span style="font-size:0.8rem; color:#6b7280; font-weight:600;">Rincian Pencatatan</span>
                       </div>
-                      <div style={`width:1.25rem; height:1.25rem; border-radius:50%; border:2px solid ${props.selected === opt ? '#38431f' : '#d1d5db'}; background:${props.selected === opt ? '#38431f' : 'transparent'}; flex-shrink:0;`} />
+                      {/* Radio circle */}
+                      <div style={`
+                        width: 1.35rem;
+                        height: 1.35rem;
+                        border-radius: 50%;
+                        border: 2px solid ${props.selected === opt ? '#38431f' : '#c8cfb6'};
+                        background: ${props.selected === opt ? '#38431f' : '#fff'};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        margin-left: 0.75rem;
+                        transition: all 0.15s ease;
+                      `}>
+                        {props.selected === opt && (
+                          <div style="width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #ffffff;" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div style="padding:0.85rem; border-top:1px solid #f3f4f6;">
-                <button type="button" class="pencatatan-primary-btn" onClick={() => emit('save')}>
-                  Simpan
-                </button>
-              </div>
             </div>
           </div>
         </Teleport>

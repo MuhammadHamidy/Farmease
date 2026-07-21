@@ -4,7 +4,7 @@ import (
     "net/http"
 
     "github.com/gofiber/fiber/v2"
-    "github.com/farmease/farmease-be/libraries/responses"
+    "github.com/farmease/kebun-be/libraries/responses"
 )
 
 const ValidatedBodyKey = "validatedBody"
@@ -24,3 +24,4 @@ func ValidateBody(factory func() interface{}) fiber.Handler {
         return c.Next()
     }
 }
+

@@ -25,7 +25,7 @@ func (h *FeedHandler) GetFeedingList(c *fiber.Ctx) error {
 	filter := domain.FeedingFilter{
 		IDSheep: c.Query("id_sheep"),
 		Page:    c.QueryInt("page", 1),
-		PerPage: c.QueryInt("per_page", 20),
+		PerPage: c.QueryInt("per_page", 100),
 	}
 
 	res, _, err := h.useCase.GetFeedingList(c.Context(), filter)

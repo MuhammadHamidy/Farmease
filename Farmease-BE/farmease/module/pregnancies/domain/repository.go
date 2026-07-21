@@ -16,6 +16,7 @@ type Pregnancy struct {
 	IDFather           string     `json:"id_father"`
 	IDMother           string     `json:"id_mother"`
 	MotherSheep        *SheepShort `json:"mother_sheep,omitempty"`
+	DamSheep           *SheepShort `json:"dam_sheep,omitempty"`
 	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -68,7 +69,7 @@ type PregnancyRepository interface {
 type UseCase interface {
 	RecordPregnancy(ctx context.Context, k *Pregnancy) error
 	GetPregnancyList(ctx context.Context, status string) ([]*Pregnancy, error)
-	UpdatePregnancyStatus(ctx context.Context, id string, status string, notes string) error
+	UpdatePregnancyStatus(ctx context.Context, id string, status string, notes string) (*Pregnancy, error)
 	CheckPregnancy(ctx context.Context, req PregnancyCheckRequest) error
 	RecordBirth(ctx context.Context, k *Birth) error
 	GetBirthHistory(ctx context.Context, from, to *time.Time) ([]*Birth, error)

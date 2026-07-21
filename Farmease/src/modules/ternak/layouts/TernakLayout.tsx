@@ -1,6 +1,6 @@
 import { defineComponent, onMounted, onUnmounted } from 'vue';
 import { RouterView, useRouter } from 'vue-router';
-import '../assets/theme.css';
+import '@/assets/theme.css';
 import { useInactivityTimer } from '@/shared/composables/useInactivityTimer';
 import { userSession, cageSession } from '@/store/navigation';
 

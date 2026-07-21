@@ -10,13 +10,18 @@ export const ternakRoutes: RouteRecordRaw[] = [
         path: '',
         component: () => import('./views/LivestockPage'),
         redirect: () => {
-          return cageSession.value ? { name: 'ternak-dasbor' } : { name: 'ternak-pilih-kandang' };
+          return { name: 'ternak-dasbor' };
         },
         children: [
           {
             path: 'dasbor',
             name: 'ternak-dasbor',
             component: () => import('./views/DashboardView'),
+          },
+          {
+            path: 'daftar',
+            name: 'ternak-daftar',
+            component: () => import('./views/LivestockView'),
           },
           {
             path: 'pencatatan',
@@ -27,6 +32,11 @@ export const ternakRoutes: RouteRecordRaw[] = [
             path: 'riwayat',
             name: 'ternak-riwayat',
             component: () => import('./views/HistoryView'),
+          },
+          {
+            path: 'gudang',
+            name: 'ternak-gudang',
+            component: () => import('./views/WarehouseView'),
           },
           {
             path: 'domba/:id',
@@ -53,6 +63,6 @@ export const ternakRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/masuk-kandang',
-    redirect: { name: 'ternak-pilih-kandang' },
+    redirect: { name: 'ternak-dasbor' },
   },
 ];

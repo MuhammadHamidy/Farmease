@@ -1,10 +1,10 @@
 package lahan
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/lahan/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/lahan/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/lahan/usecase"
-	frameworkFiber "github.com/farmease/farmease-be/framework/fiber"
+	"github.com/farmease/kebun-be/kebun/module/lahan/delivery/http"
+	"github.com/farmease/kebun-be/kebun/module/lahan/repository/postgresql"
+	"github.com/farmease/kebun-be/kebun/module/lahan/usecase"
+	frameworkFiber "github.com/farmease/kebun-be/framework/fiber"
 	"go.uber.org/fx"
 )
 
@@ -22,3 +22,4 @@ var Module = fx.Module("lahan",
 		),
 	),
 )
+

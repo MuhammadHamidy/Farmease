@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/aktivitas/domain"
+	"github.com/farmease/kebun-be/kebun/module/aktivitas/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -29,8 +29,12 @@ func (r *aktivitasRepository) FindAll(ctx context.Context) ([]domain.Aktivitas, 
 	for rows.Next() {
 		var a domain.Aktivitas
 		var tTgl time.Time
-		if err := rows.Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &a.LahanIDLahan); err != nil {
+		var lahanID *string
+		if err := rows.Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &lahanID); err != nil {
 			return nil, err
+		}
+		if lahanID != nil {
+			a.LahanIDLahan = *lahanID
 		}
 		a.TanggalAktivitas = tTgl.Format("2006-01-02 15:04:05")
 		list = append(list, a)
@@ -41,13 +45,17 @@ func (r *aktivitasRepository) FindAll(ctx context.Context) ([]domain.Aktivitas, 
 func (r *aktivitasRepository) FindByID(ctx context.Context, id string) (*domain.Aktivitas, error) {
 	var a domain.Aktivitas
 	var tTgl time.Time
+	var lahanID *string
 	err := r.db.QueryRow(ctx, "SELECT id_aktivitas, tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan FROM gardening.aktivitas WHERE id_aktivitas = $1", id).
-		Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &a.LahanIDLahan)
+		Scan(&a.IDAktivitas, &tTgl, &a.NamaJenisAktivitas, &a.NamaRincianAktivitas, &lahanID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
+	}
+	if lahanID != nil {
+		a.LahanIDLahan = *lahanID
 	}
 	a.TanggalAktivitas = tTgl.Format("2006-01-02 15:04:05")
 	return &a, nil
@@ -72,7 +80,7 @@ func (r *aktivitasRepository) Update(ctx context.Context, a *domain.Aktivitas) e
 	if err != nil {
 		tTgl = time.Now()
 	}
-	_, err = r.db.Exec(ctx, "UPDATE gardening.aktivitas SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4 WHERE id_aktivitas = $5",
+	_, err = r.db.Exec(ctx, "UPDATE gardening.aktivitas SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4, updated_at = CURRENT_TIMESTAMP WHERE id_aktivitas = $5",
 		tTgl, a.NamaJenisAktivitas, a.NamaRincianAktivitas, a.LahanIDLahan, a.IDAktivitas)
 	if err != nil {
 		return err
@@ -87,15 +95,24 @@ func (r *aktivitasRepository) Delete(ctx context.Context, id string) error {
 }
 
 func parseTime(val string) (time.Time, error) {
-	if t, err := time.Parse("2006-01-02 15:04:05", val); err == nil {
-		return t, nil
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02T15:04:05.999Z07:00",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02",
+		"02-01-2006",
+		"02/01/2006",
+		"2006/01/02",
+		time.RFC3339,
 	}
-	if t, err := time.Parse("2006-01-02T15:04:05Z", val); err == nil {
-		return t, nil
-	}
-	if t, err := time.Parse("2006-01-02", val); err == nil {
-		return t, nil
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, val); err == nil {
+			return t, nil
+		}
 	}
 	return time.Time{}, errors.New("invalid time format")
 }
+
 

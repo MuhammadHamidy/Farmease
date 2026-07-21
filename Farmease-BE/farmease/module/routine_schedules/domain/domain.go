@@ -7,17 +7,17 @@ import (
 
 type RoutineSchedule struct {
 	ID           string     `json:"id" db:"id"`
-	Title        string     `json:"title" db:"title"`
+	Title        string     `json:"title" db:"title" validate:"required"`
 	Description  string     `json:"description" db:"description"`
-	Category     string     `json:"category" db:"category"`
-	Frequency    string     `json:"frequency" db:"frequency"`       // sekali | harian | mingguan | bulanan
+	Category     string     `json:"category" db:"category" validate:"required"`
+	Frequency    string     `json:"frequency" db:"frequency" validate:"required,oneof=sekali harian mingguan bulanan"`
 	DaysOfWeek   []int32    `json:"days_of_week" db:"days_of_week"` // [0,1,...,6] (0=Minggu, 1=Senin, etc.)
 	DayOfMonth   *int32     `json:"day_of_month" db:"day_of_month"` // 1-31
 	StartDate    time.Time  `json:"start_date" db:"start_date"`
 	EndDate      *time.Time `json:"end_date" db:"end_date"`
 	StartTime    string     `json:"start_time" db:"start_time"` // "HH:MM:SS" or "HH:MM"
 	EndTime      string     `json:"end_time" db:"end_time"`     // "HH:MM:SS" or "HH:MM"
-	Priority     string     `json:"priority" db:"priority"`     // rendah | sedang | tinggi
+	Priority     string     `json:"priority" db:"priority" validate:"required"` // rendah | sedang | tinggi
 	IDCage       *string    `json:"id_cage,omitempty" db:"id_cage"`
 	IDAccount    *string    `json:"id_account,omitempty" db:"id_account"`
 	Rincian      string     `json:"rincian" db:"rincian"`

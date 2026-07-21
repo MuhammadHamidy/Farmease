@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/farmease/farmease-be/libraries/types"
+	"github.com/farmease/sso-be/libraries/types"
 )
 
 // User represents the domain user entity.
@@ -51,3 +51,4 @@ type UserRepository interface {
 	AssignRole(ctx context.Context, userRole *UserRole) error
 	// Typically we might want checking existing assignment but AssignRole can handle logic or we add FindAssignment
 }
+

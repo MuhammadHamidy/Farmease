@@ -28,5 +28,8 @@ func (h *CageHandler) DeleteCage(c *fiber.Ctx) error {
 		}
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
-	return c.Status(http.StatusNoContent).Send(nil)
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"message": "Cage deleted successfully",
+		"id":      id,
+	})
 }

@@ -13,6 +13,7 @@ export interface Lahan {
   tanggal_tanam: string
   fase_tanam: string
   // Kept for backward compatibility if needed in UI:
+  code?: string
   lokasi?: string
   luas?: number
   status?: string
@@ -33,6 +34,7 @@ function mapBackendLahanToFrontend(backend: any): Lahan {
     fase_tanam: backend.fase_tanam || '',
     
     // UI mapping
+    code: backend.kode_lahan,
     lokasi: backend.jenis_tanaman || backend.fase_tanam || '',
     luas: backend.luas_lahan || 1.0,
     status: backend.status_lahan === 1 ? 'Subur' : backend.status_lahan === 2 ? 'Pemulihan' : 'Perlu Pengairan',
@@ -95,6 +97,7 @@ export interface Pohon {
   umur: number
   id_lahan: string | number
   status: string
+  status_pohon: string
   created_at: string
   updated_at: string
 }
@@ -103,10 +106,21 @@ function mapBackendPohonToFrontend(backend: any): Pohon {
   if (!backend) return {} as Pohon
   let age = 1
   if (backend.tanggal_tanam) {
-    const plantedYear = new Date(backend.tanggal_tanam).getFullYear()
-    const currentYear = new Date().getFullYear()
-    age = Math.max(1, currentYear - plantedYear)
+    const parts = backend.tanggal_tanam.split('-')
+    if (parts.length > 0) {
+      const plantedYear = parseInt(parts[0], 10)
+      if (!isNaN(plantedYear)) {
+        const currentYear = new Date().getFullYear()
+        age = Math.max(1, currentYear - plantedYear)
+      }
+    }
   }
+  
+  let fase = backend.fase_pohon || 'Generatif'
+  if (fase === 'Produktif') {
+    fase = 'Generatif'
+  }
+
   return {
     id: backend.id_pohon,
     kode_pohon: backend.kode_pohon,
@@ -114,7 +128,8 @@ function mapBackendPohonToFrontend(backend: any): Pohon {
     jenis: backend.varietas || '',
     umur: age,
     id_lahan: backend.Lahan_id_lahan,
-    status: backend.fase_pohon || 'Produktif',
+    status: fase,
+    status_pohon: backend.status_pohon || 'aktif',
     created_at: backend.tanggal_tanam || '',
     updated_at: backend.tanggal_tanam || '',
   }
@@ -133,6 +148,7 @@ function mapFrontendPohonToBackend(frontend: Partial<Pohon>): any {
     varietas: frontend.jenis || frontend.nama_pohon || '',
     fase_pohon: frontend.status || '',
     Lahan_id_lahan: frontend.id_lahan,
+    status_pohon: frontend.status_pohon || 'aktif',
   }
 }
 
@@ -187,13 +203,14 @@ function mapBackendAktivitasToFrontend(backend: any): Aktivitas {
   }
 }
 
-function mapFrontendAktivitasToBackend(frontend: Partial<Aktivitas>): any {
+function mapFrontendAktivitasToBackend(frontend: any): any {
+  if (!frontend) return {}
   return {
-    id_aktivitas: frontend.id,
-    nama_jenis_aktivitas: frontend.nama_aktivitas || '',
-    nama_rincian_aktivitas: frontend.deskripsi || '',
-    tanggal_aktivitas: frontend.tanggal_mulai || new Date().toISOString(),
-    Lahan_id_lahan: frontend.id_lahan || '',
+    id_aktivitas: frontend.id || frontend.id_aktivitas || '',
+    nama_jenis_aktivitas: frontend.nama_jenis_aktivitas || frontend.nama_aktivitas || '',
+    nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || frontend.deskripsi || '',
+    tanggal_aktivitas: frontend.tanggal_aktivitas || frontend.tanggal_mulai || new Date().toISOString(),
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_lahan || '',
   }
 }
 
@@ -231,60 +248,68 @@ export interface Perawatan {
   status: string
   created_at: string
   updated_at: string
+  nama_jenis_aktivitas?: string
+  nama_rincian_aktivitas?: string
 }
 
 function mapBackendPerawatanToFrontend(backend: any): Perawatan {
   if (!backend) return {} as Perawatan
   return {
-    id: backend.id_perawatan,
-    jenis_perawatan: backend.jenis_bahan || backend.nama_rincian_aktivitas || '',
-    deskripsi: backend.deskripsi || backend.nama_rincian_aktivitas || '',
+    id: backend.id_pengobatan || backend.id_perawatan,
+    jenis_perawatan: backend.nama_obat || backend.nama_rincian_aktivitas || 'Obat',
+    deskripsi: backend.deskripsi || backend.nama_rincian_aktivitas || 'Pemberian obat',
     tanggal_perawatan: backend.tanggal_aktivitas || '',
-    id_pohon: backend.Lahan_id_lahan || '',
+    id_pohon: backend.detail_pohon || '',
     status: 'Selesai',
     created_at: backend.tanggal_aktivitas || '',
     updated_at: backend.tanggal_aktivitas || '',
+    nama_jenis_aktivitas: backend.nama_jenis_aktivitas || '',
+    nama_rincian_aktivitas: backend.nama_rincian_aktivitas || '',
   }
 }
 
-function mapFrontendPerawatanToBackend(frontend: Partial<Perawatan>): any {
+function mapFrontendPerawatanToBackend(frontend: any): any {
   return {
-    id_perawatan: frontend.id,
-    Aktivitas_id_aktivitas: '',
-    jenis_bahan: frontend.jenis_perawatan || '',
-    fase_pohon: frontend.status || '',
-    dosis: 0,
-    satuan: '',
-    bagian_pohon: '',
-    teknik_perawatan: '',
-    nama_obat: '',
+    id_pengobatan: frontend.id || frontend.id_perawatan || frontend.id_pengobatan || '',
+    nama_obat: frontend.nama_obat || 'Obat',
+    dosis: frontend.dosis !== undefined ? frontend.dosis : 0,
+    satuan: frontend.satuan || 'ml',
+    bagian_pohon: ['Daun', 'Akar', 'Batang', 'Buah', 'Bunga', 'Lahan', 'Tanah', 'Umum'].includes(frontend.bagian_pohon) ? frontend.bagian_pohon : 'Umum',
     deskripsi: frontend.deskripsi || '',
-    detail_pohon: String(frontend.id_pohon || ''),
-    Lahan_id_lahan: frontend.id_pohon || '',
+    Lahan_id_lahan: frontend.Lahan_id_lahan || '',
+    nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || 'Insektisida',
+    tanggal_aktivitas: frontend.tanggal_aktivitas || new Date().toISOString().split('T')[0],
+    detail_pohon: frontend.detail_pohon || frontend.id_pohon || '',
   }
 }
 
 export const perawatanApi = {
   getList: async (): Promise<Perawatan[]> => {
-    const list = await apiClient.get<any>('/api/v1/perawatan')
+    const list = await apiClient.get<any>('/api/v1/pengobatan')
     return (list || []).map(mapBackendPerawatanToFrontend)
   },
   getById: async (id: string | number): Promise<Perawatan> => {
-    const res = await apiClient.get<any>(`/api/v1/perawatan/${id}`)
+    const res = await apiClient.get<any>(`/api/v1/pengobatan/${id}`)
     return mapBackendPerawatanToFrontend(res)
   },
   create: async (payload: Partial<Perawatan>): Promise<Perawatan> => {
     const mapped = mapFrontendPerawatanToBackend(payload)
-    const res = await apiClient.post<any>('/api/v1/perawatan', mapped)
+    const res = await apiClient.post<any>('/api/v1/pengobatan', mapped)
     return mapBackendPerawatanToFrontend(res)
   },
   update: async (id: string | number, payload: Partial<Perawatan>): Promise<Perawatan> => {
     const mapped = mapFrontendPerawatanToBackend(payload)
-    const res = await apiClient.put<any>(`/api/v1/perawatan/${id}`, mapped)
+    const res = await apiClient.put<any>(`/api/v1/pengobatan/${id}`, mapped)
     return mapBackendPerawatanToFrontend(res)
   },
   delete: async (id: string | number): Promise<void> => {
-    return await apiClient.delete(`/api/v1/perawatan/${id}`)
+    return await apiClient.delete(`/api/v1/pengobatan/${id}`)
+  },
+  getRekomendasi: async (varietas: string, fase: string, obat: string): Promise<string> => {
+    const res = await apiClient.get<any>('/api/v1/pengobatan/rekomendasi', {
+      params: { varietas, fase, obat }
+    })
+    return res?.rekomendasi || ''
   },
 }
 
@@ -297,6 +322,8 @@ export interface Pemangkasan {
   status: string
   created_at: string
   updated_at: string
+  jumlah?: number
+  satuan?: string
 }
 
 function mapBackendPemangkasanToFrontend(backend: any): Pemangkasan {
@@ -309,17 +336,23 @@ function mapBackendPemangkasanToFrontend(backend: any): Pemangkasan {
     status: 'Selesai',
     created_at: backend.tanggal_aktivitas || '',
     updated_at: backend.tanggal_aktivitas || '',
+    jumlah: Number(backend.jumlah) || 0,
+    satuan: backend.satuan || 'kg',
   }
 }
 
-function mapFrontendPemangkasanToBackend(frontend: Partial<Pemangkasan>): any {
+function mapFrontendPemangkasanToBackend(frontend: any): any {
+  if (!frontend) return {}
   return {
-    id_pemangkasan: frontend.id,
-    Aktivitas_id_aktivitas: '',
-    jumlah: '0',
-    satuan: 'kg',
-    keterangan: frontend.deskripsi || '',
-    Lahan_id_lahan: frontend.id_pohon || '',
+    id_pemangkasan: frontend.id || frontend.id_pemangkasan || '',
+    Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
+    tanggal_aktivitas: frontend.tanggal_aktivitas || '',
+    nama_jenis_aktivitas: frontend.nama_jenis_aktivitas || '',
+    nama_rincian_aktivitas: frontend.nama_rincian_aktivitas || '',
+    jumlah: String(frontend.jumlah !== undefined ? frontend.jumlah : (frontend.jumlah_pemangkasan || '0')),
+    satuan: frontend.satuan || 'kg',
+    keterangan: frontend.keterangan || frontend.deskripsi || '',
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_pohon || '',
   }
 }
 
@@ -373,13 +406,14 @@ function mapBackendPanenToFrontend(backend: any): Panen {
   }
 }
 
-function mapFrontendPanenToBackend(frontend: Partial<Panen>): any {
+function mapFrontendPanenToBackend(frontend: any): any {
+  if (!frontend) return {}
   return {
-    id_panen: frontend.id,
-    Aktivitas_id_aktivitas: '',
-    jumlah: frontend.jumlah_panen || 0,
-    satuan: frontend.unit || 'kg',
-    Lahan_id_lahan: frontend.id_pohon || '',
+    id_panen: frontend.id || frontend.id_panen || '',
+    Aktivitas_id_aktivitas: frontend.Aktivitas_id_aktivitas || '',
+    jumlah: frontend.jumlah !== undefined ? Number(frontend.jumlah) : (frontend.jumlah_panen || 0),
+    satuan: frontend.satuan || frontend.unit || 'kg',
+    Lahan_id_lahan: frontend.Lahan_id_lahan || frontend.id_pohon || '',
   }
 }
 
@@ -548,7 +582,7 @@ export interface PencatatanSubmission {
   operatorCode: string;
   operatorName: string;
   cageCode: string;
-  scope: 'domba' | 'kandang';
+  scope: 'domba' | 'kandang' | 'pohon' | 'lahan';
   summary: string;
   payload: Record<string, unknown>;
   submittedAt: number;
@@ -579,31 +613,176 @@ export const submissionsApi = {
   },
 }
 
-// ============ Status Aktivitas (Activity Status) ============
-export interface StatusAktivitas {
-  id: string | number
-  nama_status: string
-  deskripsi?: string
-  urutan: number
-  created_at: string
-  updated_at: string
+
+// ============ Pencatatan Types (Jenis & Rincian) ============
+export interface JenisPencatatanItem {
+  id_jenis: string
+  nama: string
+  sort_order: number
+  is_active: boolean
 }
 
-export const statusAktivitasApi = {
-  getList: async (): Promise<StatusAktivitas[]> => {
-    return await apiClient.get('/api/v1/status-aktivitas')
+export interface RincianPencatatanItem {
+  id_rincian: string
+  jenis_id: string
+  jenis_nama?: string
+  nama: string
+  sort_order: number
+  is_active: boolean
+}
+
+export interface PencatatanTypesCatalog {
+  jenis: JenisPencatatanItem[]
+  rincian_by_jenis: Record<string, RincianPencatatanItem[]>
+}
+
+export const pencatatanTypesApi = {
+  getCatalog: async (): Promise<PencatatanTypesCatalog> => {
+    return await apiClient.get<PencatatanTypesCatalog>('/api/v1/pencatatan-types/catalog')
   },
-  getById: async (id: string | number): Promise<StatusAktivitas> => {
-    return await apiClient.get(`/api/v1/status-aktivitas/${id}`)
+  getRincianByJenis: async (jenisNama: string): Promise<RincianPencatatanItem[]> => {
+    return await apiClient.get<RincianPencatatanItem[]>(`/api/v1/pencatatan-types/jenis/${encodeURIComponent(jenisNama)}/rincian`)
   },
-  create: async (payload: Partial<StatusAktivitas>): Promise<StatusAktivitas> => {
-    return await apiClient.post('/api/v1/status-aktivitas', payload)
+  createJenis: async (payload: { nama: string; sort_order?: number }): Promise<JenisPencatatanItem> => {
+    return await apiClient.post<JenisPencatatanItem>('/api/v1/pencatatan-types/jenis', payload)
   },
-  update: async (id: string | number, payload: Partial<StatusAktivitas>): Promise<StatusAktivitas> => {
-    return await apiClient.put(`/api/v1/status-aktivitas/${id}`, payload)
+  createRincian: async (payload: { jenis_nama: string; nama: string; sort_order?: number }): Promise<RincianPencatatanItem> => {
+    return await apiClient.post<RincianPencatatanItem>('/api/v1/pencatatan-types/rincian', payload)
+  },
+}
+
+// ============ Pemupukan (Fertilization) ============
+export interface Pemupukan {
+  id_pemupukan?: string
+  nama_pupuk: string
+  dosis: number
+  satuan: string
+  deskripsi: string
+  manure_id?: string
+  id_stok_pupuk?: string
+  Lahan_id_lahan: string | number
+  Aktivitas_id_aktivitas?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export const pemupukanApi = {
+  getList: async (): Promise<Pemupukan[]> => {
+    return await apiClient.get<Pemupukan[]>('/api/v1/pemupukan')
+  },
+  getById: async (id: string | number): Promise<Pemupukan> => {
+    return await apiClient.get<Pemupukan>(`/api/v1/pemupukan/${id}`)
+  },
+  create: async (payload: Partial<Pemupukan>): Promise<Pemupukan> => {
+    return await apiClient.post<Pemupukan>('/api/v1/pemupukan', payload)
+  },
+  update: async (id: string | number, payload: Partial<Pemupukan>): Promise<Pemupukan> => {
+    return await apiClient.put<Pemupukan>(`/api/v1/pemupukan/${id}`, payload)
   },
   delete: async (id: string | number): Promise<void> => {
-    return await apiClient.delete(`/api/v1/status-aktivitas/${id}`)
+    return await apiClient.delete(`/api/v1/pemupukan/${id}`)
+  },
+}
+
+// ============ Stok (Stock) ============
+export interface StokBahan {
+  id_stok_bahan?: string
+  nama_bahan: string
+  stok_tersedia: number
+  satuan: string
+}
+
+export interface StokPupuk {
+  id_stok_pupuk?: string
+  nama_pupuk: string
+  kategori: string
+  stok_tersedia: number
+  satuan: string
+}
+
+export interface StokObat {
+  id_stok_obat?: string
+  nama_obat: string
+  stok_tersedia: number
+  satuan: string
+}
+
+export const stokApi = {
+  // Bahan
+  getBahanList: async (): Promise<StokBahan[]> => {
+    return await apiClient.get<StokBahan[]>('/api/v1/stok/bahan')
+  },
+  createBahan: async (payload: Partial<StokBahan>): Promise<StokBahan> => {
+    return await apiClient.post<StokBahan>('/api/v1/stok/bahan', payload)
+  },
+  updateBahanStock: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<void> => {
+    return await apiClient.patch(`/api/v1/stok/bahan/${id}?amount=${amount}&type=${type}`)
+  },
+
+  // Pupuk
+  getPupukList: async (): Promise<StokPupuk[]> => {
+    return await apiClient.get<StokPupuk[]>('/api/v1/stok/pupuk')
+  },
+  createPupuk: async (payload: Partial<StokPupuk>): Promise<StokPupuk> => {
+    return await apiClient.post<StokPupuk>('/api/v1/stok/pupuk', payload)
+  },
+  updatePupukStock: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<void> => {
+    return await apiClient.patch(`/api/v1/stok/pupuk/${id}?amount=${amount}&type=${type}`)
+  },
+
+  // Obat
+  getObatList: async (): Promise<StokObat[]> => {
+    return await apiClient.get<StokObat[]>('/api/v1/stok/obat')
+  },
+  createObat: async (payload: Partial<StokObat>): Promise<StokObat> => {
+    return await apiClient.post<StokObat>('/api/v1/stok/obat', payload)
+  },
+  updateObatStock: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<void> => {
+    return await apiClient.patch(`/api/v1/stok/obat/${id}?amount=${amount}&type=${type}`)
+  },
+}
+
+// ============ Fermentasi (Fermentation) ============
+export interface Fermentasi {
+  id_fermentasi?: string
+  tanggal_mulai?: string
+  status: string
+  notes?: string
+  id_account?: string
+  pupuk_details?: {
+    target_pupuk_name: string
+    target_jumlah: number
+    satuan: string
+    id_stok_bahan?: string
+  }
+}
+
+export interface LogFermentasi {
+  id_log?: string
+  id_fermentasi: string
+  suhu?: number
+  kelembaban?: number
+  kondisi_fisik?: string
+  notes?: string
+  status: string
+  id_account?: string
+}
+
+export const fermentasiApi = {
+  getList: async (): Promise<Fermentasi[]> => {
+    return await apiClient.get<Fermentasi[]>('/api/v1/fermentasi')
+  },
+  getById: async (id: string | number): Promise<Fermentasi> => {
+    return await apiClient.get<Fermentasi>(`/api/v1/fermentasi/${id}`)
+  },
+  create: async (payload: Partial<Fermentasi>): Promise<Fermentasi> => {
+    return await apiClient.post<Fermentasi>('/api/v1/fermentasi', payload)
+  },
+  updateStatus: async (id: string | number, status: string, notes?: string): Promise<void> => {
+    return await apiClient.patch(`/api/v1/fermentasi/${id}/status`, { status, notes })
+  },
+  addLog: async (payload: Partial<LogFermentasi>): Promise<LogFermentasi> => {
+    return await apiClient.post<LogFermentasi>('/api/v1/fermentasi/log', payload)
   },
 }
 
@@ -619,5 +798,9 @@ export default {
   notifications: notificationsApi,
   routineSchedules: routineSchedulesApi,
   submissions: submissionsApi,
-  statusAktivitas: statusAktivitasApi,
+  pencatatanTypes: pencatatanTypesApi,
+  pemupukan: pemupukanApi,
+  stok: stokApi,
+  fermentasi: fermentasiApi,
 }
+

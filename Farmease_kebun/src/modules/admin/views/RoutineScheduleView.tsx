@@ -8,6 +8,8 @@ import RoutineScheduleCard from '../components/routine/RoutineScheduleCard';
 import RoutineScheduleDetailModal from '../components/routine/RoutineScheduleDetailModal';
 import RoutineScheduleFormModal from '../components/routine/RoutineScheduleFormModal';
 import { landsList, fetchLandsList, cagesList, fetchCagesList } from '@/store/navigation';
+import apiClient from '@/shared/api/client';
+import '@/modules/kebun/assets/css/PerkebunanDetailPages.css';
 import {
   routineSchedules,
   addRoutineSchedule,
@@ -81,7 +83,7 @@ export default defineComponent({
       const allCats = metadataEnums.value?.task_category || [];
       const filterKeys = props.type === 'peternakan'
         ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'pengolahan_pupuk', 'umum'];
       
       return allCats
         .filter(c => filterKeys.includes(c.value))
@@ -92,7 +94,7 @@ export default defineComponent({
       const allCats = metadataEnums.value?.task_category || [];
       const filterKeys = props.type === 'peternakan'
         ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'pengolahan_pupuk', 'umum'];
       
       return allCats
         .filter(c => filterKeys.includes(c.value))
@@ -100,26 +102,27 @@ export default defineComponent({
     });
 
     const ternakRincianOptions: Record<string, string[]> = {
-      pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Suplementasi'],
-      stok_pakan: ['Tambah Stok', 'Konversi Pakan'],
-      kesehatan: ['Pemeriksaan Rutin', 'Vitamin', 'Vaksin', 'Obat Cacing'],
-      perkawinan: ['Kawin Alam', 'IB', 'Cek Birahi', 'Kontrol Kebuntingan'],
-      kelahiran: ['Lahir Normal', 'Kembar', 'Lahir Cesar'],
-      kotoran: ['Sanitasi Harian', 'Panen Kotoran', 'Pembersihan Lantai', 'Fermentasi'],
-      berat_badan: ['Timbang Rutin', 'Timbang Harian', 'Timbang Bulanan', 'Timbang Mandiri'],
-      umum: ['Lainnya']
+      pakan: ['Pakan Pagi', 'Pakan Sore'],
+      stok_pakan: ['Konversi Pakan'],
+      kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
+      perkawinan: ['Kawin Alami', 'Inseminasi Buatan', 'Kontrol Kebuntingan'],
+      kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
+      kotoran: ['Pembersihan Kandang'],
+      berat_badan: [],
+      umum: []
     };
 
     const kebunRincianOptions: Record<string, string[]> = {
-      panen: ['Panen Buah', 'Hasil Panen'],
-      pemangkasan: ['Ranting dan Daun', 'Rumput Liar (Gulma)'],
-      pembersihan: ['Limbah'],
+      panen: ['Panen Buah'],
+      pemangkasan: ['Pemangkasan Pemeliharaan'],
+      pembersihan: ['Penyiangan Gulma', 'Pembumbunan Tanah', 'Sanitasi Serasah & Ranting'],
       pembuahan: ['Merangsang Pembungaan', 'Penjarangan Buah', 'Pembungkusan Buah'],
-      penanaman: ['Bibit Baru'],
-      'pengendalian hama': ['Pestisida', 'Fungisida'],
-      pemupukan: ['Pupuk Cair', 'Pupuk Organik', 'Pupuk Padat'],
-      penyiraman: ['Penyiraman Rutin'],
-      umum: ['Lainnya']
+      penanaman: ['Bibit Baru', 'Penggantian Bibit'],
+      'pengendalian hama': ['Insektisida', 'Fungisida', 'Pestisida'],
+      pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
+      penyiraman: ['Siram Manual', 'Irigrasi Drip / Pipanisasi'],
+      pengolahan_pupuk: ['Fermentasi Pupuk', 'Cek Fermentasi'],
+      umum: []
     };
 
     const locationOptions = computed(() => {
@@ -170,7 +173,7 @@ export default defineComponent({
       const categoryMap: Record<string, string[]> = {
         pakan: ['Pakan Pagi', 'Pakan Sore', 'Konversi Pakan'],
         kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
-        kotoran: ['Pembersihan Kandang', 'Fermentasi Kotoran'],
+        kotoran: ['Pembersihan Kandang'],
         perkawinan: ['Kawin Alami', 'Inseminasi Buatan'],
         kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
       };
@@ -192,8 +195,8 @@ export default defineComponent({
         return land.name.replace(/lahan/gi, '').trim();
       }
       if (cageCode === 'L001' || cageCode === 'A') return 'Alpukat';
-      if (cageCode === 'L0002' || cageCode === 'B') return 'Kelengkeng';
-      if (cageCode === 'L0003' || cageCode === 'C') return 'Alpukat';
+      if (cageCode === 'L002' || cageCode === 'B') return 'Kelengkeng';
+      if (cageCode === 'L003' || cageCode === 'C') return 'Alpukat';
       return cageCode;
     };
 
@@ -210,7 +213,7 @@ export default defineComponent({
 
       if (titleLower.includes('admin report') || task.category === 'umum') {
         if (task.cageCode === 'A' || task.cageCode === 'L001') return 'Panen';
-        if (task.cageCode === 'B' || task.cageCode === 'L0002') return 'Pemangkasan';
+        if (task.cageCode === 'B' || task.cageCode === 'L002') return 'Pemangkasan';
         return 'Pemupukan';
       }
 
@@ -301,7 +304,7 @@ export default defineComponent({
         displayToast('Harap pilih jenis pencatatan / kegiatan!', 'error');
         return;
       }
-      if (!form.rincian) {
+      if (!form.rincian && currentRincianOptions.value.length > 0) {
         displayToast('Harap pilih rincian pencatatan!', 'error');
         return;
       }
@@ -309,9 +312,9 @@ export default defineComponent({
         displayToast(props.type === 'peternakan' ? 'Harap pilih kode kandang!' : 'Harap pilih kode lahan!', 'error');
         return;
       }
+      // Default frequency to 'harian' if not set (frequency field hidden per mockup design)
       if (!form.frequency) {
-        displayToast('Harap pilih frekuensi!', 'error');
-        return;
+        form.frequency = 'harian';
       }
       if (!form.priority) {
         displayToast('Harap pilih prioritas!', 'error');
@@ -431,8 +434,222 @@ export default defineComponent({
 
     const activeCount = computed(() => filteredSchedules.value.filter((s) => s.active).length);
 
+    // Pagination per sesi — max 3 tugas per halaman
+    const TASKS_PER_PAGE = 3;
+    const sessionPages = reactive<Record<string, number>>({
+      Pagi: 1,
+      Siang: 1,
+      Sore: 1,
+    });
+
+    // Reset halaman sesi ketika filter berubah
+    watch([filteredTasks, sessionFilter, statusFilter, dateFilter], () => {
+      sessionPages.Pagi = 1;
+      sessionPages.Siang = 1;
+      sessionPages.Sore = 1;
+    });
+
+    const pagedTasksForSession = (sessionName: 'Pagi' | 'Siang' | 'Sore') => {
+      const all = groupedTasks.value[sessionName];
+      const page = sessionPages[sessionName];
+      const start = (page - 1) * TASKS_PER_PAGE;
+      return all.slice(start, start + TASKS_PER_PAGE);
+    };
+
+    const totalPagesForSession = (sessionName: 'Pagi' | 'Siang' | 'Sore') =>
+      Math.ceil(groupedTasks.value[sessionName].length / TASKS_PER_PAGE);
+
+    const handleExport = async () => {
+      try {
+        const [rawLands, rawTrees, rawPengobatan, rawPemupukan, rawPenyiraman, rawPanen, rawPemangkasan] = await Promise.all([
+          apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
+          apiClient.get<any[]>('/api/v1/panen').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
+        ])
+
+        const lands = Array.isArray(rawLands) ? rawLands : []
+        const trees = Array.isArray(rawTrees) ? rawTrees : []
+        const pengobatanList = Array.isArray(rawPengobatan) ? rawPengobatan : []
+        const pemupukanList = Array.isArray(rawPemupukan) ? rawPemupukan : []
+        const penyiramanList = Array.isArray(rawPenyiraman) ? rawPenyiraman : []
+        const panenList = Array.isArray(rawPanen) ? rawPanen : []
+        const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const perawatanList = [
+          ...pengobatanList.map(o => ({
+            ...o,
+            id_perawatan: o.id_pengobatan,
+            jenis_bahan: 'obat',
+            id_lahan: o.Lahan_id_lahan
+          })),
+          ...pemupukanList.map(f => ({
+            ...f,
+            id_perawatan: f.id_pemupukan,
+            jenis_bahan: 'pupuk',
+            id_lahan: f.Lahan_id_lahan,
+            nama_obat: f.nama_pupuk,
+            deskripsi: f.deskripsi
+          })),
+          ...penyiramanList.map(w => ({
+            ...w,
+            id_perawatan: w.id_penyiraman,
+            jenis_bahan: 'air',
+            id_lahan: w.Lahan_id_lahan,
+            teknik_perawatan: w.teknik_penyiraman,
+            deskripsi: w.deskripsi
+          }))
+        ]
+
+        const csvRows: string[][] = []
+
+        // CSV Header
+        csvRows.push([
+          'Kategori Data',
+          'Tanggal',
+          'Kode Lahan',
+          'Nama Lahan',
+          'Kode/Detail Pohon',
+          'Nama Item / Aktivitas',
+          'Jumlah / Dosis',
+          'Satuan',
+          'Deskripsi / Catatan'
+        ])
+
+        lands.forEach((landObj: any) => {
+          const landId = landObj.id_lahan || landObj.id
+
+          // Add Land Info
+          csvRows.push([
+            'Lahan',
+            landObj.tanggal_tanam || '-',
+            landObj.kode_lahan || '-',
+            landObj.nama_lahan || '-',
+            '-',
+            landObj.varietas || 'Tanaman',
+            String(landObj.luas_lahan || landObj.luas || 0),
+            'Hektar',
+            `Fase Tanam: ${landObj.fase_tanam || '-'}`
+          ])
+
+          const landTrees = trees.filter((t: any) => 
+            String(t.Lahan_id_lahan || t.id_lahan) === String(landId) ||
+            String(t.lahan_code) === String(landObj.kode_lahan)
+          )
+          const landPerawatan = perawatanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPanen = panenList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPemangkasan = pemangkasanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+
+          // Add Trees
+          landTrees.forEach((t: any) => {
+            let age = t.umur
+            if (!age && t.tanggal_tanam) {
+              const plantedYear = new Date(t.tanggal_tanam).getFullYear()
+              const currentYear = new Date().getFullYear()
+              age = Math.max(1, currentYear - plantedYear)
+            }
+
+            csvRows.push([
+              'Pohon',
+              t.tanggal_tanam ? t.tanggal_tanam.split('T')[0] : (t.created_at ? t.created_at.split('T')[0] : '-'),
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              t.kode_pohon || '-',
+              t.varietas || t.nama_pohon || t.jenis || '-',
+              String(age || 0),
+              'Tahun',
+              `Status: ${t.fase_pohon || t.status || '-'}`
+            ])
+          })
+
+          // Add Pemupukan & Pemberian Obat
+          landPerawatan.forEach((p: any) => {
+            const jenisBahan = (p.jenis_bahan || '').toLowerCase()
+            let kategori = 'Perawatan'
+            if (jenisBahan === 'pupuk') {
+              kategori = 'Pemupukan'
+            } else if (jenisBahan === 'obat') {
+              kategori = 'Pemberian Obat'
+            }
+
+            csvRows.push([
+              kategori,
+              p.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              p.detail_pohon || '-',
+              p.nama_obat || p.jenis_perawatan || '-',
+              String(p.dosis || 0),
+              p.satuan || '-',
+              `Teknik: ${p.teknik_perawatan || '-'}, Bagian: ${p.bagian_pohon || '-'}, Catatan: ${p.deskripsi || '-'}`
+            ])
+          })
+
+          // Add Panen
+          landPanen.forEach((pa: any) => {
+            csvRows.push([
+              'Panen',
+              pa.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              pa.nama_rincian_aktivitas || 'Panen Buah',
+              String(pa.jumlah || 0),
+              pa.satuan || 'kg',
+              'Selesai'
+            ])
+          })
+
+          // Add Pemangkasan
+          landPemangkasan.forEach((pe: any) => {
+            csvRows.push([
+              'Pemangkasan',
+              pe.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              'Pemangkasan Pemeliharaan',
+              String(pe.jumlah || 0),
+              pe.satuan || 'kg',
+              pe.keterangan || '-'
+            ])
+          })
+        })
+
+        const csvContent = csvRows
+          .map((row) =>
+            row
+              .map((val) => {
+                const escaped = String(val).replace(/"/g, '""')
+                return `"${escaped}"`
+              })
+              .join(',')
+          )
+          .join('\n')
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', url)
+        
+        const dateStr = new Date().toISOString().split('T')[0]
+        const filename = `Ekspor_Data_Jadwal_Rutin_${dateStr}.csv`
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (err: any) {
+        console.error('Gagal mengekspor data:', err)
+        alert('Gagal mengekspor data: ' + (err?.message || err || 'Terjadi kesalahan.'))
+      }
+    }
+
     return () => (
-      <div class="admin-peternakan-page">
+      <div class="animate-fade-in-up" style={{ padding: '0 0.5rem' }}>
         {showToast.value && (
           <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toastType.value === 'success' ? '#4caf50' : '#f44336', color: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInDown 0.3s ease' }}>
             {toastType.value === 'success' ? '✅' : '⚠️'} {toastMessage.value}
@@ -453,60 +670,77 @@ export default defineComponent({
               <Button 
                 variant="solid" 
                 onClick={openAdd}
-                style={{ backgroundColor: '#30360E', color: '#ffffff', borderColor: '#30360E' }}
+                style={{ backgroundColor: '#38431F', color: '#ffffff', borderColor: '#38431F' }}
               >
-                {props.type === 'peternakan' ? '+ Tambah Jadwal Rutin' : '+ Tambah Tugas Baru'}
+                + Tambah Jadwal Rutin
               </Button>
           </div>
+        </div>
+
+        {/* Ekspor Data Kebun (Full-width Section) */}
+        <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <strong style={{ fontSize: '0.9rem', color: '#111827', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>Ekspor Data Kebun</strong>
+          <button
+            type="button"
+            class="pencatatan-mode-btn is-active"
+            onClick={handleExport}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download CSV
+          </button>
         </div>
 
         {/* Ringkasan Informasi Cards */}
         <div class="row g-3 mb-4">
           <div class="col-12 col-sm-6 col-md-3">
             <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Total tugas hari ini</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem' }}>{totalTodayTasks.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>rutin + insidental</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>TOTAL TUGAS HARI INI</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{totalTodayTasks.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>rutin + insidental</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Selesai</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-success-dark, #198754)', marginBottom: '0.5rem' }}>{completedTasksCount.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>dari {totalTodayTasks.value} tugas</div>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>SELESAI</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{completedTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>dari tugas</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Belum dikerjakan</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-warning, #f59e0b)', marginBottom: '0.5rem' }}>{pendingTasksCount.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>perlu perhatian</div>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>BELUM DIKERJAKAN</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{pendingTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>perlu perhatian</div>
             </div>
           </div>
           <div class="col-12 col-sm-6 col-md-3">
-            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid var(--color-outline-variant)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>Terlambat</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-danger, #dc3545)', marginBottom: '0.5rem' }}>{lateTasksCount.value}</div>
-              <div style={{ fontSize: '0.7rem', color: '#6C757D' }}>deadline terlewat</div>
+            <div class="bg-white rounded-4 p-3" style={{ border: '1px solid #E6D9CE' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#2C3E50', marginBottom: '0.5rem' }}>TUGAS TERLAMBAT</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000', marginBottom: '0.5rem', fontFamily: "'Inter', sans-serif" }}>{lateTasksCount.value}</div>
+              <div style={{ fontSize: '0.7rem', color: '#6C757D', fontWeight: '600' }}>lewat waktu tenggat</div>
             </div>
           </div>
         </div>
 
         {/* Filter Dropdowns Section */}
-        <div class="admin-filter-bar mb-4 rounded-4 p-4" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
+        <div class="mb-4 rounded-4 p-4" style={{ backgroundColor: '#F4F1EA', border: '1px solid #E6D9CE' }}>
           <div class="row g-3 w-100 m-0">
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Tanggal</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Tanggal</label>
               <input
                 type="date"
                 class="form-control bg-white"
-                style={{ height: '42px', border: '1px solid #E6D9CE', borderRadius: '8px' }}
+                style={{ height: '42px', border: '1px solid #E6D9CE', borderRadius: '8px', fontWeight: '600', color: '#374151' }}
                 value={dateFilter.value}
                 onInput={(e: any) => { dateFilter.value = e.target.value; }}
               />
             </div>
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Semua Sesi</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Semua Sesi</label>
               <Select
                 options={['Semua Sesi', 'Pagi', 'Siang', 'Sore']}
                 modelValue={sessionFilter.value}
@@ -517,7 +751,7 @@ export default defineComponent({
               />
             </div>
             <div class="col-12 col-md-4">
-              <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2C3E50', marginBottom: '0.5rem', display: 'block' }}>Semua Status</label>
+              <label style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Semua Status</label>
               <Select
                 options={['Semua Status', 'Belum Dikerjakan', 'Selesai', 'Terlambat']}
                 modelValue={statusFilter.value}
@@ -537,6 +771,10 @@ export default defineComponent({
             if (sessionFilter.value !== 'Semua Sesi' && sessionFilter.value !== sessionName) return null;
             if (tasksInSession.length === 0) return null;
 
+            const currentPage = sessionPages[sessionName];
+            const totalPages = totalPagesForSession(sessionName);
+            const pagedTasks = pagedTasksForSession(sessionName);
+
             return (
               <div class="session-section mb-4" key={sessionName}>
                 <div class="d-flex align-items-center gap-2 mb-3 mt-4">
@@ -552,7 +790,7 @@ export default defineComponent({
                 </div>
                 <hr style={{ borderColor: '#2C3E50', opacity: 0.6, margin: '0 0 1.25rem 0' }} />
                 <div class="row g-3">
-                  {tasksInSession.map(task => (
+                  {pagedTasks.map(task => (
                     <RoutineScheduleCard
                       key={task.id}
                       task={task}
@@ -565,6 +803,72 @@ export default defineComponent({
                     />
                   ))}
                 </div>
+
+                {/* Pagination — hanya muncul jika lebih dari 3 tugas */}
+                {totalPages > 1 && (
+                  <div class="d-flex align-items-center justify-content-between mt-3 px-1">
+                    <span style={{ fontSize: '0.78rem', color: '#6C757D', fontWeight: '600' }}>
+                      Menampilkan {((currentPage - 1) * TASKS_PER_PAGE) + 1}–{Math.min(currentPage * TASKS_PER_PAGE, tasksInSession.length)} dari {tasksInSession.length} tugas
+                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                      <button
+                        class="btn btn-sm rounded-3"
+                        style={{
+                          border: '1.5px solid #E6D9CE',
+                          backgroundColor: currentPage === 1 ? '#F4F1EA' : '#fff',
+                          color: currentPage === 1 ? '#C4B9AE' : '#2C3E50',
+                          fontWeight: '700',
+                          fontSize: '0.8rem',
+                          padding: '0.3rem 0.75rem',
+                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        }}
+                        disabled={currentPage === 1}
+                        onClick={() => { sessionPages[sessionName] = currentPage - 1; }}
+                      >
+                        ‹ Sebelumnya
+                      </button>
+                      <div class="d-flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
+                          <button
+                            key={pg}
+                            class="btn btn-sm rounded-3"
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              padding: '0',
+                              fontWeight: '700',
+                              fontSize: '0.8rem',
+                              border: pg === currentPage ? 'none' : '1.5px solid #E6D9CE',
+                              backgroundColor: pg === currentPage
+                                ? (props.type === 'peternakan' ? '#2D7D46' : '#4A7C59')
+                                : '#fff',
+                              color: pg === currentPage ? '#fff' : '#2C3E50',
+                            }}
+                            onClick={() => { sessionPages[sessionName] = pg; }}
+                          >
+                            {pg}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        class="btn btn-sm rounded-3"
+                        style={{
+                          border: '1.5px solid #E6D9CE',
+                          backgroundColor: currentPage === totalPages ? '#F4F1EA' : '#fff',
+                          color: currentPage === totalPages ? '#C4B9AE' : '#2C3E50',
+                          fontWeight: '700',
+                          fontSize: '0.8rem',
+                          padding: '0.3rem 0.75rem',
+                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        }}
+                        disabled={currentPage === totalPages}
+                        onClick={() => { sessionPages[sessionName] = currentPage + 1; }}
+                      >
+                        Berikutnya ›
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

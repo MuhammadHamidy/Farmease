@@ -25,12 +25,7 @@ export default defineComponent({
             value={String(props.stats.total)} 
             color="primary" 
             icon={() => (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
+              <img src="/icon/domba.png" alt="Total Domba" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
             )}
           />
         </div>
@@ -40,10 +35,7 @@ export default defineComponent({
             value={String(props.stats.healthy)} 
             color="light" 
             icon={() => (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="m9 11 2 2 4-4" />
-              </svg>
+              <img src="/icon/medical-shield.png" alt="Sehat" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
             )}
           />
         </div>
@@ -53,11 +45,7 @@ export default defineComponent({
             value={String(props.stats.alert)} 
             color="accent" 
             icon={() => (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
+              <img src="/icon/warning.png" alt="Perlu Perhatian" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
             )}
           />
         </div>
@@ -67,10 +55,7 @@ export default defineComponent({
             value={String(props.stats.cage)} 
             color="light" 
             icon={() => (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
+              <img src="/icon/kandang.png" alt="Kandang Aktif" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
             )}
           />
         </div>

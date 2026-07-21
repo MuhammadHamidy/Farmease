@@ -9,20 +9,28 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@farmease.id"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/akun": {
+        "/api/fermentations/conversions/{id}/logs": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve all accounts with their roles",
+                "description": "Retrieve all fermentation logs for a specific silage conversion ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -30,405 +38,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "accounts"
+                    "fermentations"
                 ],
-                "summary": "Get list of all accounts",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Akun"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Register a new account with role and operator category",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "accounts"
-                ],
-                "summary": "Create a new account",
+                "summary": "Get fermentation logs",
                 "parameters": [
-                    {
-                        "description": "Account details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Akun"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Akun"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/auth/login": {
-            "post": {
-                "description": "Authenticate user with username and password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Login and get JWT token",
-                "parameters": [
-                    {
-                        "description": "Login credentials",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.LoginResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/auth/login-operator": {
-            "post": {
-                "description": "Authenticate operator with only operator_id (username)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Login as Operator without password",
-                "parameters": [
-                    {
-                        "description": "Login credentials",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.LoginResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all sheep with filtering by pen, gender, and status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dombas"
-                ],
-                "summary": "Get list of all sheep",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Filter by pen ID",
-                        "name": "id_kandang",
-                        "in": "query"
-                    },
                     {
                         "type": "string",
-                        "description": "Filter by gender (Jantan/Betina)",
-                        "name": "jenis_kelamin",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by tag or nickname",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Items per page",
-                        "name": "per_page",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Domba"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create a new sheep entry with initial details",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dombas"
-                ],
-                "summary": "Register a new sheep",
-                "parameters": [
-                    {
-                        "description": "Sheep details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Domba"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Domba"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id_domba}/pemberian-pakan": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve feeding history for a specific sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "feeds"
-                ],
-                "summary": "Get feeding history",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id_domba",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.PemberianPakan"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Record that a sheep has been fed",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "feeds"
-                ],
-                "summary": "Record feeding",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id_domba",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Feeding details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.PemberianPakan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.PemberianPakan"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve specific sheep details by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dombas"
-                ],
-                "summary": "Get details of a sheep",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
+                        "description": "Silage Conversion ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -438,7 +54,201 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Domba"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.SilageFermentationLog"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new fermentation log for a silage conversion process",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "fermentations"
+                ],
+                "summary": "Create fermentation log",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Silage Conversion ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fermentation Log details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.SilageFermentationLog"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.SilageFermentationLog"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/routine-schedules": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all active/inactive routine schedules",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routine-schedules"
+                ],
+                "summary": "Get all routine schedules",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.RoutineSchedule"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new routine schedule and generate tasks for it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routine-schedules"
+                ],
+                "summary": "Create a routine schedule",
+                "parameters": [
+                    {
+                        "description": "Routine Schedule details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.RoutineSchedule"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.RoutineSchedule"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/routine-schedules/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve detail of a routine schedule by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routine-schedules"
+                ],
+                "summary": "Get routine schedule by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Routine Schedule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.RoutineSchedule"
                         }
                     },
                     "404": {
@@ -446,608 +256,9 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/responses.Response-any"
                         }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id}/berat-badan": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all weight records for a specific sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "weights"
-                ],
-                "summary": "Get sheep weight history",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.BeratBadan"
-                            }
-                        }
                     },
                     "500": {
                         "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create a new weight record for a specific sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "weights"
-                ],
-                "summary": "Record new weight",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Weight details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.BeratBadan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.BeratBadan"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id}/kesehatan": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve health records for a specific sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Get health history",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Kesehatan"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Record a new health examination for a sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Record health check",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Health check details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kesehatan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kesehatan"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id}/kotoran": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve manure collection records for a specific sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manures"
-                ],
-                "summary": "Get manure history",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Kotoran"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Record a new manure collection event for a sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "manures"
-                ],
-                "summary": "Record manure activity",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Manure details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kotoran"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kotoran"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id}/silsilah": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve family tree of a sheep up to specified generations",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dombas"
-                ],
-                "summary": "Get sheep genealogy",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of generations to traverse",
-                        "name": "generasi",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Silsilah"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/domba/{id}/status": {
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update the status (e.g., Sehat, Sakit, Terjual) of a sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dombas"
-                ],
-                "summary": "Update sheep status",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Sheep ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Status details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/kandang": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all pens with filtering by type",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cages"
-                ],
-                "summary": "Get list of all pens",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by pen type",
-                        "name": "jenis_kandang",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Items per page",
-                        "name": "per_page",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Kandang"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create a new sheep pen with capacity and code",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cages"
-                ],
-                "summary": "Create a new pen",
-                "parameters": [
-                    {
-                        "description": "Pen details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kandang"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kandang"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/kandang/verify/{kode}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Check if a pen code exists and get its details",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cages"
-                ],
-                "summary": "Verify pen by code",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Pen Code",
-                        "name": "kode",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kandang"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/kandang/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve specific pen details by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cages"
-                ],
-                "summary": "Get details of a pen",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Pen ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kandang"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/responses.Response-any"
                         }
@@ -1060,7 +271,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update details of an existing pen",
+                "description": "Update a routine schedule details by ID and regenerate its tasks",
                 "consumes": [
                     "application/json"
                 ],
@@ -1068,24 +279,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cages"
+                    "routine-schedules"
                 ],
-                "summary": "Update a pen",
+                "summary": "Update a routine schedule",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Pen ID",
+                        "type": "string",
+                        "description": "Routine Schedule ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Pen details",
+                        "description": "Routine Schedule details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.Kandang"
+                            "$ref": "#/definitions/domain.RoutineSchedule"
                         }
                     }
                 ],
@@ -1093,7 +304,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Kandang"
+                            "$ref": "#/definitions/domain.RoutineSchedule"
                         }
                     },
                     "400": {
@@ -1116,7 +327,341 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a pen by ID (fails if pen is not empty)",
+                "description": "Delete a routine schedule by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routine-schedules"
+                ],
+                "summary": "Delete a routine schedule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Routine Schedule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/routine-schedules/generate": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Manually trigger generation of tasks for routine schedules within a window of days",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routine-schedules"
+                ],
+                "summary": "Generate tasks from routine schedules",
+                "parameters": [
+                    {
+                        "description": "Window Days Request (e.g. {\"window_days\": 7})",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/submissions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all submissions with filtering by status or type",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Get list of submissions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by status (pending, approved, rejected)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by type",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Submission"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new submission for audit / logging (e.g. estrus checks, routine feeds)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Create a submission",
+                "parameters": [
+                    {
+                        "description": "Submission details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Submission"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/submissions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve details of a submission by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Get submission by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Submission"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update details of a submission record (e.g. approve or reject)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Update a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Submission update patch fields",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a submission record by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submissions"
+                ],
+                "summary": "Delete a submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cages": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all cages with filtering by cage type",
                 "consumes": [
                     "application/json"
                 ],
@@ -1126,11 +671,257 @@ const docTemplate = `{
                 "tags": [
                     "cages"
                 ],
-                "summary": "Delete a pen",
+                "summary": "Get list of all cages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by cage type",
+                        "name": "cage_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Cage"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new sheep cage with capacity and code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cages"
+                ],
+                "summary": "Create a new cage",
+                "parameters": [
+                    {
+                        "description": "Cage details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cages/verify/{code}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Check if a cage code exists and get its details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cages"
+                ],
+                "summary": "Verify cage by code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cage Code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cages/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve specific cage details by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cages"
+                ],
+                "summary": "Get details of a cage",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Pen ID",
+                        "description": "Cage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cage"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update details of an existing cage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cages"
+                ],
+                "summary": "Update a cage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Cage details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a cage by ID (fails if cage is not empty)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cages"
+                ],
+                "summary": "Delete a cage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cage ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1155,14 +946,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/kehamilan": {
+        "/api/cages/{id}/stats": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve all pregnancies with optional status filter",
+                "description": "Retrieve sheep statistics for a specific cage",
                 "consumes": [
                     "application/json"
                 ],
@@ -1170,14 +961,112 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "pregnancies"
+                    "cages"
                 ],
-                "summary": "Get list of pregnancies",
+                "summary": "Get stats of a cage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.CageStats"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cages/{id}/weight-stats": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve monthly aggregated weight statistics for a specific cage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cages"
+                ],
+                "summary": "Get weight stats of a cage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.CageWeightStats"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feedings": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all feeding records across the system with filtering and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feeds"
+                ],
+                "summary": "Get list of all feedings",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by status (dikandung/lahir/gugur)",
-                        "name": "status_kehamilan",
+                        "description": "Filter by sheep ID",
+                        "name": "id_sheep",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "per_page",
                         "in": "query"
                     }
                 ],
@@ -1187,295 +1076,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/domain.Kehamilan"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Record a new pregnancy for a female sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pregnancies"
-                ],
-                "summary": "Record pregnancy",
-                "parameters": [
-                    {
-                        "description": "Pregnancy details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kehamilan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kehamilan"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/kehamilan/{id}/status": {
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update the status of a pregnancy (e.g. to lahir or gugur)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pregnancies"
-                ],
-                "summary": "Update pregnancy status",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Pregnancy ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Status details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/kelahiran": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all birth records",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pregnancies"
-                ],
-                "summary": "Get birth history",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Kelahiran"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Record a birth event and automatically register offspring",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pregnancies"
-                ],
-                "summary": "Record birth",
-                "parameters": [
-                    {
-                        "description": "Birth details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kelahiran"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kelahiran"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/kesehatan/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update details of a health examination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Update health record",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Record ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Health check details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kesehatan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Kesehatan"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/notifications": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve notifications for the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notifications"
-                ],
-                "summary": "Get my notifications",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Notifikasi"
+                                "$ref": "#/definitions/domain.Feeding"
                             }
                         }
                     },
@@ -1488,50 +1089,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/notifications/{id}/read": {
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Mark a notification as read",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "notifications"
-                ],
-                "summary": "Read notification",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Notification ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/pakan/master": {
+        "/api/feeds": {
             "get": {
                 "security": [
                     {
@@ -1548,14 +1106,14 @@ const docTemplate = `{
                 "tags": [
                     "feeds"
                 ],
-                "summary": "Get list of feeds",
+                "summary": "Get list of master feeds",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/domain.Pakan"
+                                "$ref": "#/definitions/domain.Feed"
                             }
                         }
                     },
@@ -1591,7 +1149,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.Pakan"
+                            "$ref": "#/definitions/domain.Feed"
                         }
                     }
                 ],
@@ -1599,7 +1157,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/domain.Pakan"
+                            "$ref": "#/definitions/domain.Feed"
                         }
                     },
                     "400": {
@@ -1617,7 +1175,144 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/pakan/master/{id}/stok": {
+        "/api/feeds/conversions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all recorded silage conversion logs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feeds"
+                ],
+                "summary": "Get all silage conversions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.SilageConversion"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Record a silage conversion event",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feeds"
+                ],
+                "summary": "Record silage conversion",
+                "parameters": [
+                    {
+                        "description": "Conversion details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.SilageConversion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.SilageConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feeds/mixtures": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Record a mixture feeding event",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feeds"
+                ],
+                "summary": "Record feeding mixture",
+                "parameters": [
+                    {
+                        "description": "Mixture details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.FeedingMixture"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.FeedingMixture"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feeds/{id}/stock": {
             "patch": {
                 "security": [
                     {
@@ -1637,7 +1332,7 @@ const docTemplate = `{
                 "summary": "Update feed stock",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Feed ID",
                         "name": "id",
                         "in": "path",
@@ -1675,7 +1370,324 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/pakan/rekomendasi/{id}": {
+        "/api/pakan/rekomendasi/kandang/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve total feed recommendation for all sheep in a specific cage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feeds"
+                ],
+                "summary": "Get feed recommendation per cage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.CageFeedRecommendation"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sheep": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all sheep with filtering by cage, gender, and status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sheep"
+                ],
+                "summary": "Get list of all sheep",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Filter by cage ID",
+                        "name": "id_cage",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by gender (Jantan/Betina)",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by tag or nickname",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Sheep"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new sheep entry with initial details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sheep"
+                ],
+                "summary": "Register a new sheep",
+                "parameters": [
+                    {
+                        "description": "Sheep details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Sheep"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Sheep"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sheep/external-donor": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create an external sheep entry for semen donor if not exists, otherwise retrieve existing one",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sheep"
+                ],
+                "summary": "Register or get an external semen donor",
+                "parameters": [
+                    {
+                        "description": "External Donor details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.ExternalDonorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Sheep"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sheep/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve specific sheep details by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sheep"
+                ],
+                "summary": "Get details of a sheep",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Sheep ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Sheep"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update details of an existing sheep",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sheep"
+                ],
+                "summary": "Update sheep details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Sheep ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sheep details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Sheep"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Sheep"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sheep/{id}/feed-recommendation": {
             "get": {
                 "security": [
                     {
@@ -1695,7 +1707,7 @@ const docTemplate = `{
                 "summary": "Get feed recommendation",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Sheep ID",
                         "name": "id",
                         "in": "path",
@@ -1706,7 +1718,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.RekomendasiPakan"
+                            "$ref": "#/definitions/domain.FeedRecommendation"
                         }
                     },
                     "500": {
@@ -1718,14 +1730,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/perkawinan": {
+        "/api/sheep/{id}/feedings": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve history of sheep matings with filters",
+                "description": "Retrieve feeding history for a specific sheep",
                 "consumes": [
                     "application/json"
                 ],
@@ -1733,164 +1745,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "breeding"
+                    "feeds"
                 ],
-                "summary": "Get list of matings",
+                "summary": "Get feeding history",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Filter by inbreeding flag",
-                        "name": "flag_sedarah",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Perkawinan"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Register a new mating event between two sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "breeding"
-                ],
-                "summary": "Record a mating",
-                "parameters": [
-                    {
-                        "description": "Mating details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Perkawinan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Perkawinan"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/perkawinan/cek-inbreeding": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Calculate CoI and common ancestors between a pair of sheep",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "breeding"
-                ],
-                "summary": "Check inbreeding risk",
-                "parameters": [
-                    {
-                        "description": "Pair details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.InbreedingCheckRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.InbreedingCheckResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/perkawinan/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve specific mating event details by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "breeding"
-                ],
-                "summary": "Get mating details",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Mating ID",
+                        "description": "Sheep ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1900,94 +1761,9 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Perkawinan"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/role": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all available roles in the system",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Get list of all roles",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_farmease_farmease-be_farmease_module_auth_domain.Role"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/tasks": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve tasks assigned to the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Get my tasks",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by date (YYYY-MM-DD)",
-                        "name": "tanggal",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Task"
+                                "$ref": "#/definitions/domain.Feeding"
                             }
                         }
                     },
@@ -2005,7 +1781,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new operational task",
+                "description": "Record that a sheep has been fed",
                 "consumes": [
                     "application/json"
                 ],
@@ -2013,17 +1789,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "feeds"
                 ],
-                "summary": "Create task",
+                "summary": "Record feeding",
                 "parameters": [
                     {
-                        "description": "Task details",
+                        "type": "string",
+                        "description": "Sheep ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Feeding details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.Task"
+                            "$ref": "#/definitions/domain.Feeding"
                         }
                     }
                 ],
@@ -2031,13 +1814,62 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/domain.Task"
+                            "$ref": "#/definitions/domain.Feeding"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/responses.Response-any"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sheep/{id}/genealogy": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve family tree of a sheep up to specified generations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sheep"
+                ],
+                "summary": "Get sheep genealogy",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Sheep ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of generations to traverse",
+                        "name": "generation",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Genealogy"
                         }
                     },
                     "500": {
@@ -2049,14 +1881,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/tasks/{id}/complete": {
+        "/api/sheep/{id}/status": {
             "patch": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Mark a task as completed",
+                "description": "Update the status of a sheep",
                 "consumes": [
                     "application/json"
                 ],
@@ -2064,16 +1896,25 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "sheep"
                 ],
-                "summary": "Complete task",
+                "summary": "Update sheep status",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Task ID",
+                        "description": "Sheep ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Status details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
                     }
                 ],
                 "responses": {
@@ -2081,6 +1922,12 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.Response-any"
                         }
                     },
                     "500": {
@@ -2388,722 +2235,89 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/roles": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all roles with pagination and search",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Get list of roles",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Items per page",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by name",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-array_http_GetRolesResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create a new role with permissions for an institution",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Create a new role",
-                "parameters": [
-                    {
-                        "description": "Role details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/http.CreateRoleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-http_CreateRoleResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/roles/permissions": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all available permissions for role assignment",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Get list of permissions",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Items per page",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by code or description",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-array_http_GetPermissionsResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/roles/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve specific role details with permissions",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Get role details",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-http_GetRoleByIDResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update details and permissions of an existing role",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Update a role",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Role details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/http.UpdateRoleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete a role by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "roles"
-                ],
-                "summary": "Delete a role",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/users": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve all users with pagination and search",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get list of users",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Items per page",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by status",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by external subject",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-array_http_GetUserResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Synchronize user data with external identity provider",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Sync user data",
-                "parameters": [
-                    {
-                        "description": "Sync details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/http.SyncUserRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-http_SyncUserResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{id}/roles": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Assign a specific role to a user within an institution",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Assign role to user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Assignment details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/http.AssignRoleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-http_AssignRoleResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{id}/status": {
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update the activation status of a user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Update user status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Status details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/http.UpdateStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/responses.Response-any"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "domain.Akun": {
+        "domain.Cage": {
             "type": "object",
             "properties": {
+                "cage_code": {
+                    "type": "string"
+                },
+                "cage_name": {
+                    "type": "string"
+                },
+                "cage_type": {
+                    "type": "string"
+                },
+                "capacity": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "farm_id": {
                     "type": "string"
                 },
-                "id_akun": {
-                    "type": "integer"
-                },
-                "id_role": {
-                    "type": "integer"
-                },
-                "kategori_operator": {
+                "id_cage": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string"
-                },
-                "role": {
-                    "$ref": "#/definitions/github_com_farmease_farmease-be_farmease_module_auth_domain.Role"
+                "occupancy": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
-        "domain.BeratBadan": {
-            "type": "object",
-            "properties": {
-                "berat_kg": {
-                    "type": "number"
-                },
-                "catatan": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id_berat_badan": {
-                    "type": "integer"
-                },
-                "id_domba": {
-                    "type": "integer"
-                },
-                "tanggal_timbang": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Domba": {
-            "type": "object",
-            "properties": {
-                "asal": {
-                    "type": "string"
-                },
-                "berat_terakhir": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "integer"
-                },
-                "id_domba": {
-                    "type": "integer"
-                },
-                "id_induk_betina": {
-                    "type": "integer"
-                },
-                "id_induk_jantan": {
-                    "type": "integer"
-                },
-                "id_jenis": {
-                    "type": "integer"
-                },
-                "id_kandang": {
-                    "type": "integer"
-                },
-                "induk_betina": {
-                    "$ref": "#/definitions/domain.Parent"
-                },
-                "induk_jantan": {
-                    "$ref": "#/definitions/domain.Parent"
-                },
-                "jenis_kelamin": {
-                    "type": "string"
-                },
-                "kode_domba": {
-                    "type": "string"
-                },
-                "nama_domba": {
-                    "type": "string"
-                },
-                "nama_jenis": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tanggal_lahir": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "integer"
-                }
-            }
-        },
-        "domain.DombaBaru": {
+        "domain.CageFeedRecommendation": {
             "type": "object",
             "properties": {
                 "id_kandang": {
+                    "type": "string"
+                },
+                "jumlah_domba": {
                     "type": "integer"
                 },
-                "jenis_kelamin": {
-                    "type": "string"
+                "total_hijauan_kg": {
+                    "type": "number"
                 },
-                "kode_domba": {
-                    "type": "string"
+                "total_konsentrat_kg": {
+                    "type": "number"
+                }
+            }
+        },
+        "domain.CageStats": {
+            "type": "object",
+            "properties": {
+                "attention_needed": {
+                    "type": "integer"
                 },
-                "nama_domba": {
-                    "type": "string"
+                "healthy": {
+                    "type": "integer"
+                },
+                "total_animals": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.CageWeightStats": {
+            "type": "object",
+            "properties": {
+                "current_average": {
+                    "type": "number"
+                },
+                "growth_kg": {
+                    "type": "number"
+                },
+                "growth_percentage": {
+                    "type": "number"
+                },
+                "monthly_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.MonthlyWeight"
+                    }
                 }
             }
         },
@@ -3145,292 +2359,13 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.InbreedingCheckRequest": {
+        "domain.Feed": {
             "type": "object",
             "properties": {
-                "id_domba_betina": {
-                    "type": "integer"
-                },
-                "id_domba_jantan": {
-                    "type": "integer"
-                }
-            }
-        },
-        "domain.InbreedingCheckResponse": {
-            "type": "object",
-            "properties": {
-                "coefficient_of_inbreeding": {
+                "available_stock": {
                     "type": "number"
                 },
-                "flag_sedarah": {
-                    "type": "boolean"
-                },
-                "id_betina": {
-                    "type": "integer"
-                },
-                "id_jantan": {
-                    "type": "integer"
-                },
-                "leluhur_bersama": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.LeluhurBersama"
-                    }
-                },
-                "level_risiko": {
-                    "type": "string"
-                },
-                "persen_kekerabatan": {
-                    "type": "number"
-                },
-                "rekomendasi": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Kandang": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "farm_id": {
-                    "type": "string"
-                },
-                "id_kandang": {
-                    "type": "integer"
-                },
-                "jenis_kandang": {
-                    "type": "string"
-                },
-                "jumlah_terisi": {
-                    "type": "integer"
-                },
-                "kapasitas": {
-                    "type": "integer"
-                },
-                "kode_kandang": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Kehamilan": {
-            "type": "object",
-            "properties": {
-                "catatan": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "domba_betina": {
-                    "$ref": "#/definitions/github_com_farmease_farmease-be_farmease_module_pregnancies_domain.DombaShort"
-                },
-                "id_induk_betina": {
-                    "type": "integer"
-                },
-                "id_induk_jantan": {
-                    "type": "integer"
-                },
-                "id_kehamilan": {
-                    "type": "integer"
-                },
-                "id_perkawinan": {
-                    "type": "integer"
-                },
-                "prediksi_lahir": {
-                    "type": "string"
-                },
-                "status_kehamilan": {
-                    "type": "string"
-                },
-                "tanggal_hamil": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Kelahiran": {
-            "type": "object",
-            "properties": {
-                "catatan": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "daftar_anak": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.DombaBaru"
-                    }
-                },
-                "id_kehamilan": {
-                    "type": "integer"
-                },
-                "id_kelahiran": {
-                    "type": "integer"
-                },
-                "jenis_kelamin_anak": {
-                    "type": "string"
-                },
-                "jumlah_anak": {
-                    "type": "integer"
-                },
-                "kondisi_anak": {
-                    "type": "string"
-                },
-                "tanggal_lahir": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Kesehatan": {
-            "type": "object",
-            "properties": {
-                "catatan": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "diagnosa": {
-                    "type": "string"
-                },
-                "id_domba": {
-                    "type": "integer"
-                },
-                "id_kesehatan": {
-                    "type": "integer"
-                },
-                "nama_pemeriksa": {
-                    "type": "string"
-                },
-                "obat_diberikan": {
-                    "type": "string"
-                },
-                "tanggal_periksa": {
-                    "type": "string"
-                },
-                "tindakan": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Kotoran": {
-            "type": "object",
-            "properties": {
-                "catatan": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "destination_type": {
-                    "type": "string"
-                },
-                "external_destination_id": {
-                    "type": "string"
-                },
-                "id_domba": {
-                    "type": "integer"
-                },
-                "id_kotoran": {
-                    "type": "integer"
-                },
-                "jenis_kegiatan": {
-                    "description": "pengambilan/fermentasi",
-                    "type": "string"
-                },
-                "jumlah": {
-                    "type": "number"
-                },
-                "satuan": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.LeluhurBersama": {
-            "type": "object",
-            "properties": {
-                "id_domba": {
-                    "type": "integer"
-                },
-                "jalur": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "nama_domba": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.LoginRequest": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "akun": {
-                    "$ref": "#/definitions/domain.Akun"
-                },
-                "expires_at": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Notifikasi": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id_akun": {
-                    "type": "integer"
-                },
-                "id_notifikasi": {
-                    "type": "integer"
-                },
-                "is_read": {
-                    "type": "boolean"
-                },
-                "judul": {
-                    "type": "string"
-                },
-                "pesan": {
-                    "type": "string"
-                },
-                "tipe": {
-                    "description": "system/reminder",
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Pakan": {
-            "type": "object",
-            "properties": {
-                "catatan": {
+                "category": {
                     "type": "string"
                 },
                 "created_at": {
@@ -3439,20 +2374,17 @@ const docTemplate = `{
                 "external_source_id": {
                     "type": "string"
                 },
-                "harga_per_satuan": {
+                "feed_name": {
+                    "type": "string"
+                },
+                "id_feed": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "price_per_unit": {
                     "type": "number"
-                },
-                "id_pakan": {
-                    "type": "integer"
-                },
-                "kategori": {
-                    "type": "string"
-                },
-                "nama_pakan": {
-                    "type": "string"
-                },
-                "satuan": {
-                    "type": "string"
                 },
                 "source_api_url": {
                     "type": "string"
@@ -3460,102 +2392,170 @@ const docTemplate = `{
                 "source_type": {
                     "type": "string"
                 },
-                "stok_terseida": {
-                    "type": "number"
+                "unit": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "domain.FeedRecommendation": {
+            "type": "object",
+            "properties": {
+                "id_sheep": {
+                    "type": "string"
+                },
+                "rekomendasi_harian": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.RecommendationItem"
+                    }
+                },
+                "sheep_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_pakan_harian_kg": {
+                    "type": "number"
+                },
+                "weight_kg": {
+                    "type": "number"
+                }
+            }
+        },
+        "domain.Feeding": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "feed_name": {
+                    "type": "string"
+                },
+                "feeding_date": {
+                    "type": "string"
+                },
+                "id_feed": {
+                    "type": "string"
+                },
+                "id_feeding": {
+                    "type": "string"
+                },
+                "id_sheep": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.FeedingMixture": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.FeedingMixtureDetail"
+                    }
+                },
+                "feeding_date": {
+                    "type": "string"
+                },
+                "id_feeding_mixture": {
+                    "type": "string"
+                },
+                "id_sheep": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "number"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.FeedingMixtureDetail": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "feed_name": {
+                    "type": "string"
+                },
+                "id_detail": {
+                    "type": "string"
+                },
+                "id_feed": {
+                    "type": "string"
+                },
+                "id_feeding_mixture": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Genealogy": {
+            "type": "object",
+            "properties": {
+                "father": {
+                    "$ref": "#/definitions/domain.Genealogy"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id_sheep": {
+                    "type": "string"
+                },
+                "mother": {
+                    "$ref": "#/definitions/domain.Genealogy"
+                },
+                "sheep_code": {
+                    "type": "string"
+                },
+                "sheep_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.MonthlyWeight": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
                 }
             }
         },
         "domain.Parent": {
             "type": "object",
             "properties": {
-                "id_domba": {
-                    "type": "integer"
+                "id_sheep": {
+                    "type": "string"
                 },
-                "nama_domba": {
+                "sheep_name": {
                     "type": "string"
                 }
             }
         },
-        "domain.PemberianPakan": {
-            "type": "object",
-            "properties": {
-                "catatan": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id_domba": {
-                    "type": "integer"
-                },
-                "id_pakan": {
-                    "type": "integer"
-                },
-                "id_pemberian_pakan": {
-                    "type": "integer"
-                },
-                "jumlah": {
-                    "type": "number"
-                },
-                "nama_pakan": {
-                    "type": "string"
-                },
-                "satuan": {
-                    "type": "string"
-                },
-                "tanggal_pemberian": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Perkawinan": {
-            "type": "object",
-            "properties": {
-                "catatan": {
-                    "type": "string"
-                },
-                "coefficient_of_inbreeding": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "domba_betina": {
-                    "$ref": "#/definitions/github_com_farmease_farmease-be_farmease_module_breedings_domain.DombaShort"
-                },
-                "domba_jantan": {
-                    "$ref": "#/definitions/github_com_farmease_farmease-be_farmease_module_breedings_domain.DombaShort"
-                },
-                "flag_sedarah": {
-                    "type": "boolean"
-                },
-                "id_domba_betina": {
-                    "type": "integer"
-                },
-                "id_domba_jantan": {
-                    "type": "integer"
-                },
-                "id_perkawinan": {
-                    "type": "integer"
-                },
-                "metode_kawin": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tanggal_kawin": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.RekomendasiItem": {
+        "domain.RecommendationItem": {
             "type": "object",
             "properties": {
                 "jumlah_kg": {
@@ -3569,150 +2569,327 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.RekomendasiPakan": {
+        "domain.Sheep": {
             "type": "object",
             "properties": {
-                "berat_kg": {
-                    "type": "number"
-                },
-                "id_domba": {
+                "adg": {
                     "type": "integer"
                 },
-                "nama_domba": {
+                "adg_label": {
                     "type": "string"
                 },
-                "rekomendasi_harian": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.RekomendasiItem"
-                    }
+                "age_days": {
+                    "type": "integer"
+                },
+                "age_months": {
+                    "type": "number"
+                },
+                "age_string": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "father": {
+                    "$ref": "#/definitions/domain.Parent"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id_cage": {
+                    "type": "string"
+                },
+                "id_father": {
+                    "type": "string"
+                },
+                "id_mother": {
+                    "type": "string"
+                },
+                "id_sheep": {
+                    "type": "string"
+                },
+                "id_type": {
+                    "type": "string"
+                },
+                "is_ready_to_mate": {
+                    "type": "boolean"
+                },
+                "last_weight": {
+                    "type": "number"
+                },
+                "mating_status": {
+                    "type": "string"
+                },
+                "mother": {
+                    "$ref": "#/definitions/domain.Parent"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "poel_level": {
+                    "type": "string"
+                },
+                "sheep_code": {
+                    "type": "string"
+                },
+                "sheep_name": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
                 },
-                "total_pakan_harian_kg": {
-                    "type": "number"
-                }
-            }
-        },
-        "domain.Silsilah": {
-            "type": "object",
-            "properties": {
-                "generasi": {
-                    "type": "integer"
+                "type_name": {
+                    "type": "string"
                 },
-                "id_domba": {
-                    "type": "integer"
+                "umur_method": {
+                    "type": "string"
                 },
-                "induk_betina": {
-                    "$ref": "#/definitions/domain.Silsilah"
+                "updated_at": {
+                    "type": "string"
                 },
-                "induk_jantan": {
-                    "$ref": "#/definitions/domain.Silsilah"
-                },
-                "nama_domba": {
+                "updated_by": {
                     "type": "string"
                 }
             }
         },
-        "domain.Task": {
+        "domain.SilageFermentationLog": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "id_log": {
                     "type": "string"
                 },
-                "deskripsi": {
+                "id_conversion": {
                     "type": "string"
                 },
-                "id_akun": {
-                    "type": "integer"
-                },
-                "id_task": {
-                    "type": "integer"
-                },
-                "judul": {
-                    "type": "string"
-                },
-                "kategori": {
+                "check_date": {
                     "type": "string"
                 },
                 "status": {
-                    "description": "pending/done",
                     "type": "string"
                 },
-                "tanggal": {
+                "ph_level": {
+                    "type": "number"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "physical_condition": {
                     "type": "string"
                 },
-                "updated_at": {
+                "notes": {
                     "type": "string"
-                }
-            }
-        },
-        "github_com_farmease_farmease-be_farmease_module_auth_domain.Role": {
-            "type": "object",
-            "properties": {
+                },
                 "created_at": {
                     "type": "string"
-                },
-                "hak_akses": {
-                    "type": "string"
-                },
-                "id_role": {
-                    "type": "integer"
-                },
-                "nama_role": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },
-        "github_com_farmease_farmease-be_farmease_module_breedings_domain.DombaShort": {
-            "type": "object",
-            "properties": {
-                "id_domba": {
-                    "type": "integer"
-                },
-                "nama_domba": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_farmease_farmease-be_farmease_module_pregnancies_domain.DombaShort": {
-            "type": "object",
-            "properties": {
-                "id_domba": {
-                    "type": "integer"
-                },
-                "nama_domba": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.AssignRoleRequest": {
+        "domain.RoutineSchedule": {
             "type": "object",
             "required": [
-                "institution_id",
-                "role_id"
+                "title",
+                "category",
+                "frequency",
+                "priority"
             ],
             "properties": {
-                "group_id": {
-                    "description": "Optional",
+                "id": {
                     "type": "string"
                 },
-                "institution_id": {
+                "title": {
                     "type": "string"
                 },
-                "role_id": {
+                "description": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "frequency": {
+                    "type": "string",
+                    "enum": ["sekali", "harian", "mingguan", "bulanan"]
+                },
+                "days_of_week": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "day_of_month": {
+                    "type": "integer"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "string"
+                },
+                "id_cage": {
+                    "type": "string"
+                },
+                "id_account": {
+                    "type": "string"
+                },
+                "rincian": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
         },
-        "http.AssignRoleResponse": {
+        "domain.Submission": {
+            "type": "object",
+            "required": [
+                "type",
+                "typeLabel",
+                "operatorCode",
+                "operatorName",
+                "cageCode",
+                "scope",
+                "summary",
+                "approvalStatus"
+            ],
+            "properties": {
+                "id_submission": {
+                    "type": "string"
+                },
+                "submission_code": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "typeLabel": {
+                    "type": "string"
+                },
+                "operatorCode": {
+                    "type": "string"
+                },
+                "operatorName": {
+                    "type": "string"
+                },
+                "cageCode": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "payload": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "submittedAt": {
+                    "type": "string"
+                },
+                "approvalStatus": {
+                    "type": "string",
+                    "enum": ["pending", "approved", "rejected"]
+                },
+                "reviewedAt": {
+                    "type": "string"
+                },
+                "reviewedBy": {
+                    "type": "string"
+                },
+                "reviewNote": {
+                    "type": "string"
+                },
+                "taskId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.SilageConversion": {
             "type": "object",
             "properties": {
-                "id": {
+                "conversion_date": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.SilageConversionDetail"
+                    }
+                },
+                "id_conversion": {
+                    "type": "string"
+                },
+                "id_target_feed": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "target_amount": {
+                    "type": "number"
+                },
+                "target_feed_name": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.SilageConversionDetail": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "feed_name": {
+                    "type": "string"
+                },
+                "id_conversion": {
+                    "type": "string"
+                },
+                "id_detail": {
+                    "type": "string"
+                },
+                "id_feed": {
                     "type": "string"
                 }
             }
@@ -3741,152 +2918,13 @@ const docTemplate = `{
                 }
             }
         },
-        "http.CreateRoleRequest": {
+        "http.ExternalDonorRequest": {
             "type": "object",
-            "required": [
-                "name"
-            ],
             "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "description": "Optional, default true handled logic? TRD doesn't specify default.",
-                    "type": "boolean"
-                },
                 "name": {
                     "type": "string"
                 },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "http.CreateRoleResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.GetPermissionsResponse": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_system": {
-                    "type": "boolean"
-                },
-                "module": {
-                    "type": "string"
-                },
-                "page": {
-                    "type": "string"
-                },
-                "scope_type": {
-                    "type": "string"
-                },
-                "sub_module": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.GetRoleByIDResponse": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "institution_id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "http.GetRolesResponse": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "institution_id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.GetUserResponse": {
-            "type": "object",
-            "properties": {
-                "external_subject": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "institution_id": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.SyncUserRequest": {
-            "type": "object",
-            "required": [
-                "code"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                }
-            }
-        },
-        "http.SyncUserResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
+                "origin": {
                     "type": "string"
                 }
             }
@@ -3912,40 +2950,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 255
-                }
-            }
-        },
-        "http.UpdateRoleRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "http.UpdateStatusRequest": {
-            "type": "object",
-            "required": [
-                "status"
-            ],
-            "properties": {
-                "status": {
-                    "type": "string"
                 }
             }
         },
@@ -4018,75 +3022,6 @@ const docTemplate = `{
                 }
             }
         },
-        "responses.Response-array_http_GetPermissionsResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/http.GetPermissionsResponse"
-                    }
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "responses.Response-array_http_GetRolesResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/http.GetRolesResponse"
-                    }
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "responses.Response-array_http_GetUserResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/http.GetUserResponse"
-                    }
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
         "responses.Response-domain_Farm": {
             "type": "object",
             "properties": {
@@ -4106,98 +3041,25 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
-        },
-        "responses.Response-http_AssignRoleResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/http.AssignRoleResponse"
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "responses.Response-http_CreateRoleResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/http.CreateRoleResponse"
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "responses.Response-http_GetRoleByIDResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/http.GetRoleByIDResponse"
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "responses.Response-http_SyncUserResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/http.SyncUserResponse"
-                },
-                "error": {
-                    "$ref": "#/definitions/responses.Error"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "meta": {
-                    "$ref": "#/definitions/responses.Meta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
+	Schemes:          []string{"http"},
+	Title:            "Farmease API",
+	Description:      "API Documentation for Farmease Backend Service",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

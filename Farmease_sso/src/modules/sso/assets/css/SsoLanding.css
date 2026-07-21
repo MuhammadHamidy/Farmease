@@ -364,9 +364,10 @@
   transform: translateY(-50%) scale(0.92);
 }
 
-.sso-toggle-password-btn img {
-  width: 20px;
-  height: 20px;
+.sso-toggle-password-btn img,
+.sso-toggle-password-btn svg {
+  width: 22px;
+  height: 22px;
   display: block;
 }
 
@@ -411,6 +412,41 @@
 .sso-btn-masuk:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.sso-remember-me {
+  display: flex;
+  align-items: center;
+  margin-top: -0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.sso-remember-me__label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sso-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.sso-remember-me__label:hover {
+  color: var(--sso-primary);
+}
+
+.sso-remember-me__label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--sso-border);
+  border-radius: 4px;
+  cursor: pointer;
+  accent-color: var(--sso-btn);
+  margin: 0;
+  padding: 0;
+  transition: all 0.2s ease;
 }
 
 .sso-login-hint {
@@ -1239,4 +1275,152 @@
   height: 18px;
   object-fit: contain;
   display: block;
+}
+
+/* --- ROLE SELECTION FULLSCREEN --- */
+.sso-role-selection-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.sso-role-selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #ffffff;
+}
+
+.sso-role-selection-back {
+  background: none;
+  border: none;
+  color: #2d381c;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+
+.sso-role-selection-back:hover {
+  background: #f3f4f6;
+}
+
+.sso-role-selection-header img {
+  height: 50px;
+}
+
+.sso-role-selection-band {
+  background: #2d381c;
+  color: #ffffff;
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+
+.sso-role-selection-band h2 {
+  margin: 0 0 0.5rem;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+.sso-role-selection-band p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #eae4d8;
+}
+
+.sso-role-error {
+  max-width: 600px;
+  margin: 1rem auto;
+  text-align: center;
+}
+
+.sso-role-selection-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  padding: 4rem 2rem;
+  flex-wrap: wrap;
+}
+
+.sso-role-card {
+  background: #2d381c;
+  border: none;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: #ffffff;
+}
+
+.sso-role-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.sso-role-card-icon {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sso-role-card-icon img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.sso-role-card-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.sso-role-card-desc {
+  margin: 0;
+  font-size: 1rem;
+  color: #eae4d8;
+}
+
+@media (max-width: 768px) {
+  .sso-role-selection-grid {
+    flex-direction: column;
+  }
+  .sso-role-card {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+/* Hide other content when role selection is active */
+body.sso-role-selection-active .sso-hero {
+  display: none !important;
+}
+body.sso-role-selection-active .sso-block {
+  display: none !important;
+}
+body.sso-role-selection-active .sso-band {
+  display: none !important;
+}
+body.sso-role-selection-active .sso-footer {
+  display: none !important;
+}
+body.sso-role-selection-active {
+  overflow: hidden;
 }

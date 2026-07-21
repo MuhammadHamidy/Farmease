@@ -2,6 +2,7 @@ import { defineComponent, ref, computed } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import { sheep } from '@/store/livestock';
 import { breedingApi } from '@/shared/api';
+import CustomSelect from '@/shared/ui/admin/Select';
 
 export default defineComponent({
   name: 'InbreedingChecker',
@@ -98,32 +99,30 @@ export default defineComponent({
         </div>
 
         <div class="row g-3 mb-4">
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-6 text-start">
             <label class="form-label fw-bold small text-secondary">Domba Jantan (Pejantan)</label>
-            <select
-              class="form-select rounded-3"
-              value={selectedMaleId.value}
-              onChange={(e) => { selectedMaleId.value = (e.target as HTMLSelectElement).value; result.value = null; }}
-            >
-              <option value="">— Pilih Domba Jantan —</option>
-              {maleList.value.map(s => (
-                <option key={s.id} value={s.id}>{s.code} — {s.name} ({s.status})</option>
-              ))}
-            </select>
+            <CustomSelect
+              options={[
+                { value: '', label: '— Pilih Domba Jantan —' },
+                ...maleList.value.map(s => ({ value: String(s.id), label: `${s.code} — ${s.name} (${s.status})` }))
+              ]}
+              modelValue={selectedMaleId.value}
+              onUpdate:modelValue={(val: string) => { selectedMaleId.value = val; result.value = null; }}
+              theme="peternakan"
+            />
           </div>
 
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-6 text-start">
             <label class="form-label fw-bold small text-secondary">Domba Betina</label>
-            <select
-              class="form-select rounded-3"
-              value={selectedFemaleId.value}
-              onChange={(e) => { selectedFemaleId.value = (e.target as HTMLSelectElement).value; result.value = null; }}
-            >
-              <option value="">— Pilih Domba Betina —</option>
-              {femaleList.value.map(s => (
-                <option key={s.id} value={s.id}>{s.code} — {s.name} ({s.status})</option>
-              ))}
-            </select>
+            <CustomSelect
+              options={[
+                { value: '', label: '— Pilih Domba Betina —' },
+                ...femaleList.value.map(s => ({ value: String(s.id), label: `${s.code} — ${s.name} (${s.status})` }))
+              ]}
+              modelValue={selectedFemaleId.value}
+              onUpdate:modelValue={(val: string) => { selectedFemaleId.value = val; result.value = null; }}
+              theme="peternakan"
+            />
           </div>
         </div>
 

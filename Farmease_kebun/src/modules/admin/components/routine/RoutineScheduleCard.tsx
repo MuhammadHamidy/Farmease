@@ -32,12 +32,30 @@ export default defineComponent({
   emits: ['open-detail'],
   setup(props, { emit }) {
     const getIcon = () => {
-      if (props.type === 'perkebunan') {
-        return props.landName.toLowerCase().includes('kelengkeng')
-          ? '/icon/kelengkeng.png'
-          : '/icon/alpukat.png';
+      if (!props.task) return '/icon/catat_jenis.png';
+
+      if (props.type === 'peternakan') {
+        switch (props.task.category) {
+          case 'pakan': return '/icon/catat_pakan.png';
+          case 'kesehatan': return '/icon/catat_sehat.png';
+          case 'kotoran': return '/icon/catat_kotoran.png';
+          case 'perkawinan': return '/icon/catat_kawin.png';
+          case 'kelahiran': return '/icon/catat_lahir.png';
+          default: return '/icon/catat_jenis.png';
+        }
+      } else {
+        switch (props.task.category) {
+          case 'penyiraman': return '/icon/gardening.png';
+          case 'pemupukan': return '/icon/fertilizer.png';
+          case 'pemangkasan': return '/icon/pruning-shears.png';
+          case 'panen': return '/icon/harvest.png';
+          case 'pembersihan': return '/icon/land.png';
+          case 'pengolahan_pupuk': return '/icon/fertilizer.png';
+          case 'penanaman': return '/icon/bibit.png';
+          case 'pengendalian hama': return '/icon/pesticide.png';
+          default: return '/icon/jenis_kebun.png';
+        }
       }
-      return '/icon/pohon.png';
     };
 
     const getStatusStyle = (status: string) => {

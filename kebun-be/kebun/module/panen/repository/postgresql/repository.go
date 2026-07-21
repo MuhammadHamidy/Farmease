@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/panen/domain"
+	"github.com/farmease/kebun-be/kebun/module/panen/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -20,11 +20,11 @@ func NewPanenRepository(db *pgxpool.Pool) domain.PanenRepository {
 
 func (r *panenRepository) FindAll(ctx context.Context) ([]domain.Panen, error) {
 	query := `
-		SELECT p.id_panen, p.Aktivitas_id_aktivitas, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
-		       p.jumlah, p.satuan, p.Lahan_id_lahan 
+		SELECT p.id_panen, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
+		       p.jumlah, p.satuan, p.Lahan_id_lahan
 		FROM gardening.panen p
 		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
-		ORDER BY p.id_panen ASC
+		ORDER BY a.tanggal_aktivitas DESC
 	`
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
@@ -36,7 +36,8 @@ func (r *panenRepository) FindAll(ctx context.Context) ([]domain.Panen, error) {
 	for rows.Next() {
 		var p domain.Panen
 		var tTgl time.Time
-		if err := rows.Scan(&p.IDPanen, &p.AktivitasIDAktivitas, &tTgl, &p.NamaJenisAktivitas, &p.NamaRincianAktivitas, &p.Jumlah, &p.Satuan, &p.LahanIDLahan); err != nil {
+		if err := rows.Scan(&p.IDPanen, &tTgl, &p.NamaJenisAktivitas, &p.NamaRincianAktivitas,
+			&p.Jumlah, &p.Satuan, &p.LahanIDLahan); err != nil {
 			return nil, err
 		}
 		p.TanggalAktivitas = tTgl.Format("2006-01-02")
@@ -49,14 +50,15 @@ func (r *panenRepository) FindByID(ctx context.Context, id string) (*domain.Pane
 	var p domain.Panen
 	var tTgl time.Time
 	query := `
-		SELECT p.id_panen, p.Aktivitas_id_aktivitas, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
-		       p.jumlah, p.satuan, p.Lahan_id_lahan 
+		SELECT p.id_panen, a.tanggal_aktivitas, a.nama_jenis_aktivitas, a.nama_rincian_aktivitas,
+		       p.jumlah, p.satuan, p.Lahan_id_lahan
 		FROM gardening.panen p
 		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
 		WHERE p.id_panen = $1
 	`
 	err := r.db.QueryRow(ctx, query, id).
-		Scan(&p.IDPanen, &p.AktivitasIDAktivitas, &tTgl, &p.NamaJenisAktivitas, &p.NamaRincianAktivitas, &p.Jumlah, &p.Satuan, &p.LahanIDLahan)
+		Scan(&p.IDPanen, &tTgl, &p.NamaJenisAktivitas, &p.NamaRincianAktivitas,
+			&p.Jumlah, &p.Satuan, &p.LahanIDLahan)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -69,10 +71,12 @@ func (r *panenRepository) FindByID(ctx context.Context, id string) (*domain.Pane
 
 func (r *panenRepository) FindRekap(ctx context.Context) ([]domain.PanenRekap, error) {
 	query := `
-		SELECT EXTRACT(YEAR FROM a.tanggal_aktivitas)::INT as tahun, SUM(p.jumlah)::INT as total_jumlah, p.satuan 
+		SELECT EXTRACT(YEAR FROM a.tanggal_aktivitas)::INT AS tahun,
+		       SUM(p.jumlah)::INT AS total_jumlah,
+		       p.satuan
 		FROM gardening.panen p
 		JOIN gardening.aktivitas a ON p.Aktivitas_id_aktivitas = a.id_aktivitas
-		GROUP BY tahun, p.satuan 
+		GROUP BY tahun, p.satuan
 		ORDER BY tahun DESC
 	`
 	rows, err := r.db.Query(ctx, query)
@@ -93,25 +97,34 @@ func (r *panenRepository) FindRekap(ctx context.Context) ([]domain.PanenRekap, e
 }
 
 func (r *panenRepository) Store(ctx context.Context, p *domain.Panen) error {
+	tTgl, err := parseTime(p.TanggalAktivitas)
+	if err != nil {
+		tTgl = time.Now()
+	}
+
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 
-	tTgl, err := time.Parse("2006-01-02", p.TanggalAktivitas)
-	if err != nil {
-		tTgl = time.Now()
-	}
-
-	err = tx.QueryRow(ctx, "INSERT INTO gardening.aktivitas (tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan) VALUES ($1, $2, $3, $4) RETURNING id_aktivitas",
-		tTgl, "Panen", p.NamaRincianAktivitas, p.LahanIDLahan).Scan(&p.AktivitasIDAktivitas)
+	var aktivitasID string
+	err = tx.QueryRow(ctx,
+		`INSERT INTO gardening.aktivitas (tanggal_aktivitas, nama_jenis_aktivitas, nama_rincian_aktivitas, Lahan_id_lahan)
+		 VALUES ($1, $2, $3, $4)
+		 RETURNING id_aktivitas`,
+		tTgl, "Panen", p.NamaRincianAktivitas, p.LahanIDLahan,
+	).Scan(&aktivitasID)
 	if err != nil {
 		return err
 	}
 
-	err = tx.QueryRow(ctx, "INSERT INTO gardening.panen (Aktivitas_id_aktivitas, jumlah, satuan, Lahan_id_lahan) VALUES ($1, $2, $3, $4) RETURNING id_panen",
-		p.AktivitasIDAktivitas, p.Jumlah, p.Satuan, p.LahanIDLahan).Scan(&p.IDPanen)
+	err = tx.QueryRow(ctx,
+		`INSERT INTO gardening.panen (jumlah, satuan, Lahan_id_lahan, Aktivitas_id_aktivitas)
+		 VALUES ($1, $2, $3, $4)
+		 RETURNING id_panen`,
+		p.Jumlah, p.Satuan, p.LahanIDLahan, aktivitasID,
+	).Scan(&p.IDPanen)
 	if err != nil {
 		return err
 	}
@@ -120,25 +133,42 @@ func (r *panenRepository) Store(ctx context.Context, p *domain.Panen) error {
 }
 
 func (r *panenRepository) Update(ctx context.Context, p *domain.Panen) error {
+	tTgl, err := parseTime(p.TanggalAktivitas)
+	if err != nil {
+		tTgl = time.Now()
+	}
+
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 
-	tTgl, err := time.Parse("2006-01-02", p.TanggalAktivitas)
-	if err != nil {
-		tTgl = time.Now()
-	}
-
-	_, err = tx.Exec(ctx, "UPDATE gardening.aktivitas SET tanggal_aktivitas = $1, nama_rincian_aktivitas = $2 WHERE id_aktivitas = $3",
-		tTgl, p.NamaRincianAktivitas, p.AktivitasIDAktivitas)
+	var aktivitasID string
+	err = tx.QueryRow(ctx,
+		`SELECT Aktivitas_id_aktivitas FROM gardening.panen WHERE id_panen = $1`,
+		p.IDPanen,
+	).Scan(&aktivitasID)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(ctx, "UPDATE gardening.panen SET jumlah = $1, satuan = $2, Lahan_id_lahan = $3 WHERE id_panen = $4",
-		p.Jumlah, p.Satuan, p.LahanIDLahan, p.IDPanen)
+	_, err = tx.Exec(ctx,
+		`UPDATE gardening.aktivitas
+		 SET tanggal_aktivitas = $1, nama_jenis_aktivitas = $2, nama_rincian_aktivitas = $3, Lahan_id_lahan = $4, updated_at = CURRENT_TIMESTAMP
+		 WHERE id_aktivitas = $5`,
+		tTgl, "Panen", p.NamaRincianAktivitas, p.LahanIDLahan, aktivitasID,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx,
+		`UPDATE gardening.panen
+		 SET jumlah = $1, satuan = $2, Lahan_id_lahan = $3, updated_at = CURRENT_TIMESTAMP
+		 WHERE id_panen = $4`,
+		p.Jumlah, p.Satuan, p.LahanIDLahan, p.IDPanen,
+	)
 	if err != nil {
 		return err
 	}
@@ -147,7 +177,32 @@ func (r *panenRepository) Update(ctx context.Context, p *domain.Panen) error {
 }
 
 func (r *panenRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.db.Exec(ctx, "DELETE FROM gardening.aktivitas WHERE id_aktivitas = (SELECT Aktivitas_id_aktivitas FROM gardening.panen WHERE id_panen = $1)", id)
+	_, err := r.db.Exec(ctx,
+		`DELETE FROM gardening.aktivitas
+		 WHERE id_aktivitas = (SELECT Aktivitas_id_aktivitas FROM gardening.panen WHERE id_panen = $1)`,
+		id,
+	)
 	return err
+}
+
+func parseTime(val string) (time.Time, error) {
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02T15:04:05.999Z07:00",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02",
+		"02-01-2006",
+		"02/01/2006",
+		"2006/01/02",
+		time.RFC3339,
+	}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, val); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, errors.New("invalid time format")
 }
 

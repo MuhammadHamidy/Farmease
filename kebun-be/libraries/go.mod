@@ -1,11 +1,11 @@
-module github.com/farmease/farmease-be/libraries
+module github.com/farmease/kebun-be/libraries
 
 go 1.25.5
 
-replace github.com/farmease/farmease-be/framework v1.0.0 => ../framework
+replace github.com/farmease/kebun-be/framework v1.0.0 => ../framework
 
 require (
-	github.com/farmease/farmease-be/framework v1.0.0
+	github.com/farmease/kebun-be/framework v1.0.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.30.1

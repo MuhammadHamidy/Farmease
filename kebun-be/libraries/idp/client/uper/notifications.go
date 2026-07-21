@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/farmease/farmease-be/libraries/idp/client"
+	"github.com/farmease/kebun-be/libraries/idp/client"
 )
 
 func (i *Idp) GetNotifications(ctx context.Context, token string, page int) (*client.GeneralResponse, error) {
@@ -129,3 +129,4 @@ func (i *Idp) MarkAllNotificationsRead(ctx context.Context, token string) (*clie
 	}
 	return &result, nil
 }
+

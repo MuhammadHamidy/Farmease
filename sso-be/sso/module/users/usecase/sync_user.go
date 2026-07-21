@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 // SyncUser performs user synchronization using external IDP.
@@ -70,3 +70,4 @@ func (u *UseCase) SyncUser(ctx context.Context, institutionId string, token stri
 
 	return user, nil
 }
+

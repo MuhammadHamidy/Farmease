@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/roles/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/roles/domain"
 )
 
 // FindAll retrieves a list of roles based on filter criteria.
@@ -27,3 +27,4 @@ func (u *UseCase) FindAll(ctx context.Context, filter domain.RoleFilter) ([]*dom
 
 	return roles, total, nil
 }
+

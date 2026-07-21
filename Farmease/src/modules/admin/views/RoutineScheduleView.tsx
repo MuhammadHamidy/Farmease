@@ -78,10 +78,11 @@ export default defineComponent({
     });
 
     const categories = computed(() => {
+      if (props.type === 'peternakan') {
+        return ['Berat Badan', 'Kelahiran', 'Kesehatan', 'Kotoran', 'Pakan', 'Perkawinan', 'Stok Pakan'];
+      }
       const allCats = metadataEnums.value?.task_category || [];
-      const filterKeys = props.type === 'peternakan'
-        ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+      const filterKeys = ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
       
       return allCats
         .filter(c => filterKeys.includes(c.value))
@@ -89,10 +90,11 @@ export default defineComponent({
     });
       
     const categoryValues = computed(() => {
+      if (props.type === 'peternakan') {
+        return ['berat_badan', 'kelahiran', 'kesehatan', 'kotoran', 'pakan', 'perkawinan', 'stok_pakan'];
+      }
       const allCats = metadataEnums.value?.task_category || [];
-      const filterKeys = props.type === 'peternakan'
-        ? ['pakan', 'kesehatan', 'kotoran', 'perkawinan', 'kelahiran', 'umum']
-        : ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
+      const filterKeys = ['penyiraman', 'pemupukan', 'pemangkasan', 'panen', 'pembersihan', 'umum'];
       
       return allCats
         .filter(c => filterKeys.includes(c.value))
@@ -100,14 +102,14 @@ export default defineComponent({
     });
 
     const ternakRincianOptions: Record<string, string[]> = {
-      pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Suplementasi'],
+      pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Pemberian Mineral'],
       stok_pakan: ['Tambah Stok', 'Konversi Pakan'],
       kesehatan: ['Pemeriksaan Rutin', 'Vitamin', 'Vaksin', 'Obat Cacing'],
-      perkawinan: ['Kawin Alam', 'IB', 'Cek Birahi', 'Kontrol Kebuntingan'],
+      perkawinan: ['Kawin Alam', 'Inseminasi Buatan', 'Pencatatan Birahi', 'Kontrol Kebuntingan'],
       kelahiran: ['Lahir Normal', 'Kembar', 'Lahir Cesar'],
-      kotoran: ['Sanitasi Harian', 'Panen Kotoran', 'Pembersihan Lantai', 'Fermentasi'],
-      berat_badan: ['Timbang Rutin', 'Timbang Harian', 'Timbang Bulanan', 'Timbang Mandiri'],
-      umum: ['Lainnya']
+      kotoran: ['Panen Kotoran', 'Pembersihan Lantai'],
+      berat_badan: ['Timbang Rutin'],
+      umum: []
     };
 
     const kebunRincianOptions: Record<string, string[]> = {
@@ -117,7 +119,7 @@ export default defineComponent({
       pembuahan: ['Perangsang'],
       penanaman: ['Bibit Baru'],
       'pengendalian hama': ['Pestisida', 'Fungisida'],
-      pemupukan: ['Pupuk Cair', 'Pupuk Organik', 'Pupuk Padat'],
+      pemupukan: ['Pupuk Organik Cair', 'Pupuk Organik Padat', 'Pupuk Kimia'],
       penyiraman: ['Penyiraman Rutin'],
       umum: ['Lainnya']
     };
@@ -166,24 +168,36 @@ export default defineComponent({
     const currentRincianOptions = computed(() => {
       if (!form.category) return [];
       
-      const allRincian = metadataEnums.value?.task_rincian || [];
-      const categoryMap: Record<string, string[]> = {
-        pakan: ['Pakan Pagi', 'Pakan Sore', 'Konversi Pakan'],
-        kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
-        kotoran: ['Pembersihan Kandang', 'Fermentasi Kotoran'],
-        perkawinan: ['Kawin Alami', 'Inseminasi Buatan'],
-        kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
-      };
-      
-      const allowedVals = categoryMap[form.category];
-      if (allowedVals) {
-        return allRincian
-          .filter(r => allowedVals.includes(r.value))
-          .map(r => r.label);
+      if (props.type === 'peternakan') {
+        const ternakRincianOptions: Record<string, string[]> = {
+          pakan: ['Pakan Pagi', 'Pakan Siang', 'Pakan Sore', 'Pemberian Mineral'],
+          stok_pakan: ['Tambah Stok', 'Konversi Pakan'],
+          kesehatan: ['Pemeriksaan Rutin', 'Vitamin', 'Vaksin', 'Obat Cacing'],
+          perkawinan: ['Kawin Alam', 'Inseminasi Buatan', 'Pencatatan Birahi', 'Kontrol Kebuntingan'],
+          kelahiran: ['Lahir Normal', 'Kembar', 'Lahir Cesar'],
+          kotoran: ['Panen Kotoran', 'Pembersihan Lantai'],
+          berat_badan: ['Timbang Rutin'],
+        };
+        return ternakRincianOptions[form.category] || ['Lainnya'];
+      } else {
+        const allRincian = metadataEnums.value?.task_rincian || [];
+        const categoryMap: Record<string, string[]> = {
+          pakan: ['Pakan Pagi', 'Pakan Sore', 'Konversi Pakan'],
+          kesehatan: ['Pemberian Obat', 'Pemberian Vitamin', 'Vaksinasi', 'Pemeriksaan Medis'],
+          kotoran: ['Pembersihan Kandang'],
+          perkawinan: ['Kawin Alami', 'Inseminasi Buatan'],
+          kelahiran: ['Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk'],
+        };
+        
+        const allowedVals = categoryMap[form.category];
+        if (allowedVals) {
+          return allRincian
+            .filter(r => allowedVals.includes(r.value))
+            .map(r => r.label);
+        }
+        
+        return kebunRincianOptions[form.category] || ['Lainnya'];
       }
-      
-      const opts = props.type === 'peternakan' ? ternakRincianOptions : kebunRincianOptions;
-      return opts[form.category] || ['Lainnya'];
     });
 
     const getLandName = (cageCode: string) => {
@@ -301,7 +315,7 @@ export default defineComponent({
         displayToast('Harap pilih jenis pencatatan / kegiatan!', 'error');
         return;
       }
-      if (!form.rincian) {
+      if (!form.rincian && currentRincianOptions.value.length > 0) {
         displayToast('Harap pilih rincian pencatatan!', 'error');
         return;
       }
@@ -415,6 +429,20 @@ export default defineComponent({
     const pendingTasksCount = computed(() => filteredTasks.value.filter(t => t.status === 'belum' || t.status === 'proses').length);
     const lateTasksCount = computed(() => filteredTasks.value.filter(t => t.status === 'terlambat').length);
 
+    const completedPercent = computed(() => {
+      if (totalTodayTasks.value === 0) return 0;
+      return Math.round((completedTasksCount.value / totalTodayTasks.value) * 100);
+    });
+    const pendingPercent = computed(() => {
+      if (totalTodayTasks.value === 0) return 0;
+      return Math.round((pendingTasksCount.value / totalTodayTasks.value) * 100);
+    });
+    const latePercent = computed(() => {
+      if (totalTodayTasks.value === 0) return 0;
+      const pct = 100 - completedPercent.value - pendingPercent.value;
+      return pct < 0 ? 0 : pct;
+    });
+
     // Grouping computed
     const groupedTasks = computed(() => {
       const groups = {
@@ -434,9 +462,11 @@ export default defineComponent({
     return () => (
       <div class="admin-peternakan-page">
         {showToast.value && (
-          <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toastType.value === 'success' ? '#4caf50' : '#f44336', color: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInDown 0.3s ease' }}>
-            {toastType.value === 'success' ? '✅' : '⚠️'} {toastMessage.value}
-          </div>
+          <Teleport to="body">
+            <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: toastType.value === 'success' ? '#4caf50' : '#f44336', color: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInDown 0.3s ease' }}>
+              {toastType.value === 'success' ? '✅' : '⚠️'} {toastMessage.value}
+            </div>
+          </Teleport>
         )}
 
         {/* Header Section */}
@@ -491,6 +521,45 @@ export default defineComponent({
             </div>
           </div>
         </div>
+
+        {totalTodayTasks.value > 0 && (
+          <div class="bg-white rounded-4 p-4 border mb-4 shadow-sm text-start" style={{ borderColor: '#E6D9CE' }}>
+            <Typography variant="span" class="d-block text-uppercase fw-extrabold text-secondary mb-2" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>
+              📊 Realisasi Tugas Hari Ini ({totalTodayTasks.value} Total Tugas)
+            </Typography>
+            <div class="progress mb-3" style={{ height: '24px', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#e9ecef' }}>
+              {completedPercent.value > 0 && (
+                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated fw-bold" role="progressbar" style={{ width: `${completedPercent.value}%`, fontSize: '0.8rem' }}>
+                  {completedPercent.value}% Selesai
+                </div>
+              )}
+              {pendingPercent.value > 0 && (
+                <div class="progress-bar bg-warning text-dark progress-bar-striped fw-bold" role="progressbar" style={{ width: `${pendingPercent.value}%`, fontSize: '0.8rem' }}>
+                  {pendingPercent.value}% Belum
+                </div>
+              )}
+              {latePercent.value > 0 && (
+                <div class="progress-bar bg-danger progress-bar-striped fw-bold" role="progressbar" style={{ width: `${latePercent.value}%`, fontSize: '0.8rem' }}>
+                  {latePercent.value}% Terlambat
+                </div>
+              )}
+            </div>
+            <div class="d-flex justify-content-start gap-4 flex-wrap" style={{ fontSize: '0.8rem' }}>
+              <div class="d-flex align-items-center gap-2">
+                <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--color-success-dark, #198754)' }}></span>
+                <span class="text-secondary">Selesai: <strong>{completedTasksCount.value} tugas ({completedPercent.value}%)</strong></span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--color-warning, #f59e0b)' }}></span>
+                <span class="text-secondary">Belum Dikerjakan: <strong>{pendingTasksCount.value} tugas ({pendingPercent.value}%)</strong></span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--color-danger, #dc3545)' }}></span>
+                <span class="text-secondary">Terlambat: <strong>{lateTasksCount.value} tugas ({latePercent.value}%)</strong></span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filter Dropdowns Section */}
         <div class="admin-filter-bar mb-4 rounded-4 p-4" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-outline-variant)' }}>
@@ -569,10 +638,17 @@ export default defineComponent({
             );
           })}
 
-          {filteredTasks.value.length === 0 && (
-            <div class="text-center py-5 bg-white border rounded-5 shadow-sm text-secondary">
-              Tidak ada tugas rutin ditemukan untuk sesi/status terpilih.
+          {totalTodayTasks.value === 0 ? (
+            <div class="text-center py-5 bg-white border rounded-5 shadow-sm text-secondary fw-bold" style={{ borderColor: '#ede8e0' }}>
+              <img src="/icon/statistic.png" style={{ width: '48px', opacity: 0.3, marginBottom: '1rem', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} alt="" />
+              Tidak ada penugasan terjadwal pada tanggal ini
             </div>
+          ) : (
+            filteredTasks.value.length === 0 && (
+              <div class="text-center py-5 bg-white border rounded-5 shadow-sm text-secondary">
+                Tidak ada tugas rutin ditemukan untuk sesi/status terpilih.
+              </div>
+            )
           )}
         </div>
 

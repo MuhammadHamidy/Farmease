@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/farmease-be/libraries/validation"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -23,11 +24,15 @@ import (
 func (h *SheepHandler) UpdateSheepStatus(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var req struct {
-		Status  string `json:"status"`
+		Status  string `json:"status" validate:"required"`
 		Notes   string `json:"notes"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
+	}
+
+	if appErr := validation.ValidateStruct(&req); appErr != nil {
+		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
 	err := h.useCase.UpdateSheepStatus(c.Context(), id, req.Status, req.Notes)

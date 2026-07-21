@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
-	"github.com/farmease/farmease-be/libraries/helper"
+	"github.com/farmease/kebun-be/libraries/helper"
 )
 
 func TraceMiddleware(c *fiber.Ctx) error {
@@ -27,3 +27,4 @@ func TraceMiddleware(c *fiber.Ctx) error {
 	c.SetUserContext(ctx)
 	return c.Next()
 }
+

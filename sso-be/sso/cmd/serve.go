@@ -3,25 +3,25 @@ package cmd
 import (
 	"strings"
 
-	internalConfig "github.com/farmease/farmease-be/farmease/config"
-	_ "github.com/farmease/farmease-be/farmease/docs"
-	"github.com/farmease/farmease-be/framework/common/logger"
-	"github.com/farmease/farmease-be/framework/config"
-	"github.com/farmease/farmease-be/framework/fiber"
-	"github.com/farmease/farmease-be/framework/otel"
-	"github.com/farmease/farmease-be/framework/postgres"
-	"github.com/farmease/farmease-be/framework/redis"
-	"github.com/farmease/farmease-be/libraries/idp"
-	"github.com/farmease/farmease-be/libraries/middleware"
+	internalConfig "github.com/farmease/sso-be/sso/config"
+	_ "github.com/farmease/sso-be/sso/docs"
+	"github.com/farmease/sso-be/framework/common/logger"
+	"github.com/farmease/sso-be/framework/config"
+	"github.com/farmease/sso-be/framework/fiber"
+	"github.com/farmease/sso-be/framework/otel"
+	"github.com/farmease/sso-be/framework/postgres"
+	"github.com/farmease/sso-be/framework/redis"
+	"github.com/farmease/sso-be/libraries/idp"
+	"github.com/farmease/sso-be/libraries/middleware"
 	gofiber "github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	filterSwagger "github.com/swaggo/fiber-swagger"
 	"go.uber.org/fx"
 
 	// Core
-	"github.com/farmease/farmease-be/farmease/module/auth"
-	"github.com/farmease/farmease-be/farmease/module/roles"
-	"github.com/farmease/farmease-be/farmease/module/users"
+	"github.com/farmease/sso-be/sso/module/auth"
+	"github.com/farmease/sso-be/sso/module/roles"
+	"github.com/farmease/sso-be/sso/module/users"
 )
 
 // @title           Farmease API
@@ -109,3 +109,4 @@ func serveE(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+

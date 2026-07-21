@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/farmease/farmease-be/farmease/cmd"
+	"github.com/farmease/kebun-be/kebun/cmd"
 )
 
 func main() {
@@ -17,3 +17,4 @@ func main() {
 	}
 	fmt.Println("SERVER STOPPED NORMALLY")
 }
+

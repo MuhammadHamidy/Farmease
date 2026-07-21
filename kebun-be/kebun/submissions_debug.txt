@@ -1,0 +1,11 @@
+Row 1: id=sub-pembersihan-001, type=pembersihan, task_id=nil
+Row 2: id=sub-pembersihan-002, type=pembersihan, task_id=nil
+Row 3: id=sub-pupuk-001, type=pemupukan, task_id=nil
+Row 4: id=sub-obat-001, type=pemberian obat, task_id=nil
+Row 5: id=sub-panen-001, type=panen, task_id=nil
+Row 6: id=sub-stok-pupuk-001, type=stok pupuk, task_id=nil
+Row 7: id=sub-stok-pupuk-002, type=stok pupuk, task_id=nil
+Row 8: id=sub-stok-pupuk-003, type=stok pupuk, task_id=nil
+Row 9: id=sub-stok-pupuk-004, type=stok pupuk, task_id=nil
+Row 10: id=sub-stok-bahan-001, type=stok pupuk, task_id=nil
+Row 11: id=sub-stok-bahan-002, type=stok pupuk, task_id=nil

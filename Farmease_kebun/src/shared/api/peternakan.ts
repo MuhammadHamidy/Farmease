@@ -1,4 +1,49 @@
 import apiClient from './client'
+import axios from 'axios'
+
+// Direct client to Peternakan backend (port 8081) — bypasses the shared apiClient
+// which always routes non-auth requests to Kebun backend (port 8082).
+const PETERNAKAN_API_URL = import.meta.env.VITE_PETERNAKAN_API_URL || 'http://127.0.0.1:8081'
+
+const peternakanDirectClient = {
+  async get<T = any>(url: string, params?: any): Promise<T> {
+    const token = localStorage.getItem('authToken')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await axios.get<any>(`${PETERNAKAN_API_URL}${url}`, { headers, params })
+    const d = response.data
+    // Handle wrapped response formats: { data: [...] } or { value: [...] }
+    if (d && typeof d === 'object') {
+      if ('data' in d && ('success' in d || 'status' in d)) return d.data
+      if ('value' in d && Array.isArray(d.value)) return d.value as T
+    }
+    return d
+  },
+  async post<T = any>(url: string, data?: any): Promise<T> {
+    const token = localStorage.getItem('authToken')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await axios.post<any>(`${PETERNAKAN_API_URL}${url}`, data, { headers })
+    const d = response.data
+    if (d && typeof d === 'object') {
+      if ('data' in d && ('success' in d || 'status' in d)) return d.data
+      if ('value' in d && Array.isArray(d.value)) return d.value as T
+    }
+    return d
+  },
+  async patch<T = any>(url: string, data?: any): Promise<T> {
+    const token = localStorage.getItem('authToken')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await axios.patch<any>(`${PETERNAKAN_API_URL}${url}`, data, { headers })
+    const d = response.data
+    if (d && typeof d === 'object') {
+      if ('data' in d && ('success' in d || 'status' in d)) return d.data
+      if ('value' in d && Array.isArray(d.value)) return d.value as T
+    }
+    return d
+  }
+}
 
 // ============ Farms ============
 export interface Farm {
@@ -170,7 +215,8 @@ export const weightApi = {
 
 // ============ Feeds ============
 export interface Feed {
-  id: string | number
+  id?: string | number
+  id_feed?: string | number
   feed_name: string
   feed_type: string
   stock: number
@@ -181,59 +227,77 @@ export interface Feed {
 
 export const feedsApi = {
   getList: async (): Promise<Feed[]> => {
-    return await apiClient.get('/api/feeds')
+    const list = await peternakanDirectClient.get('/api/feeds')
+    return (list || []).map((f: any) => ({
+      ...f,
+      id: f.id ?? f.id_feed,
+      stock: f.stock ?? f.available_stock,
+      feed_type: f.feed_type ?? f.category
+    }))
   },
   create: async (payload: Partial<Feed>): Promise<Feed> => {
-    return await apiClient.post('/api/feeds', payload)
+    const f = await peternakanDirectClient.post('/api/feeds', payload)
+    return {
+      ...f,
+      id: f.id ?? f.id_feed,
+      stock: f.stock ?? f.available_stock,
+      feed_type: f.feed_type ?? f.category
+    }
   },
   updateStock: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
-    return await apiClient.patch(`/api/feeds/${id}/stock`, { amount, type })
+    return await peternakanDirectClient.patch(`/api/feeds/${id}/stock`, { amount, type })
   },
   updateStok: async (id: string | number, amount: number, type: 'tambah' | 'kurang'): Promise<Feed> => {
-    return await apiClient.patch(`/api/feeds/${id}/stok`, { amount, type })
+    return await peternakanDirectClient.patch(`/api/feeds/${id}/stok`, { amount, type })
   },
   getRecommendation: async (sheepId: string | number): Promise<any> => {
-    return await apiClient.get(`/api/sheep/${sheepId}/feed-recommendation`)
+    return await peternakanDirectClient.get(`/api/sheep/${sheepId}/feed-recommendation`)
   },
   getFeedingHistory: async (sheepId: string | number): Promise<any[]> => {
-    return await apiClient.get(`/api/sheep/${sheepId}/feedings`)
+    return await peternakanDirectClient.get(`/api/sheep/${sheepId}/feedings`)
   },
   getPemberianPakan: async (sheepId: string | number): Promise<any[]> => {
-    return await apiClient.get(`/api/sheep/${sheepId}/pemberian-pakan`)
+    return await peternakanDirectClient.get(`/api/sheep/${sheepId}/pemberian-pakan`)
   },
   recordFeeding: async (sheepId: string | number, payload: any): Promise<any> => {
-    return await apiClient.post(`/api/sheep/${sheepId}/feedings`, payload)
+    return await peternakanDirectClient.post(`/api/sheep/${sheepId}/feedings`, payload)
   },
   recordPemberianPakan: async (sheepId: string | number, payload: any): Promise<any> => {
-    return await apiClient.post(`/api/sheep/${sheepId}/pemberian-pakan`, payload)
+    return await peternakanDirectClient.post(`/api/sheep/${sheepId}/pemberian-pakan`, payload)
   },
 }
 
 // ============ Manure ============
 export interface Manure {
-  id: string | number
-  id_sheep: string | number
-  quantity: number
-  date_recorded: string
+  id?: string | number
+  id_manure?: string | number
+  id_sheep?: string | number
+  activity_type?: string
+  amount?: number
+  quantity?: number
+  unit?: string
+  destination_type?: string
+  date_recorded?: string
   notes?: string
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
 }
 
 export const manureApi = {
   getList: async (): Promise<Manure[]> => {
-    return await apiClient.get('/api/manures')
+    return await peternakanDirectClient.get('/api/manures')
   },
   getKotoran: async (): Promise<Manure[]> => {
-    return await apiClient.get('/api/kotoran')
+    return await peternakanDirectClient.get('/api/kotoran')
   },
   getSheepHistory: async (sheepId: string | number): Promise<Manure[]> => {
-    return await apiClient.get(`/api/sheep/${sheepId}/manure`)
+    return await peternakanDirectClient.get(`/api/sheep/${sheepId}/manure`)
   },
   record: async (sheepId: string | number, payload: Partial<Manure>): Promise<Manure> => {
-    return await apiClient.post(`/api/sheep/${sheepId}/manure`, payload)
+    return await peternakanDirectClient.post(`/api/sheep/${sheepId}/manure`, payload)
   },
 }
+
 
 // ============ Breeding ============
 export interface Breeding {

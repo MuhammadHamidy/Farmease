@@ -38,10 +38,10 @@ func (s *Sheep) CalculateAge() {
 
 	// Calculate Mating Status
 	if s.Gender == "betina" {
-		if s.Status == "Sehat" && months >= 8 {
-			s.IsReadyToMate = true
-			s.MatingStatus = "Ya (Siap Kawin / Birahi)"
-		} else if s.Status == "Hamil" {
+		if (s.Status == "Sehat" || s.Status == "aktif") && months >= 8 {
+			s.IsReadyToMate = false
+			s.MatingStatus = "Belum Pencatatan Birahi"
+		} else if s.Status == "Hamil" || s.Status == "hamil" {
 			s.IsReadyToMate = false
 			s.MatingStatus = "Tidak (Sedang Hamil)"
 		} else if months < 8 {
@@ -59,7 +59,14 @@ func (s *Sheep) CalculateAge() {
 
 // CalculateADG calculates the Average Daily Gain (ADG) and assigns a label
 func (s *Sheep) CalculateADG() {
-	if s.FirstWeightDate == nil || s.LastWeightDate == nil || s.FirstWeightDate.Equal(*s.LastWeightDate) {
+	if s.FirstWeightDate == nil || s.LastWeightDate == nil {
+		return
+	}
+
+	if s.FirstWeightDate.Equal(*s.LastWeightDate) {
+		zeroVal := 0
+		s.ADG = &zeroVal
+		s.ADGLabel = "Kurang"
 		return
 	}
 

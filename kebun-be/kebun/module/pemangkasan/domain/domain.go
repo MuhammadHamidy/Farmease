@@ -6,7 +6,6 @@ import (
 
 type Pemangkasan struct {
 	IDPemangkasan        string `json:"id_pemangkasan" db:"id_pemangkasan"`
-	AktivitasIDAktivitas string `json:"Aktivitas_id_aktivitas" db:"Aktivitas_id_aktivitas"`
 	TanggalAktivitas     string `json:"tanggal_aktivitas,omitempty" db:"tanggal_aktivitas"`
 	NamaJenisAktivitas   string `json:"nama_jenis_aktivitas,omitempty" db:"nama_jenis_aktivitas"`
 	NamaRincianAktivitas string `json:"nama_rincian_aktivitas,omitempty" db:"nama_rincian_aktivitas"`

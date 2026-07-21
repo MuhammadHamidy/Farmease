@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/farmease/farmease-be/farmease/module/auth/domain"
-	"github.com/farmease/farmease-be/libraries/responses"
+	"github.com/farmease/sso-be/sso/module/auth/domain"
+	"github.com/farmease/sso-be/libraries/responses"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -169,6 +169,13 @@ type MetadataEnumsResponse struct {
 	ManureDest         []EnumChoice `json:"manure_dest"`
 	Priority           []EnumChoice `json:"priority"`
 	TaskStatus         []EnumChoice `json:"task_status"`
+	HealthActions      []EnumChoice `json:"health_actions"`
+	Medicines          []EnumChoice `json:"medicines"`
+	ManureConditions   []EnumChoice `json:"manure_conditions"`
+	PregnancyCheckMethods []EnumChoice `json:"pregnancy_check_methods"`
+	PregnancyCheckResults []EnumChoice `json:"pregnancy_check_results"`
+	EstrusCheckResults []EnumChoice `json:"estrus_check_results"`
+	DamConditions      []EnumChoice `json:"dam_conditions"`
 }
 
 // GetMetadataEnums godoc
@@ -213,6 +220,7 @@ func (h *AuthHandler) GetMetadataEnums(c *fiber.Ctx) error {
 			{Value: "weighing", Label: "Penimbangan Berat"},
 			{Value: "maintenance", Label: "Pemeliharaan"},
 			{Value: "admin", Label: "Administrasi"},
+			{Value: "pengolahan_pupuk", Label: "Pengolahan Pupuk"},
 			{Value: "umum", Label: "Umum"},
 		},
 		TaskRincian: []EnumChoice{
@@ -229,6 +237,8 @@ func (h *AuthHandler) GetMetadataEnums(c *fiber.Ctx) error {
 			{Value: "Inseminasi Buatan", Label: "Inseminasi Buatan"},
 			{Value: "Pencatatan Kelahiran", Label: "Pencatatan Kelahiran"},
 			{Value: "Pemeriksaan Anak & Induk", Label: "Pemeriksaan Anak & Induk"},
+			{Value: "Pupuk Kandang", Label: "Pupuk Kandang"},
+			{Value: "Pupuk Kompos", Label: "Pupuk Kompos"},
 		},
 		DayOfWeek: []EnumChoice{
 			{Value: "Senin", Label: "Senin"},
@@ -294,6 +304,45 @@ func (h *AuthHandler) GetMetadataEnums(c *fiber.Ctx) error {
 			{Value: "done", Label: "Selesai (Done)"},
 			{Value: "menunggu", Label: "Menunggu Validasi"},
 		},
+		HealthActions: []EnumChoice{
+			{Value: "Vaksin Enterotoxemia", Label: "Vaksin Enterotoxemia"},
+			{Value: "Vitamin", Label: "Vitamin"},
+			{Value: "Obat Cacing", Label: "Obat Cacing"},
+			{Value: "Antibiotik", Label: "Antibiotik"},
+		},
+		Medicines: []EnumChoice{
+			{Value: "Clostridium Vaccine", Label: "Clostridium Vaccine (Vaksin)"},
+			{Value: "Vit B-Complex", Label: "Vit B-Complex (Vitamin)"},
+			{Value: "Albendazole", Label: "Albendazole (Obat Cacing)"},
+			{Value: "Vitamin ADE", Label: "Vitamin ADE"},
+			{Value: "Vitamin B12/PLEK", Label: "Vitamin B12/PLEK"},
+			{Value: "Antibiotik K", Label: "Antibiotik K"},
+		},
+		ManureConditions: []EnumChoice{
+			{Value: "basah", Label: "Basah"},
+			{Value: "kering", Label: "Kering"},
+			{Value: "campur", Label: "Campuran"},
+		},
+		PregnancyCheckMethods: []EnumChoice{
+			{Value: "non_return_estrus", Label: "Non-Return Estrus"},
+			{Value: "usg_palpasi", Label: "USG / Palpasi"},
+			{Value: "manual", Label: "Manual / Palpasi Tangan"},
+		},
+		PregnancyCheckResults: []EnumChoice{
+			{Value: "masih_menunggu", Label: "Masih Menunggu (Perlu Pemeriksaan Ulang Nanti)"},
+			{Value: "bunting_terkonfirmasi", Label: "Bunting Terkonfirmasi"},
+			{Value: "gagal", Label: "Gagal / Tidak Bunting"},
+			{Value: "keguguran", Label: "Keguguran"},
+		},
+		EstrusCheckResults: []EnumChoice{
+			{Value: "birahi", Label: "Birahi (Siap Kawin)"},
+			{Value: "tidak_birahi", Label: "Tidak Birahi"},
+		},
+		DamConditions: []EnumChoice{
+			{Value: "Sehat", Label: "Sehat"},
+			{Value: "Lemas", Label: "Lemas"},
+			{Value: "Perlu Penanganan", Label: "Perlu Penanganan"},
+		},
 	}
 	return c.Status(fiber.StatusOK).JSON(response)
 }
@@ -323,3 +372,4 @@ func (h *AuthHandler) Introspect(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(result)
 }
+

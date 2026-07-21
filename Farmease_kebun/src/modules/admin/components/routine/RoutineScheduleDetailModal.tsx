@@ -33,7 +33,9 @@ export default defineComponent({
   emits: ['close', 'edit', 'delete'],
   setup(props, { emit }) {
     const getIcon = () => {
-      if (props.type === 'peternakan' && props.task) {
+      if (!props.task) return '/icon/catat_jenis.png';
+
+      if (props.type === 'peternakan') {
         switch (props.task.category) {
           case 'pakan': return '/icon/catat_pakan.png';
           case 'kesehatan': return '/icon/catat_sehat.png';
@@ -42,8 +44,19 @@ export default defineComponent({
           case 'kelahiran': return '/icon/catat_lahir.png';
           default: return '/icon/catat_jenis.png';
         }
+      } else {
+        switch (props.task.category) {
+          case 'penyiraman': return '/icon/gardening.png';
+          case 'pemupukan': return '/icon/fertilizer.png';
+          case 'pemangkasan': return '/icon/pruning-shears.png';
+          case 'panen': return '/icon/harvest.png';
+          case 'pembersihan': return '/icon/land.png';
+          case 'pengolahan_pupuk': return '/icon/fertilizer.png';
+          case 'penanaman': return '/icon/bibit.png';
+          case 'pengendalian hama': return '/icon/pesticide.png';
+          default: return '/icon/jenis_kebun.png';
+        }
       }
-      return '/icon/pohon.png';
     };
 
     return () => {

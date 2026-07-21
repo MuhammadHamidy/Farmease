@@ -2,7 +2,8 @@ import { defineComponent, computed } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
 import { stocks } from '@/modules/ternak/store/peternakan';
-import '@/modules/ternak/assets/css/modules/RecordForm.css';
+import { sheep } from '@/store/livestock';
+import '@/assets/css/modules/peternakan/RecordForm.css';
 
 export default defineComponent({
   name: 'RecordSummary',
@@ -12,6 +13,12 @@ export default defineComponent({
   setup(props) {
     const data = computed(() => props.payload.data || {});
     const type = computed(() => props.payload.type);
+
+    const resolvePejantanName = (id: any) => {
+      if (!id) return '-';
+      const s = sheep.value.find(x => String(x.id) === String(id) || String(x.code) === String(id));
+      return s ? `[${s.code}] ${s.name}` : id;
+    };
 
     const typeLabel = computed(() => {
       switch (type.value) {
@@ -30,7 +37,7 @@ export default defineComponent({
       switch (type.value) {
         case 'pakan':
         case 'stok_pakan': return '/icon/catat_pakan.png';
-        case 'kesehatan': return '/icon/catat_sehat.png';
+        case 'kesehatan': return '/icon/sheep_kesehatan.png';
         case 'kotoran': return '/icon/catat_kotoran.png';
         case 'reproduksi':
         case 'kelahiran': return '/icon/catat_lahir.png';
@@ -98,7 +105,14 @@ export default defineComponent({
 
                     <div class="summary-items-grid row g-3">
                       {type.value !== 'stok_pakan' && (
-                        <SummaryItem label={item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak'} value={item.targetId} />
+                        <SummaryItem
+                          label={item.mode === 'kelompok' ? 'ID Kandang' : 'ID Ternak'}
+                          value={(() => {
+                            if (item.mode === 'kelompok') return item.targetId;
+                            const s = sheep.value.find(x => String(x.id) === String(item.targetId) || String(x.code) === String(item.targetId));
+                            return s ? `[${s.code}] ${s.name}` : item.targetId;
+                          })()}
+                        />
                       )}
                       
                       {type.value === 'pakan' && (
@@ -136,9 +150,6 @@ export default defineComponent({
                         <>
                           <SummaryItem label="Jumlah Hasil" value={`${item.qty} ${item.unit || 'kg'}`} />
                           <SummaryItem label="Kondisi" value={item.kotoranState} />
-                          {item.name === 'Fermentasi' && (
-                            <SummaryItem label="Pemanfaatan" value={item.pemanfaatan} />
-                          )}
                         </>
                       )}
 
@@ -146,16 +157,20 @@ export default defineComponent({
                         <>
                           {item.name === 'Kontrol Kebuntingan' ? (
                             <>
-                              <SummaryItem label="ID Perkawinan" value={item.idMating} />
-                              <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan} />
-                              <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
+                               <SummaryItem label="ID Perkawinan" value={item.idMating} />
+                               <SummaryItem label="Metode Pemeriksaan" value={item.metodePemeriksaan === 'usg' ? 'Cek USG' : item.metodePemeriksaan === 'palpasi' ? 'Palpasi' : item.metodePemeriksaan === 'testpack' ? 'Testpack' : item.metodePemeriksaan} />
+                               <SummaryItem label="Hasil Pemeriksaan" value={item.hasilPemeriksaan === 'masih_menunggu' ? 'Masih Menunggu' : item.hasilPemeriksaan === 'bunting_terkonfirmasi' ? 'Bunting Terkonfirmasi' : item.hasilPemeriksaan === 'gagal' ? 'Gagal / Tidak Bunting' : 'Keguguran'} />
+                            </>
+                          ) : (item.name === 'Cek Birahi' || item.name === 'Pencatatan Birahi' || item.name === 'Pengecekan Birahi') ? (
+                            <>
+                              <SummaryItem label="Hasil Pencatatan Birahi" value={item.hasilPemeriksaan === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi'} />
                             </>
                           ) : (
                             <>
-                              {!( (item.metoda === 'ib' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && item.sumberPejantan === 'eksternal' ) && (
-                                <SummaryItem label="ID Pejantan" value={item.idPejantan} />
+                              {!( (item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && item.sumberPejantan === 'eksternal' ) && (
+                                <SummaryItem label="ID Pejantan" value={resolvePejantanName(item.idPejantan)} />
                               )}
-                              {(item.metoda === 'ib' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && (
+                              {(item.metoda === 'ib' || item.metoda === 'inseminasi buatan' || item.name === 'IB' || item.name === 'Inseminasi Buatan') && (
                                 <>
                                   <SummaryItem label="Sumber Pejantan" value={item.sumberPejantan === 'eksternal' ? 'Donor Eksternal' : 'Internal'} />
                                   <SummaryItem label="Kode Batch / Nomor Straw Semen" value={item.asalSemen} />
@@ -169,7 +184,7 @@ export default defineComponent({
                                   )}
                                 </>
                               )}
-                              {!(item.name === 'IB' || item.name === 'Inseminasi Buatan' || item.name === 'Kawin Alam' || item.name === 'Kawin Alami') && (
+                              {!(item.name === 'IB' || item.name === 'Inseminasi Buatan' || item.name === 'Kawin Alam' || item.name === 'Kawin Alami') && item.metoda !== 'ib' && item.metoda !== 'inseminasi buatan' && (
                                 <SummaryItem label="Metode Kawin" value={item.metoda} />
                               )}
                             </>
@@ -180,9 +195,11 @@ export default defineComponent({
 
                       {type.value === 'kelahiran' && (
                         <>
-                          <SummaryItem label="ID Pejantan" value={item.idPejantan} />
-                          <SummaryItem label="Jumlah Anak" value={item.jumlahAnak} />
+                          <SummaryItem label="ID Pejantan" value={resolvePejantanName(item.idPejantan)} />
+                          <SummaryItem label="Ear Tag Anak" value={item.sheepCode} />
                           <SummaryItem label="Nama Anak" value={item.namaAnak} />
+                          <SummaryItem label="Jenis Kelamin Anak" value={item.genderAnak === 'jantan' ? 'Jantan' : 'Betina'} />
+                          <SummaryItem label="Jumlah Anak" value={item.jumlahAnak} />
                           <SummaryItem label="Kandang Anak" value={item.kandangAnak} />
                           <SummaryItem label="Berat Lahir" value={item.beratLahir ? `${item.beratLahir} kg` : '-'} />
                           <SummaryItem label="Kondisi Induk" value={item.kondisiInduk} />

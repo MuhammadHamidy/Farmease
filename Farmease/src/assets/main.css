@@ -4,7 +4,7 @@
 
 /* Tema default (Ternak) — palet coklat; SSO landing pakai class module-sso */
 @import "./colorpalette.css";
-@import "../modules/ternak/assets/theme.css";
+@import "./theme.css";
 
 body.module-sso {
   --color-primary: #3d2f24;

@@ -10,7 +10,7 @@ import (
     enTranslations "github.com/go-playground/validator/v10/translations/en"
     "github.com/go-playground/validator/v10"
     "github.com/google/uuid"
-    "github.com/farmease/farmease-be/libraries/errors"
+    "github.com/farmease/sso-be/libraries/errors"
 )
 
 var Validate *validator.Validate
@@ -97,3 +97,4 @@ func ValidateStruct(s interface{}) *errors.AppError {
 
     return nil
 }
+

@@ -5,7 +5,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog/log"
-	"github.com/farmease/farmease-be/framework/bunnymq"
+	"github.com/farmease/sso-be/framework/bunnymq"
 )
 
 // Handler is the function signature for processing messages.
@@ -181,3 +181,4 @@ func (c *Consumer) consume(ctx context.Context, queueName string, handler Handle
 		}
 	}
 }
+

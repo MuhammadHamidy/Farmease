@@ -6,6 +6,8 @@ import Badge from '@/shared/ui/Badge';
 import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/Select';
 import StatCard from '@/shared/ui/StatCard';
+import apiClient from '@/shared/api/client';
+import '@/modules/kebun/assets/css/PerkebunanDetailPages.css';
 
 export default defineComponent({
   name: 'CropManagementView',
@@ -122,29 +124,231 @@ export default defineComponent({
         }
       }
     };
+    const handleExport = async () => {
+      try {
+        const [rawLands, rawTrees, rawPengobatan, rawPemupukan, rawPenyiraman, rawPanen, rawPemangkasan] = await Promise.all([
+          apiClient.get<any[]>('/api/v1/lahan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pohon').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pengobatan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemupukan').catch(() => []),
+          apiClient.get<any[]>('/api/v1/penyiraman').catch(() => []),
+          apiClient.get<any[]>('/api/v1/panen').catch(() => []),
+          apiClient.get<any[]>('/api/v1/pemangkasan').catch(() => [])
+        ])
+
+        const lands = Array.isArray(rawLands) ? rawLands : []
+        const trees = Array.isArray(rawTrees) ? rawTrees : []
+        const pengobatanList = Array.isArray(rawPengobatan) ? rawPengobatan : []
+        const pemupukanList = Array.isArray(rawPemupukan) ? rawPemupukan : []
+        const penyiramanList = Array.isArray(rawPenyiraman) ? rawPenyiraman : []
+        const panenList = Array.isArray(rawPanen) ? rawPanen : []
+        const pemangkasanList = Array.isArray(rawPemangkasan) ? rawPemangkasan : []
+
+        const perawatanList = [
+          ...pengobatanList.map(o => ({
+            ...o,
+            id_perawatan: o.id_pengobatan,
+            jenis_bahan: 'obat',
+            id_lahan: o.Lahan_id_lahan
+          })),
+          ...pemupukanList.map(f => ({
+            ...f,
+            id_perawatan: f.id_pemupukan,
+            jenis_bahan: 'pupuk',
+            id_lahan: f.Lahan_id_lahan,
+            nama_obat: f.nama_pupuk,
+            deskripsi: f.deskripsi
+          })),
+          ...penyiramanList.map(w => ({
+            ...w,
+            id_perawatan: w.id_penyiraman,
+            jenis_bahan: 'air',
+            id_lahan: w.Lahan_id_lahan,
+            teknik_perawatan: w.teknik_penyiraman,
+            deskripsi: w.deskripsi
+          }))
+        ]
+
+        const csvRows: string[][] = []
+
+        // CSV Header
+        csvRows.push([
+          'Kategori Data',
+          'Tanggal',
+          'Kode Lahan',
+          'Nama Lahan',
+          'Kode/Detail Pohon',
+          'Nama Item / Aktivitas',
+          'Jumlah / Dosis',
+          'Satuan',
+          'Deskripsi / Catatan'
+        ])
+
+        lands.forEach((landObj: any) => {
+          const landId = landObj.id_lahan || landObj.id
+
+          // Add Land Info
+          csvRows.push([
+            'Lahan',
+            landObj.tanggal_tanam || '-',
+            landObj.kode_lahan || '-',
+            landObj.nama_lahan || '-',
+            '-',
+            landObj.varietas || 'Tanaman',
+            String(landObj.luas_lahan || landObj.luas || 0),
+            'Hektar',
+            `Fase Tanam: ${landObj.fase_tanam || '-'}`
+          ])
+
+          const landTrees = trees.filter((t: any) => 
+            String(t.Lahan_id_lahan || t.id_lahan) === String(landId) ||
+            String(t.lahan_code) === String(landObj.kode_lahan)
+          )
+          const landPerawatan = perawatanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPanen = panenList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+          const landPemangkasan = pemangkasanList.filter((p: any) => String(p.Lahan_id_lahan || p.id_lahan) === String(landId))
+
+          // Add Trees
+          landTrees.forEach((t: any) => {
+            let age = t.umur
+            if (!age && t.tanggal_tanam) {
+              const plantedYear = new Date(t.tanggal_tanam).getFullYear()
+              const currentYear = new Date().getFullYear()
+              age = Math.max(1, currentYear - plantedYear)
+            }
+
+            csvRows.push([
+              'Pohon',
+              t.tanggal_tanam ? t.tanggal_tanam.split('T')[0] : (t.created_at ? t.created_at.split('T')[0] : '-'),
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              t.kode_pohon || '-',
+              t.varietas || t.nama_pohon || t.jenis || '-',
+              String(age || 0),
+              'Tahun',
+              `Status: ${t.fase_pohon || t.status || '-'}`
+            ])
+          })
+
+          // Add Pemupukan & Pemberian Obat
+          landPerawatan.forEach((p: any) => {
+            const jenisBahan = (p.jenis_bahan || '').toLowerCase()
+            let kategori = 'Perawatan'
+            if (jenisBahan === 'pupuk') {
+              kategori = 'Pemupukan'
+            } else if (jenisBahan === 'obat') {
+              kategori = 'Pemberian Obat'
+            }
+
+            csvRows.push([
+              kategori,
+              p.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              p.detail_pohon || '-',
+              p.nama_obat || p.jenis_perawatan || '-',
+              String(p.dosis || 0),
+              p.satuan || '-',
+              `Teknik: ${p.teknik_perawatan || '-'}, Bagian: ${p.bagian_pohon || '-'}, Catatan: ${p.deskripsi || '-'}`
+            ])
+          })
+
+          // Add Panen
+          landPanen.forEach((pa: any) => {
+            csvRows.push([
+              'Panen',
+              pa.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              pa.nama_rincian_aktivitas || 'Panen Buah',
+              String(pa.jumlah || 0),
+              pa.satuan || 'kg',
+              'Selesai'
+            ])
+          })
+
+          // Add Pemangkasan
+          landPemangkasan.forEach((pe: any) => {
+            csvRows.push([
+              'Pemangkasan',
+              pe.tanggal_aktivitas || '-',
+              landObj.kode_lahan || '-',
+              landObj.nama_lahan || '-',
+              '-',
+              'Pemangkasan Pemeliharaan',
+              String(pe.jumlah || 0),
+              pe.satuan || 'kg',
+              pe.keterangan || '-'
+            ])
+          })
+        })
+
+        const csvContent = csvRows
+          .map((row) =>
+            row
+              .map((val) => {
+                const escaped = String(val).replace(/"/g, '""')
+                return `"${escaped}"`
+              })
+              .join(',')
+          )
+          .join('\n')
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', url)
+        
+        const dateStr = new Date().toISOString().split('T')[0]
+        const filename = `Ekspor_Data_Tanaman_${dateStr}.csv`
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (err: any) {
+        console.error('Gagal mengekspor data:', err)
+        alert('Gagal mengekspor data: ' + (err?.message || err || 'Terjadi kesalahan.'))
+      }
+    }
 
     return () => (
-      <div class="animate-fade-in-up">
+      <div class="animate-fade-in-up" style={{ padding: '0 0.5rem' }}>
         {/* Header Section */}
-        <div class="view-header mb-4">
+        <div class="view-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
           <div>
-            <Typography variant="h2" size="text-2xl" weight="extrabold" className="m-0 text-dark">Manajemen Tanaman (Perkebunan)</Typography>
-            <Typography variant="p" size="text-sm" color="secondary" className="m-0">Kelola bibit/pohon perkebunan serta penempatan lahannya.</Typography>
+            <Typography variant="h2" class="view-title" style={{ fontFamily: "'Inter', sans-serif", fontSize: '1.75rem', fontWeight: '800' }}>
+              Manajemen Tanaman
+            </Typography>
+            <Typography variant="span" color="secondary" style={{ fontSize: '0.875rem', color: '#6C757D', marginTop: '4px', display: 'block' }}>
+              Kelola bibit/pohon perkebunan serta penempatan lahannya
+            </Typography>
           </div>
           <button 
             type="button" 
-            class="peternakan-primary-btn m-0" 
+            class="btn" 
             onClick={() => {
               newCrop.value.land = availableLands.value[0] || '';
               isModalOpen.value = true;
             }}
             disabled={isLoading.value}
-            style={{ background: 'linear-gradient(135deg, #4f5d2e 0%, #303b1d 100%)', boxShadow: '0 8px 20px -4px rgba(48, 59, 29, 0.25)' }}
+            style={{ 
+              backgroundColor: '#38431F', 
+              color: '#ffffff', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '0.75rem 1.5rem',
+              fontSize: '0.95rem',
+              fontWeight: '800',
+              borderRadius: '8px',
+              border: 'none',
+              boxShadow: '0 4px 10px rgba(56, 67, 31, 0.15)',
+              cursor: 'pointer'
+            }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="me-1">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', lineHeight: '1' }}>+</span>
             Tambah Tanaman
           </button>
         </div>
@@ -177,51 +381,83 @@ export default defineComponent({
           </div>
         )}
 
+        {/* Ekspor Data Kebun (Full-width Section) */}
+        <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <strong style={{ fontSize: '0.9rem', color: '#111827', fontWeight: '800', fontFamily: "'Outfit', sans-serif" }}>Ekspor Data Kebun</strong>
+          <button
+            type="button"
+            class="pencatatan-mode-btn is-active"
+            onClick={handleExport}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download CSV
+          </button>
+        </div>
+
         {/* Stats Summary Row */}
         <div class="row g-3 mb-4">
           <div class="col-12 col-md-6 col-lg-4">
-            <StatCard 
-              label="Total Populasi Tanaman" 
-              value={String(totalCrops.value)} 
-              color="primary"
-              icon={() => (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-              )}
-            />
+            <div class="bg-white rounded-4 p-4 d-flex justify-content-between align-items-center" style={{ border: '1.5px solid #E6D9CE' }}>
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', color: '#374151', marginBottom: '0.45rem' }}>
+                  Total Populasi Tanaman
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#000000', marginBottom: '0.45rem', fontFamily: "'Inter', sans-serif" }}>
+                  {totalCrops.value} Pohon
+                </div>
+                <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#6B7280' }}>
+                  Tersebar di seluruh lahan
+                </div>
+              </div>
+              <div>
+                <img src="/icon/bibit.png" alt="Bibit" style="width: 48px; height: 48px; object-fit: contain;" />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Table View (Desktop) */}
-        <div class="view-card d-none d-md-block">
-          <table class="admin-table">
-            <thead>
+        <div class="view-card d-none d-md-block" style={{ padding: '0px', border: '1.5px solid #E6D9CE', borderRadius: '12px', overflow: 'hidden' }}>
+          <table class="admin-table m-0">
+            <thead style={{ backgroundColor: '#F9F8F6' }}>
               <tr>
-                <th>Kode</th>
-                <th>Nama Tanaman</th>
-                <th>Fase/Tipe</th>
-                <th>Penempatan Lahan</th>
-                <th>Umur Tanaman</th>
-                <th style={{ width: '100px' }}>Aksi</th>
+                <th style={{ color: '#7F8C8D', fontSize: '0.78rem', fontWeight: '800', padding: '1rem' }}>KODE POHON</th>
+                <th style={{ color: '#7F8C8D', fontSize: '0.78rem', fontWeight: '800', padding: '1rem' }}>NAMA TANAMAN</th>
+                <th style={{ color: '#7F8C8D', fontSize: '0.78rem', fontWeight: '800', padding: '1rem' }}>FASE / TIPE</th>
+                <th style={{ color: '#7F8C8D', fontSize: '0.78rem', fontWeight: '800', padding: '1rem' }}>PENEMPATAN LAHAN</th>
+                <th style={{ color: '#7F8C8D', fontSize: '0.78rem', fontWeight: '800', padding: '1rem' }}>UMUR TANAMAN</th>
+                <th style={{ color: '#7F8C8D', fontSize: '0.78rem', fontWeight: '800', padding: '1rem', width: '120px', textAlign: 'center' }}>AKSI</th>
               </tr>
             </thead>
             <tbody>
-              {cropsList.value.map(c => (
-                <tr key={c.code}>
-                  <td><code>{c.code}</code></td>
-                  <td class="fw-bold">{c.name}</td>
-                  <td>
+              {cropsList.value.map((c, index) => (
+                <tr key={c.code} style={{ borderBottom: index < cropsList.value.length - 1 ? '1px solid #f1eff0' : 'none' }}>
+                  <td style={{ padding: '1rem' }}><code>{c.code}</code></td>
+                  <td style={{ padding: '1rem', fontWeight: '700', color: '#000000' }}>{c.name}</td>
+                  <td style={{ padding: '1rem' }}>
                     <Badge variant={c.type === 'Vegetatif' ? 'info' : c.type === 'Pembibitan' ? 'warning' : 'success'}>{c.type}</Badge>
                   </td>
-                  <td>{c.land}</td>
-                  <td>{c.age}</td>
-                  <td>
+                  <td style={{ padding: '1rem', fontWeight: '700', color: '#000000' }}>{c.land}</td>
+                  <td style={{ padding: '1rem', fontWeight: '700', color: '#000000' }}>{c.age} Tahun</td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
                     <button 
                       type="button" 
-                      class="btn btn-sm btn-outline-danger rounded-3" 
+                      class="btn btn-sm btn-outline-danger" 
                       onClick={() => handleDeleteCrop(c.id, c.code)}
                       disabled={isLoading.value}
+                      style={{ 
+                        border: '1.5px solid #fca5a5', 
+                        borderRadius: '8px', 
+                        fontWeight: '700', 
+                        color: '#ef4444',
+                        padding: '0.35rem 1rem',
+                        fontSize: '0.85rem',
+                        textTransform: 'uppercase'
+                      }}
                     >
                       Hapus
                     </button>
@@ -242,22 +478,24 @@ export default defineComponent({
         {/* List View (Mobile) */}
         <div class="mobile-only d-md-none">
           <div class="mobile-card-list">
-            {cropsList.value.map(c => (
-              <div key={c.code} class="admin-mobile-card">
-                <div class="card-top">
-                  <div class="card-info">
-                    <span class="card-name">{c.name}</span>
-                    <span class="card-sub">{c.land} • {c.age}</span>
+            {cropsList.value.map((c) => (
+              <div key={c.code} class="admin-mobile-card" style={{ border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem', backgroundColor: '#fff' }}>
+                <div class="card-top d-flex justify-content-between mb-2">
+                  <div>
+                    <span class="fw-bold text-dark" style={{ fontSize: '1.05rem' }}>{c.name}</span>
+                    <span class="text-muted small d-block">Lahan: {c.land} • Umur: {c.age} Tahun</span>
                   </div>
-                  <span class="card-code">{c.code}</span>
+                  <span class="card-code text-uppercase font-monospace" style={{ fontSize: '0.9rem', color: '#606C38', fontWeight: '700' }}>{c.code}</span>
                 </div>
-                <div class="card-footer">
+                <hr style={{ margin: '0.75rem 0', borderColor: '#f3f4f6' }} />
+                <div class="card-footer d-flex justify-content-between align-items-center">
                   <Badge variant={c.type === 'Vegetatif' ? 'info' : c.type === 'Pembibitan' ? 'warning' : 'success'}>{c.type}</Badge>
                   <button 
                     type="button" 
-                    class="btn btn-sm btn-danger px-3 py-1 rounded-3 text-white border-0 fw-bold" 
+                    class="btn btn-sm btn-outline-danger" 
                     onClick={() => handleDeleteCrop(c.id, c.code)}
                     disabled={isLoading.value}
+                    style={{ border: '1.5px solid #fca5a5', borderRadius: '8px', fontWeight: '700', color: '#ef4444', padding: '0.35rem 1rem' }}
                   >
                     Hapus
                   </button>
@@ -275,18 +513,25 @@ export default defineComponent({
         {/* Create Crop Modal */}
         {isModalOpen.value && (
           <div class="peternakan-modal-overlay" onClick={() => isModalOpen.value = false}>
-            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-              <div class="peternakan-modal-header">
-                <button class="peternakan-modal-close" onClick={() => isModalOpen.value = false} disabled={isLoading.value}>
-                  <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+            <div class="peternakan-modal-card animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', borderRadius: '16px' }}>
+              <div class="peternakan-modal-header d-flex justify-content-between align-items-center" style={{ borderBottom: 'none', padding: '1.5rem 1.5rem 0 1.5rem' }}>
+                <div class="peternakan-modal-title" style={{ fontSize: '1.35rem', fontWeight: '800', color: '#000000', fontFamily: "'Inter', sans-serif" }}>
+                  Tambah Tanaman Baru
+                </div>
+                <button 
+                  class="peternakan-modal-close border-0" 
+                  onClick={() => isModalOpen.value = false} 
+                  disabled={isLoading.value}
+                  style={{ background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#9ca3af' }}
+                >
+                  &times;
                 </button>
-                <div class="peternakan-modal-title">Tambah Tanaman Baru</div>
               </div>
 
-              <div class="peternakan-modal-body mt-4">
+              <div class="peternakan-modal-body" style={{ padding: '1.5rem' }}>
                 <div class="row g-3">
                   <div class="col-12">
-                    <label class="pencatatan-label">Kode Pohon (Contoh: A03)</label>
+                    <label class="pencatatan-label text-uppercase" style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Kode Pohon (Contoh: A03)</label>
                     <CustomInput 
                       modelValue={newCrop.value.code}
                       placeholder="Masukkan kode pohon"
@@ -294,7 +539,7 @@ export default defineComponent({
                     />
                   </div>
                   <div class="col-12">
-                    <label class="pencatatan-label">Nama Tanaman / Pohon</label>
+                    <label class="pencatatan-label text-uppercase" style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Nama Tanaman / Pohon</label>
                     <CustomInput 
                       modelValue={newCrop.value.name}
                       placeholder="Contoh: Alpukat Mentega"
@@ -302,15 +547,15 @@ export default defineComponent({
                     />
                   </div>
                   <div class="col-12">
-                    <label class="pencatatan-label">Fase Pertumbuhan</label>
+                    <label class="pencatatan-label text-uppercase" style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Fase Pertumbuhan</label>
                     <CustomSelect 
-                      options={['Vegetatif', 'Generatif', 'Pembibitan']}
+                      options={['Vegetatif', 'Generatif']}
                       modelValue={newCrop.value.type}
                       onUpdate:modelValue={(val: string) => newCrop.value.type = val}
                     />
                   </div>
                   <div class="col-12">
-                    <label class="pencatatan-label">Penempatan Lahan</label>
+                    <label class="pencatatan-label text-uppercase" style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Penempatan Lahan</label>
                     {availableLands.value.length === 0 ? (
                       <div class="text-danger small mt-1">Belum ada lahan aktif. Harap tambahkan lahan terlebih dahulu.</div>
                     ) : (
@@ -322,7 +567,7 @@ export default defineComponent({
                     )}
                   </div>
                   <div class="col-12">
-                    <label class="pencatatan-label">Estimasi Umur Tanaman (Angka saja dalam tahun, misal: 2)</label>
+                    <label class="pencatatan-label text-uppercase" style={{ fontSize: '0.78rem', fontWeight: '800', color: '#374151', marginBottom: '0.4rem', display: 'block' }}>Estimasi Umur Tanaman (Angka saja dalam tahun, misal: 2)</label>
                     <CustomInput 
                       modelValue={newCrop.value.age}
                       placeholder="Contoh: 2"
@@ -337,13 +582,37 @@ export default defineComponent({
                   </div>
                 )}
 
-                <div class="mt-4 pt-3 border-top">
+                {/* Footer Buttons Batal on Left and Simpan on Right */}
+                <div class="mt-4 pt-3 border-top d-flex gap-3">
                   <button 
                     type="button" 
-                    class="btn w-100"
-                    style={{ borderRadius: '1rem', fontWeight: 600, backgroundColor: '#606C38', color: 'white', border: 'none', padding: '0.65rem 0' }}
+                    class="btn btn-outline-secondary" 
+                    onClick={() => isModalOpen.value = false}
+                    style={{ 
+                      borderRadius: '8px', 
+                      fontWeight: '600', 
+                      padding: '0.65rem 0', 
+                      width: '45%', 
+                      border: '1.5px solid #d1d5db', 
+                      color: '#374151', 
+                      backgroundColor: '#ffffff' 
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn text-white"
                     onClick={handleCreateCrop}
                     disabled={availableLands.value.length === 0 || isLoading.value}
+                    style={{ 
+                      borderRadius: '8px', 
+                      fontWeight: '600', 
+                      padding: '0.65rem 0', 
+                      width: '55%', 
+                      backgroundColor: '#38431F', 
+                      border: 'none' 
+                    }}
                   >
                     {isLoading.value ? 'Menyimpan...' : 'Simpan Tanaman'}
                   </button>

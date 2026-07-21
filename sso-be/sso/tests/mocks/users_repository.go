@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -49,3 +49,4 @@ func (m *UsersRepositoryMock) AssignRole(ctx context.Context, userRole *domain.U
 	args := m.Called(ctx, userRole)
 	return args.Error(0)
 }
+

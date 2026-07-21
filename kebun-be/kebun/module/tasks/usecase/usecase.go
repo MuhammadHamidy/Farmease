@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
+	"github.com/farmease/kebun-be/kebun/module/tasks/domain"
 )
 
 type useCase struct {
@@ -78,3 +78,4 @@ func (u *useCase) CompleteTask(ctx context.Context, id string) error {
 func (u *useCase) DeleteTask(ctx context.Context, id string) error {
 	return u.repo.DeleteTask(ctx, id)
 }
+

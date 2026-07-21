@@ -26,6 +26,8 @@ export {
   routineSchedulesApi,
   submissionsApi,
   type ApiSubmission,
+  fermentationsApi,
+  type FermentationLog,
 } from './peternakan'
 
 export {

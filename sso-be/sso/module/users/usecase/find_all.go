@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
-	"github.com/farmease/farmease-be/libraries/errors"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/libraries/errors"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 // FindAll retrieves a list of users based on filter criteria.
@@ -27,3 +27,4 @@ func (u *UseCase) FindAll(ctx context.Context, filter domain.UserFilter) ([]*dom
 
 	return users, total, nil
 }
+

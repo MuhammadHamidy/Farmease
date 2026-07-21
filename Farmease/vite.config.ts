@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -22,8 +23,14 @@ export default defineConfig({
     },
   },
   server: {
+    port: 3001,
+    strictPort: true,
     watch: {
       usePolling: true,
     },
+  },
+  test: {
+    environment: 'happy-dom',
+    exclude: ['**/node_modules/**', '**/dist/**', '**/tests/e2e/**'],
   },
 })

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/farmease/farmease-be/farmease/module/users/domain"
+	"github.com/farmease/sso-be/sso/module/users/domain"
 )
 
 var _ domain.UserRepository = (*Repository)(nil)
@@ -44,3 +44,4 @@ type Repository struct {
 func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
+

@@ -28,7 +28,7 @@ DO $$ BEGIN
         'Vaksinasi', 'Pemeriksaan Medis', 'Pembersihan Kandang', 'Fermentasi Kotoran', 
         'Kawin Alami', 'Inseminasi Buatan', 'Pencatatan Kelahiran', 'Pemeriksaan Anak & Induk',
         'Kontrol Kebuntingan', 'Penyiraman Rutin', 'Pupuk Organik', 'Pupuk Padat', 'Pupuk Cair', 
-        'Ranting dan Daun', 'Panen Buah', 'Limbah'
+        'Ranting dan Daun', 'Panen Buah', 'Limbah', 'Fermentasi Pupuk', 'Cek Fermentasi'
     );
 EXCEPTION
     WHEN duplicate_object THEN null;

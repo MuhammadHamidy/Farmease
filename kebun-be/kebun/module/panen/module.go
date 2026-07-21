@@ -1,10 +1,10 @@
 package panen
 
 import (
-	"github.com/farmease/farmease-be/farmease/module/panen/delivery/http"
-	"github.com/farmease/farmease-be/farmease/module/panen/repository/postgresql"
-	"github.com/farmease/farmease-be/farmease/module/panen/usecase"
-	frameworkFiber "github.com/farmease/farmease-be/framework/fiber"
+	"github.com/farmease/kebun-be/kebun/module/panen/delivery/http"
+	"github.com/farmease/kebun-be/kebun/module/panen/repository/postgresql"
+	"github.com/farmease/kebun-be/kebun/module/panen/usecase"
+	frameworkFiber "github.com/farmease/kebun-be/framework/fiber"
 	"go.uber.org/fx"
 )
 
@@ -22,3 +22,4 @@ var Module = fx.Module("panen",
 		),
 	),
 )
+
