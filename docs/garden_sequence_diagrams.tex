@@ -1,0 +1,250 @@
+% =========================================================================
+% DOKUMENTASI SEQUENCE DIAGRAM PERKEBUNAN (GARDENING) DALAM LATEX
+% Pola: Actor -> ui:Antarmuka -> NamaKelas.method() -> db:Database
+% Sintaks: \begin{call}, \resizebox, \item (pgf-umlsd / TikZ)
+% =========================================================================
+
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{pgf-umlsd}
+
+\begin{document}
+
+% =========================================================================
+% MODUL PERKEBUNAN (GARDENING)
+% =========================================================================
+
+% -------------------------------------------------------------------------
+% UC-G01: Registrasi Lahan Baru
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-G01: Registrasi Lahan Baru}
+
+Pengguna (Pemilik, Admin, atau Operator) melakukan registrasi lahan baru melalui antarmuka. 
+Antarmuka (\texttt{ui:Antarmuka}) mengirimkan data lahan dengan memanggil method \texttt{CreateLahan(lahan)} 
+pada kelas entitas \texttt{lh:Lahan}. Objek \texttt{Lahan} meneruskan instruksi tersebut ke 
+\texttt{db:Database} untuk melakukan operasi penyisipan baris data baru ke dalam tabel basis data. 
+Setelah basis data mengonfirmasi penyimpanan sukses, antarmuka menampilkan pesan sukses kepada Pengguna. 
+Alur ini disajikan pada Gambar~\ref{fig:seq_ucg01_lahan}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{usr}{usr:Pengguna}
+    \newinst[2.5]{ui}{ui:Antarmuka}
+    \newinst[2.5]{lh}{lh:Lahan}
+    \newinst[2.5]{db}{db:Database}
+
+    \begin{call}{usr}{Input kode, nama, luas, \& jenis tanaman}{ui}{Registrasi Lahan Sukses}
+        \begin{call}{ui}{CreateLahan(lahan)}{lh}{Lahan baru berhasil disimpan}
+            \begin{call}{lh}{CreateLahan(lahan)}{db}{Insert ke tabel lands}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram Registrasi Lahan Baru}
+\label{fig:seq_ucg01_lahan}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-G02: Pencatatan Aktivitas Penyiraman
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-G02: Pencatatan Aktivitas Penyiraman}
+
+Operator Kebun mencatat aktivitas penyiraman harian pada blok lahan tertentu. 
+Antarmuka pertama-tama memanggil method \texttt{RecordActivity(act)} pada kelas entitas 
+\texttt{act:Aktivitas} untuk menyimpan data aktivitas induk. Setelah aktivitas induk tersimpan, 
+antarmuka memanggil \texttt{RecordPenyiraman(pny)} pada kelas entitas \texttt{pny:Penyiraman} 
+untuk menyimpan detail teknis penyiraman. Kedua entitas tersebut mendelegasikan penyimpanan data 
+masing-masing ke \texttt{db:Database}. Setelah seluruh alur penyimpanan selesai, antarmuka 
+menampilkan pesan konfirmasi sukses. Alur ini disajikan pada Gambar~\ref{fig:seq_ucg02_penyiraman}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:Antarmuka}
+    \newinst[2]{act}{act:Aktivitas}
+    \newinst[2]{pny}{pny:Penyiraman}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Pilih lahan, teknik penyiraman, \& deskripsi}{ui}{Penyiraman Berhasil Dicatat}
+        \begin{call}{ui}{RecordActivity(act)}{act}{Induk aktivitas tersimpan}
+            \begin{call}{act}{RecordActivity(act)}{db}{Insert ke tabel activities}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{RecordPenyiraman(pny)}{pny}{Detail penyiraman disimpan}
+            \begin{call}{pny}{RecordPenyiraman(pny)}{db}{Insert ke tabel irrigations}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram Pencatatan Aktivitas Penyiraman}
+\label{fig:seq_ucg02_penyiraman}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-G03: Pencatatan Pemupukan \& Pengurangan Stok
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-G03: Pencatatan Pemupukan}
+
+Operator Kebun mencatat aktivitas pemupukan tanaman dan memperbarui sisa persediaan pupuk di gudang. 
+Antarmuka memanggil \texttt{RecordActivity(act)} pada kelas \texttt{act:Aktivitas} untuk mencatat aktivitas induk, 
+kemudian memanggil \texttt{RecordPemupukan(pmp)} pada kelas \texttt{pmp:Pemupukan} untuk menyimpan log pemupukan. 
+Untuk memastikan keakuratan persediaan bahan, antarmuka memanggil \texttt{UpdateStokPupuk(id, qty)} pada kelas 
+\texttt{sp:StokPupuk} guna memotong stok pupuk yang digunakan. Seluruh kelas entitas tersebut berinteraksi dengan 
+\texttt{db:Database} untuk pembaruan data secara persisten. Alur ini disajikan pada Gambar~\ref{fig:seq_ucg03_pemupukan}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[1.8]{ui}{ui:Antarmuka}
+    \newinst[1.8]{act}{act:Aktivitas}
+    \newinst[1.8]{pmp}{pmp:Pemupukan}
+    \newinst[1.8]{sp}{sp:StokPupuk}
+    \newinst[1.8]{db}{db:Database}
+
+    \begin{call}{op}{Pilih lahan, pupuk, input dosis \& deskripsi}{ui}{Pemupukan Berhasil Dicatat \& Stok Berubah}
+        \begin{call}{ui}{RecordActivity(act)}{act}{Induk aktivitas tersimpan}
+            \begin{call}{act}{RecordActivity(act)}{db}{Insert ke tabel activities}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{RecordPemupukan(pmp)}{pmp}{Detail pemupukan disimpan}
+            \begin{call}{pmp}{RecordPemupukan(pmp)}{db}{Insert ke tabel fertilizations}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{UpdateStokPupuk(id, qty)}{sp}{Stok pupuk dikurangi}
+            \begin{call}{sp}{UpdateStokPupuk(id, qty)}{db}{Update stok pupuk di DB}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram Pencatatan Pemupukan}
+\label{fig:seq_ucg03_pemupukan}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-G04: Pencatatan Panen Buah
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-G04: Pencatatan Panen Buah}
+
+Operator Kebun melakukan pencatatan hasil panen buah yang dikumpulkan dari suatu lahan. 
+Sistem memanggil \texttt{RecordActivity(act)} pada kelas entitas \texttt{act:Aktivitas} untuk menyimpan 
+log aktivitas umum, diikuti dengan pemanggilan \texttt{RecordPanen(pan)} pada kelas entitas \texttt{pan:Panen} 
+untuk mencatat rincian hasil panen seperti berat dan kualitas buah. Kedua operasi penulisan data didelegasikan ke 
+\texttt{db:Database}. Setelah proses penyimpanan rampung, pesan sukses ditampilkan kembali ke layar Operator. 
+Alur ini disajikan pada Gambar~\ref{fig:seq_ucg04_panen}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2]{ui}{ui:Antarmuka}
+    \newinst[2]{act}{act:Aktivitas}
+    \newinst[2]{pan}{pan:Panen}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{op}{Input jumlah hasil panen, satuan, \& keterangan}{ui}{Hasil Panen Berhasil Dicatat}
+        \begin{call}{ui}{RecordActivity(act)}{act}{Induk aktivitas tersimpan}
+            \begin{call}{act}{RecordActivity(act)}{db}{Insert ke tabel activities}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{RecordPanen(pan)}{pan}{Log hasil panen disimpan}
+            \begin{call}{pan}{RecordPanen(pan)}{db}{Insert ke tabel harvests}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram Pencatatan Panen Buah}
+\label{fig:seq_ucg04_panen}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-G05: Pembuatan Batch Fermentasi Pupuk
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-G05: Pembuatan Batch Fermentasi Pupuk}
+
+Operator Kebun memulai proses pembuatan batch fermentasi pupuk cair/organik mandiri di gudang perkebunan. 
+Operator memasukkan kelompok bahan baku, target pupuk, dan target kuantitas hasil produksi. 
+Antarmuka memanggil \texttt{CreateFermentasi(f)} pada kelas entitas \texttt{fer:FermentasiPupuk} 
+untuk menginisialisasi batch fermentasi baru. Objek \texttt{FermentasiPupuk} menyimpan entri baru tersebut 
+dengan status awal ``proses'' ke dalam \texttt{db:Database}. Alur ini disajikan pada Gambar~\ref{fig:seq_ucg05_fermentasi}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2.5]{ui}{ui:Antarmuka}
+    \newinst[2.5]{fer}{fer:FermentasiPupuk}
+    \newinst[2.5]{db}{db:Database}
+
+    \begin{call}{op}{Input bahan baku, target pupuk, \& target qty}{ui}{Dalam Proses Fermentasi}
+        \begin{call}{ui}{CreateFermentasi(f)}{fer}{Batch fermentasi aktif dibuat}
+            \begin{call}{fer}{CreateFermentasi(f)}{db}{Insert ke tabel fermentation\_batches}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram Pembuatan Batch Fermentasi Pupuk}
+\label{fig:seq_ucg05_fermentasi}
+\end{figure}
+
+\newpage
+
+% -------------------------------------------------------------------------
+% UC-G06: Pencatatan Log Harian Fermentasi Pupuk
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-G06: Pencatatan Log Harian Fermentasi Pupuk}
+
+Operator Kebun melakukan pengecekan rutin pada wadah fermentasi aktif dan menginput data log harian. 
+Operator memasukkan nilai suhu, tingkat kelembaban, kondisi fisik pupuk, dan catatan perkembangan. 
+Antarmuka memanggil method \texttt{CreateLogFermentasi(l)} pada kelas entitas \texttt{log:LogFermentasiPupuk} 
+untuk menyimpan entri log pengecekan harian baru. Log ini kemudian disimpan secara permanen di 
+\texttt{db:Database} dihubungkan ke ID batch fermentasi terkait. Alur ini disajikan pada Gambar~\ref{fig:seq_ucg06_log_fermentasi}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorKebun}
+    \newinst[2.5]{ui}{ui:Antarmuka}
+    \newinst[2.5]{log}{log:LogFermentasiPupuk}
+    \newinst[2.5]{db}{db:Database}
+
+    \begin{call}{op}{Input suhu, kelembaban, kondisi fisik, \& status}{ui}{Log Fermentasi Berhasil Dicatat}
+        \begin{call}{ui}{CreateLogFermentasi(l)}{log}{Log harian fermentasi disimpan}
+            \begin{call}{log}{CreateLogFermentasi(l)}{db}{Insert ke tabel fermentation\_logs}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram Pencatatan Log Harian Fermentasi Pupuk}
+\label{fig:seq_ucg06_log_fermentasi}
+\end{figure}
+
+\end{document}

@@ -142,9 +142,7 @@ export default defineComponent({
       namesSet.add('Lainnya')
 
       return Array.from(namesSet).map(name => {
-        const stockVal = getStockOf(name)
-        const label = stockVal > 0 ? `${name} (Stok: ${stockVal.toFixed(1)})` : name
-        return { value: name, label }
+        return { value: name, label: name }
       })
     })
 
@@ -182,9 +180,7 @@ export default defineComponent({
       namesSet.add('Lainnya')
 
       return Array.from(namesSet).map(name => {
-        const stockVal = getStockOf(name)
-        const label = stockVal > 0 ? `${name} (Stok: ${stockVal.toFixed(1)})` : name
-        return { value: name, label }
+        return { value: name, label: name }
       })
     })
 
