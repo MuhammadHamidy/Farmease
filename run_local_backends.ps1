@@ -12,11 +12,26 @@ Write-Host "         MELUNCURKAN BACKEND FARMEASE SECARA LOKAL        " -Foregro
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Pastikan Database & Redis di Docker sudah berjalan
-Write-Host "[1/4] Memastikan Postgres & Redis aktif di Docker..." -ForegroundColor Yellow
-docker compose up -d postgres redis rabbitmq
+Write-Host "[1/4] Memastikan Postgres, Redis & RabbitMQ aktif di Docker..." -ForegroundColor Yellow
+$running = docker ps --format '{{.Names}}'
+if ($running -notcontains "farmease_postgres" -or $running -notcontains "farmease_redis" -or $running -notcontains "farmease_rabbitmq") {
+    docker compose up -d --no-recreate postgres redis rabbitmq
+} else {
+    Write-Host "Postgres, Redis, dan RabbitMQ sudah berjalan di Docker." -ForegroundColor Green
+}
 
-Write-Host "Menunggu database siap..." -ForegroundColor Gray
-Start-Sleep -Seconds 3
+Write-Host "Memastikan database farmease_sso, farmease_peternakan, dan farmease_kebun siap..." -ForegroundColor Gray
+docker exec -i farmease_postgres psql -U user -d farmease_be -c "CREATE DATABASE farmease_sso;" 2>$null
+docker exec -i farmease_postgres psql -U user -d farmease_be -c "CREATE DATABASE farmease_peternakan;" 2>$null
+docker exec -i farmease_postgres psql -U user -d farmease_be -c "CREATE DATABASE farmease_kebun;" 2>$null
+docker exec -i farmease_postgres psql -U user -d template1 -c "CREATE DATABASE farmease_sso;" 2>$null
+docker exec -i farmease_postgres psql -U user -d template1 -c "CREATE DATABASE farmease_peternakan;" 2>$null
+docker exec -i farmease_postgres psql -U user -d template1 -c "CREATE DATABASE farmease_kebun;" 2>$null
+
+Write-Host "Jalankan migrasi database..." -ForegroundColor Gray
+docker compose up -d --no-recreate sso_migrate peternakan_migrate kebun_migrate
+Write-Host "Menunggu seluruh service siap..." -ForegroundColor Gray
+Start-Sleep -Seconds 5
 
 # 2. Menjalankan SSO Backend (Port 8080) secara Lokal
 Write-Host "[2/4] Meluncurkan SSO Backend..." -ForegroundColor Yellow
@@ -36,6 +51,7 @@ Write-Host '=== SSO BACKEND RUNNING NATIVE ===' -ForegroundColor Green; `
 go run main.go serve
 "@
 Start-Process powershell -WorkingDirectory "$PSScriptRoot\sso-be\sso" -ArgumentList "-NoExit", "-Command", $SSO_CMD
+Start-Sleep -Seconds 1
 
 # 3. Menjalankan Peternakan Backend (Port 8081) secara Lokal
 Write-Host "[3/4] Meluncurkan Peternakan Backend..." -ForegroundColor Yellow
@@ -56,6 +72,7 @@ Write-Host '=== PETERNAKAN BACKEND RUNNING NATIVE ===' -ForegroundColor Green; `
 go run main.go serve
 "@
 Start-Process powershell -WorkingDirectory "$PSScriptRoot\Farmease-BE\farmease" -ArgumentList "-NoExit", "-Command", $TERNAC_CMD
+Start-Sleep -Seconds 1
 
 # 4. Menjalankan Perkebunan Backend (Port 8082) secara Lokal
 Write-Host "[4/4] Meluncurkan Perkebunan Backend..." -ForegroundColor Yellow

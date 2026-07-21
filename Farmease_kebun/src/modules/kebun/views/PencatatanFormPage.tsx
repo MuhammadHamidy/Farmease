@@ -377,18 +377,11 @@ export default defineComponent({
           }
 
           else if ((type === 'pengolahan pupuk' || type === 'pengolahan_pupuk') && (item.selectedRincian?.includes('Fermentasi') || item.rincian?.includes('Fermentasi')) && !(item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))) {
+            // Initial Fermentasi: Deduct raw ingredient stocks ONLY, DO NOT add to usable pupuk stock yet!
             const outQty = parseFloat(item.qty) || 0
-            const outVal = parseQty(item.qty, item.unit)
             const name = item.hasilJadi || ''
-            if (!name) return
-
-            const key = `${name}_#_-`
-            pupukStockMap[key] = (pupukStockMap[key] || 0) + outVal
 
             const isCair = name.toLowerCase().includes('cair') || name.toLowerCase().includes('poc');
-            const isKompos = name.toLowerCase().includes('kompos');
-            const isManure = !isCair && !isKompos;
-
             const decName = item.dekomposer
             if (decName) {
               const decAmt = (isCair ? 20 : 10) * outQty
@@ -405,6 +398,38 @@ export default defineComponent({
             const consumedKg = factor * outQty;
             const rawName = item.bahanMentahId || 'Kotoran domba';
             bahanStockMap[rawName] = Math.max(0, (bahanStockMap[rawName] || 0) - consumedKg);
+          }
+
+          else if ((type === 'pengolahan pupuk' || type === 'pengolahan_pupuk') && (item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))) {
+            // Cek Fermentasi: ONLY add to available pupuk stock if declared ready / panen!
+            const isReady = item.siapGuna === 'siap' || item.siapGuna === true || item.kondisiFisik === 'Siap Digunakan' || item.aktivitasPengecekan === 'Panen / Ready' || item.statusFermentasi === 'siap'
+            if (isReady) {
+              const origSub = (allSubmissions.value || []).find((sub: any) => String(sub.id) === String(item.batchFermentasiId))
+              const origItem = (origSub?.payload as any)?.data?.items?.[0] || item
+              const outVal = parseQty(origItem.qty || item.qty || 5, origItem.unit || item.unit || 'Liter')
+              
+              let baseName = origItem.hasilJadi || 'POC'
+              const isPOC = baseName.toLowerCase().includes('poc') || baseName.toLowerCase().includes('cair')
+              if (isPOC) {
+                const rawMat = (origItem.bahanMentahId || origItem.bahanUtama || '').toLowerCase()
+                if (rawMat.includes('cucian beras') || rawMat.includes('beras')) {
+                  baseName = 'POC Air Cucian Beras'
+                } else if (rawMat.includes('kelapa')) {
+                  baseName = 'POC Air Kelapa'
+                } else if (rawMat.includes('domba')) {
+                  baseName = 'POC Kotoran Domba'
+                } else if (rawMat.includes('em4')) {
+                  baseName = 'POC EM4 & Molase'
+                } else if (baseName && baseName !== 'Pupuk Organik Cair' && baseName !== 'POC') {
+                  baseName = baseName
+                } else {
+                  baseName = 'POC Air Cucian Beras'
+                }
+              }
+
+              const key = `${baseName}_#_-`
+              pupukStockMap[key] = (pupukStockMap[key] || 0) + outVal
+            }
           }
 
           else if (type === 'pemupukan') {
@@ -459,10 +484,11 @@ export default defineComponent({
           const [name, expiry] = key.split('_#_')
           let type = 'organik'
           let form = 'padat'
+          const nameLower = (name || '').toLowerCase()
           if (name === 'NPK' || name === 'Urea' || name === 'SP - 36' || name === 'Fungisida Tembaga' || name === 'NPK Kelengkeng') {
             type = 'anorganik'
           }
-          if (name === 'POC Air Kelapa' || name === 'Fungisida Tembaga' || name === 'NPK Kelengkeng' || name === 'Pupuk Organik Cair') {
+          if (nameLower.includes('cair') || nameLower.includes('poc') || nameLower.includes('larutan') || nameLower.includes('fungisida')) {
             form = 'cair'
           }
 
@@ -486,7 +512,7 @@ export default defineComponent({
 
       const filteredPool = landName.includes('alpukat') 
         ? pool.filter(p => p.name !== 'NPK Kelengkeng') 
-        : pool.filter(p => p.name !== 'NPK' && p.name !== 'Urea' && p.name !== 'SP - 36' && p.name !== 'POC Air Kelapa')
+        : pool.filter(p => p.name !== 'NPK' && p.name !== 'Urea' && p.name !== 'SP - 36')
 
       if (r.includes('cair')) {
         return filteredPool.filter(p => p.form === 'cair')
@@ -518,11 +544,15 @@ export default defineComponent({
     })
 
     const getAvailableFertilizerStock = (name: string) => {
+      if (!name) return 0
       const nameLower = name.toLowerCase()
-      if (nameLower.includes('kotoran') || nameLower === 'manure' || nameLower === 'kotoran domba') {
-        return manureStock.value
+      if (nameLower.includes('kotoran domba') || nameLower === 'kotoran') {
+        return manureStock.value * 1000
       }
-      const matches = pupukStocks.value.filter(p => p.name === name)
+      const matches = pupukStocks.value.filter(p => {
+        const pLower = p.name.toLowerCase()
+        return p.name === name || pLower === nameLower || pLower.includes(nameLower) || nameLower.includes(pLower) || (nameLower.includes('poc') && pLower.includes('poc')) || (nameLower.includes('cair') && pLower.includes('cair'))
+      })
       return matches.reduce((acc, curr) => acc + (curr.val || 0), 0)
     }
 
@@ -876,8 +906,11 @@ export default defineComponent({
         const isCair = nameLower.includes('poc') || nameLower.includes('cair')
         const isOrganik = nameLower.includes('kandang') || nameLower.includes('kotoran') || nameLower.includes('kompos') || nameLower.includes('organik')
         let unit = 'gram'
-        if (isCair) unit = 'liter'
-        else if (isOrganik) unit = 'kilogram'
+        if (isCair) {
+          unit = (formState.value.satuanVolumePOC || 'Liter').toLowerCase()
+        } else if (isOrganik) {
+          unit = 'kilogram'
+        }
         const usedVal = parseQty(formState.value.jumlahBeratPupuk, unit)
         const available = getAvailableFertilizerStock(selectedPupuk)
 

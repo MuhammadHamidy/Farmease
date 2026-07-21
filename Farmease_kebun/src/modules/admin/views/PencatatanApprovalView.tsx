@@ -531,7 +531,15 @@ export default defineComponent({
                         } else if (typeLower.includes('pupuk') || typeLower.includes('pemupukan')) {
                           if (firstItem.jenisPupukDetail && firstItem.jenisPupukDetail !== 'Jenis Pupuk Detail') list.push({ label: 'Detail Jenis Pupuk', value: firstItem.jenisPupukDetail });
                           if (firstItem.teknikPemupukan && firstItem.teknikPemupukan !== 'Teknik Pemupukan') list.push({ label: 'Teknik Pemupukan', value: firstItem.teknikPemupukan });
-                          if (firstItem.jumlahBeratPupuk) list.push({ label: 'Jumlah Berat Pupuk', value: `${firstItem.jumlahBeratPupuk} kg` });
+                          if (firstItem.jumlahBeratPupuk) {
+                            const isPOC = (firstItem.jenisPupukDetail || '').toLowerCase().includes('poc') || (firstItem.jenisPupukDetail || '').toLowerCase().includes('cair');
+                            const unitPoc = isPOC ? (firstItem.satuanVolumePOC || 'Liter') : 'kg';
+                            list.push({ label: isPOC ? 'Volume POC Murni' : 'Jumlah Berat Pupuk', value: `${firstItem.jumlahBeratPupuk} ${unitPoc}` });
+                          }
+                          if (firstItem.jumlahAir) {
+                            const unitAir = firstItem.satuanVolumeAir || 'Liter (L)';
+                            list.push({ label: 'Volume Air Pelarut', value: `${firstItem.jumlahAir} ${unitAir}` });
+                          }
                         } else if (typeLower.includes('obat') || typeLower.includes('perawatan') || typeLower.includes('hama') || typeLower.includes('opt')) {
                           if (firstItem.jenisObat && firstItem.jenisObat !== 'Jenis Obat') list.push({ label: 'Jenis Obat', value: firstItem.jenisObat });
                           if (firstItem.namaObat) list.push({ label: 'Nama Obat', value: firstItem.namaObat });
@@ -546,11 +554,36 @@ export default defineComponent({
                           if (firstItem.kondisiPanen && firstItem.kondisiPanen !== 'Kondisi Panen') list.push({ label: 'Kondisi Panen', value: firstItem.kondisiPanen });
                           if (firstItem.caraPanen && firstItem.caraPanen !== 'Cara Panen') list.push({ label: 'Cara Panen', value: firstItem.caraPanen });
                         } else if (typeLower.includes('fermentasi') || typeLower.includes('pengolahan')) {
-                          if (firstItem.dekomposer) list.push({ label: 'Dekomposer', value: firstItem.dekomposer });
-                          if (firstItem.molase) list.push({ label: 'Molase', value: firstItem.molase });
-                          if (firstItem.jumlahAir) list.push({ label: 'Volume Air Tambahan', value: `${firstItem.jumlahAir} Liter` });
-                          if (firstItem.hasilJadi) list.push({ label: 'Hasil Jadi', value: firstItem.hasilJadi });
-                          if (firstItem.qty) list.push({ label: 'Estimasi Produksi', value: `${firstItem.qty} ${firstItem.unit || 'kg'}` });
+                          if (firstItem.selectedRincian?.includes('Cek') || firstItem.rincian?.includes('Cek')) {
+                            if (firstItem.jenisFermentasi) list.push({ label: 'Jenis Fermentasi', value: firstItem.jenisFermentasi });
+                            if (firstItem.aktivitasPengecekan) list.push({ label: 'Aktivitas Pengecekan', value: firstItem.aktivitasPengecekan });
+                            if (firstItem.kondisiFisik) list.push({ label: 'Kondisi Fisik', value: firstItem.kondisiFisik });
+                            if (firstItem.siapGuna) list.push({ label: 'Status Kelayakan', value: firstItem.siapGuna === 'siap' ? 'Siap Digunakan' : firstItem.siapGuna === 'gagal' ? 'Gagal' : 'Dalam Proses' });
+                          } else {
+                            if (firstItem.bahanUtama || firstItem.bahanMentahId) {
+                              const mainName = firstItem.bahanUtama || firstItem.bahanMentahId;
+                              const mainQty = firstItem.bahanUtamaQty || firstItem.materialUsed || firstItem.qty || '';
+                              const mainUnit = firstItem.bahanUtamaUnit || firstItem.unit || 'Liter';
+                              list.push({ label: 'Bahan Utama', value: mainQty ? `${mainName} (${mainQty} ${mainUnit})` : mainName });
+                            }
+                            if (firstItem.dekomposer) {
+                              const dekQty = firstItem.dekomposerQty ? `(${firstItem.dekomposerQty} ${firstItem.dekomposerUnit || 'mL'})` : '';
+                              list.push({ label: 'Dekomposer', value: `${firstItem.dekomposer} ${dekQty}`.trim() });
+                            }
+                            if (firstItem.molase) {
+                              const molQty = firstItem.molaseQty ? `(${firstItem.molaseQty} ${firstItem.molaseUnit || 'kg'})` : '';
+                              list.push({ label: 'Molase / Pemanis', value: `${firstItem.molase} ${molQty}`.trim() });
+                            }
+                            if (Array.isArray(firstItem.bahanTambahanItems) && firstItem.bahanTambahanItems.length > 0) {
+                              const btStr = firstItem.bahanTambahanItems.map((bt: any) => `${bt.nama} (${bt.qty} ${bt.unit || 'Liter'})`).join(', ');
+                              list.push({ label: 'Bahan Tambahan', value: btStr });
+                            } else if (firstItem.bahanTambahan && firstItem.bahanTambahan !== 'tidak') {
+                              list.push({ label: 'Bahan Tambahan', value: firstItem.bahanTambahan });
+                            }
+                            if (firstItem.jumlahAir) list.push({ label: 'Air Pelarut Adonan', value: `${firstItem.jumlahAir} ${firstItem.satuanVolumeAir || 'Liter (L)'}` });
+                            if (firstItem.hasilJadi) list.push({ label: 'Hasil Jadi', value: firstItem.hasilJadi });
+                            if (firstItem.qty) list.push({ label: 'Estimasi Produksi Batch', value: `${firstItem.qty} ${firstItem.unit || 'Liter'}` });
+                          }
                         }
 
                         return list.map(({ label, value }) => value && value !== '-' && value !== '' ? (
