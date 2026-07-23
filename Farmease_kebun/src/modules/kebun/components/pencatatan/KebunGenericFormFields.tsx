@@ -262,6 +262,27 @@ export default defineComponent({
       })
     })
 
+    const filteredObatOptions = computed(() => {
+      const r = (props.selectedRincian || '').toLowerCase()
+
+      const listPestisida = [
+        'Minyak sereh wangi',
+        'Nimba'
+      ]
+
+      const listFungisida = [
+        'Trichoderma'
+      ]
+
+      if (r.includes('fungisida')) {
+        return listFungisida
+      } else if (r.includes('pestisida') || r.includes('insektisida') || r.includes('hama')) {
+        return listPestisida
+      }
+
+      return [...listPestisida, ...listFungisida]
+    })
+
     const filteredFermentationPeriods = computed(() => {
       const selectedJenis = f().jenisFermentasi
       if (!selectedJenis) return []
@@ -372,7 +393,10 @@ export default defineComponent({
     })
 
     const medicineRecommendation = computed(() => {
-      if (props.kindTitle !== 'Pemberian Obat') return null
+      const k = (props.kindTitle || '').toLowerCase()
+      const r = (props.selectedRincian || '').toLowerCase()
+      const isObat = k === 'pemberian obat' || k.includes('obat') || k.includes('pestisida') || k.includes('fungisida') || k.includes('perawatan') || r.includes('pestisida') || r.includes('fungisida') || r.includes('obat')
+      if (!isObat) return null
 
       // Resolve Varietas
       let resolvedVarietas = ''
@@ -384,6 +408,11 @@ export default defineComponent({
         if (tree && tree.varietas) {
           resolvedVarietas = tree.varietas
         }
+      }
+      if (!resolvedVarietas) {
+        const landName = (landSession.value?.name || '').toLowerCase()
+        if (landName.includes('lengkeng') || landName.includes('kelengkeng')) resolvedVarietas = 'Lengkeng'
+        else resolvedVarietas = 'Alpukat'
       }
 
       // Resolve Fase
@@ -398,35 +427,69 @@ export default defineComponent({
           resolvedFase = tree.fase
         }
       }
+      if (!resolvedFase) resolvedFase = 'Vegetatif'
 
-      if (!resolvedVarietas || !resolvedFase) {
-        return null
-      }
-
-      const selectedObat = f().namaObat || ''
-      const selectedTeknik = f().teknikPemberianObat || ''
+      const selectedOPT = (f().namaOPT || '').trim()
+      const selectedObat = (f().namaObat || '').trim()
+      const selectedTeknik = (f().teknikPemberianObat || '').trim()
       const treeCount = (props.activeMode === 'pohon' && props.selectedTrees) ? props.selectedTrees.length : 1
 
-      let recommendedDose = '2 - 3 mL per L air'
-      let totalDoseCalc = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} - ${treeCount * 2 * 3} mL obat`
+      const optLower = selectedOPT.toLowerCase()
+      const obatLower = selectedObat.toLowerCase()
 
-      const foundStock = props.obatStocks?.find((o: any) => o.name === selectedObat)
-      if (foundStock) {
-        const qtyMatch = (foundStock.qty || '').toLowerCase()
-        if (qtyMatch.includes('g') || qtyMatch.includes('kg')) {
-          recommendedDose = '2 - 3 g per L air'
-          totalDoseCalc = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} - ${treeCount * 2 * 3} g obat`
-        }
+      let category: 'larutan_semprot' | 'tabur_akar' = 'larutan_semprot'
+      let dosisEksplisit = '2 ml per 1 liter air'
+      let konversiTetes: string | null = '40 tetes per Liter air'
+      let totalEstStr = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} mL (80 tetes) obat`
+      let catatanAplikasi = 'Larutkan bahan ke dalam air dan aduk rata sebelum disemprotkan.'
+      let recommendedObatName = selectedObat || 'Minyak sereh wangi'
+      let recommendedTeknik = selectedTeknik || 'Semprot'
+      let jenisObat = 'Pestisida'
+
+      if (optLower.includes('kanker') || optLower.includes('busuk') || obatLower.includes('trichoderma')) {
+        category = 'tabur_akar'
+        dosisEksplisit = '250 gram per batang'
+        konversiTetes = null
+        recommendedObatName = 'Trichoderma'
+        jenisObat = 'Fungisida'
+        recommendedTeknik = 'Tabur / Benam Akar'
+        const totalGram = 250 * treeCount
+        totalEstStr = totalGram >= 1000 ? `${(totalGram / 1000).toFixed(2)} kg Trichoderma (${treeCount} Pohon)` : `${totalGram} gram Trichoderma (${treeCount} Pohon)`
+        catatanAplikasi = 'Taburkan/benamkan serbuk Trichoderma di sekitar perakaran/pangkal batang, lalu siram air.'
+      } else if (optLower.includes('kutu putih') || obatLower.includes('nimba')) {
+        category = 'larutan_semprot'
+        dosisEksplisit = '2 ml per liter air'
+        konversiTetes = '40 tetes per Liter air'
+        recommendedObatName = 'Nimba'
+        jenisObat = 'Pestisida'
+        recommendedTeknik = 'Semprot'
+        totalEstStr = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} mL (80 tetes) Nimba`
+        catatanAplikasi = 'Larutkan Nimba ke dalam air semprot dan aduk rata sebelum disemprotkan ke kutu putih.'
+      } else {
+        // Default: Tungau Merah / Minyak sereh wangi
+        category = 'larutan_semprot'
+        dosisEksplisit = '2 ml per 1 liter air'
+        konversiTetes = '40 tetes per Liter air'
+        recommendedObatName = 'Minyak sereh wangi'
+        jenisObat = 'Pestisida'
+        recommendedTeknik = 'Semprot'
+        totalEstStr = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} mL (80 tetes) Minyak sereh wangi`
+        catatanAplikasi = 'Campurkan minyak sereh wangi dengan pelarut/air, kocok hingga merata.'
       }
 
       return {
+        category,
+        jenisObat,
         varietas: resolvedVarietas,
         fase: resolvedFase,
-        obat: selectedObat || '-',
-        teknik: selectedTeknik || '-',
-        dosis: recommendedDose,
-        total: totalDoseCalc,
-        treeCount
+        opt: selectedOPT || 'Tungau Merah',
+        obat: recommendedObatName,
+        teknik: recommendedTeknik,
+        dosisEksplisit,
+        konversiTetes,
+        totalEstStr,
+        treeCount,
+        catatanAplikasi
       }
     })
 
@@ -988,7 +1051,7 @@ export default defineComponent({
             )
           })()}
 
-          {props.kindTitle === 'Pemberian Obat' && (() => {
+          {(props.kindTitle === 'Pemberian Obat' || (props.kindTitle || '').toLowerCase().includes('obat') || (props.kindTitle || '').toLowerCase().includes('pestisida') || (props.kindTitle || '').toLowerCase().includes('fungisida') || (props.kindTitle || '').toLowerCase().includes('perawatan') || (props.selectedRincian || '').toLowerCase().includes('pestisida') || (props.selectedRincian || '').toLowerCase().includes('fungisida')) && (() => {
             return (
               <>
                 {props.activeMode === 'lahan' && (
@@ -1032,41 +1095,45 @@ export default defineComponent({
                   </>
                 )}
 
+                {/* 1. Target OPT (Input Bar) */}
                 <div class="form-group">
-                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Masukkan Nama Organisme Pengganggu Tumbuhan (OPT)</span>
+                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Target Organisme Pengganggu Tumbuhan (OPT)</span>
                   <PerkebunanFormInput
                     modelValue={f().namaOPT}
-                    placeholder="Contoh: Ulat Kipat, Lalat Buah, dll."
+                    placeholder="Contoh: Tungau Merah, Kutu Putih, Kanker Batang & Busuk Akar"
                     onUpdate:modelValue={(val) => { f().namaOPT = val }}
                   />
                 </div>
 
+                {/* 2. Pilih Nama Obat (Dropdown Select) */}
                 <div class="form-group">
                   <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Nama Obat</span>
-                  {props.obatStocks && props.obatStocks.length > 0 ? (
-                    <PerkebunanFormSelect
-                      modelValue={f().namaObat}
-                      options={props.obatStocks.map((o: any) => o.name)}
-                      placeholder="Pilih Obat"
-                      onUpdate:modelValue={(val: string) => {
-                        f().namaObat = val
-                        // Auto-fill from stock info
-                        const found = props.obatStocks.find((o: any) => o.name === val)
-                        if (found) {
-                          const qtyMatch = (found.qty || '').match(/^([\d.]+)/)
-                          if (qtyMatch) f().volumeObat = qtyMatch[1]
-                          const unitMatch = (found.qty || '').match(/([A-Za-z()\/\s]+)$/)
-                          if (unitMatch) f().satuanVolumeObat = unitMatch[1].trim()
-                        }
-                      }}
-                    />
-                  ) : (
-                    <PerkebunanFormInput
-                       modelValue={f().namaObat}
-                       placeholder="Contoh: Ekstrak Nimba"
-                       onUpdate:modelValue={(val) => { f().namaObat = val }}
-                    />
-                  )}
+                  <PerkebunanFormSelect
+                    modelValue={f().namaObat}
+                    options={filteredObatOptions.value}
+                    placeholder="Pilih Nama Obat"
+                    onUpdate:modelValue={(val: string) => {
+                      f().namaObat = val
+                      if (val === 'Minyak sereh wangi') {
+                        f().jenisObat = 'Pestisida'
+                        f().satuanVolumeObat = 'Mililiter (ml)'
+                        if (!f().namaOPT) f().namaOPT = 'Tungau Merah'
+                      } else if (val === 'Trichoderma') {
+                        f().jenisObat = 'Fungisida'
+                        f().satuanVolumeObat = 'Gram (g)'
+                        if (!f().namaOPT) f().namaOPT = 'Kanker Batang & Busuk Akar'
+                      } else if (val === 'Nimba') {
+                        f().jenisObat = 'Pestisida'
+                        f().satuanVolumeObat = 'Mililiter (ml)'
+                        if (!f().namaOPT) f().namaOPT = 'Kutu Putih'
+                      }
+                      const found = props.obatStocks?.find((o: any) => o.name === val)
+                      if (found) {
+                        const qtyMatch = (found.qty || '').match(/^([\d.]+)/)
+                        if (qtyMatch) f().volumeObat = qtyMatch[1]
+                      }
+                    }}
+                  />
                 </div>
 
                 <div class="form-group">
@@ -1081,50 +1148,65 @@ export default defineComponent({
 
                 {medicineRecommendation.value && (
                   <div style="background-color: #f6f8ee; border: 1.5px solid #dce1d0; border-radius: 0.75rem; padding: 1.25rem; margin-top: 0.5rem; margin-bottom: 1.25rem; text-align: left;">
-                    <div style="margin-bottom: 0.75rem;">
-                      <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem; font-weight: 800; color: #2e3b1f;">Rekomendasi Pemberian Obat</h4>
-                      <p style="margin: 0; font-size: 0.8rem; color: #5c6650; font-weight: 600; line-height: 1.4;">
-                        Rekomendasi takaran obat untuk varietas {medicineRecommendation.value.varietas} ({medicineRecommendation.value.fase}):
-                      </p>
+                    <div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                      <div>
+                        <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem; font-weight: 800; color: #2e3b1f;">
+                          📋 Rekomendasi Takaran & Dosis Buku Panduan
+                        </h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: #5c6650; font-weight: 600; line-height: 1.4;">
+                          Panduan resmi untuk komoditas <b>{medicineRecommendation.value.varietas}</b> ({medicineRecommendation.value.fase}) — OPT: <b>{medicineRecommendation.value.opt}</b>
+                        </p>
+                      </div>
+                      {medicineRecommendation.value.syaratWaktu && (
+                        <span style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 0.375rem;">
+                          ⏱️ Waktu: {medicineRecommendation.value.syaratWaktu}
+                        </span>
+                      )}
                     </div>
 
                     {/* Grid of details */}
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; margin-top: 0.75rem;">
                       <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                           Obat Terpilih
+                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">
+                          🧪 Bahan / Obat Rekomendasi
                         </span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
+                        <strong style="font-size: 0.88rem; color: #2e3b1f; margin-top: 0.15rem;">
                           {medicineRecommendation.value.obat}
                         </strong>
                       </div>
 
                       <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                           Teknik Pemberian
+                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">
+                          📌 Dosis Eksplisit
                         </span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
-                          {medicineRecommendation.value.teknik}
+                        <strong style="font-size: 0.88rem; color: #059669; margin-top: 0.15rem;">
+                          {medicineRecommendation.value.dosisEksplisit}
                         </strong>
                       </div>
 
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Dosis Rekomendasi
-                        </span>
-                        <strong style="font-size: 0.9rem; color: #059669; margin-top: 0.15rem;">
-                          {medicineRecommendation.value.dosis}
-                        </strong>
-                      </div>
+                      {medicineRecommendation.value.konversiTetes && (
+                        <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">
+                            💧 Konversi Tetes (Dropper)
+                          </span>
+                          <strong style="font-size: 0.88rem; color: #0284c7; margin-top: 0.15rem;">
+                            {medicineRecommendation.value.konversiTetes}
+                          </strong>
+                        </div>
+                      )}
 
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Estimasi ({medicineRecommendation.value.treeCount} Pohon)
+                      <div style={`background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center; ${!medicineRecommendation.value.konversiTetes ? 'grid-column: span 2;' : ''}`}>
+                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">
+                          🧮 Estimasi ({medicineRecommendation.value.treeCount} Pohon)
                         </span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
-                          {medicineRecommendation.value.total}
+                        <strong style="font-size: 0.88rem; color: #2e3b1f; margin-top: 0.15rem;">
+                          {medicineRecommendation.value.totalEstStr}
                         </strong>
                       </div>
+                    </div>
+
+                    <div style="margin-top: 0.75rem; padding: 0.5rem 0.65rem; background: #ffffff; border-left: 3px solid #059669; border-radius: 0.25rem; font-size: 0.78rem; color: #4b5563;">
+                      <b>Petunjuk Aplikasi:</b> {medicineRecommendation.value.catatanAplikasi}
                     </div>
                   </div>
                 )}
@@ -2042,53 +2124,58 @@ export default defineComponent({
 
             return (
               <>
-                {/* 1. Jenis Obat */}
+                {/* 1. Target OPT (Input Bar) */}
+                <div class="form-group">
+                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Target Organisme Pengganggu Tumbuhan (OPT)</span>
+                  <PerkebunanFormInput
+                    modelValue={f().namaOPT}
+                    placeholder="Contoh: Tungau Merah, Kutu Putih, Kanker Batang & Busuk Akar"
+                    onUpdate:modelValue={(val) => { f().namaOPT = val }}
+                  />
+                </div>
+
+                {/* 2. Jenis Obat */}
                 <div class="form-group">
                   <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Jenis Obat</span>
                   <PerkebunanFormSelect
                     modelValue={f().jenisObat}
-                    options={['Pestisida', 'Insektisida', 'Fungisida']}
+                    options={['Pestisida', 'Fungisida', 'Insektisida']}
                     placeholder="Jenis Obat"
                     onUpdate:modelValue={(val) => { f().jenisObat = val }}
                   />
                 </div>
 
-                {/* 2. Name Field */}
+                {/* 3. Nama Obat */}
                 {isNewRegistration ? (
                   <div class="form-group">
                     <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Masukkan Nama Obat Baru</span>
                     <PerkebunanFormInput
                       modelValue={f().namaObat}
-                      placeholder="Contoh: Ekstrak Nimba"
+                      placeholder="Contoh: Minyak sereh wangi"
                       onUpdate:modelValue={(val) => { f().namaObat = val }}
                     />
                   </div>
                 ) : (
                   <div class="form-group">
-                    <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Nama Obat</span>
+                    <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Pilih Nama Obat</span>
                     <PerkebunanFormSelect
                       modelValue={f().namaObat}
-                      options={props.obatStocks ? props.obatStocks.map((o: any) => o.name) : []}
-                      placeholder="Pilih Obat"
+                      options={filteredObatOptions.value}
+                      placeholder="Pilih Nama Obat"
                       onUpdate:modelValue={(val) => { 
                         f().namaObat = val 
-                        const found = props.obatStocks?.find((o: any) => o.name === val)
-                        if (found) {
-                          if (found.type) {
-                            const capitalizedType = found.type.charAt(0).toUpperCase() + found.type.slice(1);
-                            if (['Pestisida', 'Insektisida', 'Fungisida'].includes(capitalizedType)) {
-                              f().jenisObat = capitalizedType
-                            }
-                          }
-                          const qtyStr = found.qty || ''
-                          const unitMatch = qtyStr.match(/[a-zA-Z]+/g)
-                          if (unitMatch) {
-                            const rawUnit = unitMatch[0].toLowerCase()
-                            if (rawUnit === 'ml') f().satuanVolumeObat = 'Mililiter (ml)'
-                            else if (rawUnit === 'g') f().satuanVolumeObat = 'Gram (g)'
-                            else if (rawUnit === 'l') f().satuanVolumeObat = 'Liter (L)'
-                            else if (rawUnit === 'kg') f().satuanVolumeObat = 'Kilogram (Kg)'
-                          }
+                        if (val === 'Minyak sereh wangi') {
+                          f().jenisObat = 'Pestisida'
+                          f().satuanVolumeObat = 'Mililiter (ml)'
+                          if (!f().namaOPT) f().namaOPT = 'Tungau Merah'
+                        } else if (val === 'Trichoderma') {
+                          f().jenisObat = 'Fungisida'
+                          f().satuanVolumeObat = 'Gram (g)'
+                          if (!f().namaOPT) f().namaOPT = 'Kanker Batang & Busuk Akar'
+                        } else if (val === 'Nimba') {
+                          f().jenisObat = 'Pestisida'
+                          f().satuanVolumeObat = 'Mililiter (ml)'
+                          if (!f().namaOPT) f().namaOPT = 'Kutu Putih'
                         }
                       }}
                     />

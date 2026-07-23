@@ -541,6 +541,7 @@ export default defineComponent({
                             list.push({ label: 'Volume Air Pelarut', value: `${firstItem.jumlahAir} ${unitAir}` });
                           }
                         } else if (typeLower.includes('obat') || typeLower.includes('perawatan') || typeLower.includes('hama') || typeLower.includes('opt')) {
+                          if (firstItem.namaOPT) list.push({ label: 'Target OPT', value: firstItem.namaOPT });
                           if (firstItem.jenisObat && firstItem.jenisObat !== 'Jenis Obat') list.push({ label: 'Jenis Obat', value: firstItem.jenisObat });
                           if (firstItem.namaObat) list.push({ label: 'Nama Obat', value: firstItem.namaObat });
                           if (firstItem.volumeObat) list.push({ label: 'Volume Obat', value: `${firstItem.volumeObat} ${firstItem.satuanVolumeObat || 'ml'}` });

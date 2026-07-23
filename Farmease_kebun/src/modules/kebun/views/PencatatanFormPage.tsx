@@ -75,7 +75,14 @@ export default defineComponent({
     const kindTitle = computed(() => {
       if (selectedJenis.value === 'Jenis Pencatatan') return ''
       const lower = selectedJenis.value.toLowerCase()
-      if (lower.includes('perawatan') || lower.includes('hama') || lower.includes('penyakit')) return 'Pemberian Obat'
+      const rLower = (selectedRincian.value || '').toLowerCase()
+      if (
+        lower.includes('perawatan') || lower.includes('hama') || lower.includes('penyakit') ||
+        lower.includes('obat') || lower.includes('pestisida') || lower.includes('fungisida') || lower.includes('insektisida') ||
+        rLower.includes('pestisida') || rLower.includes('fungisida') || rLower.includes('insektisida') || rLower.includes('obat')
+      ) {
+        return 'Pemberian Obat'
+      }
       return selectedJenis.value.replace(/^Pencatatan\s+/u, '')
     })
 
@@ -228,13 +235,10 @@ export default defineComponent({
     })
 
     const currentObatStocks = computed(() => {
-      const stockMap: Record<string, { qty: number; unit: string; type: string; expiry: string }> = {
-        'Mankozeb': { qty: 500, unit: 'g', type: 'fungisida', expiry: '02 - 12 - 2026' },
-        'Fungisida Tembaga': { qty: 300, unit: 'ml', type: 'fungisida', expiry: '02 - 12 - 2026' },
-        'Sipermetrin 50EC': { qty: 500, unit: 'ml', type: 'insektisida', expiry: '02 - 12 - 2026' },
-        'Imidakloprid': { qty: 300, unit: 'ml', type: 'insektisida', expiry: '02 - 12 - 2026' },
-        'Ekstrak Nimba': { qty: 500, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026' },
-        'Ekstrak Bawang Putih': { qty: 300, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026' },
+      const stockMap: Record<string, { qty: number; unit: string; type: string; expiry: string; targetOPT?: string }> = {
+        'Minyak sereh wangi': { qty: 1000, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026', targetOPT: 'Tungau Merah' },
+        'Trichoderma': { qty: 5000, unit: 'g', type: 'fungisida', expiry: '02 - 12 - 2026', targetOPT: 'Kanker Batang & Busuk Akar' },
+        'Nimba': { qty: 1000, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026', targetOPT: 'Kutu Putih' }
       }
 
       // Add from approved stok obat submissions
@@ -248,10 +252,12 @@ export default defineComponent({
             const unit = item.satuanVolumeObat || 'ml'
             const expiry = item.tanggalKadaluarsa || '-'
             const type = (item.jenisObat || item.selectedRincian || '').toLowerCase()
+            const targetOPT = item.namaOPT || item.targetOPT || ''
             if (stockMap[name]) {
               stockMap[name].qty += val
+              if (targetOPT) stockMap[name].targetOPT = targetOPT
             } else {
-              stockMap[name] = { qty: val, unit, type, expiry }
+              stockMap[name] = { qty: val, unit, type, expiry, targetOPT }
             }
           }
         })
@@ -280,7 +286,8 @@ export default defineComponent({
           expiry: data.expiry,
           type: data.type,
           val: data.qty,
-          unit: data.unit
+          unit: data.unit,
+          targetOPT: data.targetOPT
         }
       }).filter(o => o.val > 0)
 
