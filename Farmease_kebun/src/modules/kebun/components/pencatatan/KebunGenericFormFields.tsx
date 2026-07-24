@@ -265,22 +265,31 @@ export default defineComponent({
     const filteredObatOptions = computed(() => {
       const r = (props.selectedRincian || '').toLowerCase()
 
-      const listPestisida = [
+      const listInsektisida = [
+        'Beauveria bassiana',
         'Minyak sereh wangi',
-        'Nimba'
+        'Ekstrak nimba'
+      ]
+
+      const listPestisida = [
+        'Beauveria bassiana',
+        'Minyak sereh wangi',
+        'Ekstrak nimba'
       ]
 
       const listFungisida = [
         'Trichoderma'
       ]
 
-      if (r.includes('fungisida')) {
+      if (r.includes('insektisida')) {
+        return listInsektisida
+      } else if (r.includes('fungisida')) {
         return listFungisida
-      } else if (r.includes('pestisida') || r.includes('insektisida') || r.includes('hama')) {
+      } else if (r.includes('pestisida') || r.includes('hama')) {
         return listPestisida
       }
 
-      return [...listPestisida, ...listFungisida]
+      return ['Beauveria bassiana', 'Minyak sereh wangi', 'Ekstrak nimba', 'Trichoderma']
     })
 
     const filteredFermentationPeriods = computed(() => {
@@ -431,6 +440,11 @@ export default defineComponent({
 
       const selectedOPT = (f().namaOPT || '').trim()
       const selectedObat = (f().namaObat || '').trim()
+
+      if (!selectedObat || selectedObat === 'Pilih Nama Obat' || !selectedOPT || selectedOPT === 'Pilih Target OPT') {
+        return null
+      }
+
       const selectedTeknik = (f().teknikPemberianObat || '').trim()
       const treeCount = (props.activeMode === 'pohon' && props.selectedTrees) ? props.selectedTrees.length : 1
 
@@ -446,7 +460,17 @@ export default defineComponent({
       let recommendedTeknik = selectedTeknik || 'Semprot'
       let jenisObat = 'Pestisida'
 
-      if (optLower.includes('kanker') || optLower.includes('busuk') || obatLower.includes('trichoderma')) {
+      if (optLower.includes('beauveria') || obatLower.includes('beauveria')) {
+        category = 'larutan_semprot'
+        dosisEksplisit = '100 gram serbuk/bahan Beauveria bassiana dilarutkan dalam 14 liter air'
+        konversiTetes = '± 7.14 gram serbuk per Liter air (100g / 14L air)'
+        recommendedObatName = 'Beauveria bassiana'
+        jenisObat = 'Insektisida'
+        recommendedTeknik = 'Semprot'
+        const reqGram = (100 / 14) * 2 * treeCount
+        totalEstStr = `± ${treeCount * 2} L air & ± ${reqGram.toFixed(1)} gram Beauveria bassiana (${treeCount} Pohon)`
+        catatanAplikasi = 'Larutkan 100 gram serbuk Beauveria bassiana ke dalam 14 liter air di tangki semprot, aduk hingga larut sempurna lalu semprotkan ke tanaman.'
+      } else if (optLower.includes('kanker') || optLower.includes('busuk') || obatLower.includes('trichoderma')) {
         category = 'tabur_akar'
         dosisEksplisit = '250 gram per batang'
         konversiTetes = null
@@ -460,11 +484,11 @@ export default defineComponent({
         category = 'larutan_semprot'
         dosisEksplisit = '2 ml per liter air'
         konversiTetes = '40 tetes per Liter air'
-        recommendedObatName = 'Nimba'
+        recommendedObatName = 'Ekstrak nimba'
         jenisObat = 'Pestisida'
         recommendedTeknik = 'Semprot'
-        totalEstStr = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} mL (80 tetes) Nimba`
-        catatanAplikasi = 'Larutkan Nimba ke dalam air semprot dan aduk rata sebelum disemprotkan ke kutu putih.'
+        totalEstStr = `± ${treeCount * 2} L air & ${treeCount * 2 * 2} mL (80 tetes) Ekstrak nimba`
+        catatanAplikasi = 'Larutkan Ekstrak nimba ke dalam air semprot dan aduk rata sebelum disemprotkan ke kutu putih.'
       } else {
         // Default: Tungau Merah / Minyak sereh wangi
         category = 'larutan_semprot'
@@ -526,10 +550,17 @@ export default defineComponent({
       }
 
       const faseLower = resolvedFase.toLowerCase()
-      const selectedPupuk = f().jenisPupukDetail || ''
-      const selectedTeknik = f().teknikPemupukan || ''
+      const selectedPupuk = (f().jenisPupukDetail || '').trim()
+      const selectedTeknik = (f().teknikPemupukan || '').trim()
+
+      if (
+        !selectedPupuk || selectedPupuk === 'Jenis Pupuk Detail' || selectedPupuk === 'Pilih Pupuk' ||
+        !selectedTeknik || selectedTeknik === 'Teknik Pemupukan' || selectedTeknik === 'Pilih Teknik'
+      ) {
+        return null
+      }
+
       const rincianStr = props.selectedRincian || ''
-      
       const pupukLower = selectedPupuk.toLowerCase()
       const rincianLower = rincianStr.toLowerCase()
 
@@ -1117,15 +1148,15 @@ export default defineComponent({
                       if (val === 'Minyak sereh wangi') {
                         f().jenisObat = 'Pestisida'
                         f().satuanVolumeObat = 'Mililiter (ml)'
-                        if (!f().namaOPT) f().namaOPT = 'Tungau Merah'
+                      } else if (val === 'Beauveria bassiana') {
+                        f().jenisObat = 'Insektisida'
+                        f().satuanVolumeObat = 'Gram (g)'
                       } else if (val === 'Trichoderma') {
                         f().jenisObat = 'Fungisida'
                         f().satuanVolumeObat = 'Gram (g)'
-                        if (!f().namaOPT) f().namaOPT = 'Kanker Batang & Busuk Akar'
-                      } else if (val === 'Nimba') {
+                      } else if (val === 'Ekstrak nimba' || val === 'Nimba') {
                         f().jenisObat = 'Pestisida'
                         f().satuanVolumeObat = 'Mililiter (ml)'
-                        if (!f().namaOPT) f().namaOPT = 'Kutu Putih'
                       }
                       const found = props.obatStocks?.find((o: any) => o.name === val)
                       if (found) {
@@ -2168,11 +2199,15 @@ export default defineComponent({
                           f().jenisObat = 'Pestisida'
                           f().satuanVolumeObat = 'Mililiter (ml)'
                           if (!f().namaOPT) f().namaOPT = 'Tungau Merah'
+                        } else if (val === 'Beauveria bassiana') {
+                          f().jenisObat = 'Insektisida'
+                          f().satuanVolumeObat = 'Gram (g)'
+                          if (!f().namaOPT) f().namaOPT = 'Hama Insekta / Ulat / Penggerek'
                         } else if (val === 'Trichoderma') {
                           f().jenisObat = 'Fungisida'
                           f().satuanVolumeObat = 'Gram (g)'
                           if (!f().namaOPT) f().namaOPT = 'Kanker Batang & Busuk Akar'
-                        } else if (val === 'Nimba') {
+                        } else if (val === 'Ekstrak nimba' || val === 'Nimba') {
                           f().jenisObat = 'Pestisida'
                           f().satuanVolumeObat = 'Mililiter (ml)'
                           if (!f().namaOPT) f().namaOPT = 'Kutu Putih'

@@ -82,25 +82,61 @@ export default defineComponent({
         .sort((a, b) => a.label.localeCompare(b.label));
     });
 
+    const deduplicateOptions = (dbNames: string[], fallbackNames: string[]) => {
+      const result: string[] = [...dbNames];
+      const resultLower = new Set(result.map(n => n.toLowerCase()));
+      fallbackNames.forEach(name => {
+        if (!resultLower.has(name.toLowerCase())) {
+          result.push(name);
+          resultLower.add(name.toLowerCase());
+        }
+      });
+      return result;
+    };
+
     const energyFeeds = computed(() => {
       const dbList = stocks.value
-        .filter((s: any) => s.category === 'konsentrat' && (s.notes || '').toLowerCase().includes('energi'))
+        .filter((s: any) => {
+          const cat = (s.category || '').toLowerCase();
+          const notes = (s.notes || '').toLowerCase();
+          const name = (s.name || '').toLowerCase();
+          if (cat === 'konsentrat' || cat === 'pellet') {
+            if (notes.includes('energi') || notes.includes('karbohidrat')) return true;
+            if (name.includes('bekatul') || name.includes('dedak') || name.includes('jagung') || name.includes('onggok') || name.includes('singkong') || name.includes('polard') || name.includes('gandum')) return true;
+            if (!notes.includes('protein') && !name.includes('tahu') && !name.includes('bungkil') && !name.includes('pellet') && !name.includes('ampas')) return true;
+          }
+          return false;
+        })
         .map((s: any) => s.name);
-      return dbList.length > 0 ? dbList : ['Bekatul', 'Jagung', 'Onggok'];
+
+      const fallback = ['Bekatul', 'Jagung', 'Onggok'];
+      return deduplicateOptions(dbList, fallback);
     });
 
     const proteinFeeds = computed(() => {
       const dbList = stocks.value
-        .filter((s: any) => s.category === 'konsentrat' && (s.notes || '').toLowerCase().includes('protein'))
+        .filter((s: any) => {
+          const cat = (s.category || '').toLowerCase();
+          const notes = (s.notes || '').toLowerCase();
+          const name = (s.name || '').toLowerCase();
+          if (cat === 'konsentrat' || cat === 'pellet') {
+            if (notes.includes('protein')) return true;
+            if (name.includes('tahu') || name.includes('bungkil') || name.includes('pellet') || name.includes('ampas') || name.includes('soy') || name.includes('ikan') || name.includes('konsentrat')) return true;
+          }
+          return false;
+        })
         .map((s: any) => s.name);
-      return dbList.length > 0 ? dbList : ['Ampas Tahu', 'Bungkil Kacang Tanah', 'Bungkil kelapa Sawit'];
+
+      const fallback = ['Ampas Tahu', 'Bungkil Kacang Tanah', 'Bungkil Kelapa Sawit'];
+      return deduplicateOptions(dbList, fallback);
     });
 
     const mineralFeeds = computed(() => {
       const dbList = stocks.value
         .filter((s: any) => s.category === 'vitamin' && (s.notes || '').toLowerCase().includes('mineral'))
         .map((s: any) => s.name);
-      return dbList.length > 0 ? dbList : ['Garam Dirijen', 'Mineral Blok'];
+      const fallback = ['Garam Dirijen', 'Mineral Blok'];
+      return deduplicateOptions(dbList, fallback);
     });
 
     const getOptionsForFeeds = (names: string[]) => {
@@ -118,6 +154,10 @@ export default defineComponent({
       const dbHijauan = stocks.value
         .filter((s: any) => {
           const cat = (s.category || '').toLowerCase();
+          const name = (s.name || '').toLowerCase();
+          if (name.includes('silase') || name.includes('fermentasi') || cat.includes('silase')) {
+            return false;
+          }
           return cat === 'hijauan' || cat === 'greenery';
         })
         .map((s: any) => ({
@@ -129,34 +169,18 @@ export default defineComponent({
     });
 
     const activatorOptions = computed(() => {
-      // Hanya tampilkan aktivator fermentasi: EM4, Molase, Ragi
-      const AKTIVATOR_NAMES = ['em4', 'molase', 'ragi'];
+      const AKTIVATOR_NAMES = ['em4', 'molase', 'ragi', 'tetes tebu'];
       const dbActivators = stocks.value
         .filter((s: any) => {
           const nameLower = (s.name || '').toLowerCase();
-          return AKTIVATOR_NAMES.some(a => nameLower.includes(a));
+          const catLower = (s.category || '').toLowerCase();
+          return catLower === 'vitamin' || catLower === 'mineral' || catLower === 'bahan' || catLower === 'aktivator' || AKTIVATOR_NAMES.some(a => nameLower.includes(a));
         })
-        .map((s: any) => ({
-          value: s.name,
-          label: s.name
-        }));
-      
-      // Fallback jika belum ada di DB
-      const fallback = [
-        { value: 'EM4', label: 'EM4' },
-        { value: 'Molase', label: 'Molase' },
-        { value: 'Ragi', label: 'Ragi' }
-      ];
-      
-      const result = dbActivators.length > 0 ? dbActivators : fallback;
-      // Deduplikasi
-      const seen = new Set<string>();
-      return result.filter(item => {
-        const key = item.value.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+        .map((s: any) => s.name);
+
+      const fallback = ['EM4', 'Ragi', 'Molase'];
+      const names = deduplicateOptions(dbActivators, fallback);
+      return names.map(n => ({ value: n, label: n }));
     });
 
     const toggleFiberSource = (feedName: string) => {

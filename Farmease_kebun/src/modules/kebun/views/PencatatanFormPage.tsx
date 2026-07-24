@@ -236,9 +236,10 @@ export default defineComponent({
 
     const currentObatStocks = computed(() => {
       const stockMap: Record<string, { qty: number; unit: string; type: string; expiry: string; targetOPT?: string }> = {
+        'Beauveria bassiana': { qty: 2000, unit: 'g', type: 'insektisida', expiry: '10 - 10 - 2027', targetOPT: 'Hama Insekta / Ulat / Penggerek' },
         'Minyak sereh wangi': { qty: 1000, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026', targetOPT: 'Tungau Merah' },
         'Trichoderma': { qty: 5000, unit: 'g', type: 'fungisida', expiry: '02 - 12 - 2026', targetOPT: 'Kanker Batang & Busuk Akar' },
-        'Nimba': { qty: 1000, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026', targetOPT: 'Kutu Putih' }
+        'Ekstrak nimba': { qty: 1000, unit: 'ml', type: 'pestisida', expiry: '02 - 12 - 2026', targetOPT: 'Kutu Putih' }
       }
 
       // Add from approved stok obat submissions

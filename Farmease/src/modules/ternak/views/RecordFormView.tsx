@@ -350,24 +350,47 @@ export default defineComponent({
           const requestedQty = parseFloat(f.qty) || 0;
           if (requestedQty <= 0) continue;
 
+          const validateMultiFeed = (rawFeedString: string, totalReqQty: number, label: string, pctStr: string) => {
+            if (!rawFeedString) return null;
+            const items = rawFeedString.split(',').map(s => s.trim()).filter(Boolean);
+            if (items.length === 0) return null;
+
+            const reqPerItem = totalReqQty / items.length;
+
+            for (const name of items) {
+              const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === name.toLowerCase());
+              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === name.toLowerCase() || (p.value || '').toLowerCase() === name.toLowerCase());
+              
+              const available = stockItem ? Number(stockItem.qty) : (pruningItem ? Number(pruningItem.qty || pruningItem.jumlah || 9999) : null);
+              
+              if (available !== null && available < reqPerItem) {
+                return {
+                  insufficient: true,
+                  message: `Stok ${label} "${name}" tidak mencukupi!\nTersedia: ${available.toFixed(2)} kg\nDibutuhkan (${pctStr}): ${reqPerItem.toFixed(2)} kg.`
+                };
+              }
+            }
+            return null;
+          };
+
           if (f.metoda === 'dadakan') {
             // Pakan Dadakan (Validate only selected feeds)
-            const feedsToCheck = [];
             const scale = f.hijauan ? 0.104 : 0.0312;
-            if (f.energi) feedsToCheck.push({ name: f.energi, pct: 0.018 / scale, label: 'Energi' });
-            if (f.protein) feedsToCheck.push({ name: f.protein, pct: 0.0108 / scale, label: 'Protein' });
-            if (f.mineral) feedsToCheck.push({ name: f.mineral, pct: 0.0024 / scale, label: 'Mineral' });
-            if (f.hijauan) feedsToCheck.push({ name: f.hijauan, pct: 0.0728 / scale, label: 'Hijauan' });
+            const feedsToCheck = [
+              { field: f.energi, req: requestedQty * (0.018 / scale), label: 'pakan Energi', pct: 'proporsional' },
+              { field: f.protein, req: requestedQty * (0.0108 / scale), label: 'pakan Protein', pct: 'proporsional' },
+              { field: f.mineral, req: requestedQty * (0.0024 / scale), label: 'pakan Mineral', pct: 'proporsional' },
+              { field: f.hijauan, req: requestedQty * (0.0728 / scale), label: 'pakan Hijauan', pct: 'proporsional' },
+            ];
 
             for (const item of feedsToCheck) {
-              const reqAmount = requestedQty * item.pct;
-              const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
-              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === item.name.toLowerCase());
-              const available = stockItem ? stockItem.qty : (pruningItem ? pruningItem.qty : null);
-              if (available === null || available < reqAmount) {
-                isStockInsufficient = true;
-                insufficientMessage = `Stok pakan ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${available !== null ? Number(available).toFixed(2) : 0} kg\nDibutuhkan (proporsional): ${reqAmount.toFixed(2)} kg.`;
-                break;
+              if (item.field && item.req > 0) {
+                const res = validateMultiFeed(item.field, item.req, item.label, item.pct);
+                if (res) {
+                  isStockInsufficient = true;
+                  insufficientMessage = res.message;
+                  break;
+                }
               }
             }
             if (isStockInsufficient) break;
@@ -375,7 +398,7 @@ export default defineComponent({
             // Pakan Hijauan Kebun — cek pruningOptions dulu, lalu DB stok
             const feedName = f.obat;
             if (feedName) {
-              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === feedName.toLowerCase());
+              const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === feedName.toLowerCase() || (p.value || '').toLowerCase() === feedName.toLowerCase());
               if (pruningItem) {
                 // Stok dari kebun tersedia, lewati validasi DB
               } else {
@@ -416,6 +439,29 @@ export default defineComponent({
         let isStockInsufficient = false;
         let insufficientMessage = '';
 
+        const validateMultiFeed = (rawFeedString: string, totalReqQty: number, label: string, pctStr: string) => {
+          if (!rawFeedString) return null;
+          const items = rawFeedString.split(',').map(s => s.trim()).filter(Boolean);
+          if (items.length === 0) return null;
+
+          const reqPerItem = totalReqQty / items.length;
+
+          for (const name of items) {
+            const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === name.toLowerCase());
+            const pruningItem = pruningOptions.value.find((p: any) => (p.name || '').toLowerCase() === name.toLowerCase() || (p.value || '').toLowerCase() === name.toLowerCase());
+            
+            const available = stockItem ? Number(stockItem.qty) : (pruningItem ? Number(pruningItem.qty || pruningItem.jumlah || 9999) : null);
+            
+            if (available !== null && available < reqPerItem) {
+              return {
+                insufficient: true,
+                message: `Stok ${label} "${name}" tidak mencukupi!\nTersedia: ${available.toFixed(2)} kg\nDibutuhkan (${pctStr}): ${reqPerItem.toFixed(2)} kg.`
+              };
+            }
+          }
+          return null;
+        };
+
         for (const f of forms.value) {
           if (f.name === 'Konversi Pakan') {
             const rawFeed = f.hijauan;
@@ -424,25 +470,27 @@ export default defineComponent({
             const mineralFeed = f.mineral;
             const targetQty = parseFloat(f.qty) || 0;
 
-            if (rawFeed && energyFeed && proteinFeed && mineralFeed && targetQty > 0) {
+            if (targetQty > 0) {
               const reqRaw = targetQty * 0.7;
-              const reqEnergy = targetQty * 0.3 * (0.0180 / 0.0312);
-              const reqProtein = targetQty * 0.3 * (0.0108 / 0.0312);
-              const reqMineral = targetQty * 0.3 * (0.0024 / 0.0312);
+              const reqEnergy = targetQty * 0.173;
+              const reqProtein = targetQty * 0.104;
+              const reqMineral = targetQty * 0.023;
 
               const checkItems = [
-                { name: rawFeed, req: reqRaw, label: 'Pakan Mentah', pct: '70%' },
-                { name: energyFeed, req: reqEnergy, label: 'Pakan Energi (Additive)', pct: '17.3%' },
-                { name: proteinFeed, req: reqProtein, label: 'Pakan Protein', pct: '10.4%' },
-                { name: mineralFeed, req: reqMineral, label: 'Pakan Mineral', pct: '2.3%' }
+                { field: rawFeed, req: reqRaw, label: 'Pakan Mentah', pct: '70%' },
+                { field: energyFeed, req: reqEnergy, label: 'Pakan Energi (Additive)', pct: '17.3%' },
+                { field: proteinFeed, req: reqProtein, label: 'Pakan Protein', pct: '10.4%' },
+                { field: mineralFeed, req: reqMineral, label: 'Pakan Mineral / Aktivator', pct: '2.3%' }
               ];
 
               for (const item of checkItems) {
-                const stockItem = stocks.value.find((s: any) => s.name.toLowerCase() === item.name.toLowerCase());
-                if (!stockItem || stockItem.qty < item.req) {
-                  isStockInsufficient = true;
-                  insufficientMessage = `Stok ${item.label} "${item.name}" tidak mencukupi!\nTersedia: ${stockItem ? stockItem.qty.toFixed(2) : 0} kg\nDibutuhkan (${item.pct}): ${item.req.toFixed(2)} kg.`;
-                  break;
+                if (item.field) {
+                  const res = validateMultiFeed(item.field, item.req, item.label, item.pct);
+                  if (res) {
+                    isStockInsufficient = true;
+                    insufficientMessage = res.message;
+                    break;
+                  }
                 }
               }
               if (isStockInsufficient) break;
@@ -801,9 +849,12 @@ export default defineComponent({
       }
 
       if (type === 'stok_pakan') {
-        // Show all pakan stocks (raw materials for konversi, and silase for tambah stok)
+        // Show all pakan stocks (raw materials for konversi, activators, and silase for tambah stok)
         return stocks.value
-          .filter(s => s.category === 'hijauan' || s.category === 'konsentrat' || s.category === 'pellet' || s.category === 'greenery' || s.category === 'silase')
+          .filter(s => {
+            const cat = (s.category || '').toLowerCase();
+            return ['hijauan', 'konsentrat', 'pellet', 'greenery', 'silase', 'vitamin', 'mineral', 'bahan', 'aktivator'].includes(cat) || cat.includes('pakan');
+          })
           .slice()
           .sort((a, b) => a.name.localeCompare(b.name));
       }
@@ -821,21 +872,29 @@ export default defineComponent({
     const selectedFeedNames = computed(() => {
       const names = new Set<string>();
       forms.value.forEach(f => {
+        const addSplitNames = (val?: string) => {
+          if (!val) return;
+          val.split(',').forEach(s => {
+            const clean = s.trim().toLowerCase();
+            if (clean) names.add(clean);
+          });
+        };
+
         if (activePencatatanForm.value?.jenis?.id === 'pakan') {
           if (f.metoda === 'silase' || f.metoda === 'hijauan_kebun') {
             if (f.obat) names.add(f.obat.toLowerCase());
           } else {
-            if (f.hijauan) names.add(f.hijauan.toLowerCase());
-            if (f.energi) names.add(f.energi.toLowerCase());
-            if (f.protein) names.add(f.protein.toLowerCase());
-            if (f.mineral) names.add(f.mineral.toLowerCase());
+            addSplitNames(f.hijauan);
+            addSplitNames(f.energi);
+            addSplitNames(f.protein);
+            addSplitNames(f.mineral);
           }
         } else if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
           if (f.name === 'Konversi Pakan') {
-            if (f.hijauan) names.add(f.hijauan.toLowerCase());
-            if (f.energi) names.add(f.energi.toLowerCase());
-            if (f.protein) names.add(f.protein.toLowerCase());
-            if (f.mineral) names.add(f.mineral.toLowerCase());
+            addSplitNames(f.hijauan);
+            addSplitNames(f.energi);
+            addSplitNames(f.protein);
+            addSplitNames(f.mineral);
             if (f.obat) names.add(f.obat.toLowerCase());
           } else {
             if (f.obat) names.add(f.obat.toLowerCase());
