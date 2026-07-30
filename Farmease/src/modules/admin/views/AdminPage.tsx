@@ -30,7 +30,8 @@ export default defineComponent({
       cageSession.value = null;
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/?logout=true';
+      const host = window.location.hostname;
+      window.location.href = `http://${host}:3000/?logout=true`;
     };
 
     return () => {

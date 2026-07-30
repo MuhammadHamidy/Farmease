@@ -45,7 +45,8 @@ export default defineComponent({
       localStorage.removeItem('user');
       userSession.value = null;
       cageSession.value = null;
-      window.location.href = 'http://localhost:3000/?logout=true';
+      const host = window.location.hostname;
+      window.location.href = `http://${host}:3000/?logout=true`;
     };
 
     const getCageBadgeClass = (type: string) => {

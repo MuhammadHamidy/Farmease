@@ -89,7 +89,8 @@ router.beforeEach((to, from) => {
   const publicPaths = ['/login', '/sso'];
   if (!hasToken && !publicPaths.includes(to.path)) {
     console.warn('[Auth Guard] No valid token found, redirecting to SSO...');
-    window.location.href = 'http://localhost:3000/';
+    const host = window.location.hostname;
+    window.location.href = `http://${host}:3000/`;
     return false;
   }
 
