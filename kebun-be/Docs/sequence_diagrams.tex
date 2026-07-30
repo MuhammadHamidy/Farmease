@@ -1,0 +1,763 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[bahasa]{babel}
+\usepackage{geometry}
+\geometry{margin=2cm}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shadows}
+\usepackage{pgf-umlsd}
+\usepackage{float}
+\usepackage{graphicx}
+
+\title{Dokumentasi Sequence Diagram - Sistem Pencatatan Perkebunan (Farmease)}
+\author{Sistem Pencatatan Kebun}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+Dokumen ini berisi daftar \textit{Sequence Diagram} untuk Sistem Pencatatan Perkebunan Farmease yang disajikan menggunakan struktur \texttt{enumerate} dan \texttt{\textbackslash item} beserta penjelasan alur terstruktur untuk setiap skenario.
+
+\begin{enumerate}
+
+    % ==================================================================
+    %  UC-01: MELIHAT DASBOR
+    % ==================================================================
+
+    % SD 1
+    \item \textit{Sequence Diagram} Pemilik Berhasil Melihat Dasbor Perkebunan
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{owner}{Pemilik}
+                \newinst[0.8cm]{ui}{DasborPerkebunanView (FE)}
+                \newinst[0.8cm]{mid}{Auth Middleware}
+                \newinst[0.8cm]{hnd}{LahanHandler}
+                \newinst[0.8cm]{uc}{lahanUsecase}
+                \newinst[0.8cm]{repo}{lahanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{owner}{Memilih menu Dasbor Perkebunan}{ui}{Tampilkan Dasbor Pemilik}
+                    \begin{call}{ui}{GET /api/v1/lahan}{mid}{JSON (Data Lahan, Read-only access)}
+                        \begin{call}{mid}{Forward request}{hnd}{JSON (Data Lahan)}
+                            \begin{call}{hnd}{FindAll()}{uc}{Data Lahan}
+                                \begin{call}{uc}{FindAll()}{repo}{Data Lahan}
+                                    \begin{call}{repo}{Query data}{db}{Data hasil query}
+                                    \end{call}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{callself}{ui}{Saring data \& sembunyikan tombol Ubah/Hapus}{}
+                    \end{callself}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Pemilik Berhasil Melihat Dasbor Perkebunan}
+        \label{fig:sd-melihat-dasbor-pemilik}
+    \end{figure}
+
+    \hspace{1em} Pemilik memilih menu Dasbor Perkebunan pada antarmuka. Antarmuka mengirimkan pesan HTTP \texttt{GET /api/v1/lahan} (disertai token otorisasi) ke \textit{Auth Middleware}, yang memvalidasi token dan mengekstrak peran pengguna sebagai Pemilik. Permintaan kemudian diteruskan ke \textit{LahanHandler}, yang memanggil \texttt{lahanUsecase.FindAll()}. \textit{lahanUsecase} berinteraksi dengan \textit{lahanRepository} untuk mengambil data ringkasan lahan. \textit{lahanRepository} melakukan kueri ke \textit{database}, dan \textit{database} mengembalikan data mentah perkebunan. Data hasil agregasi dikembalikan ke antarmuka sebagai data \textit{read-only}. Antarmuka menyembunyikan tombol ubah/hapus data dan menampilkan Dasbor Pemilik secara \textit{real-time}.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Pemilik memilih menu ``Dasbor Perkebunan'' pada antarmuka pengguna.
+        \item \textbf{Alur Backend:} Antarmuka mengirimkan request \texttt{GET /api/v1/lahan} dengan token otorisasi di header. Middleware memvalidasi token dan meneruskan peran \textit{Pemilik} ke handler, lalu handler memanggil usecase.
+        \item \textbf{Akses Data:} Usecase memanggil repositori lahan untuk melakukan kueri data mentah dari database.
+        \item \textbf{Output:} Usecase mengagregasi data lahan Alpukat dan Kelengkeng secara terpisah dan mengembalikannya ke antarmuka dalam format read-only, kemudian antarmuka menyembunyikan opsi edit/hapus.
+    \end{itemize}
+
+    % SD 2
+    \item \textit{Sequence Diagram} Admin Berhasil Melihat Dasbor Perkebunan
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{admin}{Admin}
+                \newinst[0.8cm]{ui}{DasborPerkebunanView (FE)}
+                \newinst[0.8cm]{mid}{Auth Middleware}
+                \newinst[0.8cm]{hnd}{LahanHandler}
+                \newinst[0.8cm]{uc}{lahanUsecase}
+                \newinst[0.8cm]{repo}{lahanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{admin}{Memilih menu Dasbor Perkebunan}{ui}{Tampilkan Dasbor Admin}
+                    \begin{call}{ui}{GET /api/v1/lahan}{mid}{JSON (Data Lahan + Admin panel access)}
+                        \begin{call}{mid}{Forward request}{hnd}{JSON}
+                            \begin{call}{hnd}{FindAll()}{uc}{Data Lahan + Admin context}
+                                \begin{call}{uc}{FindAll()}{repo}{Data Lahan}
+                                    \begin{call}{repo}{Query data}{db}{Data hasil query}
+                                    \end{call}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{callself}{ui}{Tampilkan sidebar navigasi Panel Admin}{}
+                    \end{callself}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Admin Berhasil Melihat Dasbor Perkebunan}
+        \label{fig:sd-melihat-dasbor-admin}
+    \end{figure}
+
+    \hspace{1em} Admin memilih menu Dasbor Perkebunan pada antarmuka. Antarmuka mengirimkan permintaan \texttt{GET /api/v1/lahan} ke \textit{Auth Middleware} yang memvalidasi token dan mengidentifikasi peran sebagai Admin. Permintaan diteruskan ke \textit{LahanHandler} lalu ke \texttt{lahanUsecase.FindAll()}. \textit{lahanUsecase} memanggil \textit{lahanRepository} untuk melakukan kueri data perkebunan ke \textit{database}. Setelah data mentah diterima dan diagregasi, respons dikirimkan kembali ke antarmuka. Antarmuka menampilkan dasbor perkebunan lengkap dengan bilah navigasi Panel Admin untuk memudahkan akses menu kelola data lainnya.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Admin memilih menu ``Dasbor Perkebunan'' pada antarmuka pengguna.
+        \item \textbf{Alur Backend:} Antarmuka mengirimkan request \texttt{GET /api/v1/lahan} dengan token. Middleware memvalidasi token dan meneruskan peran \textit{Admin} ke handler, lalu handler memanggil usecase.
+        \item \textbf{Akses Data:} Usecase memanggil repositori lahan untuk mengambil data mentah dari database.
+        \item \textbf{Output:} Usecase mengagregasi data dan mengembalikan dashboard data beserta context admin. Antarmuka merender sidebar navigasi Panel Admin untuk kelola data perkebunan.
+    \end{itemize}
+
+    % SD 3
+    \item \textit{Sequence Diagram} Operator Kebun Berhasil Melihat Dasbor Perkebunan
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{DasborLahanPage (FE)}
+                \newinst[0.8cm]{mid}{Auth Middleware}
+                \newinst[0.8cm]{hnd}{LahanHandler}
+                \newinst[0.8cm]{uc}{lahanUsecase}
+                \newinst[0.8cm]{repo}{lahanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Memilih menu Dasbor Perkebunan}{ui}{Tampilkan Dasbor Operator}
+                    \begin{call}{ui}{GET /api/v1/lahan}{mid}{JSON (Data Lahan Operator)}
+                        \begin{call}{mid}{Forward request}{hnd}{JSON}
+                            \begin{call}{hnd}{FindAll()}{uc}{Data Lahan Operator}
+                                \begin{call}{uc}{FindAll()}{repo}{Data Lahan}
+                                    \begin{call}{repo}{Query Lahan}{db}{Data Lahan}
+                                    \end{call}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{callself}{ui}{Saring data lahan tanggung jawab}{}
+                    \end{callself}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Berhasil Melihat Dasbor Perkebunan}
+        \label{fig:sd-melihat-dasbor-operator}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun memilih menu Dasbor Perkebunan. Antarmuka mengirimkan permintaan \texttt{GET /api/v1/lahan} ke \textit{Auth Middleware} yang memverifikasi token dan mengidentifikasi peran sebagai Operator. Permintaan diteruskan ke \textit{LahanHandler} dan memanggil \texttt{lahanUsecase.FindAll()}. \textit{lahanUsecase} meminta data lahan aktif yang menjadi tanggung jawab operator tersebut melalui \textit{lahanRepository}. \textit{lahanRepository} mengeksekusi kueri ke \textit{database} dan mengembalikan data lahan terkait. Antarmuka kemudian menampilkan data ringkasan lahan aktif Operator Kebun.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator Kebun memilih menu ``Dasbor Perkebunan'' pada antarmuka.
+        \item \textbf{Alur Backend:} Antarmuka mengirimkan request \texttt{GET /api/v1/lahan}. Middleware mengekstrak peran \textit{Operator Kebun}. Handler meneruskan permintaan ke usecase.
+        \item \textbf{Akses Data:} Usecase memanggil repositori lahan untuk mendapatkan daftar lahan aktif dari database.
+        \item \textbf{Output:} Usecase mengagregasi data lahan aktif dan mengembalikannya ke antarmuka untuk ditampilkan sebagai ringkasan dasbor operator.
+    \end{itemize}
+
+    % SD 4
+    \item \textit{Sequence Diagram} Dasbor Gagal Dimuat
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{aktor}{Aktor}
+                \newinst[0.8cm]{ui}{DasborPerkebunanView (FE)}
+                \newinst[0.8cm]{mid}{Auth Middleware}
+                \newinst[0.8cm]{hnd}{LahanHandler}
+                \newinst[0.8cm]{uc}{lahanUsecase}
+                \newinst[0.8cm]{repo}{lahanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{aktor}{Memilih menu Dasbor Perkebunan}{ui}{Tampilkan pesan error}
+                    \begin{call}{ui}{GET /api/v1/lahan}{mid}{HTTP 500 Internal Error}
+                        \begin{call}{mid}{Forward request}{hnd}{HTTP 500 Error}
+                            \begin{call}{hnd}{FindAll()}{uc}{Database failure error}
+                                \begin{call}{uc}{FindAll()}{repo}{Error / Connection Timeout}
+                                    \begin{call}{repo}{Query data}{db}{Connection Timeout}
+                                    \end{call}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Dasbor Gagal Dimuat}
+        \label{fig:sd-melihat-dasbor-gagal}
+    \end{figure}
+
+    \hspace{1em} Aktor memilih menu Dasbor Perkebunan pada antarmuka. Antarmuka mengirimkan permintaan HTTP \texttt{GET /api/v1/lahan} ke \textit{Auth Middleware} yang meneruskannya ke \textit{LahanHandler} dan \textit{lahanUsecase}. Namun, saat \textit{lahanRepository} mencoba mengambil data lahan, terjadi gangguan koneksi (\textit{timeout}) ke \textit{database}. \textit{lahanRepository} mengembalikan pesan kesalahan ke \textit{lahanUsecase}, yang diteruskan sebagai kesalahan sistem (\textit{database failure}) ke \textit{LahanHandler}. Handler mengirimkan respons \texttt{HTTP 500 Internal Server Error} ke antarmuka, yang kemudian menampilkan pesan kegagalan ``Dasbor tidak dapat dimuat, silakan coba kembali'' kepada Aktor.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Aktor memilih menu ``Dasbor Perkebunan'' pada antarmuka.
+        \item \textbf{Alur Backend:} Request dikirimkan ke backend melalui middleware dan handler menuju usecase.
+        \item \textbf{Akses Data:} Repositori gagal terhubung ke database (\textit{connection timeout/down}) dan mengembalikan error ke usecase.
+        \item \textbf{Output:} Handler menangkap error database dan mengembalikan status \texttt{HTTP 500}. Antarmuka menampilkan pesan ``Dasbor tidak dapat dimuat, silakan coba kembali''.
+    \end{itemize}
+
+    % ==================================================================
+    %  UC-02: KELOLA DATA PENGOLAHAN PUPUK
+    % ==================================================================
+
+    % SD 5
+    \item \textit{Sequence Diagram} Operator Kebun Berhasil Mencatat Proses Fermentasi Pupuk
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{FermentasiPage (FE)}
+                \newinst[0.8cm]{stokhnd}{StokHandler}
+                \newinst[0.8cm]{fermhnd}{FermentasiHandler}
+                \newinst[0.8cm]{stokuc}{stokUsecase}
+                \newinst[0.8cm]{fermuc}{fermentasiUsecase}
+                \newinst[0.8cm]{stokrepo}{stokRepository}
+                \newinst[0.8cm]{fermrepo}{fermentasiRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Memilih Pengolahan Pupuk $\rightarrow$ Fermentasi}{ui}{Tampilkan Info Stok \& Formulir}
+                    \begin{call}{ui}{GET /api/v1/stok/bahan}{stokhnd}{JSON (Stok bahan)}
+                        \begin{call}{stokhnd}{FindAllBahan()}{stokuc}{Stok bahan data}
+                            \begin{call}{stokuc}{FindAllBahan()}{stokrepo}{Stok bahan}
+                                \begin{call}{stokrepo}{FindAllBahan()}{db}{Data stok bahan}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+
+                \begin{call}{op}{Isi data \& klik Simpan}{ui}{Tampilkan pesan sukses \& log tersimpan}
+                    \begin{call}{ui}{POST /api/v1/fermentasi}{fermhnd}{HTTP 201 Created}
+                        \begin{callself}{fermhnd}{Validasi format data \& field}{} \end{callself}
+                        \begin{call}{fermhnd}{Create(data)}{fermuc}{Success}
+                            \begin{call}{fermuc}{CreatePupukFermentasi(data)}{fermrepo}{Success}
+                                \begin{call}{fermrepo}{Store(data)}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Berhasil Mencatat Proses Fermentasi Pupuk}
+        \label{fig:sd-mencatat-fermentasi}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun memilih menu Pengolahan Pupuk dan rincian Fermentasi. Antarmuka memanggil \textit{StokHandler} melalui \texttt{GET /api/v1/stok/bahan} untuk mengambil data stok bahan baku (bahan mentah, dekomposer, molase). \textit{StokHandler} memanggil \textit{stokUsecase} yang meneruskan pencarian ke \textit{stokRepository}. \textit{stokRepository} melakukan kueri ke \textit{database} dan mengembalikan data sisa stok bahan. Setelah Operator Kebun mengisi data fermentasi dan menekan tombol \textbf{Simpan}, antarmuka mengirimkan permintaan \texttt{POST /api/v1/fermentasi}. \textit{FermentasiHandler} melakukan validasi format data sebelum memanggil \texttt{fermentasiUsecase.CreatePupukFermentasi(data)}. Usecase memerintahkan \textit{fermentasiRepository} untuk menyimpan batch fermentasi baru dengan status awal ``proses'' ke dalam \textit{database}. Sistem kemudian mengembalikan status sukses dan antarmuka menampilkan notifikasi berhasil.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator Kebun membuka menu pengolahan pupuk dan rincian fermentasi. Antarmuka menarik data stok bahan baku dari Stok API.
+        \item \textbf{Alur Backend:} Setelah formulir diisi dan Operator menekan tombol \textbf{Simpan}, antarmuka mengirimkan request \texttt{POST /api/v1/fermentasi}. Handler memvalidasi format data dan memanggil usecase.
+        \item \textbf{Akses Data:} Usecase menyimpan batch fermentasi baru via \texttt{fermentasiRepository.Store} ke database.
+        \item \textbf{Output:} Data batch disimpan ke database dengan status awal ``proses'' dan antarmuka menampilkan pesan sukses.
+    \end{itemize}
+
+    % SD 6
+    \item \textit{Sequence Diagram} Operator Kebun Berhasil Melakukan Cek Fermentasi dan Pupuk Dinyatakan Siap Digunakan
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{CekFermentasiPage (FE)}
+                \newinst[0.8cm]{fermhnd}{FermentasiHandler}
+                \newinst[0.8cm]{stokhnd}{StokHandler}
+                \newinst[0.8cm]{fermuc}{fermentasiUsecase}
+                \newinst[0.8cm]{stokuc}{stokUsecase}
+                \newinst[0.8cm]{fermrepo}{fermentasiRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Memilih Pengolahan Pupuk $\rightarrow$ Cek Fermentasi}{ui}{Tampilkan Panduan \& Riwayat}
+                    \begin{call}{ui}{GET /api/v1/fermentasi/1}{fermhnd}{JSON (Data Batch)}
+                        \begin{call}{fermhnd}{FindByID(1)}{fermuc}{Data Batch}
+                            \begin{call}{fermuc}{FindByID(1)}{fermrepo}{Data Batch}
+                                \begin{call}{fermrepo}{FindByID(1)}{db}{Data Batch}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+
+                \begin{call}{op}{Isi data \& pilih status "Siap Digunakan" \& klik Simpan}{ui}{Pindahkan ke stok \& pesan sukses}
+                    \begin{call}{ui}{POST /api/v1/fermentasi/log}{fermhnd}{HTTP 201 Created}
+                        \begin{call}{fermhnd}{AddLog(data)}{fermuc}{Success}
+                            \begin{call}{fermuc}{AddLog(data)}{fermrepo}{Success}
+                                \begin{call}{fermrepo}{StoreLog(data)}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{call}{ui}{PATCH /api/v1/fermentasi/1/status?status=Siap+Digunakan}{fermhnd}{HTTP 200 OK}
+                        \begin{call}{fermhnd}{UpdateStatus(1, status)}{fermuc}{Success}
+                            \begin{call}{fermuc}{UpdateStatus(1, status)}{fermrepo}{Success}
+                                \begin{call}{fermrepo}{UpdateStatus(1, status)}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{call}{ui}{PATCH /api/v1/stok/pupuk/1?amount=100\&type=tambah}{stokhnd}{HTTP 200 OK}
+                        \begin{call}{stokhnd}{UpdatePupukStock(1, amount)}{stokuc}{Success}
+                            \begin{call}{stokuc}{UpdatePupukStock(1, amount)}{db}{Success}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Berhasil Melakukan Cek Fermentasi dan Pupuk Dinyatakan Siap Digunakan}
+        \label{fig:sd-cek-fermentasi-siap}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun membuka halaman Cek Fermentasi. Antarmuka memuat data batch fermentasi melalui \texttt{GET /api/v1/fermentasi/:id}. Operator Kebun kemudian mengisi aktivitas pengecekan, kondisi fisik, memilih status ``Siap Digunakan'', dan menekan \textbf{Simpan}. Antarmuka mengirimkan log pengecekan baru melalui \texttt{POST /api/v1/fermentasi/log} ke \textit{FermentasiHandler} untuk disimpan. Selanjutnya, antarmuka memicu status update melalui \texttt{PATCH /api/v1/fermentasi/:id/status} dengan query param `status=Siap+Digunakan`. Setelah status batch ter-update di database, antarmuka memanggil \texttt{PATCH /api/v1/stok/pupuk/:id} untuk menambahkan volume pupuk hasil fermentasi ke dalam gudang stok pupuk jadi.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator membuka halaman cek fermentasi dan antarmuka memuat detail batch fermentasi dari database.
+        \item \textbf{Alur Backend:} Operator mengisi log pengecekan dan menekan \textbf{Simpan}. Antarmuka mengirim request log \texttt{POST /api/v1/fermentasi/log} dilanjutkan dengan status update \texttt{PATCH /api/v1/fermentasi/:id/status}.
+        \item \textbf{Akses Data:} Usecase menyimpan data log pengecekan via \texttt{StoreLog} dan merubah status batch via \texttt{UpdateStatus} di database. Serta memanggil \texttt{UpdatePupukStock} di repositori stok.
+        \item \textbf{Output:} Transaksi selesai, data pupuk dipindahkan ke stok aktif, dan antarmuka menampilkan notifikasi sukses.
+    \end{itemize}
+
+    % SD 7
+    \item \textit{Sequence Diagram} Operator Kebun Mencatat Kegagalan Proses Fermentasi
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{CekFermentasiPage (FE)}
+                \newinst[0.8cm]{fermhnd}{FermentasiHandler}
+                \newinst[0.8cm]{fermuc}{fermentasiUsecase}
+                \newinst[0.8cm]{fermrepo}{fermentasiRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Memilih Cek Fermentasi pada batch gagal}{ui}{Tampilkan formulir}
+                    \begin{call}{ui}{GET /api/v1/fermentasi/1}{fermhnd}{JSON (Data Batch)}
+                        \begin{call}{fermhnd}{FindByID(1)}{fermuc}{Data Batch}
+                            \begin{call}{fermuc}{FindByID(1)}{fermrepo}{Data Batch}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+
+                \begin{call}{op}{Isi Kondisi. Pilih status "Gagal" \& klik Simpan}{ui}{Update status \& tampilkan notifikasi}
+                    \begin{call}{ui}{PATCH /api/v1/fermentasi/1/status?status=Gagal}{fermhnd}{HTTP 200 OK}
+                        \begin{call}{fermhnd}{UpdateStatus(1, status)}{fermuc}{Success}
+                            \begin{call}{fermuc}{UpdateStatus(1, status)}{fermrepo}{Success}
+                                \begin{call}{fermrepo}{UpdateStatus(1, status)}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Mencatat Kegagalan Proses Fermentasi}
+        \label{fig:sd-cek-fermentasi-gagal}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun memilih rincian Cek Fermentasi pada batch yang mengalami kegagalan. Setelah antarmuka memuat riwayat batch dari \textit{database} melalui \textit{fermentasiRepository}, Operator Kebun mengisi kondisi fisik, memilih status ``Gagal'', dan menekan \textbf{Simpan}. Antarmuka mengirimkan permintaan update status lewat \texttt{PATCH /api/v1/fermentasi/:id/status?status=Gagal}. \textit{FermentasiHandler} meneruskannya ke \textit{fermentasiUsecase} yang memanggil \textit{fermentasiRepository.UpdateStatus(batchId, "Gagal", notes)} untuk melakukan update status batch fermentasi tersebut di dalam \textit{database}. Database mengonfirmasi perubahan data, dan antarmuka menampilkan notifikasi bahwa status fermentasi berhasil diubah menjadi gagal.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator Kebun membuka menu cek fermentasi pada batch yang terindikasi gagal.
+        \item \textbf{Alur Backend:} Operator mengisi kondisi fisik, memilih status ``Gagal'', dan menekan \textbf{Simpan}. Antarmuka mengirim request status update dengan param \texttt{status=Gagal}.
+        \item \textbf{Akses Data:} Usecase memanggil repositori fermentasi untuk mengubah status batch fermentasi terkait menjadi ``Gagal'' di database.
+        \item \textbf{Output:} Data batch berhasil diperbarui di database dan antarmuka menampilkan notifikasi status gagal.
+    \end{itemize}
+
+    % SD 8
+    \item \textit{Sequence Diagram} Pencatatan Pengolahan Pupuk Gagal Karena Data Tidak Valid
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[1.5cm]{ui}{FermentasiPage (FE)}
+                \newinst[2cm]{fermhnd}{FermentasiHandler}
+
+                \begin{call}{op}{Isi formulir dengan data tidak valid \& klik Simpan}{ui}{Tampilkan pesan error}
+                    \begin{call}{ui}{POST /api/v1/fermentasi}{fermhnd}{HTTP 400 Bad Request}
+                        \begin{callself}{fermhnd}{Validasi gagal (field kosong)}{} \end{callself}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Pencatatan Pengolahan Pupuk Gagal Karena Data Tidak Valid}
+        \label{fig:sd-fermentasi-invalid}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun memasukkan data pengolahan pupuk (Fermentasi) yang tidak lengkap atau tidak valid pada antarmuka dan menekan tombol \textbf{Simpan}. Antarmuka mengirimkan permintaan ke \textit{FermentasiHandler}. Handler melakukan validasi awal data masukan dan mendeteksi adanya kolom wajib yang kosong atau format data yang salah. Handler langsung mengembalikan respons kesalahan \texttt{HTTP 400 Bad Request} ke antarmuka tanpa memproses ke usecase atau database. Antarmuka kemudian menampilkan pesan peringatan ``Pencatatan gagal, periksa kembali data yang dimasukkan'' kepada Operator Kebun.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi formulir fermentasi dengan data kosong atau tidak lengkap dan menekan \textbf{Simpan}.
+        \item \textbf{Alur Backend:} Request dikirim ke handler. Handler mendeteksi kegagalan validasi schema (kolom wajib kosong/invalid).
+        \item \textbf{Akses Data:} Tidak ada interaksi dengan layer usecase atau database karena request langsung ditolak di layer handler.
+        \item \textbf{Output:} Handler mengembalikan respons \texttt{HTTP 400 Bad Request}. Antarmuka menampilkan pesan kesalahan ``Pencatatan gagal, periksa kembali data yang dimasukkan''.
+    \end{itemize}
+
+    % SD 9
+    \item \textit{Sequence Diagram} Jumlah Bahan Yang Dimasukkan Melebihi Stok Tersedia
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[2cm]{ui}{FermentasiPage (FE)}
+
+                \begin{call}{op}{Isi Jumlah Bahan melebihi stok yang ada}{ui}{Tampilkan Peringatan Stok Kurang}
+                    \begin{callself}{ui}{Validasi input terhadap data stok ter-load}{}
+                    \end{callself}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Jumlah Bahan Yang Dimasukkan Melebihi Stok Tersedia}
+        \label{fig:sd-fermentasi-stok-kurang}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun memasukkan jumlah pupuk yang ingin dibuat pada formulir fermentasi. Secara otomatis, antarmuka pengguna memvalidasi data masukan tersebut terhadap data sisa bahan mentah, dekomposer, dan molase yang sebelumnya telah diunduh dari API Stok. Sistem frontend mendeteksi bahwa sisa stok bahan di gudang lebih kecil dari jumlah yang dibutuhkan untuk proses fermentasi. Frontend langsung menampilkan peringatan ``Peringatan Stok Kurang'' di formulir tanpa mengirimkan request HTTP ke backend.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator menginput jumlah pupuk yang ingin dibuat pada formulir fermentasi.
+        \item \textbf{Alur Backend:} Tidak ada request backend yang dikirim karena validasi ketersediaan stok ditangani langsung di sisi antarmuka (Client-side validation).
+        \item \textbf{Akses Data:} Tidak ada kueri ke database.
+        \item \textbf{Output:} Ketika input melebihi stok ter-load, antarmuka merender warning ``Peringatan Stok Kurang''.
+    \end{itemize}
+
+    % ==================================================================
+    %  UC-03: KELOLA DATA PEMUPUKAN
+    % ==================================================================
+
+    % SD 10
+    \item \textit{Sequence Diagram} Operator Kebun Membuka Formulir Pencatatan Pemupukan
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{PencatatanFormPage (FE)}
+                \newinst[0.8cm]{lahandhnd}{LahanHandler}
+                \newinst[0.8cm]{stokhnd}{StokHandler}
+                \newinst[0.8cm]{lahanuc}{lahanUsecase}
+                \newinst[0.8cm]{stokuc}{stokUsecase}
+                \newinst[0.8cm]{lahanrepo}{lahanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Pilih jenis Pemupukan}{ui}{Tampilkan Form terfilter}
+                    \begin{call}{ui}{GET /api/v1/lahan}{lahandhnd}{JSON (Daftar Lahan)}
+                        \begin{call}{lahandhnd}{FindAll()}{lahanuc}{JSON}
+                            \begin{call}{lahanuc}{FindAll()}{lahanrepo}{Data}
+                                \begin{call}{lahanrepo}{Query data}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{call}{ui}{GET /api/v1/stok/pupuk}{stokhnd}{JSON (Daftar Pupuk)}
+                        \begin{call}{stokhnd}{FindAllPupuk()}{stokuc}{JSON}
+                            \begin{call}{stokuc}{FindAllPupuk()}{db}{Success}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Membuka Formulir Pencatatan Pemupukan}
+        \label{fig:sd-membuka-pemupukan}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun menekan dropdown Jenis Pencatatan dan memilih Pemupukan. Antarmuka mengirimkan permintaan paralel \texttt{GET /api/v1/lahan} ke \textit{LahanHandler} dan \texttt{GET /api/v1/stok/pupuk} ke \textit{StokHandler}. Masing-masing handler memanggil usecase dan repositori untuk mengambil data lahan aktif serta daftar stok pupuk jadi dari \textit{database}. Data metadata tersebut dikembalikan ke antarmuka, yang kemudian merender formulir pemupukan dengan daftar pilihan dropdown yang telah disaring.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator Kebun memilih menu pemupukan pada formulir pencatatan.
+        \item \textbf{Alur Backend:} Antarmuka mengirim request \texttt{GET /api/v1/lahan} dan \texttt{GET /api/v1/stok/pupuk} ke masing-masing handler.
+        \item \textbf{Akses Data:} Usecase memanggil repositori untuk mengambil data lahan dan stok pupuk aktif dari database.
+        \item \textbf{Output:} Data metadata dikirim ke antarmuka, yang kemudian merender formulir pemupukan dengan daftar dropdown lengkap.
+    \end{itemize}
+
+    % SD 11
+    \item \textit{Sequence Diagram} Operator Kebun Berhasil Mencatat Pemupukan Dengan Pupuk Hasil Fermentasi
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{PencatatanFormPage (FE)}
+                \newinst[0.8cm]{pemupukanhnd}{PemupukanHandler}
+                \newinst[0.8cm]{stokhnd}{StokHandler}
+                \newinst[0.8cm]{pemupukanuc}{pemupukanUsecase}
+                \newinst[0.8cm]{stokuc}{stokUsecase}
+                \newinst[0.8cm]{pemupukanrepo}{pemupukanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Mengisi data pemupukan \& klik Simpan}{ui}{Tampilkan status tersimpan}
+                    \begin{call}{ui}{POST /api/v1/pemupukan}{pemupukanhnd}{HTTP 201 Created}
+                        \begin{callself}{pemupukanhnd}{Validasi format data}{} \end{callself}
+                        \begin{call}{pemupukanhnd}{Create(data)}{pemupukanuc}{Success}
+                            \begin{call}{pemupukanuc}{Create(data)}{pemupukanrepo}{Success}
+                                \begin{call}{pemupukanrepo}{Store(data)}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{call}{ui}{PATCH /api/v1/stok/pupuk/1?amount=10\&type=kurang}{stokhnd}{HTTP 200 OK}
+                        \begin{call}{stokhnd}{UpdatePupukStock(1, amount)}{stokuc}{Success}
+                            \begin{call}{stokuc}{UpdatePupukStock(1, amount)}{db}{Success}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Berhasil Mencatat Pemupukan Dengan Pupuk Hasil Fermentasi}
+        \label{fig:sd-mencatat-pemupukan}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun mengisi data pemupukan dan menekan \textbf{Simpan}. Antarmuka mengirimkan permintaan \texttt{POST /api/v1/pemupukan} ke \textit{PemupukanHandler}. \textit{PemupukanHandler} melakukan validasi data sebelum memanggil \texttt{pemupukanUsecase.Create(data)}. Usecase menyimpan catatan pemupukan ke \textit{database} melalui \textit{pemupukanRepository}. Setelah itu, antarmuka memanggil \texttt{PATCH /api/v1/stok/pupuk/:id} ke \textit{StokHandler} untuk mendepresiasi (mengurangi) sisa stok pupuk jadi di dalam \textit{database} berdasarkan jumlah pemakaian.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi parameter pohon dan pupuk pada formulir lalu menekan tombol \textbf{Simpan}.
+        \item \textbf{Alur Backend:} Antarmuka mengirim request \texttt{POST /api/v1/pemupukan}. Setelah sukses, antarmuka mengirim request pengurangan stok \texttt{PATCH /api/v1/stok/pupuk/:id}.
+        \item \textbf{Akses Data:} Usecase pemupukan menyimpan data pencatatan ke database, kemudian usecase stok memperbarui sisa volume pupuk di database.
+        \item \textbf{Output:} Catatan tersimpan dengan sukses dan stok pupuk berkurang sesuai jumlah pemakaian.
+    \end{itemize}
+
+    % SD 12
+    \item \textit{Sequence Diagram} Pencatatan Pemupukan Gagal Karena Data Tidak Valid
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[1.5cm]{ui}{PencatatanFormPage (FE)}
+                \newinst[2cm]{pemupukanhnd}{PemupukanHandler}
+
+                \begin{call}{op}{Isi formulir data tidak valid \& klik Simpan}{ui}{Tampilkan pesan error}
+                    \begin{call}{ui}{POST /api/v1/pemupukan}{pemupukanhnd}{HTTP 400 Bad Request}
+                        \begin{callself}{pemupukanhnd}{Validasi gagal}{} \end{callself}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Pencatatan Pemupukan Gagal Karena Data Tidak Valid}
+        \label{fig:sd-pemupukan-invalid}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun mengisi formulir pemupukan dengan data tidak lengkap atau tidak valid dan menekan tombol \textbf{Simpan}. Antarmuka mengirimkan data melalui permintaan \texttt{POST /api/v1/pemupukan} ke \textit{PemupukanHandler}. Handler menjalankan validasi data dan mendeteksi adanya ketidaksesuaian data masukan. Handler mengembalikan respons kesalahan \texttt{HTTP 400 Bad Request} ke antarmuka, sehingga antarmuka menampilkan pesan peringatan ``Pencatatan gagal, periksa kembali data yang dimasukkan'' kepada Operator Kebun.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi formulir dengan data tidak lengkap atau format salah dan menekan \textbf{Simpan}.
+        \item \textbf{Alur Backend:} Request dikirim ke handler. Handler memvalidasi data dan mendeteksi kolom wajib yang tidak terisi.
+        \item \textbf{Akses Data:} Request dihentikan di layer handler, tidak ada kueri ke database.
+        \item \textbf{Output:} Handler mengembalikan status \texttt{HTTP 400} dan antarmuka menampilkan pesan ``Pencatatan gagal, periksa kembali data yang dimasukkan''.
+    \end{itemize}
+
+    % SD 13
+    \item \textit{Sequence Diagram} Jumlah Pupuk Yang Dimasukkan Melebihi Stok Tersedia
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[2cm]{ui}{PencatatanFormPage (FE)}
+
+                \begin{call}{op}{Isi Jumlah Pemakaian Pupuk}{ui}{Tampilkan Peringatan Stok Kurang}
+                    \begin{callself}{ui}{Validasi input terhadap data stok pupuk ter-load}{}
+                    \end{callself}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Jumlah Pupuk Yang Dimasukkan Melebihi Stok Tersedia}
+        \label{fig:sd-pemupukan-stok-kurang}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun mengisi jumlah pupuk yang digunakan pada formulir pemupukan. Antarmuka pengguna mendeteksi secara langsung (Client-side validation) bahwa jumlah pemakaian pupuk melebihi kapasitas stok pupuk yang tersedia dari data stok ter-load sebelumnya di halaman. Antarmuka segera menampilkan peringatan ``Peringatan Stok Kurang'' di formulir.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi jumlah pupuk yang digunakan pada formulir pemupukan.
+        \item \textbf{Alur Backend:} Tidak ada request backend yang dikirim karena validasi ketersediaan stok pupuk ditangani langsung di frontend.
+        \item \textbf{Akses Data:} Tidak ada kueri ke database.
+        \item \textbf{Output:} Antarmuka merender peringatan stok kurang apabila input melebihi data stok pupuk yang ada.
+    \end{itemize}
+
+    % ==================================================================
+    %  UC-04: KELOLA DATA PEMBERIAN OBAT
+    % ==================================================================
+
+    % SD 14
+    \item \textit{Sequence Diagram} Operator Kebun Membuka Formulir Pencatatan Pemberian Obat
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{PencatatanFormPage (FE)}
+                \newinst[0.8cm]{lahandhnd}{LahanHandler}
+                \newinst[0.8cm]{stokhnd}{StokHandler}
+                \newinst[0.8cm]{lahanuc}{lahanUsecase}
+                \newinst[0.8cm]{stokuc}{stokUsecase}
+                \newinst[0.8cm]{lahanrepo}{lahanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Pilih jenis Pemberian Obat}{ui}{Tampilkan Form terfilter}
+                    \begin{call}{ui}{GET /api/v1/lahan}{lahandhnd}{JSON (Daftar Lahan)}
+                        \begin{call}{lahandhnd}{FindAll()}{lahanuc}{JSON}
+                            \begin{call}{lahanuc}{FindAll()}{lahanrepo}{Data}
+                                \begin{call}{lahanrepo}{Query data}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{call}{ui}{GET /api/v1/stok/obat}{stokhnd}{JSON (Daftar Obat)}
+                        \begin{call}{stokhnd}{FindAllObat()}{stokuc}{JSON}
+                            \begin{call}{stokuc}{FindAllObat()}{db}{Success}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Membuka Formulir Pencatatan Pemberian Obat}
+        \label{fig:sd-membuka-pengobatan}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun memilih jenis pencatatan Pemberian Obat pada dropdown antarmuka. Antarmuka mengirimkan permintaan paralel \texttt{GET /api/v1/lahan} ke \textit{LahanHandler} dan \texttt{GET /api/v1/stok/obat} ke \textit{StokHandler} untuk memuat metadata pilihan dropdown dari \textit{database}. Antarmuka menerima data tersebut dan menampilkan formulir pemberian obat lengkap dengan pilihan dropdown terfilter.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator Kebun memilih menu pemberian obat pada pop-up jenis pencatatan.
+        \item \textbf{Alur Backend:} Antarmuka mengirim request \texttt{GET /api/v1/lahan} dan \texttt{GET /api/v1/stok/obat} ke handler.
+        \item \textbf{Akses Data:} Usecase memanggil repositori untuk mengambil varietas lahan dan daftar obat aktif dari database.
+        \item \textbf{Output:} Metadata dikembalikan dan antarmuka merender form pengobatan dengan dropdown pilihan terfilter.
+    \end{itemize}
+
+    % SD 15
+    \item \textit{Sequence Diagram} Operator Kebun Berhasil Mencatat Pemberian Obat Dengan Rekomendasi Otomatis
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[0.8cm]{ui}{PencatatanFormPage (FE)}
+                \newinst[0.8cm]{pengobatanhnd}{PengobatanHandler}
+                \newinst[0.8cm]{stokhnd}{StokHandler}
+                \newinst[0.8cm]{pengobatanuc}{pengobatanUsecase}
+                \newinst[0.8cm]{stokuc}{stokUsecase}
+                \newinst[0.8cm]{pengobatanrepo}{pengobatanRepository}
+                \newinst[0.8cm]{db}{Database}
+
+                \begin{call}{op}{Isi form pemberian obat}{ui}{Tampilkan Rekomendasi Dosis}
+                    \begin{call}{ui}{GET /api/v1/pengobatan/rekomendasi?varietas=A\&fase=B\&obat=C}{pengobatanhnd}{JSON (Rekomendasi)}
+                        \begin{call}{pengobatanhnd}{GetRekomendasi()}{pengobatanuc}{Rekomendasi}
+                            \begin{call}{pengobatanuc}{GetRekomendasiObat()}{db}{Aturan Rekomendasi}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+
+                \begin{call}{op}{Isi Volume Obat \& klik Simpan}{ui}{Tampilkan status sukses}
+                    \begin{call}{ui}{POST /api/v1/pengobatan}{pengobatanhnd}{HTTP 201 Created}
+                        \begin{callself}{pengobatanhnd}{Validasi format data}{} \end{callself}
+                        \begin{call}{pengobatanhnd}{Create(data)}{pengobatanuc}{Success}
+                            \begin{call}{pengobatanuc}{Create(data)}{pengobatanrepo}{Success}
+                                \begin{call}{pengobatanrepo}{Store(data)}{db}{Success}
+                                \end{call}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                    \begin{call}{ui}{PATCH /api/v1/stok/obat/1?amount=5\&type=kurang}{stokhnd}{HTTP 200 OK}
+                        \begin{call}{stokhnd}{UpdateObatStock(1, amount)}{stokuc}{Success}
+                            \begin{call}{stokuc}{UpdateObatStock(1, amount)}{db}{Success}
+                            \end{call}
+                        \end{call}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Operator Kebun Berhasil Mencatat Pemberian Obat Dengan Rekomendasi Otomatis}
+        \label{fig:sd-mencatat-pengobatan}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun mengisi data pohon, nama OPT, nama obat, dan teknik pemberian obat. Antarmuka memanggil \texttt{GET /api/v1/pengobatan/rekomendasi} ke \textit{PengobatanHandler} untuk mengambil rekomendasi dosis berdasarkan varietas, fase, dan nama obat. Setelah Operator memasukkan volume obat dan menekan \textbf{Simpan}, antarmuka mengirimkan \texttt{POST /api/v1/pengobatan} ke backend. \textit{pengobatanUsecase} memerintahkan \textit{pengobatanRepository} untuk menyimpan catatan pemberian obat baru ke dalam \textit{database}. Terakhir, antarmuka memicu pengurangan stok obat melalui request \texttt{PATCH /api/v1/stok/obat/:id}.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi form pemberian obat. Antarmuka menarik data rekomendasi dosis otomatis dari backend.
+        \item \textbf{Alur Backend:} Operator menekan \textbf{Simpan}. Antarmuka mengirim request \texttt{POST /api/v1/pengobatan} diikuti pengurangan stok \texttt{PATCH /api/v1/stok/obat/:id}.
+        \item \textbf{Akses Data:} Usecase menyimpan log pengobatan baru dan usecase stok memperbarui sisa volume obat di database.
+        \item \textbf{Output:} Catatan tersimpan dengan sukses dan stok obat di gudang ter-depresiasi.
+    \end{itemize}
+
+    % SD 16
+    \item \textit{Sequence Diagram} Pencatatan Pemberian Obat Gagal Karena Data Tidak Valid
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[1.5cm]{ui}{PencatatanFormPage (FE)}
+                \newinst[2cm]{pengobatanhnd}{PengobatanHandler}
+
+                \begin{call}{op}{Isi formulir data tidak valid \& klik Simpan}{ui}{Tampilkan pesan error}
+                    \begin{call}{ui}{POST /api/v1/pengobatan}{pengobatanhnd}{HTTP 400 Bad Request}
+                        \begin{callself}{pengobatanhnd}{Validasi gagal}{} \end{callself}
+                    \end{call}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Pencatatan Pemberian Obat Gagal Karena Data Tidak Valid}
+        \label{fig:sd-pengobatan-invalid}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun mengisi formulir pengobatan dengan data tidak lengkap atau tidak valid dan menekan tombol \textbf{Simpan}. Antarmuka mengirimkan data melalui permintaan \texttt{POST /api/v1/pengobatan} ke \textit{PengobatanHandler}. Handler menjalankan validasi data dan mendeteksi adanya ketidaksesuaian data masukan. Handler mengembalikan respons kesalahan \texttt{HTTP 400 Bad Request} ke antarmuka, sehingga antarmuka menampilkan pesan peringatan ``Pencatatan gagal, periksa kembali data yang dimasukkan'' kepada Operator Kebun.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi formulir pengobatan dengan data tidak valid dan menekan tombol \textbf{Simpan}.
+        \item \textbf{Alur Backend:} Request dikirim ke handler. Handler menolak request karena gagal validasi input.
+        \item \textbf{Akses Data:} Request langsung dikembalikan oleh handler tanpa interaksi dengan database.
+        \item \textbf{Output:} Handler merespons dengan \texttt{HTTP 400 Bad Request} dan antarmuka menyajikan pesan ``Pencatatan gagal, periksa kembali data yang dimasukkan''.
+    \end{itemize}
+
+    % SD 17
+    \item \textit{Sequence Diagram} Volume Obat Yang Dimasukkan Melebihi Stok Tersedia
+    \begin{figure}[H]
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{sequencediagram}
+                \newthread{op}{Operator Kebun}
+                \newinst[2cm]{ui}{PencatatanFormPage (FE)}
+
+                \begin{call}{op}{Isi Volume Obat}{ui}{Tampilkan Peringatan Stok Kurang}
+                    \begin{callself}{ui}{Validasi input terhadap data stok obat ter-load}{}
+                    \end{callself}
+                \end{call}
+            \end{sequencediagram}
+        }
+        \caption{\textit{Sequence Diagram} Volume Obat Yang Dimasukkan Melebihi Stok Tersedia}
+        \label{fig:sd-pengobatan-stok-kurang}
+    \end{figure}
+
+    \hspace{1em} Operator Kebun mengisi volume obat yang digunakan pada formulir pengobatan. Antarmuka pengguna secara langsung (Client-side validation) mendeteksi bahwa volume obat melebihi kapasitas stok obat yang tersedia dari data stok ter-load sebelumnya di halaman. Antarmuka segera merender warning ``Peringatan Stok Kurang'' di layar.
+
+    \textbf{Penjelasan Alur:}
+    \begin{itemize}
+        \item \textbf{Aksi Awal:} Operator mengisi volume obat pada formulir pengobatan.
+        \item \textbf{Alur Backend:} Tidak ada request backend yang dikirim karena validasi ketersediaan stok obat ditangani di sisi antarmuka.
+        \item \textbf{Akses Data:} Tidak ada kueri ke database.
+        \item \textbf{Output:} Antarmuka merender warning ``Peringatan Stok Kurang'' apabila volume obat melebihi stok yang ada.
+    \end{itemize}
+
+\end{enumerate}
+
+\end{document}

@@ -63,8 +63,63 @@ var DefaultKelengkengDosis = KelengkengDosis{
 }
 
 // ============================================================
-// TIPE DATA INPUT
+// TIPE DATA INPUT & KATEGORI PUPUK
 // ============================================================
+
+type KategoriPupuk string
+
+const (
+	PupukOrganikPadat KategoriPupuk = "organik_padat" // kg
+	PupukOrganikCair  KategoriPupuk = "organik_cair"  // ml/L (disclaimer)
+	PupukKimia        KategoriPupuk = "kimia"         // gram (Urea, SP-36, KCl)
+)
+
+type KebutuhanHaraAlpukat struct {
+	NMinGram     float64 // 1020
+	NMaxGram     float64 // 1630
+	P2O5MinGram  float64 // 1150
+	P2O5MaxGram  float64 // 1250
+	K2OMinGram   float64 // 2400
+	K2OMaxGram   float64 // 2500
+	Frekuensi    int     // 3
+}
+
+var DefaultKebutuhanHaraAlpukatGeneratif = KebutuhanHaraAlpukat{
+	NMinGram:    1020,
+	NMaxGram:    1630,
+	P2O5MinGram: 1150,
+	P2O5MaxGram: 1250,
+	K2OMinGram:  2400,
+	K2OMaxGram:  2500,
+	Frekuensi:   3,
+}
+
+var DefaultKebutuhanHaraAlpukatVegetatif = KebutuhanHaraAlpukat{
+	NMinGram:    200,
+	NMaxGram:    400,
+	P2O5MinGram: 150,
+	P2O5MaxGram: 300,
+	K2OMinGram:  200,
+	K2OMaxGram:  400,
+	Frekuensi:   2,
+}
+
+const (
+	KandunganUrea = 0.46
+	KandunganSP36 = 0.36
+	KandunganKCl  = 0.60
+)
+
+func HitungPupukTunggal(hara KebutuhanHaraAlpukat) (ureaGram, sp36Gram, kclGram float64) {
+	nRata := (hara.NMinGram + hara.NMaxGram) / 2.0
+	pRata := (hara.P2O5MinGram + hara.P2O5MaxGram) / 2.0
+	kRata := (hara.K2OMinGram + hara.K2OMaxGram) / 2.0
+
+	ureaGram = math.Round((nRata/KandunganUrea)*100) / 100
+	sp36Gram = math.Round((pRata/KandunganSP36)*100) / 100
+	kclGram = math.Round((kRata/KandunganKCl)*100) / 100
+	return
+}
 
 type FasePohon string
 
@@ -83,33 +138,232 @@ const (
 )
 
 type DataPohon struct {
-	ID        string       
-	Jenis     JenisTanaman 
-	Fase      FasePohon    
-	UsiaTahun float64      
-	Varietas  string       
+	ID        string
+	Jenis     JenisTanaman
+	Fase      FasePohon
+	UsiaTahun float64
+	Varietas  string
 }
 
 type HasilHitungPohon struct {
-	PohonID           string
-	Jenis             JenisTanaman
-	Fase              FasePohon
-	UsiaTahun         float64
-	DosisPerAplikasi  float64
-	FrekuensiPerTahun int
-	TotalPerTahun     float64
-	Keterangan        string
+	PohonID           string       `json:"pohon_id"`
+	Jenis             JenisTanaman `json:"jenis"`
+	Fase              FasePohon    `json:"fase"`
+	UsiaTahun         float64      `json:"usia_tahun"`
+	DosisPerAplikasi  float64      `json:"dosis_per_aplikasi"`
+	FrekuensiPerTahun int          `json:"frekuensi_per_tahun"`
+	TotalPerTahun     float64      `json:"total_per_tahun"`
+	Keterangan        string       `json:"keterangan"`
+	UreaGramPerTahun  float64      `json:"urea_gram_per_tahun,omitempty"`
+	SP36GramPerTahun  float64      `json:"sp36_gram_per_tahun,omitempty"`
+	KClGramPerTahun   float64      `json:"kcl_gram_per_tahun,omitempty"`
+}
+
+// --- KONSTANTA & ASUMSI PUPUK ORGANIK CAIR (POC) ---
+// Sumber Literatur: Jumar dkk. (2023), "Pupuk Organik Cair (POC): Keunggulan, Cara Pembuatan dan Aplikasi serta Pemasarannya", Resitasi Pustaka.
+
+type KonfigPOC struct {
+	RasioPupukLiter     float64 `json:"rasio_pupuk_liter"`     // 1  (liter POC)
+	RasioAirLiter       float64 `json:"rasio_air_liter"`       // 100 (liter air) — rasio resmi 1:100 (hlm. 9)
+	KepekatanMaksPersen float64 `json:"kepekatan_maks_persen"` // 2.0% (hlm. 9)
+	FrekuensiMingguMin  int     `json:"frekuensi_minggu_min"`  // 2 minggu sekali (hlm. 79)
+	FrekuensiMingguMax  int     `json:"frekuensi_minggu_max"`  // 4 minggu sekali (hlm. 79)
+}
+
+var DefaultKonfigPOC = KonfigPOC{
+	RasioPupukLiter:     1,
+	RasioAirLiter:       100,
+	KepekatanMaksPersen: 2.0,
+	FrekuensiMingguMin:  2,
+	FrekuensiMingguMax:  4,
+}
+
+// VolumeLarutanPerPohon: ASUMSI TIM PERKEBUNAN (Volume larutan semprot/kocor per pohon per aplikasi)
+type VolumeLarutanPerPohon struct {
+	BelumProduktifLiter     float64 `json:"belum_produktif_liter"`     // 2.0 L (0-3 th)
+	ProduktifVegetatifLiter float64 `json:"produktif_vegetatif_liter"` // 5.0 L (>4 th Vegetatif)
+	ProduktifGeneratifLiter float64 `json:"produktif_generatif_liter"` // 8.0 L (>4 th Generatif)
+}
+
+var DefaultVolumeLarutan = VolumeLarutanPerPohon{
+	BelumProduktifLiter:     2.0,
+	ProduktifVegetatifLiter: 5.0,
+	ProduktifGeneratifLiter: 8.0,
+}
+
+type StatusUsiaPohon string
+
+const (
+	UsiaBelumProduktif StatusUsiaPohon = "belum_produktif"
+	UsiaProduktif      StatusUsiaPohon = "produktif"
+)
+
+type DataPohonPOC struct {
+	ID          string          `json:"id"`
+	Jenis       JenisTanaman    `json:"jenis"`
+	Varietas    string          `json:"varietas"`
+	StatusUsia  StatusUsiaPohon `json:"status_usia"`
+	Fase        FasePohon       `json:"fase"`
+	JumlahPohon int             `json:"jumlah_pohon"`
+}
+
+type HasilDosisPOC struct {
+	PohonID                string          `json:"pohon_id"`
+	Varietas               string          `json:"varietas"`
+	StatusUsia             StatusUsiaPohon `json:"status_usia"`
+	Fase                   FasePohon       `json:"fase"`
+	JumlahPohon            int             `json:"jumlah_pohon"`
+	VolumeLarutanPerPohonL float64         `json:"volume_larutan_per_pohon_l"`
+	TotalVolumeLarutanL    float64         `json:"total_volume_larutan_l"`
+	VolumePOCMurniL        float64         `json:"volume_poc_murni_l"`
+	FrekuensiPerBulan      float64         `json:"frekuensi_per_bulan"`
+	Keterangan             string          `json:"keterangan"`
+}
+
+func HitungDosisPOC(pohon DataPohonPOC, vol VolumeLarutanPerPohon, cfg KonfigPOC) HasilDosisPOC {
+	if pohon.JumlahPohon <= 0 {
+		pohon.JumlahPohon = 1
+	}
+
+	var volPerPohon float64
+	var keterangan string
+
+	switch pohon.StatusUsia {
+	case UsiaBelumProduktif:
+		volPerPohon = vol.BelumProduktifLiter
+		keterangan = "Belum produktif (0–3 th) — fase tidak relevan. " +
+			"Volume larutan ASUMSI tim (2.0L/pohon), rasio pengenceran resmi 1:100 (Jumar dkk., 2023)."
+
+	case UsiaProduktif:
+		switch pohon.Fase {
+		case FaseVegetatif:
+			volPerPohon = vol.ProduktifVegetatifLiter
+			keterangan = "Produktif, fase vegetatif — merangsang pertumbuhan tunas/daun. " +
+				"Volume larutan ASUMSI tim (5.0L/pohon), rasio 1:100 (Jumar dkk., 2023)."
+		case FaseGeneratif, FaseGeneratifBuah, FaseGeneratifPraBunga:
+			volPerPohon = vol.ProduktifGeneratifLiter
+			keterangan = "Produktif, fase generatif — disemprot saat transisi " +
+				"vegetatif ke generatif untuk merangsang buah (Jumar dkk., 2023, hlm.9). " +
+				"Volume larutan ASUMSI tim (8.0L/pohon)."
+		default:
+			volPerPohon = vol.ProduktifVegetatifLiter
+			keterangan = "Fase tidak dikenali untuk pohon produktif"
+		}
+	default:
+		volPerPohon = vol.BelumProduktifLiter
+		keterangan = "Status usia tidak dikenali"
+	}
+
+	totalLarutan := volPerPohon * float64(pohon.JumlahPohon)
+	pocMurni := totalLarutan * (cfg.RasioPupukLiter / cfg.RasioAirLiter)
+	frekuensiRataRata := float64(cfg.FrekuensiMingguMin+cfg.FrekuensiMingguMax) / 2.0
+
+	return HasilDosisPOC{
+		PohonID:                pohon.ID,
+		Varietas:               pohon.Varietas,
+		StatusUsia:             pohon.StatusUsia,
+		Fase:                   pohon.Fase,
+		JumlahPohon:            pohon.JumlahPohon,
+		VolumeLarutanPerPohonL: volPerPohon,
+		TotalVolumeLarutanL:    math.Round(totalLarutan*100) / 100,
+		VolumePOCMurniL:        math.Round(pocMurni*100) / 100,
+		FrekuensiPerBulan:      frekuensiRataRata,
+		Keterangan:             keterangan,
+	}
+}
+
+type DosisPupukResult struct {
+	Kategori               KategoriPupuk `json:"kategori"`
+	Dosis                  float64       `json:"dosis"`
+	Satuan                 string        `json:"satuan"`
+	Frekuensi              int           `json:"frekuensi"`
+	UreaGram               float64       `json:"urea_gram,omitempty"`
+	SP36Gram               float64       `json:"sp36_gram,omitempty"`
+	KClGram                float64       `json:"kcl_gram,omitempty"`
+	VolumeLarutanPerPohonL float64       `json:"volume_larutan_per_pohon_l,omitempty"`
+	TotalVolumeLarutanL    float64       `json:"total_volume_larutan_l,omitempty"`
+	VolumePOCMurniL        float64       `json:"volume_poc_murni_l,omitempty"`
+	FrekuensiPerBulan      float64       `json:"frekuensi_per_bulan,omitempty"`
+	Keterangan             string        `json:"keterangan"`
+	DisclaimerCair         string        `json:"disclaimer_cair,omitempty"`
+}
+
+func HitungDosisPupuk(kategori KategoriPupuk, jenisTanaman JenisTanaman, fase FasePohon, usiaTahun float64) DosisPupukResult {
+	switch kategori {
+	case PupukOrganikPadat:
+		var dosis float64
+		var freq int
+		var ket string
+		if jenisTanaman == TanamanKelengkeng {
+			dosis, freq, ket = HitungDosisKelengkeng(fase, usiaTahun, DefaultKelengkengDosis)
+		} else {
+			dosis, freq, ket = HitungDosisAlpukat(fase, usiaTahun, DefaultAlpukatDosis)
+		}
+		return DosisPupukResult{
+			Kategori:   PupukOrganikPadat,
+			Dosis:      dosis,
+			Satuan:     "kg",
+			Frekuensi:  freq,
+			Keterangan: ket,
+		}
+	case PupukOrganikCair:
+		statusUsia := UsiaProduktif
+		if usiaTahun < 4.0 {
+			statusUsia = UsiaBelumProduktif
+		}
+		dp := DataPohonPOC{
+			Jenis:       jenisTanaman,
+			StatusUsia:  statusUsia,
+			Fase:        fase,
+			JumlahPohon: 1,
+		}
+		resPOC := HitungDosisPOC(dp, DefaultVolumeLarutan, DefaultKonfigPOC)
+
+		return DosisPupukResult{
+			Kategori:               PupukOrganikCair,
+			Dosis:                  resPOC.VolumePOCMurniL,
+			Satuan:                 "Liter POC",
+			Frekuensi:              int(resPOC.FrekuensiPerBulan),
+			VolumeLarutanPerPohonL: resPOC.VolumeLarutanPerPohonL,
+			TotalVolumeLarutanL:    resPOC.TotalVolumeLarutanL,
+			VolumePOCMurniL:        resPOC.VolumePOCMurniL,
+			FrekuensiPerBulan:      resPOC.FrekuensiPerBulan,
+			Keterangan:             resPOC.Keterangan,
+			DisclaimerCair:         "Rasio pengenceran resmi 1 Liter POC : 100 Liter Air (Jumar dkk., 2023). Kebutuhan larutan per pohon berdasarkan asumsi tajuk.",
+		}
+	case PupukKimia:
+		hara := DefaultKebutuhanHaraAlpukatGeneratif
+		if fase == FaseVegetatif {
+			hara = DefaultKebutuhanHaraAlpukatVegetatif
+		}
+		urea, sp36, kcl := HitungPupukTunggal(hara)
+		return DosisPupukResult{
+			Kategori:   PupukKimia,
+			Dosis:      0,
+			Satuan:     "gram",
+			Frekuensi:  hara.Frekuensi,
+			UreaGram:   urea,
+			SP36Gram:   sp36,
+			KClGram:    kcl,
+			Keterangan: "Dosis pupuk tunggal (Urea, SP-36, KCl) berbasis konversi hara murni",
+		}
+	default:
+		return DosisPupukResult{}
+	}
 }
 
 type HasilHitungKebun struct {
-	DetailPohon            []HasilHitungPohon
-	TotalKebutuhanKgTahun  float64
-	TotalKebutuhanKgSiklus float64
-	StokTersediaKg         float64
-	StokAmanKg             float64
-	Cukup                  bool
-	KekuranganKg           float64
-	SafetyFactor           float64
+	DetailPohon            []HasilHitungPohon `json:"detail_pohon"`
+	TotalKebutuhanKgTahun  float64            `json:"total_kebutuhan_kg_tahun"`
+	TotalKebutuhanKgSiklus float64            `json:"total_kebutuhan_kg_siklus"`
+	TotalUreaKgTahun       float64            `json:"total_urea_kg_tahun"`
+	TotalSP36KgTahun       float64            `json:"total_sp36_kg_tahun"`
+	TotalKClKgTahun        float64            `json:"total_kcl_kg_tahun"`
+	StokTersediaKg         float64            `json:"stok_tersedia_kg"`
+	StokAmanKg             float64            `json:"stok_aman_kg"`
+	Cukup                  bool               `json:"cukup"`
+	KekuranganKg           float64            `json:"kekurangan_kg"`
+	SafetyFactor           float64            `json:"safety_factor"`
 }
 
 // ============================================================
@@ -205,6 +459,12 @@ func HitungPerPohon(pohon DataPohon) HasilHitungPohon {
 
 	totalPerTahun := math.Round(dosis*float64(frekuensi)*100) / 100
 
+	hara := DefaultKebutuhanHaraAlpukatGeneratif
+	if pohon.Fase == FaseVegetatif {
+		hara = DefaultKebutuhanHaraAlpukatVegetatif
+	}
+	uG, spG, kcG := HitungPupukTunggal(hara)
+
 	return HasilHitungPohon{
 		PohonID:           pohon.ID,
 		Jenis:             pohon.Jenis,
@@ -214,6 +474,9 @@ func HitungPerPohon(pohon DataPohon) HasilHitungPohon {
 		FrekuensiPerTahun: frekuensi,
 		TotalPerTahun:     totalPerTahun,
 		Keterangan:        keterangan,
+		UreaGramPerTahun:  uG * float64(hara.Frekuensi),
+		SP36GramPerTahun:  spG * float64(hara.Frekuensi),
+		KClGramPerTahun:   kcG * float64(hara.Frekuensi),
 	}
 }
 
@@ -224,11 +487,15 @@ func HitungKebutuhanKebun(daftarPohon []DataPohon, stokTersediaKg float64, safet
 
 	var detail []HasilHitungPohon
 	var totalTahun float64
+	var totalUreaGram, totalSP36Gram, totalKClGram float64
 
 	for _, pohon := range daftarPohon {
 		hasil := HitungPerPohon(pohon)
 		detail = append(detail, hasil)
 		totalTahun += hasil.TotalPerTahun
+		totalUreaGram += hasil.UreaGramPerTahun
+		totalSP36Gram += hasil.SP36GramPerTahun
+		totalKClGram += hasil.KClGramPerTahun
 	}
 
 	totalSiklus := math.Round((totalTahun/2)*100) / 100
@@ -240,6 +507,9 @@ func HitungKebutuhanKebun(daftarPohon []DataPohon, stokTersediaKg float64, safet
 		DetailPohon:            detail,
 		TotalKebutuhanKgTahun:  math.Round(totalTahun*100) / 100,
 		TotalKebutuhanKgSiklus: totalSiklus,
+		TotalUreaKgTahun:       math.Round((totalUreaGram/1000.0)*100) / 100,
+		TotalSP36KgTahun:       math.Round((totalSP36Gram/1000.0)*100) / 100,
+		TotalKClKgTahun:        math.Round((totalKClGram/1000.0)*100) / 100,
 		StokTersediaKg:         stokTersediaKg,
 		StokAmanKg:             stokAman,
 		Cukup:                  stokTersediaKg >= stokAman,

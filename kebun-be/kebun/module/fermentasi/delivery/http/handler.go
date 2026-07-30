@@ -4,6 +4,7 @@ import (
 	"github.com/farmease/kebun-be/kebun/module/fermentasi/domain"
 	"github.com/farmease/kebun-be/libraries/apiresponses"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type FermentasiHandler struct {
@@ -52,6 +53,7 @@ func (h *FermentasiHandler) Create(c *fiber.Ctx) error {
 		return apiresponses.Fail(c, fiber.StatusBadRequest, err.Error())
 	}
 	if err := h.usecase.CreatePupukFermentasi(c.Context(), &f); err != nil {
+		log.Error().Err(err).Interface("payload", f).Msg("Failed to create fermentation batch")
 		return apiresponses.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return apiresponses.Success(c, fiber.StatusCreated, "Success create fermentation batch", f)

@@ -236,30 +236,79 @@ export default defineComponent({
       return phases;
     });
 
-    // Display toggles
-    const hasAlpukatLand = computed(() => {
-      return landsList.value.some(l => (l.location || '').toLowerCase().includes('alpukat') || (l.name || '').toLowerCase().includes('alpukat'));
-    });
+    // Dynamic per-location computed values
+    const uniqueLandTypes = computed(() => {
+      const set = new Set<string>()
+      landsList.value.forEach(l => {
+        const loc = (l.location || '').trim()
+        if (loc) set.add(loc)
+      })
+      return Array.from(set)
+    })
 
-    const hasKelengkengLand = computed(() => {
-      return landsList.value.some(l => (l.location || '').toLowerCase().includes('kelengkeng') || (l.name || '').toLowerCase().includes('kelengkeng'));
-    });
+    const getLandsForType = (locType: string) =>
+      landsList.value.filter(l => (l.location || '').toLowerCase() === locType.toLowerCase())
 
-    const showAlpukat = computed(() => {
-      if (!hasAlpukatLand.value) return false;
-      if (selectedLand.value === 'all') return true;
-      const matchedLand = landsList.value.find(l => l.code === selectedLand.value);
-      if (!matchedLand) return selectedLand.value === 'L001';
-      return (matchedLand.location || '').toLowerCase().includes('alpukat');
-    });
+    const getCropsForType = (locType: string) => {
+      const codes = getLandsForType(locType).map(l => l.code)
+      return cropsList.value.filter(c => codes.includes(c.land) || (c.name || '').toLowerCase().includes(locType.toLowerCase()))
+    }
 
-    const showKelengkeng = computed(() => {
-      if (!hasKelengkengLand.value) return false;
-      if (selectedLand.value === 'all') return true;
-      const matchedLand = landsList.value.find(l => l.code === selectedLand.value);
-      if (!matchedLand) return selectedLand.value === 'L002';
-      return (matchedLand.location || '').toLowerCase().includes('kelengkeng');
-    });
+    const luasForType = (locType: string) => {
+      const sum = getLandsForType(locType).reduce((acc, curr) => acc + (parseFloat(curr.area) || 0), 0)
+      return `${sum.toLocaleString('id-ID')} m²`
+    }
+
+    const pohonForType = (locType: string) => `${getCropsForType(locType).length} Pohon`
+
+    const panenForType = (locType: string) => {
+      const landIds = getLandsForType(locType).map(l => l.id)
+      const sum = panenList.value
+        .filter(p => landIds.includes(p.id_pohon))
+        .reduce((acc, curr) => acc + (Number(curr.jumlah_panen) || 0), 0)
+      return `${sum.toLocaleString('id-ID')} Kg`
+    }
+
+    const monthlyPanenForType = (locType: string) => {
+      const data = [0, 0, 0, 0, 0, 0]
+      const landIds = getLandsForType(locType).map(l => l.id)
+      panenList.value.forEach(p => {
+        if (landIds.includes(p.id_pohon)) {
+          const month = new Date(p.tanggal_panen).getMonth()
+          if (month >= 0 && month <= 5) data[month] = (data[month] ?? 0) + (Number(p.jumlah_panen) || 0)
+        }
+      })
+      return data
+    }
+
+    const treePhasesForType = (locType: string): { generatif: number; vegetatif: number; pembibitan: number; panen: number; tidakProduktif: number } => {
+      const phases = { generatif: 0, vegetatif: 0, pembibitan: 0, panen: 0, tidakProduktif: 0 }
+      getCropsForType(locType).forEach(c => {
+        const status = (c.type || '').toLowerCase()
+        if (status.includes('generatif')) phases.generatif = (phases.generatif || 0) + 1
+        else if (status.includes('vegetatif')) phases.vegetatif = (phases.vegetatif || 0) + 1
+        else if (status.includes('pembibitan') || status.includes('bibit')) phases.pembibitan = (phases.pembibitan || 0) + 1
+        else if (status.includes('panen')) phases.panen = (phases.panen || 0) + 1
+        else if (status.includes('tidak produktif') || status.includes('belum') || status.includes('juvenile')) phases.tidakProduktif = (phases.tidakProduktif || 0) + 1
+        else phases.panen = (phases.panen || 0) + 1
+      })
+      return phases
+    }
+
+    const showSectionForType = (locType: string) => {
+      if (selectedLand.value === 'all') return true
+      const matchedLand = landsList.value.find(l => l.code === selectedLand.value)
+      if (!matchedLand) return false
+      return (matchedLand.location || '').toLowerCase() === locType.toLowerCase()
+    }
+
+    const getLandIcon = (locType: string) => {
+      const t = locType.toLowerCase()
+      if (t.includes('kelengkeng')) return '/icon/kelengkeng.png'
+      if (t.includes('alpukat')) return '/icon/alpukat.png'
+      return '/icon/lahan.png'
+    }
+
 
     // Inline SVG Line Chart for "Hasil Panen"
     const renderLineChart = (monthlyData: number[], labelType: string) => {
@@ -724,184 +773,102 @@ export default defineComponent({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-            {/* ============ ALPUKAT SECTION ============ */}
-            {showAlpukat.value && (
-              <div>
-                {/* Section Label */}
-                {(() => {
-                  const alpukatLand = landsList.value.find(l => (l.location || '').toLowerCase().includes('alpukat'))
-                  const landCode = alpukatLand ? alpukatLand.code : 'L001'
-                  return (
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#38431F', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ display: 'inline-block', width: '4px', height: '1.3rem', background: '#38431F', borderRadius: '2px' }}></span>
-                      Lahan {landCode} — Alpukat
-                    </h2>
-                  )
-                })()} 
-                {/* Stats Cards Grid - 2 columns */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{luasAlpukat.value}</span>
-                    <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Total Luas Lahan Alpukat</strong>
-                  </div>
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{pohonAlpukat.value}</span>
-                    <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Total Pohon</strong>
-                  </div>
-                </div>
-  
-                {/* Stats Card - Full width */}
-                <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                  <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{panenAlpukat.value}</span>
-                  <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Jumlah Panen Alpukat</strong>
-                </div>
-  
-                {/* Charts Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                  {/* Hasil Panen Alpukat Chart */}
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>Hasil Panen Alpukat</h3>
-                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: '#6B7280', fontWeight: '600' }}>Data 6 bulan terakhir (kg)</p>
-                    
-                    {/* Custom Legend */}
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.75rem', fontWeight: '700', color: '#374151' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#38431F', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Per lahan</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#A5B892', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Per pohon (rata-rata)</span>
-                      </div>
-                    </div>
-  
-                    {renderLineChart(monthlyPanenAlpukat.value, 'Alpukat')}
-                  </div>
-  
-                  {/* Jumlah Pohon Chart */}
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>Jumlah pohon (per fase pohon)</h3>
-                    
-                    {/* Legend Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem 1rem', marginBottom: '1.25rem', fontSize: '0.73rem', fontWeight: '700', color: '#374151', width: '100%', justifyContent: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#7C8B64', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Generatif: {Math.round(treePhasesAlpukat.value.generatif || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#2D3B1D', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Vegetatif: {Math.round(treePhasesAlpukat.value.vegetatif || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#D8CEBF', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Pembibitan: {Math.round(treePhasesAlpukat.value.pembibitan || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#A5B892', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Panen: {Math.round(treePhasesAlpukat.value.panen || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#3C3026', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Tidak Prod: {Math.round(treePhasesAlpukat.value.tidakProduktif || 0)}</span>
-                      </div>
-                    </div>
-  
-                    {renderBarChart(treePhasesAlpukat.value)}
-                  </div>
-                </div>
-              </div>
-            )}
-  
-            {/* ============ KELENGKENG SECTION ============ */}
-            {showKelengkeng.value && (
-              <div>
-                {selectedLand.value === 'all' && showAlpukat.value && (
-                  <hr style={{ border: 'none', borderTop: '2px solid #E6D9CE', margin: '1rem 0 2rem 0' }} />
-                )}
-  
-                {/* Section Label */}
-                {(() => {
-                  const kelengkengLand = landsList.value.find(l => (l.location || '').toLowerCase().includes('kelengkeng'))
-                  const landCode = kelengkengLand ? kelengkengLand.code : 'L002'
-                  return (
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#38431F', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ display: 'inline-block', width: '4px', height: '1.3rem', background: '#38431F', borderRadius: '2px' }}></span>
-                      Lahan {landCode} — Kelengkeng
-                    </h2>
-                  )
-                })()} 
+            {uniqueLandTypes.value.map((locType, idx) => (
+              showSectionForType(locType) && (
+                <div key={locType}>
+                  {idx > 0 && selectedLand.value === 'all' && (
+                    <hr style={{ border: 'none', borderTop: '2px solid #E6D9CE', margin: '1rem 0 2rem 0' }} />
+                  )}
 
-                {/* Stats Cards Grid - 2 columns */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{luasKelengkeng.value}</span>
-                    <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Total Luas Lahan Kelengkeng</strong>
-                  </div>
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{pohonKelengkeng.value}</span>
-                    <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Total Pohon</strong>
-                  </div>
-                </div>
-  
-                {/* Stats Card - Full width */}
-                <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                  <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{panenKelengkeng.value}</span>
-                  <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Jumlah Panen Kelengkeng</strong>
-                </div>
-  
-                {/* Charts Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                  {/* Hasil Panen Kelengkeng Chart */}
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>Hasil Panen Kelengkeng</h3>
-                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: '#6B7280', fontWeight: '600' }}>Data 6 bulan terakhir (kg)</p>
-                    
-                    {/* Custom Legend */}
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.75rem', fontWeight: '700', color: '#374151' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#38431F', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Per lahan</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#A5B892', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Per pohon (rata-rata)</span>
-                      </div>
+                  {/* Section Label */}
+                  {(() => {
+                    const typeLands = getLandsForType(locType)
+                    const landCodes = typeLands.map(l => l.code).join(', ')
+                    return (
+                      <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#38431F', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ display: 'inline-block', width: '4px', height: '1.3rem', background: '#38431F', borderRadius: '2px' }}></span>
+                        Lahan {landCodes} — {locType}
+                      </h2>
+                    )
+                  })()}
+
+                  {/* Stats Cards Grid - 2 columns */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{luasForType(locType)}</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Total Luas Lahan {locType}</strong>
                     </div>
-  
-                    {renderLineChart(monthlyPanenKelengkeng.value, 'Kelengkeng')}
-                  </div>
-  
-                  {/* Jumlah Pohon Chart */}
-                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>Jumlah pohon (per fase pohon)</h3>
-                    
-                    {/* Legend Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem 1rem', marginBottom: '1.25rem', fontSize: '0.73rem', fontWeight: '700', color: '#374151', width: '100%', justifyContent: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#7C8B64', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Generatif: {Math.round(treePhasesKelengkeng.value.generatif || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#2D3B1D', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Vegetatif: {Math.round(treePhasesKelengkeng.value.vegetatif || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#D8CEBF', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Pembibitan: {Math.round(treePhasesKelengkeng.value.pembibitan || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#A5B892', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Panen: {Math.round(treePhasesKelengkeng.value.panen || 0)}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
-                        <span style={{ width: '10px', height: '10px', backgroundColor: '#3C3026', borderRadius: '2px', display: 'inline-block' }}></span>
-                        <span>Tidak Prod: {Math.round(treePhasesKelengkeng.value.tidakProduktif || 0)}</span>
-                      </div>
+                    <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{pohonForType(locType)}</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Total Pohon</strong>
                     </div>
-  
-                    {renderBarChart(treePhasesKelengkeng.value)}
+                  </div>
+
+                  {/* Stats Card - Full width */}
+                  <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '2rem 1rem', textAlign: 'center', marginBottom: '1.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <span style={{ fontSize: '2.25rem', fontWeight: '800', color: '#111827', display: 'block', marginBottom: '0.5rem', fontFamily: "'Nunito', sans-serif" }}>{panenForType(locType)}</span>
+                    <strong style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '700' }}>Jumlah Panen {locType}</strong>
+                  </div>
+
+                  {/* Charts Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>Hasil Panen {locType}</h3>
+                      <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: '#6B7280', fontWeight: '600' }}>Data 6 bulan terakhir (kg)</p>
+                      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.75rem', fontWeight: '700', color: '#374151' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ width: '10px', height: '10px', backgroundColor: '#38431F', borderRadius: '2px', display: 'inline-block' }}></span>
+                          <span>Per lahan</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ width: '10px', height: '10px', backgroundColor: '#A5B892', borderRadius: '2px', display: 'inline-block' }}></span>
+                          <span>Per pohon (rata-rata)</span>
+                        </div>
+                      </div>
+                      {renderLineChart(monthlyPanenForType(locType), locType)}
+                    </div>
+
+                    <div style={{ background: '#FFF', border: '1.5px solid #E6D9CE', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: '800', color: '#111827' }}>Jumlah pohon (per fase pohon)</h3>
+                      {(() => {
+                        const phases = treePhasesForType(locType)
+                        return (
+                          <>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem 1rem', marginBottom: '1.25rem', fontSize: '0.73rem', fontWeight: '700', color: '#374151', width: '100%', justifyContent: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
+                                <span style={{ width: '10px', height: '10px', backgroundColor: '#7C8B64', borderRadius: '2px', display: 'inline-block' }}></span>
+                                <span>Generatif: {Math.round(phases.generatif || 0)}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
+                                <span style={{ width: '10px', height: '10px', backgroundColor: '#2D3B1D', borderRadius: '2px', display: 'inline-block' }}></span>
+                                <span>Vegetatif: {Math.round(phases.vegetatif || 0)}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
+                                <span style={{ width: '10px', height: '10px', backgroundColor: '#D8CEBF', borderRadius: '2px', display: 'inline-block' }}></span>
+                                <span>Pembibitan: {Math.round(phases.pembibitan || 0)}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
+                                <span style={{ width: '10px', height: '10px', backgroundColor: '#A5B892', borderRadius: '2px', display: 'inline-block' }}></span>
+                                <span>Panen: {Math.round(phases.panen || 0)}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center' }}>
+                                <span style={{ width: '10px', height: '10px', backgroundColor: '#3C3026', borderRadius: '2px', display: 'inline-block' }}></span>
+                                <span>Tidak Prod: {Math.round(phases.tidakProduktif || 0)}</span>
+                              </div>
+                            </div>
+                            {renderBarChart(phases)}
+                          </>
+                        )
+                      })()}
+                    </div>
                   </div>
                 </div>
+              )
+            ))}
+
+            {uniqueLandTypes.value.length === 0 && (
+              <div style={{ textAlign: 'center', color: '#9CA3AF', fontWeight: '700', fontSize: '0.9rem', padding: '3rem 0' }}>
+                Belum ada data lahan. Tambah lahan terlebih dahulu di menu Manajemen Lahan.
               </div>
             )}
           </div>
@@ -910,3 +877,5 @@ export default defineComponent({
     };
   }
 });
+
+

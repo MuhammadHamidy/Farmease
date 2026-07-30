@@ -44,7 +44,10 @@ export default defineComponent({
       const defaults = [
         { value: 'Pupuk Organik Padat Kandang', label: 'Pupuk Organik Padat Kandang' },
         { value: 'Pupuk Organik Kompos', label: 'Pupuk Organik Kompos' },
-        { value: 'Pupuk Organik Cair', label: 'Pupuk Organik Cair (POC)' }
+        { value: 'Pupuk Organik Cair', label: 'Pupuk Organik Cair (POC)' },
+        { value: 'Urea', label: 'Pupuk Kimia - Urea (N)' },
+        { value: 'SP-36', label: 'Pupuk Kimia - SP-36 (P₂O₅)' },
+        { value: 'KCl', label: 'Pupuk Kimia - KCl (K₂O)' }
       ];
       const customs = customFertilizerTypes.value.map(val => ({
         value: val,
@@ -89,8 +92,8 @@ export default defineComponent({
       
       if (h.includes('cair') || h.includes('poc')) {
         return [
-          { value: 'Limbah organik (contohnya sisa bahan makanan, sisa sayuran, dll)', label: 'Limbah organik (contohnya sisa bahan makanan, sisa sayuran, dll)' },
-          { value: 'Air kelapa', label: 'Air kelapa' }
+          { value: 'Air cucian beras (Metode Ragi Tape & Air Kelapa)', label: 'Air cucian beras (Metode Ragi Tape & Air Kelapa)' },
+          { value: 'EM4 & Molase (Metode Kotoran Domba / Limbah Organik)', label: 'EM4 & Molase (Metode Kotoran Domba / Limbah Organik)' }
         ];
       } else if (h.includes('kompos')) {
         return [
@@ -106,44 +109,88 @@ export default defineComponent({
     });
 
     const decomposerOptions = computed(() => {
-      const list = [
-        { value: 'EM4', label: 'EM4' },
-        { value: 'MOL (Mikroorganisme Lokal)', label: 'MOL (Mikroorganisme Lokal)' },
-        { value: 'Dekomposer Lokal', label: 'Dekomposer Lokal' },
-        { value: 'Lainnya', label: 'Lainnya' }
-      ]
-      return list.filter(opt => {
-        if (opt.value === 'Lainnya') return true
-        return getStockOf(opt.value) > 0
+      const namesSet = new Set<string>()
+
+      ;(props.bahanStocks || []).forEach((b: any) => {
+        if (b.name) {
+          const cat = (b.category || b.kategoriBahan || '').toLowerCase()
+          const nameLower = b.name.toLowerCase()
+          if (cat.includes('dekomposer') || nameLower.includes('em4') || nameLower.includes('mol') || nameLower.includes('dekomposer')) {
+            namesSet.add(b.name)
+          }
+        }
+      })
+
+      ;(props.allSubmissions || []).forEach((s: any) => {
+        if ((s.type || '').toLowerCase() === 'stok pupuk') {
+          const item = s.payload?.data?.items?.[0] || {}
+          if (item.tujuanPemanfaatan === 'bahan' && item.namaObat) {
+            const cat = (item.kategoriBahan || '').toLowerCase()
+            const nameLower = item.namaObat.toLowerCase()
+            if (cat.includes('dekomposer') || nameLower.includes('em4') || nameLower.includes('mol') || nameLower.includes('dekomposer')) {
+              namesSet.add(item.namaObat)
+            }
+          }
+        }
+      })
+
+      if (namesSet.size === 0) {
+        namesSet.add('EM4')
+        namesSet.add('MOL (Mikroorganisme Lokal)')
+      }
+
+      namesSet.add('Lainnya')
+
+      return Array.from(namesSet).map(name => {
+        const stockVal = getStockOf(name)
+        const label = stockVal > 0 ? `${name} (Stok: ${stockVal.toFixed(1)})` : name
+        return { value: name, label }
       })
     })
 
     const molaseOptions = computed(() => {
-      const list = [
-        { value: 'Tetes Tebu (Molase)', label: 'Tetes Tebu (Molase)' },
-        { value: 'Air Gula Merah', label: 'Air Gula Merah' },
-        { value: 'Air Gula Pasir', label: 'Air Gula Pasir' },
-        { value: 'Lainnya', label: 'Lainnya' }
-      ]
-      return list.filter(opt => {
-        if (opt.value === 'Lainnya') return true
-        return getStockOf(opt.value) > 0
+      const namesSet = new Set<string>()
+
+      ;(props.bahanStocks || []).forEach((b: any) => {
+        if (b.name) {
+          const cat = (b.category || b.kategoriBahan || '').toLowerCase()
+          const nameLower = b.name.toLowerCase()
+          if (cat.includes('molase') || nameLower.includes('molase') || nameLower.includes('tebu') || nameLower.includes('gula')) {
+            namesSet.add(b.name)
+          }
+        }
+      })
+
+      ;(props.allSubmissions || []).forEach((s: any) => {
+        if ((s.type || '').toLowerCase() === 'stok pupuk') {
+          const item = s.payload?.data?.items?.[0] || {}
+          if (item.tujuanPemanfaatan === 'bahan' && item.namaObat) {
+            const cat = (item.kategoriBahan || '').toLowerCase()
+            const nameLower = item.namaObat.toLowerCase()
+            if (cat.includes('molase') || nameLower.includes('molase') || nameLower.includes('tebu') || nameLower.includes('gula')) {
+              namesSet.add(item.namaObat)
+            }
+          }
+        }
+      })
+
+      if (namesSet.size === 0) {
+        namesSet.add('Tetes Tebu (Molase)')
+        namesSet.add('Gula Merah')
+      }
+
+      namesSet.add('Lainnya')
+
+      return Array.from(namesSet).map(name => {
+        const stockVal = getStockOf(name)
+        const label = stockVal > 0 ? `${name} (Stok: ${stockVal.toFixed(1)})` : name
+        return { value: name, label }
       })
     })
 
     const bahanOptions = computed(() => {
-      const names = props.bahanStocks.map((b: any) => b.name)
-      const defaults = [
-        'Kotoran Domba', 'EM4', 'MOL (Mikroorganisme Lokal)',
-        'Dekomposer Lokal', 'Tetes Tebu (Molase)', 'Air Gula Merah',
-        'Air Gula Pasir', 'Daun', 'Ranting', 'Gulma', 'Lainnya'
-      ]
-      defaults.forEach(d => {
-        if (!names.includes(d)) {
-          names.push(d)
-        }
-      })
-      return names
+      const names = (props.bahanStocks || []).map((b: any) => b.name)
+      return names.length > 0 ? names : ['Kotoran Domba', 'EM4', 'Tetes Tebu (Molase)', 'Lainnya']
     })
 
     const checkingHistory = computed(() => {
@@ -171,6 +218,18 @@ export default defineComponent({
 
     const bahanTambahanOptions = computed(() => {
       const namesSet = new Set<string>()
+
+      // 1. From bahanStocks registered under 'Bahan Tambahan'
+      ;(props.bahanStocks || []).forEach((b: any) => {
+        if (b.name) {
+          const cat = (b.category || b.kategoriBahan || '')
+          if (cat === 'Bahan Tambahan') {
+            namesSet.add(b.name)
+          }
+        }
+      })
+
+      // 2. From submissions registered under 'Bahan Tambahan'
       ;(props.allSubmissions || []).forEach((s: any) => {
         if ((s.type || '').toLowerCase() === 'stok pupuk') {
           const item = s.payload?.data?.items?.[0] || {}
@@ -180,20 +239,31 @@ export default defineComponent({
         }
       })
 
-      const list = Array.from(namesSet).map(name => {
+      // 3. Fallback to active stock materials with tujuanPemanfaatan === 'bahan' if no specific category match
+      if (namesSet.size === 0) {
+        ;(props.bahanStocks || []).forEach((b: any) => {
+          if (b.name) namesSet.add(b.name)
+        })
+        ;(props.allSubmissions || []).forEach((s: any) => {
+          if ((s.type || '').toLowerCase() === 'stok pupuk') {
+            const item = s.payload?.data?.items?.[0] || {}
+            if (item.tujuanPemanfaatan === 'bahan' && item.namaObat) {
+              namesSet.add(item.namaObat)
+            }
+          }
+        })
+      }
+
+      namesSet.add('Lainnya')
+
+      return Array.from(namesSet).map(name => {
         const stockVal = getStockOf(name)
+        const label = stockVal > 0 ? `${name} (Stok: ${stockVal.toFixed(1)})` : name
         return {
           value: name,
-          label: `${name} (Stok: ${stockVal.toFixed(1)} kg)`,
-          stock: stockVal
+          label
         }
       })
-
-      const activeList = list.filter(o => o.stock > 0)
-      return [
-        { value: '', label: 'Tidak Ada / Tanpa Bahan Tambahan' },
-        ...activeList
-      ]
     })
 
     const filteredFermentationPeriods = computed(() => {
@@ -233,17 +303,75 @@ export default defineComponent({
       const match = filteredFermentationPeriods.value.find((p: any) => String(p.value) === String(batchId))
       if (!match) return null
 
-      const item = match.rawItem
+      const item = match.rawItem || {}
+      const qty = item.qty || item.jumlahPupukDibuat || 5
+      const unit = item.unit || 'Liter'
 
-      let resolvedBahanMentah = item.bahanMentahId || '-'
+      const itemsList: Array<{ label: string; value: string }> = []
+
+      // 1. Bahan Utama / Mentah
+      const mainName = item.bahanUtama || item.bahanMentahId || 'Air cucian beras'
+      const mainQty = item.bahanUtamaQty || item.materialUsed || qty
+      const mainUnit = item.bahanUtamaUnit || unit
+      itemsList.push({
+        label: 'Bahan Utama / Mentah',
+        value: `${mainName} (${mainQty} ${mainUnit})`
+      })
+
+      // 2. Dekomposer
+      if (item.dekomposer) {
+        const dekQty = item.dekomposerQty ? `${item.dekomposerQty} ${item.dekomposerUnit || 'mL'}` : ''
+        itemsList.push({
+          label: 'Dekomposer',
+          value: dekQty ? `${item.dekomposer} (${dekQty})` : item.dekomposer
+        })
+      }
+
+      // 3. Molase
+      if (item.molase) {
+        const molQty = item.molaseQty ? `${item.molaseQty} ${item.molaseUnit || 'kg'}` : ''
+        itemsList.push({
+          label: 'Molase / Pemanis',
+          value: molQty ? `${item.molase} (${molQty})` : item.molase
+        })
+      }
+
+      // 4. Bahan Tambahan Items
+      if (Array.isArray(item.bahanTambahanItems) && item.bahanTambahanItems.length > 0) {
+        const btStr = item.bahanTambahanItems
+          .filter((bt: any) => bt.nama)
+          .map((bt: any) => `${bt.nama} (${bt.qty || 1} ${bt.unit || 'Liter'})`)
+          .join(', ')
+        if (btStr) {
+          itemsList.push({
+            label: 'Bahan Tambahan',
+            value: btStr
+          })
+        }
+      } else if (item.bahanTambahan && item.bahanTambahan !== 'tidak') {
+        itemsList.push({
+          label: 'Bahan Tambahan',
+          value: item.bahanTambahan
+        })
+      } else {
+        itemsList.push({
+          label: 'Bahan Tambahan',
+          value: 'Tidak ada'
+        })
+      }
+
+      // 5. Air Bersih Pelarut
+      if (item.jumlahAir) {
+        itemsList.push({
+          label: 'Air Bersih Pelarut',
+          value: `${item.jumlahAir} ${item.satuanVolumeAir || 'Liter (L)'}`
+        })
+      }
 
       return {
-        bahanMentah: resolvedBahanMentah || '-',
-        dekomposer: item.dekomposer || '-',
-        molase: item.molase || '-',
-        bahanTambahan: item.bahanTambahan || 'Tidak ada',
-        qty: item.qty || 0,
-        unit: item.unit || 'kg'
+        qty,
+        unit,
+        items: itemsList
       }
     })
 
@@ -343,50 +471,96 @@ export default defineComponent({
       const selectedTeknik = f().teknikPemupukan || ''
       const rincianStr = props.selectedRincian || ''
       
-      let recommendedDose = ''
-      let totalDoseCalc = ''
-
       const pupukLower = selectedPupuk.toLowerCase()
-      const isCair = pupukLower.includes('cair') || pupukLower.includes('poc') || rincianStr.toLowerCase().includes('cair')
-      const isOrganikPadat = pupukLower.includes('padat') || pupukLower.includes('kompos') || pupukLower.includes('kandang') || rincianStr.toLowerCase().includes('padat') || rincianStr.toLowerCase().includes('organik')
+      const rincianLower = rincianStr.toLowerCase()
+
+      const isCair = pupukLower.includes('cair') || pupukLower.includes('poc') || rincianLower.includes('cair')
+      const isKimia = pupukLower.includes('kimia') || pupukLower.includes('urea') || pupukLower.includes('sp-36') || pupukLower.includes('sp36') || pupukLower.includes('kcl') || pupukLower.includes('npk') || rincianLower.includes('kimia')
 
       const treeCount = (props.activeMode === 'pohon' && props.selectedTrees) ? props.selectedTrees.length : 1
 
       if (isCair) {
-        if (selectedTeknik === 'Semprot') {
-          recommendedDose = '2 - 5 mL per L air'
-          totalDoseCalc = `± ${treeCount * 2} L air & ${treeCount * 2 * 3} - ${treeCount * 2 * 5} mL pupuk`
-        } else if (selectedTeknik === 'Kocor') {
-          recommendedDose = '10 - 20 mL per L (5 L per pohon)'
-          totalDoseCalc = `${treeCount * 5} L air & ${treeCount * 5 * 15} mL pupuk`
-        } else {
-          recommendedDose = '15 - 20 mL per L air'
-          totalDoseCalc = `${treeCount * 100} - ${treeCount * 150} mL pupuk`
+        const isVeg = faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')
+        const isGeneratif = faseLower.includes('generatif') || faseLower.includes('buah') || faseLower.includes('bunga')
+
+        let volPerPohon = 2.0 // Belum produktif (0-3 th)
+        let faseNote = 'Belum Produktif (0-3 th) — Volume Larutan: 2.0L / pohon'
+        if (!isVeg || isGeneratif) {
+          if (isGeneratif) {
+            volPerPohon = 8.0
+            faseNote = 'Produktif (> 4 th), Fase Generatif — Volume Larutan: 8.0L / pohon'
+          } else {
+            volPerPohon = 5.0
+            faseNote = 'Produktif (> 4 th), Fase Vegetatif — Volume Larutan: 5.0L / pohon'
+          }
         }
-      } else if (isOrganikPadat) {
-        if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('tidak produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
-          recommendedDose = '5 - 10 kg per pohon'
-          totalDoseCalc = `${treeCount * 5} - ${treeCount * 10} kg`
-        } else {
-          recommendedDose = '15 - 20 kg per pohon'
-          totalDoseCalc = `${treeCount * 15} - ${treeCount * 20} kg`
-        }
-      } else {
-        // Kimia / NPK
-        if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('tidak produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
-          recommendedDose = '150 - 200 g per pohon'
-          totalDoseCalc = `${treeCount * 150} - ${treeCount * 200} g`
-        } else {
-          recommendedDose = '500 - 1000 g per pohon'
-          totalDoseCalc = `${treeCount * 0.5} - ${treeCount * 1.0} kg`
+
+        const totalLarutanL = volPerPohon * treeCount
+        const pocMurniL = totalLarutanL * (1.0 / 100.0)
+
+        const inputPocQty = parseFloat(f().jumlahBeratPupuk || '0') || 0
+        const calcWaterQty = inputPocQty > 0 ? (inputPocQty * 100).toFixed(1) : (totalLarutanL * 100 / 101).toFixed(1)
+
+        return {
+          category: 'organik_cair',
+          varietas: resolvedVarietas,
+          fase: resolvedFase,
+          pupuk: selectedPupuk || 'Pupuk Organik Cair',
+          teknik: selectedTeknik || 'Kocor / Semprot',
+          volPerPohon: `${volPerPohon.toFixed(1)} L / pohon`,
+          faseNote,
+          totalLarutanL: `${totalLarutanL.toFixed(1)} Liter`,
+          pocMurniL: `${pocMurniL.toFixed(2)} Liter`,
+          pocQty: inputPocQty > 0 ? `${inputPocQty} Liter` : `${pocMurniL.toFixed(2)} Liter`,
+          waterQty: inputPocQty > 0 ? `${(inputPocQty * 100).toFixed(1)} Liter` : `${totalLarutanL.toFixed(1)} Liter`,
+          disclaimer: 'Rasio pengenceran resmi 1 Liter POC : 100 Liter Air.',
+          treeCount
         }
       }
 
+      if (isKimia) {
+        const isVeg = faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('tidak produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')
+        
+        const ureaG = isVeg ? 650 : 2880
+        const sp36G = isVeg ? 625 : 3330
+        const kclG = isVeg ? 500 : 4080
+
+        const totalUreaKg = ((ureaG * treeCount) / 1000).toFixed(2)
+        const totalSP36Kg = ((sp36G * treeCount) / 1000).toFixed(2)
+        const totalKClKg = ((kclG * treeCount) / 1000).toFixed(2)
+
+        return {
+          category: 'kimia',
+          varietas: resolvedVarietas,
+          fase: resolvedFase,
+          pupuk: selectedPupuk || 'Pupuk Kimia (Pupuk Tunggal)',
+          teknik: selectedTeknik || 'Tebar / Tugal',
+          singleFertilizers: [
+            { name: 'Urea (N)', dosePerTree: `${ureaG} g / pohon / tahun`, total: `${totalUreaKg} kg` },
+            { name: 'SP-36 (P₂O₅)', dosePerTree: `${sp36G} g / pohon / tahun`, total: `${totalSP36Kg} kg` },
+            { name: 'KCl (K₂O)', dosePerTree: `${kclG} g / pohon / tahun`, total: `${totalKClKg} kg` }
+          ],
+          treeCount
+        }
+      }
+
+      // Organik Padat
+      let recommendedDose = ''
+      let totalDoseCalc = ''
+      if (faseLower.includes('vegetatif') || faseLower.includes('belum produktif') || faseLower.includes('tidak produktif') || faseLower.includes('0-3') || faseLower.includes('pembibitan')) {
+        recommendedDose = '5 - 10 kg per pohon'
+        totalDoseCalc = `${treeCount * 5} - ${treeCount * 10} kg`
+      } else {
+        recommendedDose = '15 - 20 kg per pohon'
+        totalDoseCalc = `${treeCount * 15} - ${treeCount * 20} kg`
+      }
+
       return {
+        category: 'organik_padat',
         varietas: resolvedVarietas,
         fase: resolvedFase,
-        pupuk: selectedPupuk || '-',
-        teknik: selectedTeknik || '-',
+        pupuk: selectedPupuk || 'Pupuk Organik Padat',
+        teknik: selectedTeknik || 'Tebar / Tugal',
         dosis: recommendedDose,
         total: totalDoseCalc,
         treeCount
@@ -405,19 +579,44 @@ export default defineComponent({
 
       const isCair = (f().hasilJadi || '').toLowerCase().includes('cair') || (f().hasilJadi || '').toLowerCase().includes('poc')
 
-      let materialUsed = (0.3 * qVal).toFixed(1)
-      let waterUsed = qVal.toFixed(1)
-      let durationText = '7 - 14 Hari'
-      let checkingText = 'Setiap 3 hari sekali (buka tutup wadah sebentar untuk membuang gas, serta periksa aroma berbau asam segar).'
+      if (isCair) {
+        const isCucianBeras = materialLabel.toLowerCase().includes('cucian beras') || materialLabel.toLowerCase().includes('ragi')
 
-      if (!isCair) {
-        materialUsed = (1.0 * qVal).toFixed(1)
-        waterUsed = (0.3 * qVal).toFixed(1)
-        durationText = '21 - 30 Hari'
-        checkingText = 'Setiap 7 hari sekali (bolak-balik adukan kompos untuk aerasi dan periksa kelembapan serta suhu timbunan).'
+        if (isCucianBeras) {
+          return {
+            recipeType: 'cucian_beras',
+            materialLabel,
+            materialUsed: qVal.toFixed(1),
+            airKelapa: (0.1 * qVal).toFixed(1),
+            ragiTape: `${Math.ceil(0.1 * qVal)} butir`,
+            gulaMerah: (0.025 * qVal).toFixed(2),
+            decomposer: Math.round(10 * qVal),
+            decomposerLabel,
+            durationText: '7 - 14 Hari',
+            checkingText: 'Setiap 3 hari sekali (buka tutup wadah sebentar untuk membuang gas, serta periksa aroma berbau asam segar).'
+          }
+        } else {
+          return {
+            recipeType: 'em4_poc',
+            materialLabel,
+            em4Volume: (0.2 * qVal).toFixed(1),
+            molaseVolume: (0.1 * qVal).toFixed(1),
+            kotoranDombaKg: (0.3 * qVal).toFixed(1),
+            dedakKg: (0.1 * qVal).toFixed(1),
+            water: (0.8 * qVal).toFixed(1),
+            durationText: '14 - 21 Hari',
+            checkingText: 'Setiap 3 hari sekali (periksa suhu, kelembapan, dan aroma fermentasi).'
+          }
+        }
       }
 
+      let materialUsed = (1.0 * qVal).toFixed(1)
+      let waterUsed = (0.3 * qVal).toFixed(1)
+      let durationText = '21 - 30 Hari'
+      let checkingText = 'Setiap 7 hari sekali (bolak-balik adukan kompos untuk aerasi dan periksa kelembapan serta suhu timbunan).'
+
       return {
+        recipeType: 'kompos',
         materialUsed,
         materialLabel,
         decomposerLabel,
@@ -431,14 +630,102 @@ export default defineComponent({
       }
     })
 
+    const addBahanTambahanItem = () => {
+      if (!Array.isArray(f().bahanTambahanItems)) {
+        f().bahanTambahanItems = []
+      }
+      f().bahanTambahanItems.push({ nama: '', qty: '', unit: 'kg' })
+    }
+
+    const removeBahanTambahanItem = (index: number) => {
+      if (Array.isArray(f().bahanTambahanItems)) {
+        f().bahanTambahanItems.splice(index, 1)
+      }
+    }
+
     watch(
-      () => [f().qty, f().hasilJadi, f().bahanMentahId, f().dekomposer, f().molase, f().bahanTambahan],
+      () => [f().qty, f().hasilJadi, f().bahanMentahId],
       () => {
         if (f().hasilJadi !== 'ADD_NEW') {
           f().unit = (f().hasilJadi || '').toLowerCase().includes('cair') ? 'Liter' : 'kg'
         }
       },
       { deep: true }
+    )
+
+    watch(
+      () => [f().bahanMentahId, f().hasilJadi],
+      () => {
+        const rec = fermentationRecommendation.value
+        if (!rec) return
+        if (rec.recipeType === 'cucian_beras') {
+          f().bahanUtama = f().bahanMentahId || 'Air cucian beras (Metode Ragi Tape & Air Kelapa)'
+          f().bahanUtamaQty = rec.materialUsed
+          f().bahanUtamaUnit = 'Liter'
+          f().dekomposer = 'EM4'
+          f().dekomposerQty = rec.decomposer
+          f().dekomposerUnit = 'mL'
+          f().molase = 'Gula Merah'
+          f().molaseQty = rec.gulaMerah
+          f().molaseUnit = 'kg'
+          f().adaBahanTambahan = 'ya'
+          f().bahanTambahanItems = [
+            { nama: 'Air Kelapa', qty: rec.airKelapa, unit: 'Liter' },
+            { nama: 'Ragi Tape', qty: '1', unit: 'butir' }
+          ]
+          f().jumlahAir = rec.materialUsed
+          f().satuanVolumeAir = 'Liter (L)'
+        } else if (rec.recipeType === 'em4_poc') {
+          f().bahanUtama = f().bahanMentahId || 'EM4 & Molase (Metode Kotoran Domba / Limbah Organik)'
+          f().bahanUtamaQty = rec.materialUsed || f().qty || '10'
+          f().bahanUtamaUnit = 'Liter'
+          f().dekomposer = 'EM4'
+          f().dekomposerQty = rec.em4Volume
+          f().dekomposerUnit = 'Liter'
+          f().molase = 'Tetes Tebu (Molase)'
+          f().molaseQty = rec.molaseVolume
+          f().molaseUnit = 'Liter'
+          f().adaBahanTambahan = 'ya'
+          f().bahanTambahanItems = [
+            { nama: 'Kotoran Domba', qty: rec.kotoranDombaKg, unit: 'kg' },
+            { nama: 'Dedak', qty: rec.dedakKg, unit: 'kg' }
+          ]
+          f().jumlahAir = rec.water
+          f().satuanVolumeAir = 'Liter (L)'
+        } else if (rec.recipeType === 'kompos') {
+          f().bahanUtama = f().bahanMentahId || 'Hasil pemangkasan (kanopi, ranting, daun)'
+          f().bahanUtamaQty = rec.materialUsed
+          f().bahanUtamaUnit = 'kg'
+          f().dekomposer = 'EM4'
+          f().dekomposerQty = rec.decomposer
+          f().dekomposerUnit = 'mL'
+          f().molase = 'Tetes Tebu (Molase)'
+          f().molaseQty = rec.molase
+          f().molaseUnit = 'mL'
+          f().adaBahanTambahan = 'tidak'
+          f().bahanTambahanItems = []
+          f().jumlahAir = rec.water
+          f().satuanVolumeAir = 'Liter (L)'
+        }
+      }
+    )
+
+    watch(
+      () => [fertilizerRecommendation.value, props.selectedRincian, f().jenisPupukDetail],
+      () => {
+        const rec = fertilizerRecommendation.value
+        if (rec && rec.category === 'organik_cair') {
+          if (!f().satuanVolumePOC) f().satuanVolumePOC = 'Liter'
+          if (!f().satuanVolumeAir) f().satuanVolumeAir = 'Liter (L)'
+          if (!f().jumlahBeratPupuk || f().jumlahBeratPupuk === '0') {
+            f().jumlahBeratPupuk = (rec.pocMurniL || '').replace(/[^0-9.]/g, '') || '0.02'
+          }
+          if (!f().jumlahAir || f().jumlahAir === '0') {
+            f().jumlahAir = (rec.totalLarutanL || '').replace(/[^0-9.]/g, '') || '2.0'
+          }
+        }
+      },
+      { immediate: true }
     )
 
     watch(
@@ -455,40 +742,162 @@ export default defineComponent({
     )
 
     const pupukComposition = computed(() => {
-      const dose = Number(f().jumlahBeratPupuk) || 0
-      if (dose <= 0) return null
+      const inputVal = Number(f().jumlahBeratPupuk) || 0
+      if (inputVal <= 0) return null
 
-      const name = (f().jenisPupukDetail || '').toLowerCase()
-      const isCair = name.includes('poc') || name.includes('cair')
-      const isOrganik = name.includes('kandang') || name.includes('kotoran') || name.includes('kompos') || name.includes('organik')
+      const selectedPupuk = f().jenisPupukDetail || ''
+      if (!selectedPupuk) return null
+
+      const selectedLower = selectedPupuk.toLowerCase()
+      const isCair = selectedLower.includes('poc') || selectedLower.includes('cair')
+      const isOrganik = selectedLower.includes('kandang') || selectedLower.includes('kotoran') || selectedLower.includes('kompos') || selectedLower.includes('organik')
 
       if (!isOrganik && !isCair) return null
 
-      if (isCair) {
-        const matVal = 0.3 * dose
-        const matStr = matVal < 0.1 ? Math.round(matVal * 1000) + ' gram' : matVal.toFixed(1) + ' kg'
-        const waterStr = dose < 0.1 ? Math.round(dose * 1000) + ' ml' : dose.toFixed(1) + ' Liter'
+      // Convert dose to Liter or kg if unit is mL or gram
+      const unitPoc = f().satuanVolumePOC || 'Liter'
+      const doseInLiter = (isCair && unitPoc === 'mL') ? inputVal / 1000.0 : inputVal
+
+      // Helper to parse numeric values safely
+      const parseQty = (val: any, fallback: number): number => {
+        const num = parseFloat(val)
+        return (!isNaN(num) && num > 0) ? num : fallback
+      }
+
+      // Helper to format values with auto unit scaling (Liter -> mL, kg -> gram)
+      const formatScaledValue = (val: number, unit: string): string => {
+        const uLower = (unit || '').toLowerCase()
+        if (uLower.includes('ml') || uLower.includes('mililiter')) {
+          return val < 0.1 ? (val * 1000).toFixed(1) + ' mL' : val.toFixed(1) + ' mL'
+        }
+        if (uLower.includes('liter') || uLower.includes('l')) {
+          if (val < 0.1) {
+            return (val * 1000).toFixed(0) + ' mL'
+          }
+          return val.toFixed(2) + ' Liter'
+        }
+        if (uLower.includes('kg') || uLower.includes('kilogram')) {
+          if (val < 0.1) {
+            return (val * 1000).toFixed(1) + ' gram'
+          }
+          return val.toFixed(2) + ' kg'
+        }
+        if (uLower.includes('gram') || uLower.includes('g')) {
+          return val.toFixed(1) + ' gram'
+        }
+        return val.toFixed(2) + ' ' + unit
+      }
+
+      // Search for recorded Fermentasi submission in allSubmissions
+      const ferSub = (props.allSubmissions || []).find((s: any) => {
+        const typeLower = (s.type || '').toLowerCase()
+        const isFer = typeLower === 'pengolahan pupuk' || typeLower === 'pengolahan_pupuk'
+        if (!isFer) return false
+        const item = s.payload?.data?.items?.[0] || {}
+        const recordedName = (item.hasilJadi || item.namaJenisPupuk || '').toLowerCase()
+        return recordedName.includes(selectedLower) || selectedLower.includes(recordedName)
+      })
+
+      if (ferSub) {
+        const item = ferSub.payload?.data?.items?.[0] || {}
+        const batchQty = parseQty(item.qty || item.jumlahPupukDibuat, 10)
+        const scale = doseInLiter / batchQty
+
+        const itemsList: Array<{ label: string; value: string }> = []
+
+        // 1. Bahan Utama
+        const mainName = item.bahanUtama || item.bahanMentahId || 'Air cucian beras'
+        const mainUnit = item.bahanUtamaUnit || 'Liter'
+        const mainQtyVal = parseQty(item.bahanUtamaQty || item.materialUsed, batchQty) * scale
+        itemsList.push({
+          label: `Bahan Utama (${mainName})`,
+          value: formatScaledValue(mainQtyVal, mainUnit)
+        })
+
+        // 2. Dekomposer
+        if (item.dekomposer || item.decomposer) {
+          const dekName = item.dekomposer || 'EM4'
+          const dekUnit = item.dekomposerUnit || 'mL'
+          const defaultDekQty = dekUnit.toLowerCase().includes('liter') ? 0.1 : 100
+          const dekQtyVal = parseQty(item.dekomposerQty || item.decomposer, defaultDekQty) * scale
+          itemsList.push({
+            label: `Dekomposer (${dekName})`,
+            value: formatScaledValue(dekQtyVal, dekUnit)
+          })
+        }
+
+        // 3. Molase
+        if (item.molase) {
+          const molName = item.molase || 'Gula Merah'
+          const molUnit = item.molaseUnit || 'kg'
+          const defaultMolQty = molUnit.toLowerCase().includes('liter') ? 0.1 : 0.25
+          const molQtyVal = parseQty(item.molaseQty || item.molaseVal, defaultMolQty) * scale
+          itemsList.push({
+            label: `Molase / Pemanis (${molName})`,
+            value: formatScaledValue(molQtyVal, molUnit)
+          })
+        }
+
+        // 4. Bahan Tambahan Items
+        if (Array.isArray(item.bahanTambahanItems) && item.bahanTambahanItems.length > 0) {
+          item.bahanTambahanItems.forEach((bt: any) => {
+            if (bt.nama) {
+              const btUnit = bt.unit || 'Liter'
+              const btQtyVal = parseQty(bt.qty, 1.0) * scale
+              itemsList.push({
+                label: `Bahan Tambahan (${bt.nama})`,
+                value: formatScaledValue(btQtyVal, btUnit)
+              })
+            }
+          })
+        }
+
+        // 5. Air Bersih
+        const airUnit = item.satuanVolumeAir || 'Liter (L)'
+        const airQtyVal = parseQty(item.jumlahAir || item.water, batchQty) * scale
+        itemsList.push({
+          label: 'Air Bersih Pelarut',
+          value: formatScaledValue(airQtyVal, airUnit)
+        })
+
         return {
-          type: 'cair',
-          materialLabel: 'Bahan Organik (Hasil Pemangkasan)',
-          materialQty: matStr,
-          waterQty: waterStr,
-          decomposerQty: Math.round(20 * dose) + ' ml',
-          molaseQty: Math.round(20 * dose) + ' ml'
+          recorded: true,
+          recipeName: item.hasilJadi || selectedPupuk,
+          items: itemsList
+        }
+      }
+
+      // Default calculation if no specific recorded fermentation submission found
+      if (isCair) {
+        const matVal = 1.0 * doseInLiter
+        const waterVal = 1.0 * doseInLiter
+        const decomposerVal = (100 / 10) * doseInLiter // 100 mL per 10 L
+        const molaseVal = (0.25 / 10) * doseInLiter   // 0.25 kg per 10 L
+        return {
+          recorded: false,
+          recipeName: selectedPupuk,
+          items: [
+            { label: 'Bahan Utama (Air Cucian Beras)', value: formatScaledValue(matVal, 'Liter') },
+            { label: 'Air Bersih Pelarut', value: formatScaledValue(waterVal, 'Liter') },
+            { label: 'Dekomposer (EM4)', value: formatScaledValue(decomposerVal, 'mL') },
+            { label: 'Molase (Gula Merah)', value: formatScaledValue(molaseVal, 'kg') },
+            { label: 'Bahan Tambahan (Air Kelapa)', value: formatScaledValue(0.1 * doseInLiter, 'Liter') },
+            { label: 'Bahan Tambahan (Ragi Tape)', value: `${Math.ceil(0.1 * doseInLiter)} butir` }
+          ]
         }
       } else {
-        // Solid organic (Pupuk Kandang / Kotoran Domba)
-        const isKompos = name.includes('kompos')
-        const matStr = dose < 0.1 ? Math.round(dose * 1000) + ' gram' : dose.toFixed(1) + ' kg'
-        const waterVal = 0.3 * dose
-        const waterStr = waterVal < 0.1 ? Math.round(waterVal * 1000) + ' ml' : waterVal.toFixed(1) + ' Liter'
+        const matVal = 1.0 * doseInLiter
+        const waterVal = 0.3 * doseInLiter
+        const decomposerVal = (10 / 1) * doseInLiter
         return {
-          type: 'padat',
-          materialLabel: isKompos ? 'Bahan Organik (Hasil Pemangkasan)' : 'Kotoran Domba',
-          materialQty: matStr,
-          waterQty: waterStr,
-          decomposerQty: Math.round(10 * dose) + ' ml',
-          molaseQty: Math.round(10 * dose) + ' ml'
+          recorded: false,
+          recipeName: selectedPupuk,
+          items: [
+            { label: 'Bahan Organik Utama (Kotoran Domba)', value: formatScaledValue(matVal, 'kg') },
+            { label: 'Air Bersih', value: formatScaledValue(waterVal, 'Liter') },
+            { label: 'Dekomposer (EM4)', value: formatScaledValue(decomposerVal, 'mL') },
+            { label: 'Molase (Tetes Tebu)', value: formatScaledValue(decomposerVal, 'mL') }
+          ]
         }
       }
     })
@@ -606,9 +1015,9 @@ export default defineComponent({
                         onUpdate:modelValue={(val) => {
                           f().statusProduktivitas = val
                           if (val === 'usia belum produktif (0 - 3 tahun)') {
-                            f().fasePohon = 'Belum Produktif'
-                          } else {
                             f().fasePohon = 'Vegetatif'
+                          } else {
+                            f().fasePohon = 'Generatif'
                           }
                         }}
                       />
@@ -762,6 +1171,40 @@ export default defineComponent({
                   />
                 </div>
 
+                {/* ── Inline obat stock warning ── */}
+                {(() => {
+                  const selectedObat = f().namaObat
+                  const vol = parseFloat(f().volumeObat)
+                  if (!selectedObat || selectedObat === 'Jenis Obat' || selectedObat === 'Pilih Obat' || !f().volumeObat || isNaN(vol) || vol <= 0) return null
+                  const stockItem = props.obatStocks?.find((o: any) => o.name === selectedObat)
+                  if (!stockItem) return null
+                  const available = stockItem.val ?? 0
+                  const unit = stockItem.unit || 'ml'
+                  const satuan = f().satuanVolumeObat || unit
+                  // Normalize to ml for comparison
+                  const isLiterInput = (satuan || '').toLowerCase().includes('liter') || (satuan || '').toLowerCase() === 'l'
+                  const usedMl = isLiterInput ? vol * 1000 : vol
+                  const isInsufficient = usedMl > available
+                  return (
+                    <div style={`background-color: ${isInsufficient ? '#fff5f5' : '#f6f8ee'}; border: 1px solid ${isInsufficient ? '#ffe3e3' : '#dce1d0'}; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;`}>
+                      <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="font-size: 1.25rem;">{isInsufficient ? '⚠️' : '💊'}</span>
+                        <div>
+                          <h4 style={`margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: ${isInsufficient ? '#e03131' : '#2f3b1d'};`}>
+                            {isInsufficient ? 'Peringatan Stok Kurang' : 'Informasi Stok Obat'}
+                          </h4>
+                          <p style={`margin: 0; font-size: 0.85rem; font-weight: 600; color: ${isInsufficient ? '#c92a2a' : '#4f5d2e'}; line-height: 1.4;`}>
+                            {isInsufficient
+                              ? `Jumlah yang Anda masukkan (${vol} ${satuan}) melebihi stok ${selectedObat} yang tersedia saat ini (${available} ${unit}).`
+                              : `Stok tersedia: ${available} ${unit}. Anda menggunakan ${vol} ${satuan} dari stok ${selectedObat}.`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 <div class="form-group">
                   <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Catatan (Opsional)</span>
                   <PerkebunanFormInput
@@ -861,9 +1304,9 @@ export default defineComponent({
                         onUpdate:modelValue={(val) => {
                           f().statusProduktivitas = val
                           if (val === 'usia belum produktif (0 - 3 tahun)') {
-                            f().fasePohon = 'Belum Produktif'
-                          } else {
                             f().fasePohon = 'Vegetatif'
+                          } else {
+                            f().fasePohon = 'Generatif'
                           }
                         }}
                       />
@@ -911,84 +1354,212 @@ export default defineComponent({
                       </p>
                     </div>
 
-                    {/* Grid of details */}
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; margin-top: 0.75rem;">
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Pupuk Terpilih
+                    {fertilizerRecommendation.value.category === 'organik_cair' ? (
+                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <strong style="font-size: 0.88rem; color: #2e3b1f;">Rasio Pengenceran POC Standar</strong>
+                          <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.2rem 0.6rem; border-radius: 0.375rem; font-size: 0.78rem; font-weight: 800;">
+                            1 : 100
+                          </span>
+                        </div>
+                        <div style="font-size: 0.78rem; color: #475569; font-weight: 600;">
+                          📌 <strong>Status Target:</strong> {fertilizerRecommendation.value.faseNote}
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.25rem;">
+                          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 0.65rem;">
+                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block;">Estimasi Larutan ({fertilizerRecommendation.value.treeCount} Pohon)</span>
+                            <strong style="font-size: 0.88rem; color: #0f172a; margin-top: 0.1rem; display: block;">{fertilizerRecommendation.value.totalLarutanL}</strong>
+                          </div>
+                          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 0.65rem;">
+                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block;">Kebutuhan POC Murni Pekat</span>
+                            <strong style="font-size: 0.88rem; color: #059669; margin-top: 0.1rem; display: block;">{fertilizerRecommendation.value.pocMurniL}</strong>
+                          </div>
+                        </div>
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.375rem; padding: 0.5rem 0.65rem; margin-top: 0.25rem;">
+                          <span style="font-size: 0.78rem; color: #166534; font-weight: 600; line-height: 1.4; display: block;">
+                            💧 <strong>Instruksi Racikan Siap Siram:</strong> Campurkan <strong>{fertilizerRecommendation.value.pocQty}</strong> POC Murni ke dalam <strong>{fertilizerRecommendation.value.waterQty}</strong> air bersih.
+                          </span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 500; line-height: 1.4; margin-top: 0.15rem; display: block;">
+                          💡 {fertilizerRecommendation.value.disclaimer}
                         </span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
-                          {fertilizerRecommendation.value.pupuk}
-                        </strong>
                       </div>
+                    ) : fertilizerRecommendation.value.category === 'kimia' ? (
+                      <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.75rem;">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; margin-bottom: 0.25rem;">
+                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">Pupuk Terpilih</span>
+                            <strong style="font-size: 0.88rem; color: #2e3b1f; display: block; margin-top: 0.15rem;">
+                              {fertilizerRecommendation.value.pupuk}
+                            </strong>
+                          </div>
+                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">Teknik Pemupukan</span>
+                            <strong style="font-size: 0.88rem; color: #2e3b1f; display: block; margin-top: 0.15rem;">
+                              {fertilizerRecommendation.value.teknik}
+                            </strong>
+                          </div>
+                        </div>
 
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Teknik Pemupukan
-                        </span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
-                          {fertilizerRecommendation.value.teknik}
-                        </strong>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: #2e3b1f;">Rincian Dosis Pupuk Tunggal ({fertilizerRecommendation.value.treeCount} Pohon):</span>
+                        {fertilizerRecommendation.value.singleFertilizers?.map((item: any, idx: number) => (
+                          <div key={idx} style="background: #ffffff; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                              <strong style="font-size: 0.88rem; color: #1e293b; display: block;">{item.name}</strong>
+                              <span style="font-size: 0.78rem; color: #059669; font-weight: 600;">{item.dosePerTree}</span>
+                            </div>
+                            <div style="text-align: right;">
+                              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block;">Total Estimasi</span>
+                              <strong style="font-size: 0.9rem; color: #0369a1;">{item.total}</strong>
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                    ) : (
+                      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; margin-top: 0.75rem;">
+                        <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                            Pupuk Terpilih
+                          </span>
+                          <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
+                            {fertilizerRecommendation.value.pupuk}
+                          </strong>
+                        </div>
 
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Dosis Rekomendasi
-                        </span>
-                        <strong style="font-size: 0.9rem; color: #059669; margin-top: 0.15rem;">
-                          {fertilizerRecommendation.value.dosis}
-                        </strong>
-                      </div>
+                        <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                            Teknik Pemupukan
+                          </span>
+                          <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
+                            {fertilizerRecommendation.value.teknik}
+                          </strong>
+                        </div>
 
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                          Estimasi ({fertilizerRecommendation.value.treeCount} Pohon)
-                        </span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
-                          {fertilizerRecommendation.value.total}
-                        </strong>
+                        <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                            Dosis Rekomendasi
+                          </span>
+                          <strong style="font-size: 0.9rem; color: #059669; margin-top: 0.15rem;">
+                            {fertilizerRecommendation.value.dosis}
+                          </strong>
+                        </div>
+
+                        <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                            Estimasi ({fertilizerRecommendation.value.treeCount} Pohon)
+                          </span>
+                          <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
+                            {fertilizerRecommendation.value.total}
+                          </strong>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 
-                <div class="form-group">
-                  <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">{volumeLabel}</span>
-                  <PerkebunanFormInput
-                    modelValue={f().jumlahBeratPupuk}
-                    placeholder={volumePlaceholder}
-                    onUpdate:modelValue={(val) => { f().jumlahBeratPupuk = val }}
-                  />
-                </div>
+                {isCair ? (
+                  <>
+                    {/* 1. Volume Pupuk Organik Cair (POC Murni) */}
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">
+                        Volume Pupuk Organik Cair (POC Murni)
+                      </span>
+                      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;">
+                        <div style="flex: 2 1 180px; min-width: 140px;">
+                          <PerkebunanFormInput
+                            type="number"
+                            modelValue={f().jumlahBeratPupuk}
+                            placeholder="Contoh: 0.02 atau 20"
+                            onUpdate:modelValue={(val) => { 
+                              f().jumlahBeratPupuk = val 
+                              const numVal = parseFloat(val || '0') || 0
+                              const unitPoc = f().satuanVolumePOC || 'Liter'
+                              const unitAir = f().satuanVolumeAir || 'Liter (L)'
+                              if (numVal > 0) {
+                                if (unitPoc === 'Liter' && unitAir.includes('Liter')) {
+                                  f().jumlahAir = (numVal * 100).toFixed(2)
+                                } else if (unitPoc === 'mL' && unitAir.includes('Liter')) {
+                                  f().jumlahAir = (numVal * 100 / 1000).toFixed(2)
+                                } else if (unitPoc === 'mL' && unitAir.includes('ml')) {
+                                  f().jumlahAir = (numVal * 100).toFixed(0)
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                        <div style="flex: 1 1 120px; min-width: 100px;">
+                          <PerkebunanFormSelect
+                            modelValue={f().satuanVolumePOC || 'Liter'}
+                            options={[
+                              { value: 'Liter', label: 'Liter' },
+                              { value: 'mL', label: 'Mililiter (mL)' }
+                            ]}
+                            placeholder="Satuan POC"
+                            onUpdate:modelValue={(val) => { f().satuanVolumePOC = val }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Volume Larutan Air Bersih (Air Pelarut) */}
+                    <div class="form-group">
+                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">
+                        Volume Larutan (Air Bersih Pelarut)
+                      </span>
+                      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;">
+                        <div style="flex: 2 1 180px; min-width: 140px;">
+                          <PerkebunanFormInput
+                            type="number"
+                            modelValue={f().jumlahAir}
+                            placeholder="Contoh: 2.0 atau 2000"
+                            onUpdate:modelValue={(val) => { f().jumlahAir = val }}
+                          />
+                        </div>
+                        <div style="flex: 1 1 120px; min-width: 100px;">
+                          <PerkebunanFormSelect
+                            modelValue={f().satuanVolumeAir || 'Liter (L)'}
+                            options={[
+                              { value: 'Liter (L)', label: 'Liter (L)' },
+                              { value: 'Mililiter (ml)', label: 'Mililiter (ml)' }
+                            ]}
+                            placeholder="Satuan Air"
+                            onUpdate:modelValue={(val) => { f().satuanVolumeAir = val }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div class="form-group">
+                    <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">{volumeLabel}</span>
+                    <PerkebunanFormInput
+                      modelValue={f().jumlahBeratPupuk}
+                      placeholder={volumePlaceholder}
+                      onUpdate:modelValue={(val) => { f().jumlahBeratPupuk = val }}
+                    />
+                  </div>
+                )}
 
                 {pupukComposition.value && (
                   <div style="background-color: #f6f8ee; border: 1.5px solid #dce1d0; border-radius: 0.75rem; padding: 1.25rem; margin-top: 0.5rem; margin-bottom: 1rem; text-align: left;">
                     <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem;">
                       <span style="font-size: 1.25rem;">🧪</span>
                       <div>
-                        <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem; font-weight: 800; color: #2e3b1f;">Kandungan Racikan Fermentasi Pupuk</h4>
+                        <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem; font-weight: 800; color: #2e3b1f;">
+                          Kandungan Racikan Fermentasi ({pupukComposition.value.recipeName})
+                        </h4>
                         <p style="margin: 0; font-size: 0.8rem; color: #5c6650; font-weight: 600; line-height: 1.4;">
-                          Berdasarkan racikan fermentasi standar untuk {f().jumlahBeratPupuk} {pupukComposition.value.type === 'cair' ? 'Liter' : 'Kg'} {f().jenisPupukDetail || 'Pupuk'}, pupuk ini terbuat dari:
+                          Berdasarkan racikan fermentasi yang sudah dicatat untuk {f().jumlahBeratPupuk} {f().satuanVolumePOC || 'Liter'} {f().jenisPupukDetail || 'Pupuk'}, pupuk ini terbuat dari:
                         </p>
                       </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">{pupukComposition.value.materialLabel}</span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">{pupukComposition.value.materialQty}</strong>
-                      </div>
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Air Bersih</span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">{pupukComposition.value.waterQty}</strong>
-                      </div>
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Dekomposer (EM4)</span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">{pupukComposition.value.decomposerQty}</strong>
-                      </div>
-                      <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Molase (Tetes Tebu)</span>
-                        <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">{pupukComposition.value.molaseQty}</strong>
-                      </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
+                      {pupukComposition.value.items.map((item: any, idx: number) => (
+                        <div key={idx} style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.55rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">{item.label}</span>
+                          <strong style="font-size: 0.88rem; color: #2e3b1f; margin-top: 0.15rem;">{item.value}</strong>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1008,21 +1579,17 @@ export default defineComponent({
                   const isKotoranDomba = selectedName.includes('kotoran') || selectedName.includes('manure');
                   const availableStock = isKotoranDomba ? props.manureStock : props.selectedPupukStock;
                   const isInsufficient = Number(f().jumlahBeratPupuk) > availableStock;
+                  if (!isInsufficient) return null;
                   return (
-                    <div style={`background-color: ${isInsufficient ? '#fff5f5' : '#f6f8ee'}; border: 1px solid ${isInsufficient ? '#ffe3e3' : '#dce1d0'}; border-radius: 0.5rem; padding: 1rem; margin-top: 0.5rem;`}>
+                    <div style="background-color: #fff5f5; border: 1px solid #ffe3e3; border-radius: 0.5rem; padding: 1rem; margin-top: 0.5rem;">
                       <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
-                        <span style="font-size: 1.25rem;">{isInsufficient ? '⚠️' : '💡'}</span>
+                        <span style="font-size: 1.25rem;">⚠️</span>
                         <div>
-                          <h4 style={`margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: ${isInsufficient ? '#e03131' : '#2f3b1d'};`}>
-                            {isInsufficient ? 'Peringatan Stok Kurang' : 'Prediksi Dosis Pemupukan'}
+                          <h4 style="margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 800; color: #e03131;">
+                            Peringatan Stok Kurang
                           </h4>
-                          <p style={`margin: 0; font-size: 0.85rem; font-weight: 600; color: ${isInsufficient ? '#c92a2a' : '#4f5d2e'}; line-height: 1.4;`}>
-                            {isInsufficient 
-                              ? `Jumlah yang Anda masukkan (${f().jumlahBeratPupuk} Kg) melebihi stok ${f().jenisPupukDetail || 'pupuk'} yang tersedia saat ini (${availableStock.toFixed(1)} Kg).`
-                              : props.activeMode === 'pohon'
-                                ? `Dengan total ${f().jumlahBeratPupuk} Kg untuk ${props.selectedTreesCount} pohon, maka setiap pohon akan mendapatkan dosis ${(Number(f().jumlahBeratPupuk) / props.selectedTreesCount).toFixed(2)} Kg/pohon.`
-                                : `Anda menggunakan ${f().jumlahBeratPupuk} Kg dari stok ${f().jenisPupukDetail || 'pupuk'} (${availableStock.toFixed(1)} Kg) untuk seluruh lahan.`
-                            }
+                          <p style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #c92a2a; line-height: 1.4;">
+                            Jumlah yang Anda masukkan ({f().jumlahBeratPupuk} Kg) melebihi stok {f().jenisPupukDetail || 'pupuk'} yang tersedia saat ini ({availableStock.toFixed(1)} Kg).
                           </p>
                         </div>
                       </div>
@@ -1897,56 +2464,71 @@ export default defineComponent({
 
                         {/* Ingredients Grid */}
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; margin-top: 0.75rem;">
-                          {/* Bahan Mentah */}
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                              Bahan Mentah
-                            </span>
-                            <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={fermentationRecommendation.value.materialLabel}>
-                              {fermentationRecommendation.value.materialUsed} kg ({fermentationRecommendation.value.materialLabel})
-                            </strong>
-                          </div>
-
-                          {/* Dekomposer */}
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                              Dekomposer
-                            </span>
-                            <strong style="font-size: 0.82rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={fermentationRecommendation.value.decomposerLabel}>
-                              {fermentationRecommendation.value.decomposer} ml ({fermentationRecommendation.value.decomposerLabel})
-                            </strong>
-                          </div>
-
-                          {/* Molase */}
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                              Molase
-                            </span>
-                            <strong style="font-size: 0.82rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={fermentationRecommendation.value.molaseLabel}>
-                              {fermentationRecommendation.value.molase} ml ({fermentationRecommendation.value.molaseLabel})
-                            </strong>
-                          </div>
-
-                          {/* Air */}
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                              Air Bersih
-                            </span>
-                            <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
-                              {fermentationRecommendation.value.water} Liter
-                            </strong>
-                          </div>
-
-                          {/* Bahan Tambahan */}
-                          {fermentationRecommendation.value.additional && (
-                            <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; justify-content: center;">
-                              <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
-                                Bahan Tambahan
-                              </span>
-                              <strong style="font-size: 0.82rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={fermentationRecommendation.value.additional}>
-                                {fermentationRecommendation.value.additional}
-                              </strong>
-                            </div>
+                          {fermentationRecommendation.value.recipeType === 'cucian_beras' ? (
+                            <>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Air Cucian Beras</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.materialUsed} Liter</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Air Kelapa</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.airKelapa} Liter</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Ragi Tape</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.ragiTape}</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Gula Merah</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.gulaMerah} kg</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; grid-column: span 2;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">EM4 / Dekomposer</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.decomposer} mL</strong>
+                              </div>
+                            </>
+                          ) : fermentationRecommendation.value.recipeType === 'em4_poc' ? (
+                            <>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">EM4</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.em4Volume} Liter</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Molase (Tetes Tebu)</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.molaseVolume} Liter</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Kotoran Domba / Organik</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.kotoranDombaKg} kg</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Dedak / Katul</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.dedakKg} kg</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem; grid-column: span 2;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Air Bersih</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.water} Liter</strong>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Bahan Mentah</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.materialUsed} kg ({fermentationRecommendation.value.materialLabel})</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Dekomposer</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.decomposer} ml</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Molase</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.molase} ml</strong>
+                              </div>
+                              <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.65rem 0.75rem;">
+                                <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700; display: block;">Air Bersih</span>
+                                <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem; display: block;">{fermentationRecommendation.value.water} Liter</strong>
+                              </div>
+                            </>
                           )}
                         </div>
 
@@ -1968,63 +2550,238 @@ export default defineComponent({
                       </div>
                     )}
 
-                    {/* 8. Dekomposer */}
-                    <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Dekomposer (Opsional)</span>
-                      <PerkebunanFormSelect
-                        modelValue={f().dekomposer}
-                        options={decomposerOptions.value}
-                        placeholder="Pilih Dekomposer"
-                        onUpdate:modelValue={(val) => { f().dekomposer = val }}
-                      />
-                    </div>
+                    {/* Manual Component Form Fields specifically for POC (Pupuk Organik Cair) */}
+                    {((f().hasilJadi || '').toLowerCase().includes('cair') || (f().hasilJadi || '').toLowerCase().includes('poc')) ? (
+                      <>
+                        {/* 0. Bahan Utama */}
+                        <div class="form-group" style="margin-top: 1rem;">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Bahan Utama</span>
+                          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;">
+                            <div style="flex: 2 1 180px; min-width: 140px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().bahanUtama || f().bahanMentahId}
+                                options={bahanMentahOptions.value}
+                                placeholder="Pilih Bahan Utama"
+                                onUpdate:modelValue={(val) => { f().bahanUtama = val; f().bahanMentahId = val; }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 90px; min-width: 80px;">
+                              <PerkebunanFormInput
+                                type="number"
+                                modelValue={f().bahanUtamaQty || f().qty}
+                                placeholder="Jumlah"
+                                onUpdate:modelValue={(val) => { f().bahanUtamaQty = val }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 90px; min-width: 80px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().bahanUtamaUnit || f().unit || 'Liter'}
+                                options={['Liter', 'kg', 'mL', 'gram', 'karung', 'botol'].map(u => ({ value: u, label: u }))}
+                                placeholder="Satuan"
+                                onUpdate:modelValue={(val) => { f().bahanUtamaUnit = val }}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* 9. Molase */}
-                    <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Molase (Opsional)</span>
-                      <PerkebunanFormSelect
-                        modelValue={f().molase}
-                        options={molaseOptions.value}
-                        placeholder="Pilih Molase"
-                        onUpdate:modelValue={(val) => { f().molase = val }}
-                      />
-                    </div>
+                        {/* 1. Dekomposer */}
+                        <div class="form-group">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Dekomposer</span>
+                          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;">
+                            <div style="flex: 2 1 180px; min-width: 140px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().dekomposer}
+                                options={decomposerOptions.value}
+                                placeholder="Nama Dekomposer"
+                                onUpdate:modelValue={(val) => { f().dekomposer = val }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 90px; min-width: 80px;">
+                              <PerkebunanFormInput
+                                type="number"
+                                modelValue={f().dekomposerQty}
+                                placeholder="Jumlah"
+                                onUpdate:modelValue={(val) => { f().dekomposerQty = val }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 90px; min-width: 80px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().dekomposerUnit}
+                                options={['mL', 'Liter', 'kg', 'gram'].map(u => ({ value: u, label: u }))}
+                                placeholder="Satuan"
+                                onUpdate:modelValue={(val) => { f().dekomposerUnit = val }}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
+                        {/* 2. Molase / Pemanis */}
+                        <div class="form-group">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Molase / Pemanis</span>
+                          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;">
+                            <div style="flex: 2 1 180px; min-width: 140px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().molase}
+                                options={molaseOptions.value}
+                                placeholder="Nama Molase"
+                                onUpdate:modelValue={(val) => { f().molase = val }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 90px; min-width: 80px;">
+                              <PerkebunanFormInput
+                                type="number"
+                                modelValue={f().molaseQty}
+                                placeholder="Jumlah"
+                                onUpdate:modelValue={(val) => { f().molaseQty = val }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 90px; min-width: 80px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().molaseUnit}
+                                options={['Liter', 'mL', 'kg', 'gram'].map(u => ({ value: u, label: u }))}
+                                placeholder="Satuan"
+                                onUpdate:modelValue={(val) => { f().molaseUnit = val }}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* 11. Additional Materials */}
-                    <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Bahan Tambahan (Opsional)</span>
-                      <PerkebunanFormSelect
-                        modelValue={f().bahanTambahan}
-                        options={bahanTambahanOptions.value}
-                        placeholder="Pilih Bahan Tambahan"
-                        onUpdate:modelValue={(val) => { f().bahanTambahan = val }}
-                      />
-                    </div>
+                        {/* 3. Radio Button Bahan Tambahan */}
+                        <div class="form-group" style="background: #f9fafb; padding: 0.85rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.5rem;">Apakah ada Bahan Tambahan?</span>
+                          <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; font-weight: 600; color: #374151; font-size: 0.9rem;">
+                              <input
+                                type="radio"
+                                name="adaBahanTambahan"
+                                value="ya"
+                                checked={f().adaBahanTambahan === 'ya'}
+                                onChange={() => { f().adaBahanTambahan = 'ya' }}
+                              />
+                              Ya (Ada)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; font-weight: 600; color: #374151; font-size: 0.9rem;">
+                              <input
+                                type="radio"
+                                name="adaBahanTambahan"
+                                value="tidak"
+                                checked={f().adaBahanTambahan !== 'ya'}
+                                onChange={() => { f().adaBahanTambahan = 'tidak' }}
+                              />
+                              Tidak (Tanpa Bahan Tambahan)
+                            </label>
+                          </div>
 
-                    {/* 10. Water (Jumlah Air & Satuan Air) */}
-                    <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Jumlah Air (Opsional)</span>
-                      <PerkebunanFormInput
-                        type="number"
-                        modelValue={f().jumlahAir}
-                        placeholder="0.0"
-                        onUpdate:modelValue={(val) => { f().jumlahAir = val }}
-                      />
-                    </div>
+                          {f().adaBahanTambahan === 'ya' && (
+                            <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.65rem;">
+                              {(Array.isArray(f().bahanTambahanItems) ? f().bahanTambahanItems : []).map((item: any, idx: number) => (
+                                <div key={idx} style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; width: 100%;">
+                                  <div style="flex: 2 1 150px; min-width: 120px;">
+                                    <PerkebunanFormSelect
+                                      modelValue={item.nama}
+                                      options={bahanTambahanOptions.value}
+                                      placeholder="Pilih Bahan Tambahan"
+                                      onUpdate:modelValue={(val) => { item.nama = val }}
+                                    />
+                                  </div>
+                                  <div style="flex: 1 1 80px; min-width: 70px;">
+                                    <PerkebunanFormInput
+                                      type="number"
+                                      modelValue={item.qty}
+                                      placeholder="Jumlah"
+                                      onUpdate:modelValue={(val) => { item.qty = val }}
+                                    />
+                                  </div>
+                                  <div style="flex: 1 1 80px; min-width: 70px;">
+                                    <PerkebunanFormSelect
+                                      modelValue={item.unit}
+                                      options={['Liter', 'mL', 'kg', 'gram', 'butir', 'karung'].map(u => ({ value: u, label: u }))}
+                                      placeholder="Satuan"
+                                      onUpdate:modelValue={(val) => { item.unit = val }}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeBahanTambahanItem(idx)}
+                                    style="padding: 0.45rem 0.65rem; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; border-radius: 0.375rem; font-weight: 700; cursor: pointer; font-size: 0.85rem;"
+                                    title="Hapus Bahan Ini"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
 
-                    <div class="form-group">
-                      <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Satuan Air (Opsional)</span>
-                      <PerkebunanFormSelect
-                        modelValue={f().satuanVolumeAir}
-                        options={[
-                          { value: 'Liter (L)', label: 'Liter (L)' },
-                          { value: 'Mililiter (ml)', label: 'Mililiter (ml)' }
-                        ]}
-                        placeholder="Pilih Satuan Air"
-                        onUpdate:modelValue={(val) => { f().satuanVolumeAir = val }}
-                      />
-                    </div>
+                              <button
+                                type="button"
+                                onClick={addBahanTambahanItem}
+                                style="align-self: flex-start; margin-top: 0.25rem; padding: 0.45rem 0.85rem; background: #2e3b1f; color: #ffffff; border: none; border-radius: 0.375rem; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: background 0.2s;"
+                                onMouseover={(e) => { if (e.currentTarget) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1f2915'; }}
+                                onMouseout={(e) => { if (e.currentTarget) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2e3b1f'; }}
+                              >
+                                + Tambah Bahan Tambahan
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 4. Air Bersih */}
+                        <div class="form-group">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Air Bersih</span>
+                          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;">
+                            <div style="flex: 1 1 140px; min-width: 100px;">
+                              <PerkebunanFormInput
+                                type="number"
+                                modelValue={f().jumlahAir}
+                                placeholder="Jumlah Air"
+                                onUpdate:modelValue={(val) => { f().jumlahAir = val }}
+                              />
+                            </div>
+                            <div style="flex: 1 1 120px; min-width: 100px;">
+                              <PerkebunanFormSelect
+                                modelValue={f().satuanVolumeAir}
+                                options={[
+                                  { value: 'Liter (L)', label: 'Liter (L)' },
+                                  { value: 'Mililiter (ml)', label: 'Mililiter (ml)' }
+                                ]}
+                                placeholder="Satuan Air"
+                                onUpdate:modelValue={(val) => { f().satuanVolumeAir = val }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Standard Composition for Non-POC (e.g. Kompos / Padat) */}
+                        <div class="form-group" style="margin-top: 1rem;">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Dekomposer</span>
+                          <PerkebunanFormSelect
+                            modelValue={f().dekomposer}
+                            options={decomposerOptions.value}
+                            placeholder="Dekomposer"
+                            onUpdate:modelValue={(val) => { f().dekomposer = val }}
+                          />
+                        </div>
+                        <div class="form-group">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Molase / Pemanis</span>
+                          <PerkebunanFormSelect
+                            modelValue={f().molase}
+                            options={molaseOptions.value}
+                            placeholder="Molase"
+                            onUpdate:modelValue={(val) => { f().molase = val }}
+                          />
+                        </div>
+                        <div class="form-group">
+                          <span class="field-label" style="font-weight: 700; color: #1f2937; display: block; margin-bottom: 0.45rem;">Jumlah Air (Liter)</span>
+                          <PerkebunanFormInput
+                            type="number"
+                            modelValue={f().jumlahAir}
+                            placeholder="Jumlah Air"
+                            onUpdate:modelValue={(val) => { f().jumlahAir = val }}
+                          />
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
                 {/* B. CEK FERMENTASI FORM */}
@@ -2098,37 +2855,21 @@ export default defineComponent({
                             </p>
                           </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
                           <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; grid-column: span 2;">
                             <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 700;">Jumlah Hasil Fermentasi</span>
                             <strong style="font-size: 0.9rem; color: #2e3b1f; margin-top: 0.15rem;">
                               {selectedFermentationDetails.value.qty} {selectedFermentationDetails.value.unit}
                             </strong>
                           </div>
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Bahan Mentah</span>
-                            <strong style="font-size: 0.85rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={selectedFermentationDetails.value.bahanMentah}>
-                              {selectedFermentationDetails.value.bahanMentah}
-                            </strong>
-                          </div>
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Dekomposer</span>
-                            <strong style="font-size: 0.85rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={selectedFermentationDetails.value.dekomposer}>
-                              {selectedFermentationDetails.value.dekomposer}
-                            </strong>
-                          </div>
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Molase</span>
-                            <strong style="font-size: 0.85rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={selectedFermentationDetails.value.molase}>
-                              {selectedFermentationDetails.value.molase}
-                            </strong>
-                          </div>
-                          <div style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column;">
-                            <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">Bahan Tambahan</span>
-                            <strong style="font-size: 0.85rem; color: #2e3b1f; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={selectedFermentationDetails.value.bahanTambahan}>
-                              {selectedFermentationDetails.value.bahanTambahan}
-                            </strong>
-                          </div>
+                          {selectedFermentationDetails.value.items.map((it: any, idx: number) => (
+                            <div key={idx} style="background: #ffffff; border: 1px solid #ebdcb9; border-radius: 0.5rem; padding: 0.5rem 0.75rem; display: flex; flex-direction: column;">
+                              <span style="font-size: 0.75rem; color: #7f8c70; font-weight: 600;">{it.label}</span>
+                              <strong style="font-size: 0.85rem; color: #2e3b1f; margin-top: 0.15rem; word-break: break-word;" title={it.value}>
+                                {it.value}
+                              </strong>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

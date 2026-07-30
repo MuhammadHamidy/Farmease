@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/farmease/kebun-be/kebun/module/fermentasi/domain"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -183,5 +184,27 @@ func (r *fermentasiRepository) StoreLog(ctx context.Context, l *domain.LogFermen
 	`
 	return r.db.QueryRow(ctx, query, l.IDFermentasi, l.TanggalCek, l.Suhu, l.Kelembaban, l.KondisiFisik, l.Notes, l.Status, idAccount).
 		Scan(&l.IDLog, &l.CreatedAt)
+}
+
+func (r *fermentasiRepository) resolveStokBahanByName(ctx context.Context, name string) (string, error) {
+	// 1. Try to find the existing material by name (case-insensitive)
+	var id string
+	querySelect := `SELECT id_stok_bahan FROM gardening.stok_bahan WHERE LOWER(nama_bahan) = LOWER($1) LIMIT 1`
+	err := r.db.QueryRow(ctx, querySelect, name).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+
+	// 2. If it does not exist, insert it with 0 stock
+	queryInsert := `
+		INSERT INTO gardening.stok_bahan (nama_bahan, stok_tersedia, satuan)
+		VALUES ($1, 0.00, 'kg')
+		RETURNING id_stok_bahan
+	`
+	err = r.db.QueryRow(ctx, queryInsert, name).Scan(&id)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }
 

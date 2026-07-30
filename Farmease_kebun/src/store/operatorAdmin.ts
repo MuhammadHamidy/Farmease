@@ -1068,14 +1068,24 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
                     baseName = 'Pupuk Kandang (Fermentasi)';
                   } else if (origHasil === 'Pupuk Organik Kompos') {
                     baseName = 'Pupuk Kompos (Fermentasi)';
-                  } else if (origHasil === 'Pupuk Organik Cair') {
-                    baseName = 'Pupuk Organik Cair (Fermentasi)';
+                  } else if (origHasil === 'Pupuk Organik Cair' || origHasil === 'POC' || origHasil.toLowerCase().includes('poc')) {
+                    const rawMat = (origItem.bahanMentahId || origItem.bahanUtama || '').toLowerCase();
+                    if (rawMat.includes('cucian beras') || rawMat.includes('beras')) {
+                      baseName = 'POC Air Cucian Beras';
+                    } else if (rawMat.includes('kelapa')) {
+                      baseName = 'POC Air Kelapa';
+                    } else if (rawMat.includes('domba')) {
+                      baseName = 'POC Kotoran Domba';
+                    } else if (rawMat.includes('em4')) {
+                      baseName = 'POC EM4 & Molase';
+                    } else if (origHasil && origHasil !== 'Pupuk Organik Cair' && origHasil !== 'POC') {
+                      baseName = origHasil;
+                    } else {
+                      baseName = 'POC Air Cucian Beras';
+                    }
                   }
 
                   let finalName = baseName;
-                  if (origItem.bahanTambahan && origItem.bahanTambahan.toLowerCase() !== 'tidak ada' && origItem.bahanTambahan.trim() !== '') {
-                    finalName = `${baseName} (+ ${origItem.bahanTambahan})`;
-                  }
 
                   await stokApi.createPupuk({
                     nama_pupuk: finalName,

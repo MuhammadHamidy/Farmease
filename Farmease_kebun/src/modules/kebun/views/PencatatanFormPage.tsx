@@ -193,9 +193,10 @@ export default defineComponent({
     const allTrees = ref<TreeItem[]>([])
 
     const varietasOptions = computed(() => {
-      const set = new Set(allTrees.value.map(t => t.varietas))
+      const set = new Set(allTrees.value.map(t => t.varietas).filter(Boolean))
       return ['Semua Varietas', ...Array.from(set)]
     })
+
 
     const filteredTrees = computed(() => {
       let result = allTrees.value
@@ -376,18 +377,11 @@ export default defineComponent({
           }
 
           else if ((type === 'pengolahan pupuk' || type === 'pengolahan_pupuk') && (item.selectedRincian?.includes('Fermentasi') || item.rincian?.includes('Fermentasi')) && !(item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))) {
+            // Initial Fermentasi: Deduct raw ingredient stocks ONLY, DO NOT add to usable pupuk stock yet!
             const outQty = parseFloat(item.qty) || 0
-            const outVal = parseQty(item.qty, item.unit)
             const name = item.hasilJadi || ''
-            if (!name) return
-
-            const key = `${name}_#_-`
-            pupukStockMap[key] = (pupukStockMap[key] || 0) + outVal
 
             const isCair = name.toLowerCase().includes('cair') || name.toLowerCase().includes('poc');
-            const isKompos = name.toLowerCase().includes('kompos');
-            const isManure = !isCair && !isKompos;
-
             const decName = item.dekomposer
             if (decName) {
               const decAmt = (isCair ? 20 : 10) * outQty
@@ -404,6 +398,38 @@ export default defineComponent({
             const consumedKg = factor * outQty;
             const rawName = item.bahanMentahId || 'Kotoran domba';
             bahanStockMap[rawName] = Math.max(0, (bahanStockMap[rawName] || 0) - consumedKg);
+          }
+
+          else if ((type === 'pengolahan pupuk' || type === 'pengolahan_pupuk') && (item.selectedRincian?.includes('Cek') || item.rincian?.includes('Cek'))) {
+            // Cek Fermentasi: ONLY add to available pupuk stock if declared ready / panen!
+            const isReady = item.siapGuna === 'siap' || item.siapGuna === true || item.kondisiFisik === 'Siap Digunakan' || item.aktivitasPengecekan === 'Panen / Ready' || item.statusFermentasi === 'siap'
+            if (isReady) {
+              const origSub = (allSubmissions.value || []).find((sub: any) => String(sub.id) === String(item.batchFermentasiId))
+              const origItem = (origSub?.payload as any)?.data?.items?.[0] || item
+              const outVal = parseQty(origItem.qty || item.qty || 5, origItem.unit || item.unit || 'Liter')
+              
+              let baseName = origItem.hasilJadi || 'POC'
+              const isPOC = baseName.toLowerCase().includes('poc') || baseName.toLowerCase().includes('cair')
+              if (isPOC) {
+                const rawMat = (origItem.bahanMentahId || origItem.bahanUtama || '').toLowerCase()
+                if (rawMat.includes('cucian beras') || rawMat.includes('beras')) {
+                  baseName = 'POC Air Cucian Beras'
+                } else if (rawMat.includes('kelapa')) {
+                  baseName = 'POC Air Kelapa'
+                } else if (rawMat.includes('domba')) {
+                  baseName = 'POC Kotoran Domba'
+                } else if (rawMat.includes('em4')) {
+                  baseName = 'POC EM4 & Molase'
+                } else if (baseName && baseName !== 'Pupuk Organik Cair' && baseName !== 'POC') {
+                  baseName = baseName
+                } else {
+                  baseName = 'POC Air Cucian Beras'
+                }
+              }
+
+              const key = `${baseName}_#_-`
+              pupukStockMap[key] = (pupukStockMap[key] || 0) + outVal
+            }
           }
 
           else if (type === 'pemupukan') {
@@ -458,10 +484,11 @@ export default defineComponent({
           const [name, expiry] = key.split('_#_')
           let type = 'organik'
           let form = 'padat'
+          const nameLower = (name || '').toLowerCase()
           if (name === 'NPK' || name === 'Urea' || name === 'SP - 36' || name === 'Fungisida Tembaga' || name === 'NPK Kelengkeng') {
             type = 'anorganik'
           }
-          if (name === 'POC Air Kelapa' || name === 'Fungisida Tembaga' || name === 'NPK Kelengkeng' || name === 'Pupuk Organik Cair') {
+          if (nameLower.includes('cair') || nameLower.includes('poc') || nameLower.includes('larutan') || nameLower.includes('fungisida')) {
             form = 'cair'
           }
 
@@ -485,7 +512,7 @@ export default defineComponent({
 
       const filteredPool = landName.includes('alpukat') 
         ? pool.filter(p => p.name !== 'NPK Kelengkeng') 
-        : pool.filter(p => p.name !== 'NPK' && p.name !== 'Urea' && p.name !== 'SP - 36' && p.name !== 'POC Air Kelapa')
+        : pool.filter(p => p.name !== 'NPK' && p.name !== 'Urea' && p.name !== 'SP - 36')
 
       if (r.includes('cair')) {
         return filteredPool.filter(p => p.form === 'cair')
@@ -517,11 +544,15 @@ export default defineComponent({
     })
 
     const getAvailableFertilizerStock = (name: string) => {
+      if (!name) return 0
       const nameLower = name.toLowerCase()
-      if (nameLower.includes('kotoran') || nameLower === 'manure' || nameLower === 'kotoran domba') {
-        return manureStock.value
+      if (nameLower.includes('kotoran domba') || nameLower === 'kotoran') {
+        return manureStock.value * 1000
       }
-      const matches = pupukStocks.value.filter(p => p.name === name)
+      const matches = pupukStocks.value.filter(p => {
+        const pLower = p.name.toLowerCase()
+        return p.name === name || pLower === nameLower || pLower.includes(nameLower) || nameLower.includes(pLower) || (nameLower.includes('poc') && pLower.includes('poc')) || (nameLower.includes('cair') && pLower.includes('cair'))
+      })
       return matches.reduce((acc, curr) => acc + (curr.val || 0), 0)
     }
 
@@ -797,6 +828,67 @@ export default defineComponent({
         formState.value.fasePohon = 'Generatif'
       }
 
+      // ── General field validation ──────────────────────────────────────────────
+      const showErr = (msg: string) => { alertModal.value = { isOpen: true, title: 'Validasi Gagal', message: msg, type: 'error' } }
+      const jenis = selectedJenis.value
+      const rincian = selectedRincian.value
+      const f = formState.value
+
+      if (!jenis || jenis === 'Jenis Pencatatan') { showErr('Harap pilih jenis pencatatan terlebih dahulu!'); return }
+      if (!rincian || rincian === 'Rincian Pencatatan') { showErr('Harap pilih rincian pencatatan terlebih dahulu!'); return }
+      const needsTree = !['Stok Obat', 'Stok Pupuk', 'Penanaman', 'Pengolahan Pupuk'].includes(jenis)
+      if (activeMode.value === 'pohon' && needsTree && selectedTrees.value.length === 0) { showErr('Harap pilih minimal satu pohon terlebih dahulu!'); return }
+
+      if (jenis === 'Pemupukan') {
+        if (!f.jenisPupukDetail || f.jenisPupukDetail === 'Jenis Pupuk Detail' || f.jenisPupukDetail === 'Pilih Pupuk') { showErr('Harap pilih pupuk yang digunakan!'); return }
+        if (!f.teknikPemupukan || f.teknikPemupukan === 'Teknik Pemupukan') { showErr('Harap pilih teknik pemupukan!'); return }
+        if (!f.jumlahBeratPupuk || parseFloat(f.jumlahBeratPupuk) <= 0) { showErr('Harap masukkan jumlah/dosis pupuk yang valid!'); return }
+      }
+      if (jenisLower.includes('obat') || jenisLower.includes('perawatan') || jenisLower.includes('hama') || jenisLower.includes('penyakit')) {
+        if (activeMode.value === 'pohon' && (!f.bagianPohon || f.bagianPohon === 'Bagian Pohon')) { showErr('Harap pilih bagian pohon yang diobati!'); return }
+        if (!f.namaObat || f.namaObat === 'Jenis Obat' || f.namaObat === 'Pilih Obat' || !f.namaObat.trim()) { showErr('Harap pilih atau isi nama obat yang digunakan!'); return }
+        if (!f.teknikPemberianObat || f.teknikPemberianObat === 'Teknik Pemberian Obat') { showErr('Harap pilih teknik pemberian obat!'); return }
+        if (!f.volumeObat || parseFloat(f.volumeObat) <= 0) { showErr('Harap masukkan volume obat yang valid!'); return }
+      }
+      if (jenisLower.includes('panen')) {
+        if (!f.jumlahPanen || parseFloat(f.jumlahPanen) <= 0) { showErr('Harap masukkan jumlah/berat hasil panen!'); return }
+        if (!f.kondisiPanen || f.kondisiPanen === 'Kondisi Panen') { showErr('Harap pilih kondisi panen!'); return }
+        if (!f.caraPanen || f.caraPanen === 'Cara Panen') { showErr('Harap pilih cara panen!'); return }
+      }
+      if (jenisLower.includes('pemangkasan')) {
+        if (!f.jumlahPemangkasan || parseFloat(f.jumlahPemangkasan) <= 0) { showErr('Harap masukkan jumlah pemangkasan yang valid!'); return }
+        if (!f.metodePemangkasan || f.metodePemangkasan === 'Metode Pemangkasan') { showErr('Harap pilih metode pemangkasan!'); return }
+      }
+      if (jenisLower.includes('penyiraman')) {
+        if (!f.teknikPenyiraman || f.teknikPenyiraman === 'Teknik Penyiraman') { showErr('Harap pilih teknik penyiraman!'); return }
+      }
+      if (jenisLower.includes('pembersihan')) {
+        if (!f.alatPembersihan || f.alatPembersihan === 'Alat Pembersihan') { showErr('Harap pilih alat pembersihan!'); return }
+      }
+      if (jenisLower.includes('pembuahan')) {
+        if (rincian === 'Penjarangan Buah') {
+          if (!f.jumlahBuahDibuang || parseFloat(f.jumlahBuahDibuang) <= 0) { showErr('Harap masukkan jumlah buah yang dibuang!'); return }
+          if (!f.sisaBuahPerTandan || parseFloat(f.sisaBuahPerTandan) <= 0) { showErr('Harap masukkan sisa buah per tandan!'); return }
+        }
+        if (rincian === 'Pembungkusan Buah') {
+          if (!f.bahanPembungkus || f.bahanPembungkus === 'Bahan Pembungkus') { showErr('Harap pilih bahan pembungkus!'); return }
+          if (!f.jumlahBuahDibungkus || parseFloat(f.jumlahBuahDibungkus) <= 0) { showErr('Harap masukkan jumlah buah yang dibungkus!'); return }
+        }
+        if (rincian === 'Merangsang Pembungaan') {
+          if (!f.jenisPerangsang || f.jenisPerangsang === 'Jenis Perangsang') { showErr('Harap pilih jenis perangsang bunga!'); return }
+          if (!f.dosisPerangsang || parseFloat(f.dosisPerangsang) <= 0) { showErr('Harap masukkan dosis perangsang!'); return }
+        }
+      }
+      if (jenis === 'Stok Obat') {
+        if (!f.namaObat || !f.namaObat.trim()) { showErr('Harap isi nama obat!'); return }
+        if (!f.volumeObat || parseFloat(f.volumeObat) <= 0) { showErr('Harap masukkan volume/jumlah obat yang valid!'); return }
+      }
+      if (jenis === 'Stok Pupuk' && (rincian === 'Pendaftaran Pupuk/Bahan Baru' || rincian === 'Tambah Stok Pupuk (Exp Lama)' || rincian === 'Tambah Stok Bahan')) {
+        if (!f.namaObat || !f.namaObat.trim()) { showErr('Harap isi nama pupuk/bahan!'); return }
+        if (!f.volumeObat || parseFloat(f.volumeObat) <= 0) { showErr('Harap masukkan jumlah yang valid!'); return }
+      }
+      // ── End general validation ──────────────────────────────────────────────
+
       // Stock validation for Pemupukan
       if (selectedJenis.value === 'Pemupukan') {
         const selectedPupuk = formState.value.jenisPupukDetail
@@ -814,8 +906,11 @@ export default defineComponent({
         const isCair = nameLower.includes('poc') || nameLower.includes('cair')
         const isOrganik = nameLower.includes('kandang') || nameLower.includes('kotoran') || nameLower.includes('kompos') || nameLower.includes('organik')
         let unit = 'gram'
-        if (isCair) unit = 'liter'
-        else if (isOrganik) unit = 'kilogram'
+        if (isCair) {
+          unit = (formState.value.satuanVolumePOC || 'Liter').toLowerCase()
+        } else if (isOrganik) {
+          unit = 'kilogram'
+        }
         const usedVal = parseQty(formState.value.jumlahBeratPupuk, unit)
         const available = getAvailableFertilizerStock(selectedPupuk)
 
