@@ -51,6 +51,11 @@ class ApiClient {
         const isAuthRoute = url.includes('/api/auth/login')
         
         if (error.response?.status === 401 && !isAuthRoute) {
+          const currentToken = localStorage.getItem('authToken')
+          if (currentToken && currentToken.startsWith('mock-token-development')) {
+            console.warn('[Client] 401 received with mock token, suppressing auto-logout redirect.')
+            return Promise.reject(error)
+          }
           // Token expired - clear storage and redirect to login
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
