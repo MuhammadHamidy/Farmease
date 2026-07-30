@@ -118,7 +118,7 @@ services:
       APP_JWTSECRET: ${JWT_SECRET:-farmease-secret-key-123}
       APP_REDIRECTURL: https://sso-staging.farmease.id/callback
     ports:
-      - "127.0.0.1:8085:8080"  # Dedicated Staging SSO BE Port (8085)
+      - "8085:8080"  # Dedicated Staging SSO BE Port (8085)
     networks:
       - farmease_staging_network
 
@@ -140,7 +140,7 @@ services:
       APP_SSOAPIURL: http://sso_be_staging:8080
       APP_RABBITMQ_URL: amqp://guest:guest@peternakan_rabbitmq_staging:5672/
     ports:
-      - "127.0.0.1:8086:8081"  # Dedicated Staging Ternak BE Port (8086)
+      - "8086:8081"  # Dedicated Staging Ternak BE Port (8086)
     networks:
       - farmease_staging_network
 
@@ -159,7 +159,7 @@ services:
       APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@kebun_postgres_staging:5432/farmease_kebun_staging?sslmode=disable
       APP_SSOAPIURL: http://sso_be_staging:8080
     ports:
-      - "127.0.0.1:8087:8082"  # Dedicated Staging Kebun BE Port (8087)
+      - "8087:8082"  # Dedicated Staging Kebun BE Port (8087)
     networks:
       - farmease_staging_network
 
@@ -175,7 +175,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-sso-staging.farmease.id
     ports:
-      - "127.0.0.1:3005:3000"  # Dedicated Staging SSO FE Port (3005)
+      - "3005:3000"  # Dedicated Staging SSO FE Port (3005)
     networks:
       - farmease_staging_network
 
@@ -188,7 +188,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-ternak-staging.farmease.id
     ports:
-      - "127.0.0.1:3006:3000"  # Dedicated Staging Ternak FE Port (3006)
+      - "3006:3000"  # Dedicated Staging Ternak FE Port (3006)
     networks:
       - farmease_staging_network
 
@@ -201,7 +201,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-kebun-staging.farmease.id
     ports:
-      - "127.0.0.1:3007:3000"  # Dedicated Staging Kebun FE Port (3007)
+      - "3007:3000"  # Dedicated Staging Kebun FE Port (3007)
     networks:
       - farmease_staging_network
 
