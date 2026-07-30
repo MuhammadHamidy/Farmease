@@ -175,7 +175,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-sso-staging.netrash.id
     ports:
-      - "3005:3000"  # Dedicated Staging SSO FE Port (3005)
+      - "3005:3000"  # Container listens on 3000
     networks:
       - farmease_staging_network
 
@@ -188,7 +188,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-ternak-staging.netrash.id
     ports:
-      - "3006:3000"  # Dedicated Staging Ternak FE Port (3006)
+      - "3006:3001"  # Container listens on 3001
     networks:
       - farmease_staging_network
 
@@ -201,7 +201,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-kebun-staging.netrash.id
     ports:
-      - "3007:3000"  # Dedicated Staging Kebun FE Port (3007)
+      - "3007:3002"  # Container listens on 3002
     networks:
       - farmease_staging_network
 

@@ -175,7 +175,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-sso.netrash.id
     ports:
-      - "3000:3000"  # Dedicated Production SSO FE Host Port (3000)
+      - "3000:3000"  # Container listens on 3000
     networks:
       - farmease_prod_network
 
@@ -188,7 +188,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-ternak.netrash.id
     ports:
-      - "3001:3000"  # Dedicated Production Ternak FE Host Port (3001)
+      - "3001:3001"  # Container listens on 3001
     networks:
       - farmease_prod_network
 
@@ -201,7 +201,7 @@ services:
     environment:
       VITE_API_BASE_URL: https://api-kebun.netrash.id
     ports:
-      - "3002:3000"  # Dedicated Production Kebun FE Host Port (3002)
+      - "3002:3002"  # Container listens on 3002
     networks:
       - farmease_prod_network
 
