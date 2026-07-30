@@ -15,6 +15,7 @@ import PencatatanTypeFields, { type PencatatanFormItem } from '@/modules/ternak/
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import { useRouter } from 'vue-router';
 import CustomAlertModal, { type AlertModalState } from '@/shared/ui/CustomAlertModal';
+import { formatMatingReadiness, formatSheepStatus } from '@/shared/utils/i18nFormatters';
 
 const JENIS_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
@@ -182,52 +183,73 @@ export default defineComponent({
 
     const pregnantCageSheepList = computed(() => {
       const activeCode = forms.value[0]?.selectedCageCode || cageSession.value?.code || '';
-      if (!activeCode) return [];
       
-      return sheep.value
-        .filter(s => s.cage_code === activeCode && s.gender === 'betina' && s.status === 'Hamil')
-        .map(s => {
-          const targetIdStr = String(s.id);
-          const foundPreg = pregnancies.value.find((p: any) => {
-            const idMother = String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || '');
-            const statusStr = (p.status || p.pregnancy_status || '').toLowerCase();
-            const isActive = statusStr === 'dikandung' || statusStr === 'hamil' || statusStr === 'aktif';
-            return idMother === targetIdStr && isActive;
-          });
-          
-          // Gunakan expected_birth_date langsung dari DB jika tersedia
-          let hpl: Date;
-          if (foundPreg?.expected_birth_date) {
-            hpl = new Date(foundPreg.expected_birth_date);
-          } else if (foundPreg?.pregnancy_date) {
-            hpl = new Date(new Date(foundPreg.pregnancy_date).getTime() + 150 * 24 * 60 * 60 * 1000);
-          } else {
-            // Fallback: estimasi 60 hari dari sekarang
-            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
-          }
-          if (isNaN(hpl.getTime())) {
-            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
-          }
-          const today = new Date();
-          today.setHours(0,0,0,0);
-          hpl.setHours(0,0,0,0);
-          const diffTime = hpl.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          let countdownText = '';
-          if (diffDays > 0) countdownText = `H-${diffDays} Hari`;
-          else if (diffDays === 0) countdownText = 'HPL Hari Ini';
-          else countdownText = `Lewat HPL ${Math.abs(diffDays)} Hari`;
+      const pregnantSheepIds = new Set(
+        pregnancies.value
+          .filter((p: any) => {
+            const st = (p.status || p.pregnancy_status || '').toLowerCase();
+            return st === 'dikandung' || st === 'hamil' || st === 'aktif';
+          })
+          .map((p: any) => String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || ''))
+      );
 
-          return {
-            id: s.id,
-            code: s.code,
-            name: s.name,
-            countdownText,
-            hpl: hpl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
-            cage_code: s.cage_code
-          };
+      let candidates = sheep.value.filter(s => {
+        if (s.gender !== 'betina') return false;
+        if (['Mati', 'Terjual', 'Disembelih'].includes(s.status)) return false;
+        const isStatusHamil = s.status?.toLowerCase() === 'hamil';
+        const hasPregnancyRecord = pregnantSheepIds.has(String(s.id));
+        return isStatusHamil || hasPregnancyRecord;
+      });
+
+      if (activeCode) {
+        const filteredByCage = candidates.filter(s => s.cage_code === activeCode);
+        if (filteredByCage.length > 0) {
+          candidates = filteredByCage;
+        }
+      }
+
+      return candidates.map(s => {
+        const targetIdStr = String(s.id);
+        const foundPreg = pregnancies.value.find((p: any) => {
+          const idMother = String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || '');
+          const statusStr = (p.status || p.pregnancy_status || '').toLowerCase();
+          const isActive = statusStr === 'dikandung' || statusStr === 'hamil' || statusStr === 'aktif';
+          return idMother === targetIdStr && isActive;
         });
+        
+        // Gunakan expected_birth_date langsung dari DB jika tersedia
+        let hpl: Date;
+        if (foundPreg?.expected_birth_date) {
+          hpl = new Date(foundPreg.expected_birth_date);
+        } else if (foundPreg?.pregnancy_date) {
+          hpl = new Date(new Date(foundPreg.pregnancy_date).getTime() + 150 * 24 * 60 * 60 * 1000);
+        } else {
+          // Fallback: estimasi 60 hari dari sekarang
+          hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+        }
+        if (isNaN(hpl.getTime())) {
+          hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+        }
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        hpl.setHours(0,0,0,0);
+        const diffTime = hpl.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        let countdownText = '';
+        if (diffDays > 0) countdownText = `H-${diffDays} Hari`;
+        else if (diffDays === 0) countdownText = 'HPL Hari Ini';
+        else countdownText = `Lewat HPL ${Math.abs(diffDays)} Hari`;
+
+        return {
+          id: s.id,
+          code: s.code,
+          name: s.name,
+          countdownText,
+          hpl: hpl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
+          cage_code: s.cage_code
+        };
+      });
     });
 
     // Fetch stocks when form opens
@@ -506,14 +528,18 @@ export default defineComponent({
         if (categoryId === 'stok_pakan') {
           const isConversion = formItem.name === 'Konversi Pakan';
           if (!isConversion && (!formItem.obat || !formItem.qty)) return showError('Nama pakan sumber dan jumlah masuk wajib diisi.');
-          if (isConversion && (
-            !(formItem.hijauan || '').trim() ||
-            !(formItem.energi || '').trim() ||
-            !(formItem.protein || '').trim() ||
-            !(formItem.mineral || '').trim() ||
-            !formItem.qty
-          )) {
-            return showError('Semua kelompok bahan baku konversi pakan (Serat, Energi, Protein, Aktivator) dan target kuantitas wajib diisi.');
+          if (isConversion) {
+            const hasFiber = !!(formItem.hijauan || '').trim();
+            const hasEnergy = !!(formItem.energi || '').trim();
+            const hasActivator = !!(formItem.mineral || '').trim();
+            const hasHasilJadi = !!(formItem.obat || '').trim();
+            const hasValidQty = !!formItem.qty && parseFloat(formItem.qty) > 0;
+
+            if (!hasFiber) return showError('Sumber Serat Kasar / Hijauan wajib dipilih.');
+            if (!hasEnergy) return showError('Sumber Karbohidrat dan Energi wajib dipilih.');
+            if (!hasActivator) return showError('Aktivator Fermentasi & Mineral wajib dipilih.');
+            if (!hasValidQty) return showError('Target Stok Pakan Hasil Konversi (KG) wajib diisi dengan angka lebih besar dari 0.');
+            if (!hasHasilJadi) return showError('Hasil Konversi Jadi (nama hasil pakan silase) wajib diisi.');
           }
         }
         // Validation for Health / Treatment activity (routine checks vs. medication injections)
@@ -640,7 +666,7 @@ export default defineComponent({
             }
 
             // check if female has been estrus-checked
-            if (female.mating_status === 'Belum Cek Birahi' || female.mating_status === 'Belum Pencatatan Birahi') {
+            if (female.mating_status === 'NOT_CHECKED' || female.mating_status === 'Belum Cek Birahi' || female.mating_status === 'Belum Pencatatan Birahi') {
               alertModal.value = {
                 isOpen: true,
                 title: 'Belum Pencatatan Birahi',
@@ -664,7 +690,7 @@ export default defineComponent({
 
             // check if female is underage
             const femaleAgeMonths = getAgeInMonths(female.birth_date);
-            if (female.mating_status === 'Tidak (Belum Cukup Umur)' || (femaleAgeMonths > 0 && femaleAgeMonths < 8)) {
+            if (female.mating_status === 'UNDERAGE' || female.mating_status === 'Tidak (Belum Cukup Umur)' || (femaleAgeMonths > 0 && femaleAgeMonths < 8)) {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
@@ -676,11 +702,11 @@ export default defineComponent({
 
             // check if male is underage
             const maleAgeMonths = getAgeInMonths(male.birth_date);
-            if (male.mating_status === 'Tidak (Belum Cukup Umur)' || (maleAgeMonths > 0 && maleAgeMonths < 12)) {
+            if (male.mating_status === 'UNDERAGE' || male.mating_status === 'Tidak (Belum Cukup Umur)' || (maleAgeMonths > 0 && maleAgeMonths < 8)) {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
-                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} masih di bawah umur.\nStatus: Belum Cukup Umur (umur: ${male.age || 'di bawah 12 bulan'}).`,
+                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} masih di bawah umur.\nStatus: Belum Cukup Umur (umur: ${male.age || 'di bawah 8 bulan'}).`,
                 type: 'error'
               };
               return;
@@ -689,22 +715,22 @@ export default defineComponent({
             // check other readiness restrictions for female
             // Also accept if local submission shows birahi (even if not yet admin-approved)
             const femaleHasLocalBirahi = checkIsSheepBirahi(female);
-            if (!femaleHasLocalBirahi && !female.is_ready_to_mate && female.mating_status && female.mating_status !== 'Siap Kawin' && !female.mating_status.includes('Birahi') && female.mating_status !== 'Belum Pencatatan Birahi') {
+            if (!femaleHasLocalBirahi && !female.is_ready_to_mate && female.mating_status && female.mating_status !== 'MATING_READY' && female.mating_status !== 'Siap Kawin' && !female.mating_status.includes('Birahi') && female.mating_status !== 'NOT_CHECKED' && female.mating_status !== 'Belum Pencatatan Birahi') {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
-                message: `Gagal menyimpan data perkawinan.\nInduk Betina ${female.code} (${female.name}) tidak dapat dikawinkan.\nStatus: ${female.mating_status}.`,
+                message: `Gagal menyimpan data perkawinan.\nInduk Betina ${female.code} (${female.name}) tidak dapat dikawinkan.\nStatus: ${formatMatingReadiness(female.mating_status)}.`,
                 type: 'error'
               };
               return;
             }
 
             // check other readiness restrictions for male
-            if (!male.is_ready_to_mate && male.mating_status && male.mating_status !== 'Siap Kawin') {
+            if (!male.is_ready_to_mate && male.mating_status && male.mating_status !== 'MATING_READY' && male.mating_status !== 'Siap Kawin') {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
-                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} tidak siap kawin.\nStatus: ${male.mating_status}.`,
+                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} tidak siap kawin.\nStatus: ${formatMatingReadiness(male.mating_status)}.`,
                 type: 'error'
               };
               return;
@@ -952,10 +978,11 @@ export default defineComponent({
     const cageActiveMatings = computed(() => {
       const activeCage = currentSelectedCageCode.value;
       if (!activeCage) return activeMatings.value;
-      return activeMatings.value.filter((mating) => {
+      const filtered = activeMatings.value.filter((mating) => {
         const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
         return female && female.cage_code === activeCage;
       });
+      return filtered.length > 0 ? filtered : activeMatings.value;
     });
 
     return () => {
@@ -1449,7 +1476,7 @@ export default defineComponent({
                               return (
                                 <div
                                   class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
-                                  style={isSelected ? { borderLeft: '4px solid var(--color-primary, #bc6c25)', borderTop: '1px solid rgba(188, 108, 37, 0.2)', borderBottom: '1px solid rgba(188, 108, 37, 0.2)', borderRight: '1px solid rgba(188, 108, 37, 0.2)' } : {}}
+                                  style={isSelected ? { borderLeft: '4px solid var(--color-primary, #3d2f24)', borderTop: '1px solid rgba(139, 94, 60, 0.2)', borderBottom: '1px solid rgba(139, 94, 60, 0.2)', borderRight: '1px solid rgba(139, 94, 60, 0.2)' } : {}}
                                   key={stock.id}
                                 >
                                 <div class="min-w-0">
@@ -1499,9 +1526,10 @@ export default defineComponent({
                           {/* Pejantan Dewasa vs Data Perkawinan Tercatat */}
                           {(() => {
                             const firstFormName = forms.value[0]?.name || '';
-                            const isIBOrPregnancy = firstFormName === 'IB' || firstFormName === 'Inseminasi Buatan' || firstFormName === 'Kontrol Kebuntingan';
+                            const isPregnancyControl = firstFormName === 'Kontrol Kebuntingan';
+                            const isIB = firstFormName === 'IB' || firstFormName === 'Inseminasi Buatan';
 
-                            if (isIBOrPregnancy) {
+                            if (isPregnancyControl) {
                               return (
                                 <>
                                   <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
@@ -1576,31 +1604,35 @@ export default defineComponent({
                                     ))
                                   )}
 
-                                  <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
-                                    Pejantan Dewasa (Siap Kawin)
-                                  </Typography>
-                                  {siapKawinJantan.value.length === 0 ? (
-                                    <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
-                                      Tidak ada pejantan
-                                    </div>
-                                  ) : (
-                                    siapKawinJantan.value.slice(0, 5).map((sheepItem) => (
-                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
-                                        <div class="min-w-0">
-                                          <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                            {sheepItem.name}
-                                          </Typography>
-                                          <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                            {sheepItem.code} • {getCageName(sheepItem.cage_code)}
-                                          </Typography>
+                                  {!isIB && (
+                                    <>
+                                      <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
+                                        Pejantan Dewasa (Siap Kawin)
+                                      </Typography>
+                                      {siapKawinJantan.value.length === 0 ? (
+                                        <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
+                                          Tidak ada pejantan
                                         </div>
-                                        <div class="text-end ps-3">
-                                          <Badge variant="secondary" className="px-2 py-1">
-                                            Pejantan
-                                          </Badge>
-                                        </div>
-                                      </div>
-                                    ))
+                                      ) : (
+                                        siapKawinJantan.value.slice(0, 5).map((sheepItem) => (
+                                          <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
+                                            <div class="min-w-0">
+                                              <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
+                                                {sheepItem.name}
+                                              </Typography>
+                                              <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                                {sheepItem.code} • {getCageName(sheepItem.cage_code)}
+                                              </Typography>
+                                            </div>
+                                            <div class="text-end ps-3">
+                                              <Badge variant="secondary" className="px-2 py-1">
+                                                Pejantan
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        ))
+                                      )}
+                                    </>
                                   )}
                                 </>
                               );

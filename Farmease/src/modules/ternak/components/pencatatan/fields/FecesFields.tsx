@@ -15,7 +15,7 @@ export default defineComponent({
     const f = () => props.form;
     return () => (
       <>
-        <PencatatanField label="Jumlah Produksi" colClass="col-12" required>
+        <PencatatanField label="Jumlah Panen" colClass="col-12" required>
           <PencatatanInput
             type="number"
             modelValue={f().qty}

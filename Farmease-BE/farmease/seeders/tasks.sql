@@ -299,18 +299,49 @@ INSERT INTO logistics.silage_conversion_details (id_detail, id_conversion, id_fe
 ('ab000008-0000-0000-0000-000000000002', 'aa000008-0000-0000-0000-000000000001', 'ca000002-0000-0000-0000-000000000001', 30.00)
 ON CONFLICT (id_detail) DO NOTHING;
 
--- 4. Buat Tugas Pengecekan untuk Hari Ini (7 hari setelah konversi)
+-- 4. Buat Tugas Pengecekan Evaluasi Fermentasi Silase (Hari ke-7)
 INSERT INTO operations.tasks (
     id_task, title, description, task_date, status,
     priority, id_account, category, end_time,
     schedule_id, id_cage, start_time, rincian
 ) VALUES (
     'db000008-0000-0000-0000-000000000001',
-    'Pengecekan Fermentasi Silase',
-    'Lakukan pengecekan kualitas fermentasi pakan silase (Target: 100.00 kg, Tanggal Konversi: ' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYY-MM-DD') || ')',
+    'Pengecekan Evaluasi Fermentasi Silase (Hari ke-7)',
+    'Lakukan pengecekan evaluasi awal fermentasi silase (Cek pH, suhu, dan aroma). Target: 100.00 kg (Konversi: ' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYY-MM-DD') || ')',
     CURRENT_DATE AT TIME ZONE 'Asia/Jakarta',
     'belum',
     'sedang',
+    '11111111-1111-1111-1111-111111111106', -- Default Operator Ternak
+    'pakan',
+    '10:00:00',
+    NULL,
+    NULL,
+    '08:00:00',
+    'Konversi Pakan'
+)
+ON CONFLICT (id_task) DO UPDATE
+SET title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    task_date = EXCLUDED.task_date,
+    status = EXCLUDED.status,
+    priority = EXCLUDED.priority,
+    category = EXCLUDED.category,
+    end_time = EXCLUDED.end_time,
+    start_time = EXCLUDED.start_time,
+    rincian = EXCLUDED.rincian;
+
+-- 5. Buat Tugas Pematangan & Panen Silase Matang (Hari ke-21)
+INSERT INTO operations.tasks (
+    id_task, title, description, task_date, status,
+    priority, id_account, category, end_time,
+    schedule_id, id_cage, start_time, rincian
+) VALUES (
+    'db000008-0000-0000-0000-000000000021',
+    'Pematangan & Panen Silase Matang (Hari ke-21)',
+    'Proses ensilase 21 hari selesai. Silase matang sempurna dan siap digunakan sebagai pakan. Target: 100.00 kg (Konversi: ' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYY-MM-DD') || ')',
+    (CURRENT_DATE + INTERVAL '14 days') AT TIME ZONE 'Asia/Jakarta',
+    'belum',
+    'tinggi',
     '11111111-1111-1111-1111-111111111106', -- Default Operator Ternak
     'pakan',
     '10:00:00',

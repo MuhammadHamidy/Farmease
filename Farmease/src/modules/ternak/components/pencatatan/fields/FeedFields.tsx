@@ -635,22 +635,30 @@ export default defineComponent({
                     ℹ️ Komposisi Penyusun Silase ({selectedSilageDetails.value.targetName})
                   </div>
                   <div class="row g-2" style={{ fontSize: '0.85rem' }}>
-                    <div class="col-12">
-                      <span class="text-muted d-block small">Pakan Mentah Asal:</span>
-                      <span class="fw-bold text-dark">🌿 {selectedSilageDetails.value.hijauan} (70.0%)</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="text-muted d-block small">Sumber Energi:</span>
-                      <span class="fw-bold text-dark">🌾 {selectedSilageDetails.value.energi} (17.3%)</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="text-muted d-block small">Sumber Protein:</span>
-                      <span class="fw-bold text-dark">🫘 {selectedSilageDetails.value.protein} (10.4%)</span>
-                    </div>
-                    <div class="col-12 border-top pt-2 mt-2">
-                      <span class="text-muted d-block small">Pemberian Mineral:</span>
-                      <span class="fw-bold text-dark">🧂 {selectedSilageDetails.value.mineral} (2.3%)</span>
-                    </div>
+                    {selectedSilageDetails.value.hijauan && (
+                      <div class="col-12">
+                        <span class="text-muted d-block small">Serat Kasar / Hijauan:</span>
+                        <span class="fw-bold text-dark">🌿 {selectedSilageDetails.value.hijauan}</span>
+                      </div>
+                    )}
+                    {selectedSilageDetails.value.energi && (
+                      <div class="col-6">
+                        <span class="text-muted d-block small">Sumber Energi:</span>
+                        <span class="fw-bold text-dark">🌾 {selectedSilageDetails.value.energi}</span>
+                      </div>
+                    )}
+                    {selectedSilageDetails.value.protein && (
+                      <div class="col-6">
+                        <span class="text-muted d-block small">Sumber Protein:</span>
+                        <span class="fw-bold text-dark">🫘 {selectedSilageDetails.value.protein}</span>
+                      </div>
+                    )}
+                    {selectedSilageDetails.value.mineral && (
+                      <div class="col-12 border-top pt-2 mt-2">
+                        <span class="text-muted d-block small">Aktivator & Mineral:</span>
+                        <span class="fw-bold text-dark">🧂 {selectedSilageDetails.value.mineral}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

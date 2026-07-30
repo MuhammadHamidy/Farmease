@@ -90,7 +90,7 @@ func getNutrient(feedName string, category string) nutrient {
 //   - Target Mix Ratio: 95% Forage (Hijauan) and 5% Concentrate (Konsentrat) by Dry Matter.
 func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed) ([]domain.RecommendationItem, float64) {
 	if weight <= 0 {
-		weight = 30.0 // Default fallback weight (average sheep weight)
+		weight = 30.0 
 	}
 
 	// 1. Calculate total Dry Matter (BK) needed (2.5% of body weight)

@@ -16,7 +16,7 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ['keguguran'],
+  emits: ['laporKehamilan'],
   setup(props, { emit }) {
     return () => {
       if (props.alerts.length === 0) return null;
@@ -46,11 +46,11 @@ export default defineComponent({
                   {alert.daysLeft <= 3 ? '⚠️ Segera' : '📅 Mendekati'}
                 </Badge>
                 <button 
-                  class="btn btn-sm btn-outline-danger fw-bold" 
+                  class="btn btn-sm btn-outline-success fw-bold" 
                   style={{ fontSize: '0.7rem' }}
-                  onClick={() => emit('keguguran', alert.id)}
+                  onClick={() => emit('laporKehamilan', alert.id)}
                 >
-                  Lapor Keguguran
+                  Lapor Kehamilan
                 </button>
               </div>
             </div>

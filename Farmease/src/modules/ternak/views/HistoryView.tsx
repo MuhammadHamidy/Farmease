@@ -96,7 +96,7 @@ export default defineComponent({
     const summaryCards = computed(() => [
       { label: 'Total Log', value: listRecords.value.length, tone: 'var(--color-brown-light)' },
       { label: 'Pakan Hari Ini', value: listRecords.value.filter(r => r.category === 'Pakan' && r.date === new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })).length, tone: 'var(--color-primary-light)' },
-      { label: 'Menunggu', value: listRecords.value.filter(r => r.status === 'pending').length, tone: '#bc6c25' }
+      { label: 'Menunggu', value: listRecords.value.filter(r => r.status === 'pending').length, tone: '#8b5e3c' }
     ]);
 
     const CATEGORY_ICONS: Record<string, string> = {
@@ -130,19 +130,23 @@ export default defineComponent({
       
       if (item.hijauan) {
         const label = sType === 'stok_pakan' ? 'Pakan Mentah Asal (Dari Kebun)' : 'Hijauan';
-        chips.push({ label, value: String(item.hijauan) });
+        const pct = item.pctFiber !== undefined && item.pctFiber !== '' ? ` (${item.pctFiber}%)` : (isConversion ? ' (70%)' : '');
+        chips.push({ label, value: `${item.hijauan}${pct}` });
       }
       if (item.energi) {
         const label = sType === 'stok_pakan' ? 'Pakan Tambahan (Sumber Energi)' : 'Sumber Energi';
-        chips.push({ label, value: String(item.energi) });
+        const pct = item.pctEnergy !== undefined && item.pctEnergy !== '' ? ` (${item.pctEnergy}%)` : (isConversion ? ' (17.3%)' : '');
+        chips.push({ label, value: `${item.energi}${pct}` });
       }
       if (item.protein) {
         const label = sType === 'stok_pakan' ? 'Pakan Tambahan (Sumber Protein)' : 'Sumber Protein';
-        chips.push({ label, value: String(item.protein) });
+        const pct = item.pctProtein !== undefined && item.pctProtein !== '' ? ` (${item.pctProtein}%)` : (isConversion ? ' (10.4%)' : '');
+        chips.push({ label, value: `${item.protein}${pct}` });
       }
       if (item.mineral) {
         const label = sType === 'stok_pakan' ? 'Pakan Tambahan (Pemberian Mineral)' : 'Pemberian Mineral';
-        chips.push({ label, value: String(item.mineral) });
+        const pct = item.pctActivator !== undefined && item.pctActivator !== '' ? ` (${item.pctActivator}%)` : (isConversion ? ' (2.3%)' : '');
+        chips.push({ label, value: `${item.mineral}${pct}` });
       }
       
       if (item.qty) {

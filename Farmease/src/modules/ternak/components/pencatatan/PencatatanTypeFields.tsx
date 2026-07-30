@@ -308,7 +308,7 @@ export default defineComponent({
         if (birthDate) {
           const now = new Date();
           const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
-          if (ageInMonths < 12) {
+          if (ageInMonths < 8) {
             return 'Tidak (Belum Cukup Umur)';
           }
         }

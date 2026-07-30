@@ -14,80 +14,170 @@ import EditLivestockModal from '@/shared/ui/EditLivestockModal';
 import SheepWeightChart from '@/shared/ui/SheepWeightChart';
 import CustomSelect from '@/shared/ui/admin/Select';
 import CustomAlertModal, { type AlertModalState } from '@/shared/ui/CustomAlertModal';
+import '@/modules/ternak/assets/css/modules/RecordForm.css';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 // calcADG is now handled by the backend
 
-const SilsilahNode = (props: { node: any; label: string; depth?: number }) => {
+const SilsilahNode = (props: { node: any; label: string; depth?: number; onClick?: () => void }) => {
   const node = props.node;
   const label = props.label;
   const depth = props.depth ?? 0;
+
+  const cleanLabel = label.replace(/[♂♀]/g, '').trim();
+  const lowerLabel = cleanLabel.toLowerCase();
+  const isMale = node
+    ? String(node.gender).toLowerCase().includes('jantan')
+    : (lowerLabel.includes('kakek') || lowerLabel === 'bapak' || lowerLabel.includes('sire'));
+
+  const isFemale = node
+    ? String(node.gender).toLowerCase().includes('betina')
+    : (lowerLabel.includes('nenek') || lowerLabel === 'ibu' || lowerLabel.includes('dam'));
+
+  const targetId = node ? (node.id_sheep || node.id || node.sheep_id) : null;
+  const isClickable = !!(props.onClick || targetId);
+
+  const handleClick = () => {
+    if (props.onClick) {
+      props.onClick();
+    } else if (targetId) {
+      router.push(`/livestock/${targetId}`);
+    }
+  };
+
   if (!node) {
     return (
       <div
         style={{
-          padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px dashed #ccc',
-          fontSize: '0.72rem', color: 'var(--color-gray-400)', textAlign: 'center', minWidth: '120px',
+          padding: '0.6rem 0.7rem',
+          borderRadius: '10px',
+          border: '1.5px dashed var(--color-outline-variant)',
+          backgroundColor: 'color-mix(in srgb, var(--color-surface-container-low) 50%, transparent)',
+          fontSize: '0.75rem',
+          width: '135px',
+          minHeight: '76px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center',
+          boxSizing: 'border-box',
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', marginBottom: '2px', color: 'var(--color-gray-300)' }}>{label}</div>
-        Tidak Diketahui
+        <div class="d-flex align-items-center justify-content-center gap-1 mb-1">
+          <span style={{ fontWeight: 800, fontSize: '0.62rem', textTransform: 'uppercase', color: 'var(--color-outline)' }}>{cleanLabel}</span>
+          {isMale && <img src="/icon/male.png" alt="♂" style={{ width: '13px', height: '13px', objectFit: 'contain', opacity: 0.6 }} />}
+          {isFemale && <img src="/icon/female.png" alt="♀" style={{ width: '13px', height: '13px', objectFit: 'contain', opacity: 0.6 }} />}
+        </div>
+        <div style={{ fontWeight: 600, fontSize: '0.72rem', color: 'var(--color-outline)' }}>Tidak Diketahui</div>
       </div>
     );
   }
+
   return (
     <div
+      onClick={handleClick}
       style={{
-        padding: '0.5rem 0.75rem', borderRadius: '8px',
-        background: depth === 0 ? 'var(--color-primary-fixed)' : 'var(--color-surface)',
-        border: '1px solid var(--color-outline-variant)', fontSize: '0.75rem', minWidth: '120px',
+        padding: '0.6rem 0.7rem',
+        borderRadius: '10px',
+        background: 'var(--color-surface-container-lowest)',
+        border: '1.5px solid var(--color-outline-variant)',
+        fontSize: '0.75rem',
+        width: '135px',
+        minHeight: '76px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
+        cursor: isClickable ? 'pointer' : 'default',
+        boxShadow: isClickable ? '0 2px 6px rgba(0,0,0,0.05)' : 'none',
+        transition: 'transform 0.15s ease',
+        boxSizing: 'border-box',
       }}
+      title={isClickable ? `Klik untuk lihat detail silsilah ${node.sheep_name || node.sheep_code || node.name}` : ''}
     >
-      <div style={{ fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', marginBottom: '2px', color: 'var(--color-primary)' }}>{label}</div>
-      <div style={{ fontWeight: 700, color: 'var(--color-on-surface)' }}>
-        {node.sheep_name || node.sheep_code || '—'}
+      <div class="d-flex align-items-center justify-content-center gap-1 mb-1">
+        <span style={{ fontWeight: 800, fontSize: '0.62rem', textTransform: 'uppercase', color: 'var(--color-primary)' }}>{cleanLabel}</span>
+        {isMale && <img src="/icon/male.png" alt="♂" style={{ width: '13px', height: '13px', objectFit: 'contain' }} />}
+        {isFemale && <img src="/icon/female.png" alt="♀" style={{ width: '13px', height: '13px', objectFit: 'contain' }} />}
       </div>
-      <div style={{ fontSize: '0.65rem', color: 'var(--color-gray-800)' }}>{node.sheep_code} • {node.gender || '—'}</div>
+      <div style={{ fontWeight: 700, color: 'var(--color-on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+        {node.sheep_name || node.sheep_code || node.name || '—'}
+      </div>
+      <div class="d-flex align-items-center justify-content-center gap-1" style={{ fontSize: '0.65rem', color: 'var(--color-on-surface-variant)', marginTop: '2px' }}>
+        <span>{node.sheep_code || node.code}</span>
+        {node.gender && (
+          <img
+            src={String(node.gender).toLowerCase().includes('jantan') ? '/icon/male.png' : '/icon/female.png'}
+            alt=""
+            style={{ width: '13px', height: '13px', objectFit: 'contain' }}
+          />
+        )}
+      </div>
     </div>
   );
 };
 
-const SiblingNode = (props: { sibling: any; onClick?: () => void }) => {
+const SiblingNode = (props: { sibling: any; orderTag?: string; dob?: string | null; onClick?: () => void }) => {
   const sib = props.sibling;
-  const isKandung = sib.type === 'kandung';
-  const isTiriBapak = sib.type === 'tiri_bapak';
+  const orderTag = props.orderTag || sib.orderTag || 'Saudara';
+  const isMale = String(sib.gender).toLowerCase().includes('jantan');
 
-  const badgeStyle = isKandung
-    ? { bg: '#e8f5e9', border: '#a5d6a7', text: '#2e7d32', label: 'Sd. Kandung' }
-    : isTiriBapak
-    ? { bg: '#e3f2fd', border: '#90caf9', text: '#1565c0', label: 'Tiri (Bapak)' }
-    : { bg: '#f3e5f5', border: '#ce93d8', text: '#7b1fa2', label: 'Tiri (Ibu)' };
+  const orderTagStyle = orderTag === 'Kakak'
+    ? { bg: '#faedcd', border: '#dda15e', text: '#8c5017' }
+    : orderTag === 'Adik'
+    ? { bg: '#e9edc9', border: '#a3b18a', text: '#3a471c' }
+    : { bg: '#faf8f5', border: '#8b5e3c', text: '#8b5e3c' };
 
   return (
     <div
       onClick={props.onClick}
       style={{
-        padding: '0.5rem 0.75rem',
-        borderRadius: '8px',
-        background: 'var(--color-surface)',
-        border: `1.5px solid ${badgeStyle.border}`,
+        padding: '0.6rem 0.7rem',
+        borderRadius: '10px',
+        background: '#ffffff',
+        border: `1.5px solid ${orderTagStyle.border}`,
         fontSize: '0.75rem',
-        minWidth: '120px',
+        width: '135px',
+        minHeight: '76px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
         textAlign: 'center',
         cursor: 'pointer',
         boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
         transition: 'transform 0.15s ease',
+        boxSizing: 'border-box',
       }}
-      title={`Klik untuk lihat silsilah ${sib.sheep_name || sib.sheep_code}`}
+      title={`Klik untuk lihat silsilah ${sib.name || sib.sheep_name || sib.sheep_code}`}
     >
-      <div style={{ fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', marginBottom: '2px', color: badgeStyle.text }}>
-        {badgeStyle.label} {sib.gender === 'jantan' ? '♂' : '♀'}
+      <div class="d-flex align-items-center justify-content-center gap-1 mb-1">
+        <span
+          style={{
+            fontSize: '0.62rem',
+            fontWeight: 800,
+            padding: '1px 8px',
+            borderRadius: '4px',
+            backgroundColor: orderTagStyle.bg,
+            color: orderTagStyle.text,
+            textTransform: 'uppercase',
+          }}
+        >
+          {orderTag}
+        </span>
+        <img
+          src={isMale ? '/icon/male.png' : '/icon/female.png'}
+          alt=""
+          style={{ width: '13px', height: '13px', objectFit: 'contain' }}
+        />
       </div>
-      <div style={{ fontWeight: 700, color: 'var(--color-on-surface)' }}>
-        {sib.sheep_name || sib.sheep_code}
+      <div style={{ fontWeight: 700, color: 'var(--color-on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+        {sib.name || sib.sheep_name || sib.sheep_code}
       </div>
-      <div style={{ fontSize: '0.65rem', color: 'var(--color-gray-800)' }}>
-        {sib.sheep_code}
+      <div style={{ fontSize: '0.65rem', color: 'var(--color-on-surface-variant)' }}>
+        {sib.code || sib.sheep_code}
       </div>
     </div>
   );
@@ -125,6 +215,14 @@ export default defineComponent({
       if (!currentSilsilah.value) return 0;
       return getSilsilahDepth(currentSilsilah.value);
     });
+
+    const selectedSilsilahDepth = ref<number>(3);
+
+    watch(silsilahMaxDepth, (depth) => {
+      if (depth > 0) {
+        selectedSilsilahDepth.value = Math.max(3, Math.min(depth, 5));
+      }
+    }, { immediate: true });
 
     const selectedTernakId = computed(() => route.params.id as string);
 
@@ -360,6 +458,7 @@ export default defineComponent({
     });
 
     const silsilah = computed(() => currentSilsilah.value);
+
     const healthRecords = computed(() => currentHealthRecords.value);
     const weightRecords = computed(() => currentWeightRecords.value);
     const matingRecords = computed(() => currentMatingRecords.value);
@@ -444,6 +543,14 @@ export default defineComponent({
           message: 'Gagal melaporkan keguguran.',
           type: 'error',
         };
+      }
+    };
+
+    const navigateToSheep = (targetNode: any) => {
+      if (!targetNode) return;
+      const targetId = targetNode.id_sheep || targetNode.id || targetNode.sheep_id;
+      if (targetId) {
+        router.push(`/livestock/${targetId}`);
       }
     };
 
@@ -699,29 +806,49 @@ export default defineComponent({
             </div>
           </div>
 
-          {/* Silsilah Keluarga — 3 Generasi Default + 5 Generasi Auto-Detect (Option B) & Siblings */}
+          {/* Silsilah Keluarga — Layout Cabang Keluarga Bapak (Sire) & Ibu (Dam) dengan Selector 3 - 5 Generasi */}
           <div class="bg-white rounded-4 border p-4 mb-4">
-            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
               <div>
                 <Typography variant="h3" weight="bold" color="coffee-brown" className="mb-0 fs-6">
-                  Silsilah Keluarga (3 Generasi)
+                  Silsilah Keluarga ({selectedSilsilahDepth.value} Generasi)
                 </Typography>
+                <span class="text-muted small">
+                  Bagan silsilah mencakup Garis Keturunan Leluhur & Saudara (Kakak & Adik)
+                </span>
                 {silsilahMaxDepth.value >= 4 && (
-                  <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style={{ fontSize: '0.7rem' }}>
-                    ✨ Terdeteksi {silsilahMaxDepth.value} Generasi Leluhur
-                  </span>
+                  <div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style={{ fontSize: '0.7rem' }}>
+                      Terdeteksi {silsilahMaxDepth.value} Generasi Leluhur Lengkap
+                    </span>
+                  </div>
                 )}
               </div>
 
-              {silsilahMaxDepth.value >= 4 && (
+              {/* Selector Tombol Generasi (3, 4, 5 Generasi) — Menggunakan pencatatan-mode-toggle Peternakan */}
+              <div class="pencatatan-mode-toggle" style={{ width: 'auto' }}>
                 <button
-                  class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold"
-                  style={{ fontSize: '0.75rem' }}
-                  onClick={() => showFullSilsilahModal.value = true}
+                  type="button"
+                  class={['pencatatan-mode-btn', selectedSilsilahDepth.value === 3 ? 'is-active' : '']}
+                  onClick={() => selectedSilsilahDepth.value = 3}
                 >
-                  🔍 Perluas Pohon Silsilah ({silsilahMaxDepth.value} Generasi)
+                  3 Generasi
                 </button>
-              )}
+                <button
+                  type="button"
+                  class={['pencatatan-mode-btn', selectedSilsilahDepth.value === 4 ? 'is-active' : '']}
+                  onClick={() => selectedSilsilahDepth.value = 4}
+                >
+                  4 Generasi
+                </button>
+                <button
+                  type="button"
+                  class={['pencatatan-mode-btn', selectedSilsilahDepth.value === 5 ? 'is-active' : '']}
+                  onClick={() => selectedSilsilahDepth.value = 5}
+                >
+                  5 Generasi
+                </button>
+              </div>
             </div>
 
             {detailLoading.value ? (
@@ -730,77 +857,238 @@ export default defineComponent({
               <div class="text-center py-3 text-muted small">Data silsilah tidak tersedia</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                {/* Generasi 2 (Buyut/Great-grandparents) */}
-                <div class="d-flex justify-content-around gap-2 mb-3">
-                  <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.father as any)?.father?.father} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.father as any)?.father?.mother} label="GG-Nenek ♀" depth={2} />
-                  </div>
-                  <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.father as any)?.mother?.father} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.father as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} />
-                  </div>
-                  <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.mother as any)?.father?.father} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.mother as any)?.father?.mother} label="GG-Nenek ♀" depth={2} />
-                  </div>
-                  <div class="d-flex flex-column gap-2">
-                    <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.father} label="GG-Kakek ♂" depth={2} />
-                    <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} />
-                  </div>
-                </div>
-
-                {/* Connector line */}
-                <div style={{ borderTop: '2px solid var(--color-outline-variant)', margin: '0.25rem 0' }} />
-
-                {/* Generasi 1 (Kakek-Nenek) */}
-                <div class="d-flex justify-content-around gap-2 mb-3 mt-3">
-                  <SilsilahNode node={(silsilah.value?.father as any)?.father} label="Kakek (Bapak) ♂" depth={1} />
-                  <SilsilahNode node={(silsilah.value?.father as any)?.mother} label="Nenek (Bapak) ♀" depth={1} />
-                  <SilsilahNode node={(silsilah.value?.mother as any)?.father} label="Kakek (Ibu) ♂" depth={1} />
-                  <SilsilahNode node={(silsilah.value?.mother as any)?.mother} label="Nenek (Ibu) ♀" depth={1} />
-                </div>
-
-                <div style={{ borderTop: '2px solid var(--color-outline-variant)', margin: '0.25rem 0' }} />
-
-                {/* Generasi 0 (Ayah/Ibu) */}
-                <div class="d-flex justify-content-center gap-4 mb-3 mt-3">
-                  <SilsilahNode node={silsilah.value?.father} label="Bapak ♂" depth={0} />
-                  <SilsilahNode node={silsilah.value?.mother} label="Ibu ♀" depth={0} />
-                </div>
-
-                <div style={{ borderTop: '2px solid var(--color-primary)', margin: '0.25rem 0' }} />
-
-                {/* Generasi Anak: Domba Ini + Kakak & Adik (Saudara Kandung & Tiri) dalam 1 baris */}
-                <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-3 mb-2">
-                  {/* Sibling nodes di sebelah kiri */}
-                  {(silsilah.value?.siblings || []).slice(0, Math.ceil((silsilah.value?.siblings?.length || 0) / 2)).map((sib: any) => (
-                    <SiblingNode
-                      key={sib.id_sheep}
-                      sibling={sib}
-                      onClick={() => router.push(`/livestock/${sib.id_sheep}`)}
-                    />
-                  ))}
-
-                  {/* Domba Utama (Domba Ini) */}
-                  <div style={{
-                    padding: '0.75rem 1.5rem', borderRadius: '10px',
-                    background: 'var(--color-primary)', color: '#fff',
-                    fontWeight: 700, fontSize: '0.85rem', textAlign: 'center', minWidth: '160px',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
-                  }}>
-                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8, marginBottom: '2px' }}>🐑 Domba Ini</div>
-                    {ternak.nama} ({ternak.code})
+                <div class="pencatatan-tree-container p-4 rounded-4 border" style={{ backgroundColor: '#fcfaf7', borderColor: '#e8ded1', minWidth: '1240px' }}>
+                  
+                  {/* Sub-Header Kolom Kiri (Bapak - Terracotta/Brown) & Kolom Kanan (Ibu - Forest Green) */}
+                  <div class="row g-3 mb-3 text-center fw-extrabold text-uppercase" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>
+                    <div class="col-6">
+                      <div class="p-2 rounded-3 border shadow-sm" style={{ backgroundColor: '#fdf6ee', borderColor: '#c19a6b', color: '#8b5e3c' }}>
+                        KELUARGA PIHAK BAPAK (SIRE LINE)
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="p-2 rounded-3 border shadow-sm" style={{ backgroundColor: '#f4f6f0', borderColor: '#a3b18a', color: '#4a572c' }}>
+                        KELUARGA PIHAK IBU (DAM LINE)
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Sibling nodes di sebelah kanan */}
-                  {(silsilah.value?.siblings || []).slice(Math.ceil((silsilah.value?.siblings?.length || 0) / 2)).map((sib: any) => (
-                    <SiblingNode
-                      key={sib.id_sheep}
-                      sibling={sib}
-                      onClick={() => router.push(`/livestock/${sib.id_sheep}`)}
-                    />
-                  ))}
+                  {/* Generasi 4 (Leluhur GGG) — jika depth === 5 */}
+                  {selectedSilsilahDepth.value >= 5 && (
+                    <div class="mb-3">
+                      <div class="text-center text-muted small fw-bold text-uppercase mb-2" style={{ fontSize: '0.62rem', color: '#8c7a6b' }}>Generasi 4 (Leluhur GGG)</div>
+                      <div class="row g-3">
+                        {/* Pihak Bapak (2 Pasang Kotak) */}
+                        <div class="col-6">
+                          <div class="d-flex justify-content-center align-items-center gap-2">
+                            <div class="d-flex justify-content-center align-items-center gap-1.5 p-2 rounded-4 shadow-sm" style={{ background: '#fdf6ee', border: '1.5px solid #dda15e' }}>
+                              <SilsilahNode node={(silsilah.value?.father as any)?.father?.father?.father} label="GGG-Kakek ♂" depth={3} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father?.father?.father)} />
+                              <SilsilahNode node={(silsilah.value?.father as any)?.father?.father?.mother} label="GGG-Nenek ♀" depth={3} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father?.father?.mother)} />
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center gap-1.5 p-2 rounded-4 shadow-sm" style={{ background: '#fdf6ee', border: '1.5px solid #dda15e' }}>
+                              <SilsilahNode node={(silsilah.value?.father as any)?.father?.mother?.father} label="GGG-Kakek ♂" depth={3} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father?.mother?.father)} />
+                              <SilsilahNode node={(silsilah.value?.father as any)?.father?.mother?.mother} label="GGG-Nenek ♀" depth={3} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father?.mother?.mother)} />
+                            </div>
+                          </div>
+                        </div>
+                        {/* Pihak Ibu (2 Pasang Kotak) */}
+                        <div class="col-6">
+                          <div class="d-flex justify-content-center align-items-center gap-2">
+                            <div class="d-flex justify-content-center align-items-center gap-1.5 p-2 rounded-4 shadow-sm" style={{ background: '#f4f6f0', border: '1.5px solid #a3b18a' }}>
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.father?.father?.father} label="GGG-Kakek ♂" depth={3} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father?.father?.father)} />
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.father?.father?.mother} label="GGG-Nenek ♀" depth={3} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father?.father?.mother)} />
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center gap-1.5 p-2 rounded-4 shadow-sm" style={{ background: '#f4f6f0', border: '1.5px solid #a3b18a' }}>
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.father?.mother?.father} label="GGG-Kakek ♂" depth={3} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father?.mother?.father)} />
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.father?.mother?.mother} label="GGG-Nenek ♀" depth={3} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father?.mother?.mother)} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ borderTop: '1px dashed #dda15e', margin: '0.75rem 0' }} />
+                    </div>
+                  )}
+
+                  {/* Generasi 3 (Buyut GG) — jika depth >= 4 */}
+                  {selectedSilsilahDepth.value >= 4 && (
+                    <div class="mb-3">
+                      <div class="text-center small fw-bold text-uppercase mb-2" style={{ fontSize: '0.62rem', color: '#8c7a6b' }}>Generasi 3 (Buyut GG)</div>
+                      <div class="row g-3">
+                        {/* Buyut Bapak (2 Pasang Kotak) */}
+                        <div class="col-6">
+                          <div class="d-flex justify-content-center align-items-center gap-2">
+                            <div class="d-flex justify-content-center align-items-center gap-2 p-2.5 rounded-4 shadow-sm" style={{ background: '#fdf9f3', border: '1.5px solid #dda15e' }}>
+                              <SilsilahNode node={(silsilah.value?.father as any)?.father?.father} label="GG-Kakek ♂" depth={2} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father?.father)} />
+                              <SilsilahNode node={(silsilah.value?.father as any)?.father?.mother} label="GG-Nenek ♀" depth={2} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father?.mother)} />
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center gap-2 p-2.5 rounded-4 shadow-sm" style={{ background: '#fdf9f3', border: '1.5px solid #dda15e' }}>
+                              <SilsilahNode node={(silsilah.value?.father as any)?.mother?.father} label="GG-Kakek ♂" depth={2} onClick={() => navigateToSheep((silsilah.value?.father as any)?.mother?.father)} />
+                              <SilsilahNode node={(silsilah.value?.father as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} onClick={() => navigateToSheep((silsilah.value?.father as any)?.mother?.mother)} />
+                            </div>
+                          </div>
+                        </div>
+                        {/* Buyut Ibu (2 Pasang Kotak) */}
+                        <div class="col-6">
+                          <div class="d-flex justify-content-center align-items-center gap-2">
+                            <div class="d-flex justify-content-center align-items-center gap-2 p-2.5 rounded-4 shadow-sm" style={{ background: '#f6f8f4', border: '1.5px solid #a3b18a' }}>
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.father?.father} label="GG-Kakek ♂" depth={2} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father?.father)} />
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.father?.mother} label="GG-Nenek ♀" depth={2} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father?.mother)} />
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center gap-2 p-2.5 rounded-4 shadow-sm" style={{ background: '#f6f8f4', border: '1.5px solid #a3b18a' }}>
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.father} label="GG-Kakek ♂" depth={2} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.mother?.father)} />
+                              <SilsilahNode node={(silsilah.value?.mother as any)?.mother?.mother} label="GG-Nenek ♀" depth={2} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.mother?.mother)} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ borderTop: '1px dashed #dda15e', margin: '0.75rem 0' }} />
+                    </div>
+                  )}
+
+                  {/* Generasi 2 (Kakek & Nenek) */}
+                  <div class="mb-3">
+                    <div class="text-center small fw-bold text-uppercase mb-2" style={{ fontSize: '0.65rem', color: 'var(--color-primary)' }}>Generasi 2 (Kakek & Nenek)</div>
+                    <div class="row g-3">
+                      {/* Kakek & Nenek Bapak */}
+                      <div class="col-6">
+                        <div class="d-flex justify-content-center align-items-center gap-3 p-3 rounded-4 shadow-sm" style={{ background: '#fdf6ee', border: '1.5px solid #dda15e', minHeight: '104px' }}>
+                          <SilsilahNode node={(silsilah.value?.father as any)?.father} label="Kakek (Bapak) ♂" depth={1} onClick={() => navigateToSheep((silsilah.value?.father as any)?.father)} />
+                          <SilsilahNode node={(silsilah.value?.father as any)?.mother} label="Nenek (Bapak) ♀" depth={1} onClick={() => navigateToSheep((silsilah.value?.father as any)?.mother)} />
+                        </div>
+                      </div>
+                      {/* Kakek & Nenek Ibu */}
+                      <div class="col-6">
+                        <div class="d-flex justify-content-center align-items-center gap-3 p-3 rounded-4 shadow-sm" style={{ background: '#f4f6f0', border: '1.5px solid #a3b18a', minHeight: '104px' }}>
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.father} label="Kakek (Ibu) ♂" depth={1} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.father)} />
+                          <SilsilahNode node={(silsilah.value?.mother as any)?.mother} label="Nenek (Ibu) ♀" depth={1} onClick={() => navigateToSheep((silsilah.value?.mother as any)?.mother)} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Garis Keturunan Kakek/Nenek ke Bapak & Ibu */}
+                  <div class="row g-3 my-1">
+                    <div class="col-6 d-flex flex-column align-items-center">
+                      <div style={{ width: '160px', height: '2px', backgroundColor: '#dda15e' }} />
+                      <div style={{ width: '2px', height: '14px', backgroundColor: '#dda15e' }} />
+                    </div>
+                    <div class="col-6 d-flex flex-column align-items-center">
+                      <div style={{ width: '160px', height: '2px', backgroundColor: '#a3b18a' }} />
+                      <div style={{ width: '2px', height: '14px', backgroundColor: '#a3b18a' }} />
+                    </div>
+                  </div>
+
+                  {/* Generasi 1 (Perkawinan Bapak & Ibu) */}
+                  <div class="mb-3">
+                    <div class="text-center small fw-bold text-uppercase mb-2" style={{ fontSize: '0.65rem', color: '#8b5e3c' }}>Generasi 1 (Perkawinan Bapak & Ibu)</div>
+                    <div class="row g-3">
+                      <div class="col-6 d-flex justify-content-center">
+                        <div class="d-flex justify-content-center align-items-center p-2 rounded-4 shadow-sm" style={{ background: '#fdf6ee', border: '1.5px solid #c19a6b' }}>
+                          <SilsilahNode
+                            node={silsilah.value?.father}
+                            label="Bapak"
+                            depth={0}
+                            onClick={() => navigateToSheep(silsilah.value?.father)}
+                          />
+                        </div>
+                      </div>
+                      <div class="col-6 d-flex justify-content-center">
+                        <div class="d-flex justify-content-center align-items-center p-2 rounded-4 shadow-sm" style={{ background: '#f4f6f0', border: '1.5px solid #a3b18a' }}>
+                          <SilsilahNode
+                            node={silsilah.value?.mother}
+                            label="Ibu"
+                            depth={0}
+                            onClick={() => navigateToSheep(silsilah.value?.mother)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Garis Keturunan Bapak & Ibu ke Anak */}
+                  <div class="position-relative my-2" style={{ height: '20px' }}>
+                    <div style={{ position: 'absolute', top: '0', left: '25%', right: '25%', height: '2px', backgroundColor: '#8b5e3c' }} />
+                    <div style={{ position: 'absolute', top: '0', left: '50%', transform: 'translateX(-50%)', width: '2px', height: '20px', backgroundColor: '#8b5e3c' }} />
+                  </div>
+
+                  {/* Generasi 0 (Aku / Target & Kakak/Adik Kandung) */}
+                  <div>
+                    <div class="text-center small fw-bold text-uppercase mb-2" style={{ fontSize: '0.65rem', color: '#606c38' }}>Generasi Anak (Kakak ➔ Domba Ini ➔ Adik)</div>
+                    {(() => {
+                      const targetDOBStr = (currentSheepDetail.value as any)?.date_of_birth || (currentSheepDetail.value as any)?.birth_date;
+                      const targetDOB = targetDOBStr ? new Date(targetDOBStr).getTime() : null;
+
+                      // Filter HANYA saudara kandung (pasangan Bapak & Ibu sama)
+                      const rawSiblings = (silsilah.value?.siblings || []).filter((sib: any) => sib.type === 'kandung');
+
+                      const processedSiblings = rawSiblings.map((sib: any) => {
+                        const fullObj = sheep.value.find(s => String(s.id) === String(sib.id_sheep) || s.code === sib.sheep_code);
+                        const sibDOBStr = (fullObj as any)?.date_of_birth || (fullObj as any)?.birth_date || sib.date_of_birth;
+                        const sibDOB = sibDOBStr ? new Date(sibDOBStr).getTime() : null;
+
+                        let orderTag: 'Kakak' | 'Adik' | 'Kembar' = 'Adik';
+                        let timeDiff = 0;
+
+                        if (sibDOB && targetDOB) {
+                          timeDiff = sibDOB - targetDOB;
+                          if (sibDOB < targetDOB) orderTag = 'Kakak';
+                          else if (sibDOB > targetDOB) orderTag = 'Adik';
+                          else orderTag = 'Kembar';
+                        }
+
+                        return {
+                          ...sib,
+                          orderTag,
+                          timeDiff,
+                          name: fullObj?.name || sib.sheep_name || sib.sheep_code,
+                          code: fullObj?.code || sib.sheep_code,
+                          dobStr: sibDOBStr ? new Date(sibDOBStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : null,
+                        };
+                      });
+
+                      const kakakList = processedSiblings.filter((s: any) => s.orderTag === 'Kakak').sort((a: any, b: any) => a.timeDiff - b.timeDiff);
+                      const adikList = processedSiblings.filter((s: any) => s.orderTag === 'Adik' || s.orderTag === 'Kembar').sort((a: any, b: any) => a.timeDiff - b.timeDiff);
+
+                      return (
+                        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-2 mb-2 p-3 rounded-4" style={{ backgroundColor: '#f4f6f0', border: '2px solid #a3b18a' }}>
+                          {/* Kakak (Lebih Tua) */}
+                          {kakakList.map((sib: any) => (
+                            <SiblingNode
+                              key={sib.id_sheep || sib.id}
+                              sibling={sib}
+                              orderTag={sib.orderTag}
+                              dob={sib.dobStr}
+                              onClick={() => navigateToSheep(sib)}
+                            />
+                          ))}
+
+                          {/* Domba Utama (Domba Ini) */}
+                          <div style={{
+                            padding: '0.75rem 1.5rem', borderRadius: '12px',
+                            background: 'var(--color-secondary)', color: 'var(--color-on-secondary)',
+                            fontWeight: 700, fontSize: '0.85rem', textAlign: 'center', minWidth: '160px',
+                            boxShadow: '0 4px 12px color-mix(in srgb, var(--color-secondary) 30%, transparent)',
+                            border: '2px solid color-mix(in srgb, var(--color-secondary) 80%, white)'
+                          }}>
+                            <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.9, marginBottom: '2px', letterSpacing: '0.5px' }}>Domba Ini</div>
+                            {ternak.nama} ({ternak.code})
+                          </div>
+
+                          {/* Adik (Lebih Muda) */}
+                          {adikList.map((sib: any) => (
+                            <SiblingNode
+                              key={sib.id_sheep || sib.id}
+                              sibling={sib}
+                              orderTag={sib.orderTag}
+                              dob={sib.dobStr}
+                              onClick={() => navigateToSheep(sib)}
+                            />
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
                 </div>
 
                 {/* Warning jika silsilah tidak lengkap */}

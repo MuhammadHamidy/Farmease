@@ -760,59 +760,75 @@ export default defineComponent({
                           <span class="ms-auto badge bg-light text-dark border">{item.mode === 'individu' ? 'Individu' : 'Kandang/Kelompok'}</span>
                         </div>
                         <div class="row g-3">
-                          {Object.entries(item).map(([key, val]) => {
-                            if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode') return null;
-                            if (!shouldShowKey(selected.value?.type || '', key, item)) return null;
-                            const formName = item.name || '';
-                            let displayLabel = labelMappings[key] || camelToTitle(key);
-                            if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
-                            const subType = (selected.value?.type || '').toLowerCase();
-                            if (subType === 'stok pupuk' || subType === 'stok_pupuk') {
-                              if (key === 'jenisObat') displayLabel = 'Jenis Pupuk';
-                              else if (key === 'namaObat') displayLabel = 'Nama Pupuk';
-                              else if (key === 'volumeObat') displayLabel = 'Jumlah Stok Pupuk';
-                              else if (key === 'satuanVolumeObat') displayLabel = 'Satuan Volume Pupuk';
-                              else if (key === 'teknikPemberianObat') displayLabel = 'Teknik Pemupukan';
-                            }
-                            if (key === 'qty') {
-                              if (subType === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Target Hasil Konversi';
-                              else if (subType === 'pakan') displayLabel = 'Jumlah Pemberian';
-                              else if (subType === 'kotoran') displayLabel = 'Jumlah Produksi';
-                              else if (subType === 'berat_badan' || subType === 'weighing') displayLabel = 'Berat Badan';
-                              else displayLabel = labelMappings['qty'] || 'Jumlah/Volume';
-                            }
-                            if (key === 'obat') {
-                              if (subType === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Hasil Konversi Jadi';
-                              else if (subType === 'stok_pakan' && formName === 'Tambah Stok') displayLabel = 'Nama Pakan/Sumber';
-                              else if (subType === 'pakan') displayLabel = 'Nama Pakan';
-                              else displayLabel = labelMappings['obat'] || 'Obat/Pakan/Vitamin';
-                            }
-                            if (key === 'vitaminAmount') {
-                              if (subType === 'kesehatan') displayLabel = 'Jumlah Vitamin/Dosis';
-                              else displayLabel = labelMappings['vitaminAmount'] || 'Jumlah/Dosis';
-                            }
-                            if (key === 'hijauan') {
-                              if (subType === 'stok_pakan') displayLabel = 'Pakan Mentah Asal';
-                              else if (subType === 'pakan') displayLabel = 'Hijauan';
-                            }
-                            if (key === 'energi') {
-                              if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Sumber Energi)';
-                              else if (subType === 'pakan') displayLabel = 'Sumber Energi';
-                            }
-                            if (key === 'protein') {
-                              if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Sumber Protein)';
-                              else if (subType === 'pakan') displayLabel = 'Sumber Protein';
-                            }
-                            if (key === 'mineral') {
-                              if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Pemberian Mineral)';
-                              else if (subType === 'pakan') displayLabel = 'Pemberian Mineral';
-                            }
-                            if (key === 'metoda') {
-                              if (subType === 'pakan') displayLabel = 'Metode Pemberian Pakan';
-                              else displayLabel = 'Metode Kawin';
-                            }
-                             
+                           {Object.entries(item).map(([key, val]) => {
+                             if (!val || val === '' || key === 'id' || key === 'name' || key === 'mode' || key === 'pctFiber' || key === 'pctEnergy' || key === 'pctProtein' || key === 'pctActivator') return null;
+                             if (!shouldShowKey(selected.value?.type || '', key, item)) return null;
+                             const formName = item.name || '';
+                             let displayLabel = labelMappings[key] || camelToTitle(key);
+                             if (key === 'targetId') displayLabel = item.mode === 'individu' ? 'ID Domba/Target' : 'ID Kandang';
+                             const subType = (selected.value?.type || '').toLowerCase();
+                             if (subType === 'stok pupuk' || subType === 'stok_pupuk') {
+                               if (key === 'jenisObat') displayLabel = 'Jenis Pupuk';
+                               else if (key === 'namaObat') displayLabel = 'Nama Pupuk';
+                               else if (key === 'volumeObat') displayLabel = 'Jumlah Stok Pupuk';
+                               else if (key === 'satuanVolumeObat') displayLabel = 'Satuan Volume Pupuk';
+                               else if (key === 'teknikPemberianObat') displayLabel = 'Teknik Pemupukan';
+                             }
+                             if (key === 'qty') {
+                               if (subType === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Target Hasil Konversi';
+                               else if (subType === 'pakan') displayLabel = 'Jumlah Pemberian';
+                               else if (subType === 'kotoran') displayLabel = 'Jumlah Produksi';
+                               else if (subType === 'berat_badan' || subType === 'weighing') displayLabel = 'Berat Badan';
+                               else displayLabel = labelMappings['qty'] || 'Jumlah/Volume';
+                             }
+                             if (key === 'obat') {
+                               if (subType === 'stok_pakan' && formName === 'Konversi Pakan') displayLabel = 'Hasil Konversi Jadi';
+                               else if (subType === 'stok_pakan' && formName === 'Tambah Stok') displayLabel = 'Nama Pakan/Sumber';
+                               else if (subType === 'pakan') displayLabel = 'Nama Pakan';
+                               else displayLabel = labelMappings['obat'] || 'Obat/Pakan/Vitamin';
+                             }
+                             if (key === 'vitaminAmount') {
+                               if (subType === 'kesehatan') displayLabel = 'Jumlah Vitamin/Dosis';
+                               else displayLabel = labelMappings['vitaminAmount'] || 'Jumlah/Dosis';
+                             }
+                             if (key === 'hijauan') {
+                               if (subType === 'stok_pakan') displayLabel = 'Pakan Mentah Asal';
+                               else if (subType === 'pakan') displayLabel = 'Hijauan';
+                             }
+                             if (key === 'energi') {
+                               if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Sumber Energi)';
+                               else if (subType === 'pakan') displayLabel = 'Sumber Energi';
+                             }
+                             if (key === 'protein') {
+                               if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Sumber Protein)';
+                               else if (subType === 'pakan') displayLabel = 'Sumber Protein';
+                             }
+                             if (key === 'mineral') {
+                               if (subType === 'stok_pakan') displayLabel = 'Pakan Tambahan (Pemberian Mineral)';
+                               else if (subType === 'pakan') displayLabel = 'Pemberian Mineral';
+                             }
+                             if (key === 'metoda') {
+                               if (subType === 'pakan') displayLabel = 'Metode Pemberian Pakan';
+                               else displayLabel = 'Metode Kawin';
+                             }
+                              
                              let displayValue = String(val);
+                             if (subType === 'stok_pakan' && formName === 'Konversi Pakan') {
+                               if (key === 'hijauan') {
+                                 const pct = item.pctFiber !== undefined && item.pctFiber !== '' ? item.pctFiber : 70;
+                                 displayValue = `${val} (${pct}%)`;
+                               } else if (key === 'energi') {
+                                 const pct = item.pctEnergy !== undefined && item.pctEnergy !== '' ? item.pctEnergy : 17.3;
+                                 displayValue = `${val} (${pct}%)`;
+                               } else if (key === 'protein') {
+                                 const pct = item.pctProtein !== undefined && item.pctProtein !== '' ? item.pctProtein : 10.4;
+                                 displayValue = `${val} (${pct}%)`;
+                               } else if (key === 'mineral') {
+                                 const pct = item.pctActivator !== undefined && item.pctActivator !== '' ? item.pctActivator : 2.3;
+                                 displayValue = `${val} (${pct}%)`;
+                               }
+                             }
+
                              if (key === 'hasilPemeriksaan') {
                                if (formName === 'Cek Birahi' || formName === 'Pencatatan Birahi' || formName === 'Pengecekan Birahi') {
                                  displayValue = val === 'birahi' ? 'Birahi (Siap Kawin)' : 'Tidak Birahi';
@@ -842,9 +858,9 @@ export default defineComponent({
                              }
                             
                             return (
-                              <div key={key} class="col-6 col-sm-4">
-                                <span class="d-block text-muted mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{displayLabel}</span>
-                                <span class="d-block fw-bold text-dark text-truncate" style={{ fontSize: '0.9rem' }} title={displayValue}>{displayValue}</span>
+                              <div key={key} class="col-12 pb-2">
+                                <span class="d-block text-muted mb-1" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{displayLabel}</span>
+                                <span class="d-block fw-bold text-dark text-break" style={{ fontSize: '0.9rem', lineHeight: '1.4' }} title={displayValue}>{displayValue}</span>
                               </div>
                             );
                           })}

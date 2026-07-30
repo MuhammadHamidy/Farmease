@@ -105,23 +105,29 @@ export default defineComponent({
       ];
     });
 
+    const isSilaseOrFermentation = (stock: any) => {
+      const nameLower = (stock?.name || '').toLowerCase();
+      const catLower = (stock?.category || '').toLowerCase();
+      return nameLower.includes('silase') || nameLower.includes('fermentasi') || catLower.includes('silase');
+    };
+
     const energyFeeds = computed(() => {
       const dbList = stocks.value
-        .filter((stock: any) => stock.category === 'konsentrat' && (stock.notes || '').toLowerCase().includes('energi'))
+        .filter((stock: any) => !isSilaseOrFermentation(stock) && stock.category === 'konsentrat' && (stock.notes || '').toLowerCase().includes('energi'))
         .map((stock: any) => stock.name);
       return dbList.length > 0 ? dbList : ['Bekatul', 'Jagung', 'Onggok'];
     });
 
     const proteinFeeds = computed(() => {
       const dbList = stocks.value
-        .filter((stock: any) => stock.category === 'konsentrat' && (stock.notes || '').toLowerCase().includes('protein'))
+        .filter((stock: any) => !isSilaseOrFermentation(stock) && stock.category === 'konsentrat' && (stock.notes || '').toLowerCase().includes('protein'))
         .map((stock: any) => stock.name);
       return dbList.length > 0 ? dbList : ['Ampas Tahu', 'Bungkil Kacang Tanah', 'Bungkil kelapa Sawit'];
     });
 
     const mineralFeeds = computed(() => {
       const dbList = stocks.value
-        .filter((stock: any) => stock.category === 'vitamin' && (stock.notes || '').toLowerCase().includes('mineral'))
+        .filter((stock: any) => !isSilaseOrFermentation(stock) && stock.category === 'vitamin' && (stock.notes || '').toLowerCase().includes('mineral'))
         .map((stock: any) => stock.name);
       return dbList.length > 0 ? dbList : ['Garam Dirijen', 'Mineral Blok'];
     });
@@ -140,6 +146,7 @@ export default defineComponent({
     const fiberOptions = computed(() => {
       const dbHijauan = stocks.value
         .filter((stock: any) => {
+          if (isSilaseOrFermentation(stock)) return false;
           const cat = (stock.category || '').toLowerCase();
           return cat === 'hijauan' || cat === 'greenery';
         })
@@ -152,10 +159,11 @@ export default defineComponent({
     });
 
     const activatorOptions = computed(() => {
-      // Hanya tampilkan aktivator fermentasi: EM4, Molase, Ragi
+      // Hanya tampilkan aktivator murni (EM4, Molase, Ragi) & bukan hasil silase/fermentasi
       const AKTIVATOR_NAMES = ['em4', 'molase', 'ragi'];
       const dbActivators = stocks.value
         .filter((stock: any) => {
+          if (isSilaseOrFermentation(stock)) return false;
           const nameLower = (stock.name || '').toLowerCase();
           return AKTIVATOR_NAMES.some(actName => nameLower.includes(actName));
         })
@@ -246,6 +254,33 @@ export default defineComponent({
       return current.includes(feedName);
     };
 
+    // Custom percentage inputs for silage conversion formulation (defaults: 70%, 17.3%, 10.4%, 2.3%)
+    const pctFiber = ref<number>(70.0);
+    const pctEnergy = ref<number>(17.3);
+    const pctProtein = ref<number>(10.4);
+    const pctActivator = ref<number>(2.3);
+
+    const activePreset = ref<'standard' | 'kaliwedi' | 'custom'>('standard');
+
+    const applyPreset = (preset: 'standard' | 'kaliwedi') => {
+      activePreset.value = preset;
+      if (preset === 'standard') {
+        pctFiber.value = 70.0;
+        pctEnergy.value = 17.3;
+        pctProtein.value = 10.4;
+        pctActivator.value = 2.3;
+      } else if (preset === 'kaliwedi') {
+        pctFiber.value = 75.0;
+        pctEnergy.value = 14.0;
+        pctProtein.value = 0.0;
+        pctActivator.value = 6.0;
+      }
+    };
+
+    const totalPctSum = computed(() => {
+      return (Number(pctFiber.value) || 0) + (Number(pctEnergy.value) || 0) + (Number(pctProtein.value) || 0) + (Number(pctActivator.value) || 0);
+    });
+
     return () => (
       <>
         {!isKonversi.value ? (
@@ -314,8 +349,104 @@ export default defineComponent({
           </>
         ) : (
           <>
-            <PencatatanField label="Sumber Serat Kasar (60-70%) (Bisa centang lebih dari 1)" colClass="col-12" required>
-              <div class="d-flex flex-column gap-2 mt-2">
+            <div class="col-12 mb-3">
+              <label class="form-label fw-bold text-dark mb-1" style={{ fontSize: '0.9rem' }}>
+                ⚙️ Opsi Preset Formulasi Persentase
+              </label>
+              <div class="d-flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="btn btn-sm rounded-pill px-3 py-1.5 transition-all"
+                  style={activePreset.value === 'standard' ? {
+                    backgroundColor: 'var(--color-primary, #3d2f24)',
+                    color: '#ffffff',
+                    border: '1.5px solid var(--color-primary, #3d2f24)',
+                    fontWeight: '600'
+                  } : {
+                    backgroundColor: '#ffffff',
+                    color: 'var(--color-primary, #3d2f24)',
+                    border: '1.5px solid #d4c4b0',
+                    fontWeight: '500'
+                  }}
+                  onClick={() => applyPreset('standard')}
+                >
+                   Standar Complete Feed (70:17:10:3)
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm rounded-pill px-3 py-1.5 transition-all"
+                  style={activePreset.value === 'kaliwedi' ? {
+                    backgroundColor: 'var(--color-primary, #3d2f24)',
+                    color: '#ffffff',
+                    border: '1.5px solid var(--color-primary, #3d2f24)',
+                    fontWeight: '600'
+                  } : {
+                    backgroundColor: '#ffffff',
+                    color: 'var(--color-primary, #3d2f24)',
+                    border: '1.5px solid #d4c4b0',
+                    fontWeight: '500'
+                  }}
+                  onClick={() => applyPreset('kaliwedi')}
+                >
+                   Praktik Kaliwedi (75:14:0:6)
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm rounded-pill px-3 py-1.5 transition-all"
+                  style={activePreset.value === 'custom' ? {
+                    backgroundColor: 'var(--color-primary, #3d2f24)',
+                    color: '#ffffff',
+                    border: '1.5px solid var(--color-primary, #3d2f24)',
+                    fontWeight: '600'
+                  } : {
+                    backgroundColor: '#ffffff',
+                    color: 'var(--color-primary, #3d2f24)',
+                    border: '1.5px solid #d4c4b0',
+                    fontWeight: '500'
+                  }}
+                  onClick={() => { activePreset.value = 'custom'; }}
+                >
+                  ✏️ Formulasi Kustom (%)
+                </button>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                <span class="small text-muted">
+                  {activePreset.value === 'standard' && 'Menggunakan acuan nutrisi pakan lengkap (TMR).'}
+                  {activePreset.value === 'kaliwedi' && 'Menggunakan acuan hasil pelatihan & praktik lapangan Desa Kaliwedi.'}
+                  {activePreset.value === 'custom' && 'Masukkan persentase (%) kustom di masing-masing kelompok bahan.'}
+                </span>
+                <span 
+                  class="badge rounded-pill px-2.5 py-1.5 fw-bold"
+                  style={{
+                    backgroundColor: Math.abs(totalPctSum.value - 100) < 0.1 ? '#2d6a4f' : '#c97a2b',
+                    color: '#ffffff',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  Total Persentase: {totalPctSum.value.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
+            <PencatatanField label="Sumber Serat Kasar / Hijauan" colClass="col-12" required>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="small fw-bold text-secondary">Persentase Target (%):</span>
+                <input
+                  type="number"
+                  class="form-control form-control-sm text-end fw-bold"
+                  style={{ width: '90px', borderRadius: '8px', border: '1.5px solid #d4c4b0', color: 'var(--color-primary, #3d2f24)' }}
+                  value={pctFiber.value}
+                  onInput={(e: any) => {
+                    pctFiber.value = parseFloat(e.target.value) || 0;
+                    activePreset.value = 'custom';
+                  }}
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+                <span class="small text-muted">%</span>
+              </div>
+              <div class="d-flex flex-column gap-2 mt-1">
                 {fiberOptions.value.map((opt: any) => {
                   const isActive = isFiberSourceSelected(opt.value);
                   return (
@@ -343,8 +474,25 @@ export default defineComponent({
               </div>
             </PencatatanField>
 
-            <PencatatanField label="Sumber Karbohidrat dan Energi (10-20%) (Bisa centang lebih dari 1)" colClass="col-12" required>
-              <div class="d-flex flex-column gap-2 mt-2">
+            <PencatatanField label="Sumber Karbohidrat dan Energi" colClass="col-12" required>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="small fw-bold text-secondary">Persentase Target (%):</span>
+                <input
+                  type="number"
+                  class="form-control form-control-sm text-end fw-bold"
+                  style={{ width: '90px', borderRadius: '8px', border: '1.5px solid #d4c4b0', color: 'var(--color-primary, #3d2f24)' }}
+                  value={pctEnergy.value}
+                  onInput={(e: any) => {
+                    pctEnergy.value = parseFloat(e.target.value) || 0;
+                    activePreset.value = 'custom';
+                  }}
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+                <span class="small text-muted">%</span>
+              </div>
+              <div class="d-flex flex-column gap-2 mt-1">
                 {energyOptions.value.map((opt: any) => {
                   const isActive = isEnergySourceSelected(opt.value);
                   return (
@@ -372,8 +520,25 @@ export default defineComponent({
               </div>
             </PencatatanField>
 
-            <PencatatanField label="Sumber Protein/Konsentrat (10%) (Bisa centang lebih dari 1)" colClass="col-12" required>
-              <div class="d-flex flex-column gap-2 mt-2">
+            <PencatatanField label="Sumber Protein / Konsentrat" colClass="col-12">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="small fw-bold text-secondary">Persentase Target (%):</span>
+                <input
+                  type="number"
+                  class="form-control form-control-sm text-end fw-bold"
+                  style={{ width: '90px', borderRadius: '8px', border: '1.5px solid #d4c4b0', color: 'var(--color-primary, #3d2f24)' }}
+                  value={pctProtein.value}
+                  onInput={(e: any) => {
+                    pctProtein.value = parseFloat(e.target.value) || 0;
+                    activePreset.value = 'custom';
+                  }}
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+                <span class="small text-muted">%</span>
+              </div>
+              <div class="d-flex flex-column gap-2 mt-1">
                 {proteinOptions.value.map((opt: any) => {
                   const isActive = isProteinSourceSelected(opt.value);
                   return (
@@ -401,8 +566,25 @@ export default defineComponent({
               </div>
             </PencatatanField>
 
-            <PencatatanField label="Aktivator Fermentasi & Mineral (2.3%) (Bisa centang lebih dari 1)" colClass="col-12" required>
-              <div class="d-flex flex-column gap-2 mt-2">
+            <PencatatanField label="Aktivator Fermentasi & Mineral" colClass="col-12" required>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="small fw-bold text-secondary">Persentase Target (%):</span>
+                <input
+                  type="number"
+                  class="form-control form-control-sm text-end fw-bold"
+                  style={{ width: '90px', borderRadius: '8px', border: '1.5px solid #d4c4b0', color: 'var(--color-primary, #3d2f24)' }}
+                  value={pctActivator.value}
+                  onInput={(e: any) => {
+                    pctActivator.value = parseFloat(e.target.value) || 0;
+                    activePreset.value = 'custom';
+                  }}
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+                <span class="small text-muted">%</span>
+              </div>
+              <div class="d-flex flex-column gap-2 mt-1">
                 {activatorOptions.value.map((opt: any) => {
                   const isActive = isActivatorSourceSelected(opt.value);
                   return (
@@ -455,13 +637,13 @@ export default defineComponent({
 
                       const rendering = [];
 
-                      // Fiber details (65% or 70.0% of target)
-                      if (selectedFiber.length > 0) {
-                        const totalFiber = targetQty * 0.70;
+                      // Fiber details
+                      if (selectedFiber.length > 0 && pctFiber.value > 0) {
+                        const totalFiber = targetQty * (pctFiber.value / 100);
                         const qtyPerItem = totalFiber / selectedFiber.length;
                         rendering.push(
                           <div class="col-12" key="fiber_recap">
-                            <span class="text-muted d-block fw-bold">Serat Kasar (70.0%):</span>
+                            <span class="text-muted d-block fw-bold">Serat Kasar / Hijauan ({pctFiber.value.toFixed(1)}%):</span>
                             {selectedFiber.map(name => (
                               <div class="ps-2 py-1 border-bottom" key={name}>
                                 🌿 <span class="fw-bold">{name}</span>: <span class="text-success fw-bold">{qtyPerItem.toFixed(2)} kg</span>
@@ -471,13 +653,13 @@ export default defineComponent({
                         );
                       }
 
-                      // Energy details (17.3% of target)
-                      if (selectedEnergy.length > 0) {
-                        const totalEnergy = targetQty * 0.173;
+                      // Energy details
+                      if (selectedEnergy.length > 0 && pctEnergy.value > 0) {
+                        const totalEnergy = targetQty * (pctEnergy.value / 100);
                         const qtyPerItem = totalEnergy / selectedEnergy.length;
                         rendering.push(
                           <div class="col-12 border-top pt-2 mt-2" key="energy_recap">
-                            <span class="text-muted d-block fw-bold">Energi / Karbohidrat (17.3%):</span>
+                            <span class="text-muted d-block fw-bold">Sumber Energi / Karbohidrat ({pctEnergy.value.toFixed(1)}%):</span>
                             {selectedEnergy.map(name => (
                               <div class="ps-2 py-1 border-bottom" key={name}>
                                 🌾 <span class="fw-bold">{name}</span>: <span class="text-primary fw-bold">{qtyPerItem.toFixed(2)} kg</span>
@@ -487,13 +669,13 @@ export default defineComponent({
                         );
                       }
 
-                      // Protein details (10.4% of target)
-                      if (selectedProtein.length > 0) {
-                        const totalProtein = targetQty * 0.104;
+                      // Protein details
+                      if (selectedProtein.length > 0 && pctProtein.value > 0) {
+                        const totalProtein = targetQty * (pctProtein.value / 100);
                         const qtyPerItem = totalProtein / selectedProtein.length;
                         rendering.push(
                           <div class="col-12 border-top pt-2 mt-2" key="protein_recap">
-                            <span class="text-muted d-block fw-bold">Protein / Konsentrat (10.4%):</span>
+                            <span class="text-muted d-block fw-bold">Sumber Protein / Konsentrat ({pctProtein.value.toFixed(1)}%):</span>
                             {selectedProtein.map(name => (
                               <div class="ps-2 py-1 border-bottom" key={name}>
                                 🫘 <span class="fw-bold">{name}</span>: <span class="text-primary fw-bold">{qtyPerItem.toFixed(2)} kg</span>
@@ -503,13 +685,13 @@ export default defineComponent({
                         );
                       }
 
-                      // Activator details (2.3% of target)
-                      if (selectedActivator.length > 0) {
-                        const totalActivator = targetQty * 0.023;
+                      // Activator details
+                      if (selectedActivator.length > 0 && pctActivator.value > 0) {
+                        const totalActivator = targetQty * (pctActivator.value / 100);
                         const qtyPerItem = totalActivator / selectedActivator.length;
                         rendering.push(
                           <div class="col-12 border-top pt-2 mt-2" key="activator_recap">
-                            <span class="text-muted d-block fw-bold">Aktivator & Mineral (2.3%):</span>
+                            <span class="text-muted d-block fw-bold">Aktivator & Mineral ({pctActivator.value.toFixed(1)}%):</span>
                             {selectedActivator.map(name => (
                               <div class="ps-2 py-1 border-bottom" key={name}>
                                 🧂 <span class="fw-bold">{name}</span>: <span class="text-primary fw-bold">{qtyPerItem.toFixed(2)} kg</span>

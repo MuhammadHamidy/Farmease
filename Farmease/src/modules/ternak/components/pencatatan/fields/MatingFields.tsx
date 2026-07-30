@@ -1,4 +1,4 @@
-import { defineComponent, computed, ref, onMounted, watch } from 'vue';
+import { defineComponent, computed, ref, onMounted, watch, Teleport } from 'vue';
 import type { PropType } from 'vue';
 import PencatatanField from '../PencatatanField';
 import PencatatanInput from '../PencatatanInput';
@@ -8,6 +8,7 @@ import { sheep, weightRecords } from '@/store/livestock';
 import { cagesList, cageSession, activePencatatanForm } from '@/store/navigation';
 import { metadataEnums, pencatatanSubmissions } from '@/store/operatorAdmin';
 import type { PencatatanFormItem } from '../PencatatanTypeFields';
+import { formatGender, formatSheepStatus, formatMatingReadiness } from '@/shared/utils/i18nFormatters';
 
 export default defineComponent({
   name: 'MatingFields',
@@ -28,6 +29,8 @@ export default defineComponent({
 
     const activeMatings = ref<any[]>([]);
     const isLoadingMatings = ref(false);
+    const commonAncestorsList = ref<any[]>([]);
+    const commonAncestorSet = ref<Set<string>>(new Set());
 
     const fetchActiveMatings = async () => {
       try {
@@ -60,6 +63,34 @@ export default defineComponent({
     const getBirahiStatus = (s: any): string => {
       if (!s) return '—';
 
+      // 1. Cek Umur Minimal (Betina: 8 bulan, Jantan: 12 bulan)
+      const birthDate = s.birth_date ? new Date(s.birth_date) : null;
+      if (birthDate) {
+        const now = new Date();
+        const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
+        const minAge = 8;
+        if (ageInMonths < minAge) {
+          return 'Tidak (Belum Cukup Umur)';
+        }
+      }
+
+      // 2. Cek Kondisi Kesehatan / Kehamilan
+      if (s.gender?.toLowerCase() === 'jantan') {
+        if (s.status === 'Sakit' || s.status === 'sakit') {
+          return 'Tidak (Sedang Sakit)';
+        }
+        const weightStr = getSheepWeight(s);
+        const weightNum = parseFloat(weightStr);
+        if (weightNum > 0 && weightNum < 30.0) {
+          return `Tidak (Berat ${weightNum} kg < 30 kg)`;
+        }
+      } else {
+        if (s.status === 'Hamil' || s.status === 'hamil') {
+          return 'Tidak (Sedang Hamil)';
+        }
+      }
+
+      // 3. Cek Log Pengecekan Birahi Terakhir
       let hasCheckedEstrus = false;
       let latestEstrusCheck: { hasil: string; time: number } | null = null;
 
@@ -85,48 +116,21 @@ export default defineComponent({
         return 'Tidak Birahi';
       }
 
-      if (s.gender?.toLowerCase() === 'jantan') {
-        if (s.status === 'Sakit' || s.status === 'sakit') {
-          return 'Tidak (Sedang Sakit)';
-        }
-        const birthDate = s.birth_date ? new Date(s.birth_date) : null;
-        if (birthDate) {
-          const now = new Date();
-          const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
-          if (ageInMonths < 12) {
-            return 'Tidak (Belum Cukup Umur)';
-          }
-        }
-        const weightStr = getSheepWeight(s);
-        const weightNum = parseFloat(weightStr);
-        if (weightNum > 0 && weightNum < 30.0) {
-          return `Tidak (Berat ${weightNum} kg < 30 kg)`;
-        }
-        const matingStatus = s.mating_status || '';
-        if (matingStatus.includes('Hamil') || matingStatus.includes('hamil')) {
-          return 'Belum Pencatatan Birahi';
-        }
-        return matingStatus || 'Belum Pencatatan Birahi';
-      }
-
-      if (s.status === 'Hamil' || s.status === 'hamil') {
-        return 'Tidak (Sedang Hamil)';
-      }
-      const birthDate = s.birth_date ? new Date(s.birth_date) : null;
-      if (birthDate) {
+      const backendMatingStatus = s.mating_status || '';
+      if (backendMatingStatus === 'Tidak (Belum Cukup Umur)' && birthDate) {
         const now = new Date();
         const ageInMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + (now.getMonth() - birthDate.getMonth());
-        const minAge = 8;
-        if (ageInMonths < minAge) {
-          return 'Tidak (Belum Cukup Umur)';
+        if (ageInMonths >= 8) {
+          return s.gender?.toLowerCase() === 'jantan' ? 'Siap Kawin' : 'Belum Pencatatan Birahi';
         }
       }
-      return 'Belum Pencatatan Birahi';
+
+      return s.gender?.toLowerCase() === 'jantan' ? (backendMatingStatus || 'Siap Kawin') : 'Belum Pencatatan Birahi';
     };
 
     const checkIsSheepBirahi = (s: any) => {
       const localStatus = getBirahiStatus(s);
-      if (localStatus === 'Ya (Siap Kawin / Birahi)') return true;
+      if (localStatus === 'Ya (Siap Kawin / Birahi)' || localStatus === 'Siap Kawin') return true;
       if (localStatus === 'Tidak Birahi' || localStatus === 'Belum Pencatatan Birahi') return false;
       return !!s.is_ready_to_mate;
     };
@@ -136,6 +140,8 @@ export default defineComponent({
     });
 
     const selectedPartnerSheep = computed(() => {
+      const isIB = f().metoda === 'ib' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan';
+      if (isIB && f().sumberPejantan === 'eksternal') return null;
       const base = selectedBaseSheep.value;
       if (!base) return null;
       const partnerId = base.gender === 'betina' ? props.form.idPejantan : props.form.targetId;
@@ -299,12 +305,7 @@ export default defineComponent({
 
       if (formName === 'Kawin Alam' || formName === 'Kawin Alami') {
         return list
-          .filter(s => {
-            if (s.gender === 'betina') {
-              return checkIsSheepBirahi(s) && !isMated(s);
-            }
-            return checkIsSheepBirahi(s);
-          })
+          .filter(s => s.gender === 'betina' && checkIsSheepBirahi(s) && !isMated(s))
           .map(s => ({
             value: s.id,
             label: `${s.code} ${s.name}`
@@ -328,17 +329,16 @@ export default defineComponent({
     const partnerOptions = computed(() => {
       const base = selectedBaseSheep.value;
       if (!base) return [];
-      const activeCode = cageSession.value?.code || '';
       if (base.gender === 'betina') {
         return sheep.value
-          .filter(s => s.gender === 'jantan' && s.cage_code !== activeCode && !['Mati', 'Terjual', 'Disembelih'].includes(s.status) && checkIsSheepBirahi(s))
+          .filter(s => s.gender === 'jantan' && !['Mati', 'Terjual', 'Disembelih'].includes(s.status) && checkIsSheepBirahi(s))
           .map(s => ({
             value: s.id,
             label: `${s.code} ${s.name}`
           }));
       } else {
         return sheep.value
-          .filter(s => s.gender === 'betina' && s.cage_code !== activeCode && !['Mati', 'Terjual', 'Disembelih'].includes(s.status) && checkIsSheepBirahi(s))
+          .filter(s => s.gender === 'betina' && !['Mati', 'Terjual', 'Disembelih'].includes(s.status) && checkIsSheepBirahi(s))
           .map(s => ({
             value: s.id,
             label: `${s.code} ${s.name}`
@@ -388,7 +388,7 @@ export default defineComponent({
       }
     });
 
-    const renderCompactTree = (node: any, level = 0, maxDepth = 3): any => {
+    const renderCompactTree = (node: any, level = 0, maxDepth = 5): any => {
       if (!node || (!node.id_sheep && !node.sheep_code) || level >= maxDepth) return null;
 
       const isRoot = level === 0;
@@ -397,24 +397,44 @@ export default defineComponent({
         ? '' 
         : (node.gender === 'jantan' ? 'Bapak' : 'Ibu');
 
+      const isCommonAncestor = commonAncestorSet.value.has(String(node.sheep_code || '').toUpperCase()) ||
+        commonAncestorSet.value.has(String(node.id_sheep || '').toUpperCase()) ||
+        commonAncestorSet.value.has(String(node.sheep_name || '').toUpperCase());
+
       return (
-        <div class="position-relative mt-2 text-start" style={{ fontSize: '0.85rem' }}>
-          <div class="d-inline-flex align-items-center gap-2 py-1.5 px-3 rounded-3 bg-white border shadow-sm" style={{ borderColor: '#e2e8f0' }}>
-            <span style={{ fontSize: '0.95rem' }}>{genderSymbol}</span>
-            {relationLabel && <span class="text-secondary fw-semibold small me-1">{relationLabel}:</span>}
-            <span class="fw-bold text-dark">{node.sheep_code || '—'}</span>
+        <div class="position-relative mt-1 text-start" style={{ fontSize: '0.78rem' }}>
+          <div 
+            class="d-inline-flex flex-wrap align-items-center gap-1 py-1 px-2.5 rounded-3 border shadow-sm" 
+            style={{ 
+              borderColor: isCommonAncestor ? '#F59E0B' : '#e2e8f0',
+              backgroundColor: isCommonAncestor ? '#FEF3C7' : '#FFFFFF',
+              boxShadow: isCommonAncestor ? '0 2px 6px rgba(245, 158, 11, 0.25)' : undefined,
+              maxWidth: '100%',
+              transition: 'all 0.2s'
+            }}
+          >
+            <span style={{ fontSize: '0.85rem' }}>{genderSymbol}</span>
+            {relationLabel && <span class="text-secondary fw-semibold small me-0.5" style={{ fontSize: '0.72rem' }}>{relationLabel}:</span>}
+            <span class={['fw-bold', isCommonAncestor ? 'text-warning-dark' : 'text-dark']} style={isCommonAncestor ? { color: '#92400E' } : {}}>
+              {node.sheep_code || '—'}
+            </span>
             {node.sheep_name && (
-              <span class="text-muted text-truncate ms-1" style={{ maxWidth: '120px' }} title={node.sheep_name}>
+              <span class="text-muted text-truncate ms-0.5" style={{ maxWidth: '85px' }} title={node.sheep_name}>
                 ({node.sheep_name})
+              </span>
+            )}
+            {isCommonAncestor && (
+              <span class="badge rounded-pill bg-warning text-dark ms-0.5 fw-extrabold" style={{ fontSize: '0.62rem', padding: '0.25em 0.5em', letterSpacing: '0.2px' }}>
+                ⭐ Leluhur Bersama
               </span>
             )}
           </div>
 
           {((node.father && (node.father.id_sheep || node.father.sheep_code)) || (node.mother && (node.mother.id_sheep || node.mother.sheep_code))) && (
             <div 
-              class="ms-3 border-start ps-3 mt-1 position-relative" 
+              class="ms-2 border-start ps-2 mt-1 position-relative" 
               style={{ 
-                borderColor: '#cbd5e1',
+                borderColor: isCommonAncestor ? '#F59E0B' : '#cbd5e1',
                 borderLeftWidth: '1.5px',
                 borderLeftStyle: 'dashed'
               }}
@@ -427,11 +447,14 @@ export default defineComponent({
       );
     };
 
-    watch([() => props.form.targetId, () => props.form.idPejantan], ([id1Str, id2Str]) => {
-      if (!id1Str || !id2Str) {
+    watch([() => props.form.targetId, () => props.form.idPejantan, () => f().sumberPejantan], ([id1Str, id2Str, sumber]) => {
+      const isIB = f().metoda === 'ib' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan';
+      if (!id1Str || !id2Str || (isIB && sumber === 'eksternal')) {
         inbreedingResult.value = null;
         maleSilsilah.value = null;
         femaleSilsilah.value = null;
+        commonAncestorsList.value = [];
+        commonAncestorSet.value = new Set();
         return;
       }
       
@@ -457,6 +480,8 @@ export default defineComponent({
           };
           maleSilsilah.value = null;
           femaleSilsilah.value = null;
+          commonAncestorsList.value = [];
+          commonAncestorSet.value = new Set();
           return;
         }
 
@@ -468,6 +493,16 @@ export default defineComponent({
           ]);
           maleSilsilah.value = maleSil;
           femaleSilsilah.value = femaleSil;
+
+          const commonList = res?.common_ancestors || res?.commonAncestors || [];
+          commonAncestorsList.value = commonList;
+          const cSet = new Set<string>();
+          commonList.forEach((c: any) => {
+            if (c.id_sheep) cSet.add(String(c.id_sheep).toUpperCase());
+            if (c.sheep_code) cSet.add(String(c.sheep_code).toUpperCase());
+            if (c.sheep_name) cSet.add(String(c.sheep_name).toUpperCase());
+          });
+          commonAncestorSet.value = cSet;
 
           const flag = res?.inbreeding_flag ?? false;
           const percentage = res?.inbreeding_percentage ?? 0.0;
@@ -571,7 +606,7 @@ export default defineComponent({
               <div class="row g-2">
                 <div class="col-6">
                   <span class="text-muted small d-block">Jenis Kelamin</span>
-                  <span class="fw-bold">{selectedBaseSheep.value.gender === 'jantan' ? 'Jantan (Pejantan)' : 'Betina (Indukan)'}</span>
+                  <span class="fw-bold">{formatGender(selectedBaseSheep.value.gender)}</span>
                 </div>
                 <div class="col-6">
                   <span class="text-muted small d-block">Umur</span>
@@ -587,15 +622,15 @@ export default defineComponent({
                 </div>
                 <div class="col-12 mt-1">
                   <span class="text-muted small d-block">Masa Birahi / Siap Kawin</span>
-                  <span class={['fw-bold', (getBirahiStatus(selectedBaseSheep.value).startsWith('Ya') || getBirahiStatus(selectedBaseSheep.value).includes('Siap') || getBirahiStatus(selectedBaseSheep.value).includes('Birahi')) ? 'text-success' : 'text-danger']}>
-                    {getBirahiStatus(selectedBaseSheep.value)}
+                  <span class={['fw-bold', (formatMatingReadiness(getBirahiStatus(selectedBaseSheep.value)).startsWith('Ya') || formatMatingReadiness(getBirahiStatus(selectedBaseSheep.value)).includes('Siap') || formatMatingReadiness(getBirahiStatus(selectedBaseSheep.value)).includes('Birahi')) ? 'text-success' : 'text-danger']}>
+                    {formatMatingReadiness(getBirahiStatus(selectedBaseSheep.value))}
                   </span>
                 </div>
-                {selectedBaseSheep.value.gender === 'betina' && (
+                {(selectedBaseSheep.value.gender === 'betina' || selectedBaseSheep.value.gender === 'female') && (
                   <div class="col-12 mt-1">
                     <span class="text-muted small d-block">Status Kehamilan</span>
-                    <span class={['fw-bold', selectedBaseSheep.value.status === 'Hamil' ? 'text-warning' : '']}>
-                      {selectedBaseSheep.value.status === 'Hamil' ? 'Hamil' : 'Tidak Hamil'}
+                    <span class={['fw-bold', (selectedBaseSheep.value.status === 'Hamil' || selectedBaseSheep.value.status === 'pregnant') ? 'text-warning' : '']}>
+                      {(selectedBaseSheep.value.status === 'Hamil' || selectedBaseSheep.value.status === 'pregnant') ? 'Hamil' : 'Tidak Hamil'}
                     </span>
                   </div>
                 )}
@@ -841,7 +876,15 @@ export default defineComponent({
                                 value="internal"
                                 name={`sumberPejantan-${f().id}`}
                                 checked={f().sumberPejantan !== 'eksternal'}
-                                onChange={() => { f().sumberPejantan = 'internal'; }}
+                                onChange={() => {
+                                  f().sumberPejantan = 'internal';
+                                  f().donorName = '';
+                                  f().donorOrigin = '';
+                                  f().idPejantan = '';
+                                  inbreedingResult.value = null;
+                                  maleSilsilah.value = null;
+                                  femaleSilsilah.value = null;
+                                }}
                               />
                               <span>Pejantan Internal</span>
                             </label>
@@ -851,7 +894,13 @@ export default defineComponent({
                                 value="eksternal"
                                 name={`sumberPejantan-${f().id}`}
                                 checked={f().sumberPejantan === 'eksternal'}
-                                onChange={() => { f().sumberPejantan = 'eksternal'; }}
+                                onChange={() => {
+                                  f().sumberPejantan = 'eksternal';
+                                  f().idPejantan = '';
+                                  inbreedingResult.value = null;
+                                  maleSilsilah.value = null;
+                                  femaleSilsilah.value = null;
+                                }}
                               />
                               <span>Donor Eksternal (Straw)</span>
                             </label>
@@ -969,24 +1018,42 @@ export default defineComponent({
                         </span>
                         <div class="flex-grow-1 text-start">
                           <span class="fw-bold d-block mb-1">{inbreedingResult.value.text}</span>
+
+                          {/* Highlight Leluhur Bersama Summary Bar */}
+                          {commonAncestorsList.value.length > 0 && (
+                            <div class="mt-2 p-2.5 rounded-3 border d-flex align-items-center gap-2 flex-wrap" style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E', fontSize: '0.78rem' }}>
+                              <span class="fw-bold">⭐ Leluhur Bersama (Terhubung di Jalur Pejantan & Indukan):</span>
+                              <div class="d-flex gap-1 flex-wrap">
+                                {commonAncestorsList.value.map((c: any) => (
+                                  <span class="badge rounded-pill bg-warning text-dark px-2.5 py-1 fw-extrabold" key={c.id_sheep || c.sheep_code} style={{ fontSize: '0.72rem' }}>
+                                    🔗 {c.sheep_name || c.sheep_code}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           
                           {/* Lineage Trees Side-by-Side */}
                           {(!inbreedingResult.value.error && (maleSilsilah.value || femaleSilsilah.value)) && (
                             <div class="row mt-3 g-3">
                               <div class="col-md-6">
-                                <div class="p-3 rounded-4 h-100 bg-white bg-opacity-70 border border-white-30" style={{ backdropFilter: 'blur(4px)' }}>
+                                <div class="p-3 rounded-4 h-100 bg-white bg-opacity-80 border border-white-30" style={{ backdropFilter: 'blur(4px)', overflowX: 'auto' }}>
                                   <div class="fw-bold mb-2 text-dark d-flex align-items-center gap-1" style={{ fontSize: '0.85rem' }}>
                                     <span>♂️ Silsilah Pejantan</span>
                                   </div>
-                                  {maleSilsilah.value?.silsilah ? renderCompactTree(maleSilsilah.value.silsilah) : (maleSilsilah.value ? renderCompactTree(maleSilsilah.value) : <span class="text-muted">Tidak ada silsilah.</span>)}
+                                  <div style={{ minWidth: '220px' }}>
+                                    {maleSilsilah.value?.silsilah ? renderCompactTree(maleSilsilah.value.silsilah) : (maleSilsilah.value ? renderCompactTree(maleSilsilah.value) : <span class="text-muted">Tidak ada silsilah.</span>)}
+                                  </div>
                                 </div>
                               </div>
                               <div class="col-md-6">
-                                <div class="p-3 rounded-4 h-100 bg-white bg-opacity-70 border border-white-30" style={{ backdropFilter: 'blur(4px)' }}>
+                                <div class="p-3 rounded-4 h-100 bg-white bg-opacity-80 border border-white-30" style={{ backdropFilter: 'blur(4px)', overflowX: 'auto' }}>
                                   <div class="fw-bold mb-2 text-dark d-flex align-items-center gap-1" style={{ fontSize: '0.85rem' }}>
                                     <span>♀️ Silsilah Indukan</span>
                                   </div>
-                                  {femaleSilsilah.value?.silsilah ? renderCompactTree(femaleSilsilah.value.silsilah) : (femaleSilsilah.value ? renderCompactTree(femaleSilsilah.value) : <span class="text-muted">Tidak ada silsilah.</span>)}
+                                  <div style={{ minWidth: '220px' }}>
+                                    {femaleSilsilah.value?.silsilah ? renderCompactTree(femaleSilsilah.value.silsilah) : (femaleSilsilah.value ? renderCompactTree(femaleSilsilah.value) : <span class="text-muted">Tidak ada silsilah.</span>)}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1039,118 +1106,112 @@ export default defineComponent({
 
         {/* COI Details Pop-up Modal */}
         {showCOIInfoModal.value && (
-          <div class="peternakan-modal-overlay animate-fade-in" style={{ zIndex: 1100 }} onClick={() => { showCOIInfoModal.value = false; }}>
-            <div class="peternakan-modal-card animate-fade-in-up" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
-              <div class="peternakan-modal-header">
-                <button type="button" class="peternakan-modal-close" onClick={() => { showCOIInfoModal.value = false; }}>
-                  <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-                </button>
-                <div class="peternakan-modal-title">Perhitungan Inbreeding (COI)</div>
-              </div>
-              <div class="peternakan-modal-body">
-                <div class="p-3 rounded-4 bg-light border mb-3">
-                  <div class="fw-extrabold text-dark mb-2" style={{ fontSize: '0.9rem' }}>📐 Rumus Wright's Coefficient of Inbreeding (COI)</div>
-                  <div class="font-monospace text-secondary small bg-white p-2 rounded mb-2 border text-center" style={{ fontSize: '0.85rem' }}>
-                    F_X = Σ [ (1/2)^(n + m + 1) * (1 + F_A) ]
-                  </div>
-                  <div class="text-muted" style={{ fontSize: '0.78rem', lineHeight: '1.4' }}>
-                    Di mana <strong>n</strong> dan <strong>m</strong> adalah jumlah generasi dari induk jantan dan betina ke leluhur bersama (common ancestor) <strong>A</strong>, dan <strong>F_A</strong> adalah inbreeding coefficient dari leluhur tersebut.
-                  </div>
+          <Teleport to="body">
+            <div class="peternakan-modal-overlay animate-fade-in" style={{ zIndex: 1200 }} onClick={() => { showCOIInfoModal.value = false; }}>
+              <div class="peternakan-modal-card animate-fade-in-up" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
+                <div class="peternakan-modal-header">
+                  <button type="button" class="peternakan-modal-close" onClick={() => { showCOIInfoModal.value = false; }}>
+                    <img src="/icon/close-cancel/grey-24.svg" alt="Tutup" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                  </button>
+                  <div class="peternakan-modal-title">Perhitungan Inbreeding (COI)</div>
                 </div>
+                <div class="peternakan-modal-body">
+                  <div class="p-3 rounded-4 bg-light border mb-3">
+                    <div class="fw-extrabold text-dark mb-2" style={{ fontSize: '0.9rem' }}>📐 Rumus Wright's Coefficient of Inbreeding (COI)</div>
+                    <div class="font-monospace text-secondary small bg-white p-2 rounded mb-2 border text-center" style={{ fontSize: '0.85rem' }}>
+                      F_X = Σ [ (1/2)^(n + m + 1) * (1 + F_A) ]
+                    </div>
+                    <div class="text-muted" style={{ fontSize: '0.78rem', lineHeight: '1.4' }}>
+                      Di mana <strong>n</strong> dan <strong>m</strong> adalah jumlah generasi dari induk jantan dan betina ke leluhur bersama (common ancestor) <strong>A</strong>, dan <strong>F_A</strong> adalah inbreeding coefficient dari leluhur tersebut.
+                    </div>
+                  </div>
 
-                <div class="fw-extrabold text-dark mb-2" style={{ fontSize: '0.9rem' }}>🚦 Kategori Risiko Inbreeding:</div>
-                <div class="d-flex flex-column gap-2 text-dark mb-3" style={{ fontSize: '0.8rem' }}>
-                  <div class="d-flex align-items-center justify-content-between p-2 rounded bg-success bg-opacity-10 text-success border border-success-subtle">
-                    <span class="fw-bold">Safe (Aman)</span>
-                    <span>&lt; 3.125%</span>
+                  <div class="fw-extrabold text-dark mb-2" style={{ fontSize: '0.9rem' }}>🚦 Kategori Risiko Inbreeding:</div>
+                  <div class="d-flex flex-column gap-2 text-dark mb-3" style={{ fontSize: '0.8rem' }}>
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-success bg-opacity-10 text-success border border-success-subtle">
+                      <span class="fw-bold">Safe (Aman)</span>
+                      <span>&lt; 3.125%</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-info bg-opacity-10 text-info border border-info-subtle">
+                      <span class="fw-bold">Low (Rendah)</span>
+                      <span>3.125% - 6.25%</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-warning bg-opacity-10 text-warning border border-warning-subtle">
+                      <span class="fw-bold">Ambang Batas</span>
+                      <span>6.25% - 12.5%</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-danger bg-opacity-10 text-danger border border-danger-subtle">
+                      <span class="fw-bold">High (Tinggi)</span>
+                      <span>12.5% - 25%</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-danger text-white border border-danger">
+                      <span class="fw-bold text-white">Very High</span>
+                      <span class="fw-bold text-white">&gt;= 25%</span>
+                    </div>
                   </div>
-                  <div class="d-flex align-items-center justify-content-between p-2 rounded bg-info bg-opacity-10 text-info border border-info-subtle">
-                    <span class="fw-bold">Low (Rendah)</span>
-                    <span>3.125% - 6.25%</span>
-                  </div>
-                  <div class="d-flex align-items-center justify-content-between p-2 rounded bg-warning bg-opacity-10 text-warning border border-warning-subtle">
-                    <span class="fw-bold">Ambang Batas</span>
-                    <span>6.25% - 12.5%</span>
-                  </div>
-                  <div class="d-flex align-items-center justify-content-between p-2 rounded bg-danger bg-opacity-10 text-danger border border-danger-subtle">
-                    <span class="fw-bold">High (Tinggi)</span>
-                    <span>12.5% - 25%</span>
-                  </div>
-                  <div class="d-flex align-items-center justify-content-between p-2 rounded bg-danger text-white border border-danger">
-                    <span class="fw-bold text-white">Very High</span>
-                    <span class="fw-bold text-white">&gt;= 25%</span>
-                  </div>
-                </div>
 
-                <div class="fw-extrabold text-dark mb-2" style={{ fontSize: '0.9rem' }}>📋 Acuan Hubungan Kekerabatan & Koefisien F:</div>
-                <div class="table-responsive border rounded-4 bg-white">
-                  <table class="table table-sm table-hover align-middle mb-0" style={{ fontSize: '0.78rem' }}>
-                    <thead class="table-light">
-                      <tr class="text-center font-weight-bold">
-                        <th style={{ width: '40px', fontWeight: 'bold' }}>No</th>
-                        <th style={{ textAlign: 'left', fontWeight: 'bold' }}>Hubungan Kekerabatan</th>
-                        <th style={{ width: '90px', fontWeight: 'bold' }}>Koefisien F</th>
-                        <th style={{ width: '120px', fontWeight: 'bold' }}>Kategori</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td class="text-center text-muted">1</td>
-                        <td>Induk–anak (<em>parent–offspring</em>)</td>
-                        <td class="text-center fw-semibold text-danger">25,00%</td>
-                        <td class="text-center">
-                          <span class="badge bg-danger text-white px-2 py-1" style={{ fontSize: '0.7rem' }}>Sangat Tinggi</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-center text-muted">2</td>
-                        <td>Saudara kandung penuh (<em>full sibling</em>)</td>
-                        <td class="text-center fw-semibold text-danger">25,00%</td>
-                        <td class="text-center">
-                          <span class="badge bg-danger text-white px-2 py-1" style={{ fontSize: '0.7rem' }}>Sangat Tinggi</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-center text-muted">3</td>
-                        <td>Saudara tiri (<em>half sibling</em>)</td>
-                        <td class="text-center fw-semibold text-warning-emphasis">12,50%</td>
-                        <td class="text-center">
-                          <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Tinggi</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-center text-muted">4</td>
-                        <td>Sepupu pertama (<em>first cousin</em>)</td>
-                        <td class="text-center fw-semibold text-info-emphasis">6,25%</td>
-                        <td class="text-center">
-                          <span class="badge bg-warning text-warning-emphasis bg-opacity-10 border border-warning-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Ambang Batas</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-center text-muted">5</td>
-                        <td>Sepupu pertama sekali lepas (<em>first cousin once removed</em>)</td>
-                        <td class="text-center fw-semibold text-success-emphasis">3,13%</td>
-                        <td class="text-center">
-                          <span class="badge bg-info text-info bg-opacity-10 border border-info-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Rendah</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="text-center text-muted">6</td>
-                        <td>Sepupu kedua (<em>second cousin</em>)</td>
-                        <td class="text-center fw-semibold text-muted">1,56%</td>
-                        <td class="text-center">
-                          <span class="badge bg-success text-success bg-opacity-10 border border-success-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Sangat Rendah</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="fw-extrabold text-dark mb-2" style={{ fontSize: '0.9rem' }}>📋 Acuan Hubungan Kekerabatan & Koefisien F:</div>
+                  <div class="table-responsive border rounded-4 bg-white">
+                    <table class="table table-sm table-hover align-middle mb-0" style={{ fontSize: '0.78rem' }}>
+                      <thead class="table-light">
+                        <tr class="text-center font-weight-bold">
+                          <th style={{ width: '40px', fontWeight: 'bold' }}>No</th>
+                          <th style={{ textAlign: 'left', fontWeight: 'bold' }}>Hubungan Kekerabatan</th>
+                          <th style={{ width: '90px', fontWeight: 'bold' }}>Koefisien F</th>
+                          <th style={{ width: '120px', fontWeight: 'bold' }}>Kategori</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="text-center text-muted">1</td>
+                          <td>Induk–anak (<em>parent–offspring</em>)</td>
+                          <td class="text-center fw-semibold text-danger">25,00%</td>
+                          <td class="text-center">
+                            <span class="badge bg-danger text-white px-2 py-1" style={{ fontSize: '0.7rem' }}>Sangat Tinggi</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="text-center text-muted">2</td>
+                          <td>Saudara kandung penuh (<em>full sibling</em>)</td>
+                          <td class="text-center fw-semibold text-danger">25,00%</td>
+                          <td class="text-center">
+                            <span class="badge bg-danger text-white px-2 py-1" style={{ fontSize: '0.7rem' }}>Sangat Tinggi</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="text-center text-muted">3</td>
+                          <td>Saudara tiri (<em>half sibling</em>)</td>
+                          <td class="text-center fw-semibold text-warning-emphasis">12,50%</td>
+                          <td class="text-center">
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Tinggi</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="text-center text-muted">4</td>
+                          <td>Sepupu pertama (<em>first cousin</em>)</td>
+                          <td class="text-center fw-semibold text-warning-emphasis">6,25%</td>
+                          <td class="text-center">
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Ambang Batas</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="text-center text-muted">5</td>
+                          <td>Tidak ada kekerabatan terdekat</td>
+                          <td class="text-center fw-semibold text-success">0,00%</td>
+                          <td class="text-center">
+                            <span class="badge bg-success text-success bg-opacity-10 border border-success-subtle px-2 py-1" style={{ fontSize: '0.7rem' }}>Sangat Rendah</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-              <div class="mt-4 pt-3 border-top border-light text-end">
-                <button type="button" class="peternakan-primary-btn px-4" onClick={() => { showCOIInfoModal.value = false; }}>Tutup</button>
+                <div class="mt-4 pt-3 border-top border-light text-end">
+                  <button type="button" class="peternakan-primary-btn px-4" onClick={() => { showCOIInfoModal.value = false; }}>Tutup</button>
+                </div>
               </div>
             </div>
-          </div>
+          </Teleport>
         )}
       </>
     );
