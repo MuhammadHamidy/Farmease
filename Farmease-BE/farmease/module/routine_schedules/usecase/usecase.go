@@ -9,9 +9,6 @@ import (
 	tasksDomain "github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
-
-
-
 type useCase struct {
 	repo     domain.RoutineScheduleRepository
 	taskRepo tasksDomain.TaskRepository
@@ -24,23 +21,16 @@ func NewUseCase(repo domain.RoutineScheduleRepository, taskRepo tasksDomain.Task
 	}
 }
 
+func (u *useCase) generateForSchedule(ctx context.Context, routineSchedule *domain.RoutineSchedule, todayMidnight time.Time, windowDays int, localLoc *time.Location) {
+	for dayOffset := 0; dayOffset <= windowDays; dayOffset++ {
+		targetDate := todayMidnight.AddDate(0, 0, dayOffset)
 
-
-
-
-
-
-
-func (u *useCase) generateForSchedule(ctx context.Context, rs *domain.RoutineSchedule, todayMidnight time.Time, windowDays int, localLoc *time.Location) {
-	for d := 0; d <= windowDays; d++ {
-		targetDate := todayMidnight.AddDate(0, 0, d)
-
-		if !shouldGenerateTask(rs, targetDate) {
+		if !shouldGenerateTask(routineSchedule, targetDate) {
 			continue
 		}
 
 		// Check if task already exists for this schedule and target date
-		existingTask, err := u.taskRepo.FindByScheduleAndDate(ctx, rs.ID, targetDate)
+		existingTask, err := u.taskRepo.FindByScheduleAndDate(ctx, routineSchedule.ID, targetDate)
 		if err != nil {
 			continue
 		}
@@ -51,8 +41,8 @@ func (u *useCase) generateForSchedule(ctx context.Context, rs *domain.RoutineSch
 
 		// Combine date and start time
 		taskTime := targetDate
-		if rs.StartTime != "" {
-			parts := strings.Split(rs.StartTime, ":")
+		if routineSchedule.StartTime != "" {
+			parts := strings.Split(routineSchedule.StartTime, ":")
 			if len(parts) >= 2 {
 				var hour, min, sec int
 				fmt.Sscanf(parts[0], "%d", &hour)
@@ -65,23 +55,23 @@ func (u *useCase) generateForSchedule(ctx context.Context, rs *domain.RoutineSch
 		}
 
 		assigneeID := ""
-		if rs.IDAccount != nil {
-			assigneeID = *rs.IDAccount
+		if routineSchedule.IDAccount != nil {
+			assigneeID = *routineSchedule.IDAccount
 		}
 
 		newTask := &tasksDomain.Task{
-			Title:       rs.Title,
-			Description: rs.Description,
+			Title:       routineSchedule.Title,
+			Description: routineSchedule.Description,
 			TaskDate:    taskTime,
-			EndTime:     rs.EndTime,
+			EndTime:     routineSchedule.EndTime,
 			Status:      "pending",
-			Priority:    rs.Priority,
+			Priority:    routineSchedule.Priority,
 			IDAccount:   assigneeID,
-			Category:    rs.Category,
-			ScheduleID:  &rs.ID,
-			IDCage:      rs.IDCage,
-			StartTime:   rs.StartTime,
-			Rincian:     rs.Rincian,
+			Category:    routineSchedule.Category,
+			ScheduleID:  &routineSchedule.ID,
+			IDCage:      routineSchedule.IDCage,
+			StartTime:   routineSchedule.StartTime,
+			Rincian:     routineSchedule.Rincian,
 		}
 
 		err = u.taskRepo.StoreTask(ctx, newTask)
@@ -91,11 +81,11 @@ func (u *useCase) generateForSchedule(ctx context.Context, rs *domain.RoutineSch
 	}
 }
 
-func shouldGenerateTask(rs *domain.RoutineSchedule, targetDate time.Time) bool {
+func shouldGenerateTask(routineSchedule *domain.RoutineSchedule, targetDate time.Time) bool {
 	// Normalize StartDate to midnight for date-only comparison
-	rsStartMidnight := time.Date(rs.StartDate.Year(), rs.StartDate.Month(), rs.StartDate.Day(), 0, 0, 0, 0, targetDate.Location())
+	rsStartMidnight := time.Date(routineSchedule.StartDate.Year(), routineSchedule.StartDate.Month(), routineSchedule.StartDate.Day(), 0, 0, 0, 0, targetDate.Location())
 
-	if rs.Frequency == "sekali" {
+	if routineSchedule.Frequency == "sekali" {
 		return sameDate(targetDate, rsStartMidnight)
 	}
 
@@ -105,27 +95,27 @@ func shouldGenerateTask(rs *domain.RoutineSchedule, targetDate time.Time) bool {
 	}
 
 	// Must be before or on end_date (if end_date is set)
-	if rs.EndDate != nil {
-		rsEndMidnight := time.Date(rs.EndDate.Year(), rs.EndDate.Month(), rs.EndDate.Day(), 0, 0, 0, 0, targetDate.Location())
+	if routineSchedule.EndDate != nil {
+		rsEndMidnight := time.Date(routineSchedule.EndDate.Year(), routineSchedule.EndDate.Month(), routineSchedule.EndDate.Day(), 0, 0, 0, 0, targetDate.Location())
 		if targetDate.After(rsEndMidnight) {
 			return false
 		}
 	}
 
-	switch rs.Frequency {
+	switch routineSchedule.Frequency {
 	case "harian":
 		return true
 	case "mingguan":
 		weekday := int32(targetDate.Weekday())
-		for _, w := range rs.DaysOfWeek {
-			if w == weekday {
+		for _, day := range routineSchedule.DaysOfWeek {
+			if day == weekday {
 				return true
 			}
 		}
 		return false
 	case "bulanan":
-		if rs.DayOfMonth != nil {
-			return int32(targetDate.Day()) == *rs.DayOfMonth
+		if routineSchedule.DayOfMonth != nil {
+			return int32(targetDate.Day()) == *routineSchedule.DayOfMonth
 		}
 		return false
 	}

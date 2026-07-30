@@ -8,9 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-
-
-
 type routineScheduleRepository struct {
 	db *pgxpool.Pool
 }
@@ -46,7 +43,7 @@ func NewRoutineScheduleRepository(db *pgxpool.Pool) domain.RoutineScheduleReposi
 	return &routineScheduleRepository{db: db}
 }
 
-func scanRoutineSchedule(rs *domain.RoutineSchedule, rows pgx.Rows) error {
+func scanRoutineSchedule(routineSchedule *domain.RoutineSchedule, rows pgx.Rows) error {
 	var desc, cat, prio, idCage, idAccount, rincian *string
 	var daysOfWeek []int32
 	var dayOfMonth *int32
@@ -54,35 +51,35 @@ func scanRoutineSchedule(rs *domain.RoutineSchedule, rows pgx.Rows) error {
 	var startTimeStr, endTimeStr *string
 
 	err := rows.Scan(
-		&rs.ID, &rs.Title, &desc, &cat, &rs.Frequency, &daysOfWeek, &dayOfMonth,
-		&rs.StartDate, &endDate, &startTimeStr, &endTimeStr, &prio, &idCage,
-		&idAccount, &rincian, &rs.IsActive, &rs.CreatedAt, &rs.UpdatedAt,
+		&routineSchedule.ID, &routineSchedule.Title, &desc, &cat, &routineSchedule.Frequency, &daysOfWeek, &dayOfMonth,
+		&routineSchedule.StartDate, &endDate, &startTimeStr, &endTimeStr, &prio, &idCage,
+		&idAccount, &rincian, &routineSchedule.IsActive, &routineSchedule.CreatedAt, &routineSchedule.UpdatedAt,
 	)
 	if err != nil {
 		return err
 	}
 	if desc != nil {
-		rs.Description = *desc
+		routineSchedule.Description = *desc
 	}
 	if cat != nil {
-		rs.Category = *cat
+		routineSchedule.Category = *cat
 	}
 	if prio != nil {
-		rs.Priority = *prio
+		routineSchedule.Priority = *prio
 	}
-	rs.IDCage = idCage
-	rs.IDAccount = idAccount
+	routineSchedule.IDCage = idCage
+	routineSchedule.IDAccount = idAccount
 	if rincian != nil {
-		rs.Rincian = *rincian
+		routineSchedule.Rincian = *rincian
 	}
-	rs.DaysOfWeek = daysOfWeek
-	rs.DayOfMonth = dayOfMonth
-	rs.EndDate = endDate
+	routineSchedule.DaysOfWeek = daysOfWeek
+	routineSchedule.DayOfMonth = dayOfMonth
+	routineSchedule.EndDate = endDate
 	if startTimeStr != nil && len(*startTimeStr) >= 5 {
-		rs.StartTime = (*startTimeStr)[:5]
+		routineSchedule.StartTime = (*startTimeStr)[:5]
 	}
 	if endTimeStr != nil && len(*endTimeStr) >= 5 {
-		rs.EndTime = (*endTimeStr)[:5]
+		routineSchedule.EndTime = (*endTimeStr)[:5]
 	}
 	return nil
 }

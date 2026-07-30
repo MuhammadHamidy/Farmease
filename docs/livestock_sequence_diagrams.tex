@@ -1,12 +1,12 @@
 % =========================================================================
-% DOKUMENTASI SEQUENCE DIAGRAM FARMEASE DALAM FORMAT LATEX (pgf-umlsd / TikZ)
+% SEQUENCE DIAGRAM FARMEASE - MODUL PETERNAKAN
+% Pola: Actor -> ui:Antarmuka -> NamaKelas.method() -> db:Database
+% Sintaks: \begin{call}, \begin{sdblock}, \resizebox (pgf-umlsd / TikZ)
 % =========================================================================
 %
-% Catatan Penggunaan:
-% 1. Salin isi dokumen ini ke dalam berkas .tex proyek Tugas Akhir/Skripsi Anda.
-% 2. Pastikan Anda menyertakan package berikut di preamble dokumen Anda:
-%    \usepackage{tikz}
-%    \usepackage{pgf-umlsd}
+% Preamble yang diperlukan:
+%   \usepackage{tikz}
+%   \usepackage{pgf-umlsd}
 %
 % =========================================================================
 
@@ -16,365 +16,691 @@
 
 \begin{document}
 
+% =========================================================================
+% UC-01: MELIHAT DASBOR TERNAK
+% =========================================================================
+
 % -------------------------------------------------------------------------
-% UC-01: Melihat Dasbor Ternak
+% UC-01 Normal-1: Operator Ternak melihat Dasbor Ternak
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-01: Melihat Dasbor Ternak}
+\item{Sequence Diagram UC-01 N-1: Operator Melihat Dasbor Ternak}
+
+Operator Ternak membuka halaman Dasbor Ternak. Antarmuka (
+\texttt{ui:DashboardView}) memanggil \texttt{GetCageStats()} pada kelas
+\texttt{cs:Cage} untuk mengambil ringkasan statistik populasi ternak dan
+utilitas kandang, kemudian memanggil \texttt{GetMyTasks(id, role, date)}
+pada kelas \texttt{tk:Task} untuk memuat daftar tugas rutin yang dijadwalkan
+pada hari tersebut. Kedua method meneruskan permintaan ke \texttt{db:Database}
+dan mengembalikan data yang dibutuhkan. Setelah semua data terkumpul,
+dasbor menampilkan kartu ringkasan populasi domba, daftar tugas harian, dan
+widget peringatan kehamilan terdekat. Apabila Operator mengeklik salah satu
+tugas pada daftar, sistem memanggil kembali \texttt{GetMyTasks()} untuk
+mengambil detail tugas dan mengarahkan Operator ke formulir pencatatan yang
+telah ter-\textit{prefill} secara otomatis. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc01_n1_operator}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
-    \newthread{usr}{Pengguna}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{ds}{ds:DasborService}
-    \newinst[3]{db}{db:Database}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[1.5]{ui}{ui:DashboardView}
+    \newinst[1.5]{cs}{cs:Cage}
+    \newinst[1.5]{tk}{tk:Task}
+    \newinst[1.5]{db}{db:Database}
 
-    \begin{messcall}{usr}{Buka Halaman Utama / Dasbor}{ui}
-        \begin{messcall}{ui}{getDasborStats()}{ds}
-            \begin{messcall}{ds}{selectStatistikPopulasi()}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ds}{selectLogAktivitasTerakhir()}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \node (ds_ret) at (ds) {};
-        \end{messcall}
-        \node (ui_ret) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Melihat Dasbor Ternak}
-\label{fig:seq_uc01_dasbor}
+    \begin{call}{op}{Buka Halaman Dasbor Ternak}{ui}{Menampilkan ringkasan populasi, tugas, \& alarm kehamilan}
+        \begin{call}{ui}{GetCageStats()}{cs}{Data statistik kandang}
+            \begin{call}{cs}{GetCageStats()}{db}{Rows statistik}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{GetMyTasks(id, role, date)}{tk}{Daftar tugas harian hari ini}
+            \begin{call}{tk}{GetMyTasks(id, role, date)}{db}{Rows tugas}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    \begin{call}{op}{Klik salah satu tugas harian pada daftar tugas}{ui}{Formulir pencatatan terkait ter-prefill}
+        \begin{call}{ui}{GetMyTasks(id, role, date)}{tk}{Data detail tugas}
+            \begin{call}{tk}{GetMyTasks(id, role, date)}{db}{Rows tugas}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 N-1: Operator Melihat Dasbor Ternak}
+\label{fig:seq_uc01_n1_operator}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-02.1: Registrasi Domba Baru
+% UC-01 Normal-2: Admin melihat Dasbor Peternakan
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-02.1: Registrasi Domba Baru}
+\item{Sequence Diagram UC-01 N-2: Admin Melihat Dasbor Peternakan}
+
+Admin membuka halaman Dasbor Peternakan. Antarmuka memanggil
+\texttt{GetCageStats()} pada kelas \texttt{cs:Cage} untuk menampilkan
+ringkasan total populasi, jumlah kandang, dan persentase utilitas kapasitas.
+Selanjutnya, sistem memanggil \texttt{GetSubmissions("pending")} pada kelas
+\texttt{sb:Submission} untuk memuat seluruh pengajuan pencatatan Operator
+yang belum mendapat persetujuan. Kedua data tersebut ditampilkan bersama
+dengan lencana jumlah pengajuan dan alat ekspor laporan. Apabila Admin
+mengeklik tombol Ekspor Laporan, sistem mengunduh laporan aktivitas
+peternakan dalam format dokumen eksternal. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc01_n2_admin}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
-    \newthread{op}{op:OperatorTernak}
-    \newinst[2.5]{ui}{ui:Antarmuka}
-    \newinst[2.5]{ds}{ds:DombaService}
-    \newinst[2.5]{ks}{ks:KandangService}
-    \newinst[2.5]{db}{db:Database}
+    \newthread{adm}{adm:Admin}
+    \newinst[1.5]{ui}{ui:DashboardView}
+    \newinst[1.5]{cs}{cs:Cage}
+    \newinst[1.5]{sb}{sb:Submission}
+    \newinst[1.5]{db}{db:Database}
 
-    \begin{messcall}{op}{Buka halaman Registrasi Domba}{ui}
-        \begin{messcall}{ui}{getKandangTersedia()}{ks}
-            \begin{messcall}{ks}{selectKandangTersedia()}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \node (ks_ret) at (ks) {};
-        \end{messcall}
-        \node (ui_ret1) at (ui) {};
-    \end{messcall}
-    
-    \begin{messcall}{op}{Isi data domba \& klik "Simpan"}{ui}
-        \begin{messcall}{ui}{registrasiDomba(data)}{ds}
-            \begin{messcall}{ds}{checkKodeDombaExist(kode)}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ds}{insertDombaBaru(data)}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ds}{tambahOccupancyKandang()}{db}
-                \node (db_ret4) at (db) {};
-            \end{messcall}
-            \node (ds_ret) at (ds) {};
-        \end{messcall}
-        \node (ui_ret2) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Registrasi Domba Baru}
-\label{fig:seq_uc02_registrasi}
+    \begin{call}{adm}{Buka Halaman Dasbor Peternakan}{ui}{Menampilkan statistik, pengajuan pending, \& alat ekspor}
+        \begin{call}{ui}{GetCageStats()}{cs}{Statistik total populasi \& utilitas kandang}
+            \begin{call}{cs}{GetCageStats()}{db}{Rows statistik}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{GetSubmissions("pending")}{sb}{Daftar pengajuan menunggu persetujuan}
+            \begin{call}{sb}{GetSubmissions("pending")}{db}{Rows submissions berstatus pending}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    \begin{call}{adm}{Klik tombol Ekspor Laporan}{ui}{File laporan terunduh}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 N-2: Admin Melihat Dasbor Peternakan}
+\label{fig:seq_uc01_n2_admin}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-02.2: Mutasi Kandang Domba
+% UC-01 Normal-3: Pemilik melihat Dasbor Pemilik (read-only)
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-02.2: Mutasi Kandang Domba}
+\item{Sequence Diagram UC-01 N-3: Pemilik Melihat Dasbor (Read-Only)}
+
+Pemilik membuka halaman Dasbor yang menyajikan data eksekutif peternakan
+bersifat \textit{read-only}. Sistem memanggil \texttt{GetCageStats()} pada
+kelas \texttt{cs:Cage} untuk menampilkan metrik performa ringkasan seperti
+rata-rata ADG, jumlah mutasi, dan total populasi. Sistem juga memanggil
+\texttt{GetCageWeightStats()} untuk memuat data bobot kandang, tren produksi
+pupuk kandang, dan tabel utilitas kapasitas kandang. Halaman dasbor Pemilik
+tidak menyertakan tombol aksi pencatatan maupun tombol ekspor laporan,
+sehingga seluruh tampilan bersifat hanya baca. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc01_n3_pemilik}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
-    \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{ks}{ks:KandangService}
-    \newinst[3]{ds}{ds:DombaService}
-    \newinst[3]{db}{db:Database}
+    \newthread{own}{own:Pemilik}
+    \newinst[2]{ui}{ui:DashboardView}
+    \newinst[2]{cs}{cs:Cage}
+    \newinst[2]{db}{db:Database}
 
-    \begin{messcall}{op}{Klik "Mutasi Kandang"}{ui}
-        \begin{messcall}{ui}{getKandangTersedia()}{ks}
-            \begin{messcall}{ks}{selectKandangTersedia()}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \node (ks_ret) at (ks) {};
-        \end{messcall}
-        \node (ui_ret1) at (ui) {};
-    \end{messcall}
-
-    \begin{messcall}{op}{Pilih kandang tujuan \& klik "Simpan"}{ui}
-        \begin{messcall}{ui}{mutasiKandang(id\_domba, new\_cage)}{ds}
-            \begin{messcall}{ds}{updateKandangDomba()}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ds}{updateKapasitasKandang()}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \node (ds_ret) at (ds) {};
-        \end{messcall}
-        \node (ui_ret2) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Mutasi Kandang Domba}
-\label{fig:seq_uc02_mutasi}
+    \begin{call}{own}{Buka Halaman Dasbor Pemilik}{ui}{Menampilkan data eksekutif peternakan (read-only)}
+        \begin{call}{ui}{GetCageStats()}{cs}{Metrik performa: ADG, mutasi, populasi}
+            \begin{call}{cs}{GetCageStats()}{db}{Rows statistik}
+            \end{call}
+        \end{call}
+        \begin{call}{ui}{GetCageWeightStats()}{cs}{Data bobot, tren produksi, utilitas kapasitas}
+            \begin{call}{cs}{GetCageWeightStats()}{db}{Rows statistik bobot kandang}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 N-3: Pemilik Melihat Dasbor (Read-Only)}
+\label{fig:seq_uc01_n3_pemilik}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-03.1: Pencatatan Perkawinan & Kelahiran Anak Domba
+% UC-01 Tidak Normal-1: Data dasbor gagal dimuat
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-03.1: Pencatatan Perkawinan \& Kelahiran}
+\item{Sequence Diagram UC-01 TN-1: Data Dasbor Gagal Dimuat}
+
+Pengguna membuka halaman Dasbor, namun pemanggilan \texttt{GetCageStats()}
+pada kelas \texttt{cs:Cage} gagal karena gangguan koneksi jaringan atau
+server \textit{backend} tidak merespons. Kelas \texttt{cs:Cage} meneruskan
+permintaan ke \texttt{db:Database}, tetapi basis data mengembalikan pesan
+\textit{connection timeout}. Kesalahan ini dipropagasikan kembali ke
+antarmuka, yang kemudian menampilkan pesan peringatan kepada pengguna
+bahwa data gagal dimuat dari \textit{backend}. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc01_tn1_error}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{usr}{usr:Pengguna}
+    \newinst[2]{ui}{ui:DashboardView}
+    \newinst[2]{cs}{cs:Cage}
+    \newinst[2]{db}{db:Database}
+
+    \begin{call}{usr}{Buka Halaman Dasbor}{ui}{Tampilkan pesan ``Gagal memuat data dari backend''}
+        \begin{call}{ui}{GetCageStats()}{cs}{Error: koneksi gagal}
+            \begin{call}{cs}{GetCageStats()}{db}{Connection timeout}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-01 TN-1: Data Dasbor Gagal Dimuat}
+\label{fig:seq_uc01_tn1_error}
+\end{figure}
+
+\newpage
+
+% =========================================================================
+% UC-02: KELOLA DATA PERKAWINAN
+% =========================================================================
+
+% -------------------------------------------------------------------------
+% UC-02 Normal-1 & TN-1 & TN-2: Perkawinan + sdblock alt CoI
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-02: Kelola Data Perkawinan}
+
+Operator membuka menu Pencatatan Perkawinan. Sistem memanggil
+\texttt{GetSheepList(filter)} pada kelas \texttt{ss:Sheep} untuk mengisi
+dropdown daftar domba betina berstatus birahi dan pejantan aktif. Setelah
+Operator memilih ID domba betina dan ID pejantan, sistem secara
+\textit{real-time} memanggil \texttt{GetSheepGenealogy()} untuk menelusuri
+silsilah leluhur kedua domba hingga 5 generasi ke atas guna menghitung
+Koefisien Inbreeding (CoI) menggunakan metode jalur Wright.
+
+Diagram menampilkan dua skenario menggunakan blok \textit{alt}. Jika CoI
+$\ge$ 6.25\%, antarmuka menampilkan tanda bahaya merah dan memblokir aksi
+penyimpanan, sehingga Operator tidak dapat melanjutkan. Jika CoI~$<$~6.25\%
+atau silsilah tidak lengkap (dengan peringatan kuning), Operator mengisi
+tanggal kawin dan catatan kemudian menekan Simpan. Sistem memanggil
+\texttt{RecordMating(m)} pada kelas \texttt{ms:Mating} untuk menyimpan
+data perkawinan, dilanjutkan dengan memanggil \texttt{CreateSubmission(sub)}
+pada kelas \texttt{sb:Submission} untuk mendaftarkan pengajuan berstatus
+\textit{pending} yang menunggu persetujuan Admin. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc02_perkawinan}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
     \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{rs}{rs:ReproduksiService}
-    \newinst[3]{db}{db:Database}
+    \newinst[1.2]{ui}{ui:RecordFormView}
+    \newinst[1.2]{ss}{ss:Sheep}
+    \newinst[1.2]{ms}{ms:Mating}
+    \newinst[1.2]{sb}{sb:Submission}
+    \newinst[1.2]{db}{db:Database}
 
-    \begin{messcall}{op}{Input ID Pejantan \& Betina}{ui}
-        \begin{messcall}{ui}{simpanPerkawinan(jantan, betina)}{rs}
-            \begin{messcall}{rs}{checkStatusBirahiBetina(betina)}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \begin{messcall}{rs}{insertPerkawinan()}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \node (rs_ret1) at (rs) {};
-        \end{messcall}
-        \node (ui_ret1) at (ui) {};
-    \end{messcall}
+    % -- Muat daftar domba --
+    \begin{call}{op}{Buka menu Pencatatan Perkawinan}{ui}{Tampilkan form \& dropdown domba}
+        \begin{call}{ui}{GetSheepList(filter)}{ss}{Daftar domba betina birahi \& pejantan aktif}
+            \begin{call}{ss}{GetSheepList(filter)}{db}{Rows domba}
+            \end{call}
+        \end{call}
+    \end{call}
 
-    \begin{messcall}{op}{Input hasil cek kehamilan (Positif)}{ui}
-        \begin{messcall}{ui}{simpanKehamilan(betina, est\_tgl)}{rs}
-            \begin{messcall}{rs}{insertKehamilan()}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \begin{messcall}{rs}{updateStatusDomba(betina, "hamil")}{db}
-                \node (db_ret4) at (db) {};
-            \end{messcall}
-            \node (rs_ret2) at (rs) {};
-        \end{messcall}
-        \node (ui_ret2) at (ui) {};
-    \end{messcall}
+    % -- Cek silsilah secara real-time --
+    \begin{call}{op}{Pilih ID domba betina \& ID pejantan}{ui}{Tampilkan status risiko inbreeding}
+        \begin{call}{ui}{GetSheepGenealogy()}{ss}{Nilai CoI \& status kekerabatan}
+            \begin{call}{ss}{GetSheepGenealogy()}{db}{Data leluhur 5 generasi}
+            \end{call}
+        \end{call}
+    \end{call}
 
-    \begin{messcall}{op}{Kirim data kelahiran anak domba}{ui}
-        \begin{messcall}{ui}{catatKelahiran(id\_preg, jumlah)}{rs}
-            \begin{messcall}{rs}{updateStatusKehamilan(id\_preg, "selesai")}{db}
-                \node (db_ret5) at (db) {};
-            \end{messcall}
-            \begin{messcall}{rs}{insertAnakDombaBaru()}{db}
-                \node (db_ret6) at (db) {};
-            \end{messcall}
-            \node (rs_ret3) at (rs) {};
-        \end{messcall}
-        \node (ui_ret3) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Siklus Perkawinan dan Kelahiran}
-\label{fig:seq_uc03_reproduksi}
+    % -- Percabangan berdasarkan hasil CoI --
+    \begin{sdblock}{alt}{CoI $\ge$ 6.25\% -- Inbreeding Tinggi}
+        \begin{call}{op}{Klik tombol ``Simpan''}{ui}{Blokir aksi -- Tampilkan pop-up error}
+        \end{call}
+        \mess{ui}{Tampilkan pesan: ``Risiko Inbreeding Tinggi: Pencatatan Diblokir''}{op}
+    \end{sdblock}
+
+    \begin{sdblock}{alt}{CoI < 6.25\% atau Silsilah Tidak Lengkap (Peringatan)}
+        \begin{call}{op}{Isi tanggal kawin \& catatan, klik ``Simpan''}{ui}{Pesan ``Data Perkawinan Terkirim -- Menunggu Persetujuan''}
+            \begin{call}{ui}{RecordMating(m)}{ms}{Data perkawinan tersimpan}
+                \begin{call}{ms}{RecordMating(m)}{db}{Insert ke tabel matings}
+                \end{call}
+            \end{call}
+            \begin{call}{ui}{CreateSubmission(sub)}{sb}{Pengajuan dibuat berstatus pending}
+                \begin{call}{sb}{CreateSubmission(sub)}{db}{Insert ke tabel submissions}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sdblock}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02: Kelola Data Perkawinan}
+\label{fig:seq_uc02_perkawinan}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-03.2: Pencatatan Pemberian Pakan Harian
+% UC-02 Tidak Normal-3: Formulir tidak lengkap (validasi gagal)
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-03.2: Pencatatan Pemberian Pakan Harian}
+\item{Sequence Diagram UC-02 TN-3: Formulir Perkawinan Tidak Lengkap}
+
+Operator mengosongkan salah satu kolom wajib pada formulir pencatatan
+perkawinan, seperti tanggal kawin atau nomor batch semen untuk
+Inseminasi Buatan (IB), kemudian menekan tombol Simpan. Antarmuka
+memanggil \texttt{RecordMating(m)} pada kelas \texttt{ms:Mating}, namun
+kelas tersebut mengembalikan kesalahan validasi karena data masukan
+tidak lengkap. Sistem menampilkan pesan kesalahan spesifik kepada
+Operator, seperti ``Tanggal Kawin wajib diisi'' atau ``Asal Semen wajib
+diisi'', dan membatalkan pengiriman formulir. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc02_tn3_validasi}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
     \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{ps}{ps:PakanService}
-    \newinst[3]{db}{db:Database}
+    \newinst[2.5]{ui}{ui:RecordFormView}
+    \newinst[2.5]{ms}{ms:Mating}
 
-    \begin{messcall}{op}{Buka halaman Pemberian Pakan}{ui}
-        \begin{messcall}{ui}{getDaftarStokPakan()}{ps}
-            \begin{messcall}{ps}{selectStokPakan()}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \node (ps_ret) at (ps) {};
-        \end{messcall}
-        \node (ui_ret1) at (ui) {};
-    \end{messcall}
+    \begin{call}{op}{Kosongkan tanggal kawin / nomor batch semen}{ui}{}
+    \end{call}
 
-    \begin{messcall}{op}{Pilih pakan, input jumlah, pilih kandang \& simpan}{ui}
-        \begin{messcall}{ui}{catatPemberianPakan(id\_kandang, id\_pakan, jumlah)}{ps}
-            \begin{messcall}{ps}{insertRiwayatPemberianPakan()}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ps}{kurangiStokPakan()}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \node (ps_ret2) at (ps) {};
-        \end{messcall}
-        \node (ui_ret2) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Pencatatan Pemberian Pakan Harian}
-\label{fig:seq_uc03_pakan}
+    \begin{call}{op}{Klik tombol ``Simpan''}{ui}{Tampilkan pesan validasi -- pengiriman dibatalkan}
+        \begin{call}{ui}{RecordMating(m)}{ms}{Error: validasi masukan gagal}
+        \end{call}
+    \end{call}
+    \mess{ui}{Tampilkan pesan: ``Tanggal Kawin wajib diisi'' / ``Asal Semen wajib diisi''}{op}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-02 TN-3: Formulir Perkawinan Tidak Lengkap}
+\label{fig:seq_uc02_tn3_validasi}
+\end{figure}
+
+\newpage
+
+% =========================================================================
+% UC-03: KELOLA DATA BIRAHI
+% =========================================================================
+
+% -------------------------------------------------------------------------
+% UC-03 Normal-1 & Normal-2: Pencatatan birahi + sdblock alt hasil
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-03: Kelola Data Birahi}
+
+Operator membuka menu Pencatatan Birahi. Sistem memanggil
+\texttt{GetSheepList(filter)} pada kelas \texttt{ss:Sheep} untuk mengisi
+dropdown pilihan domba betina yang tersedia. Operator memilih domba
+betina, mengisi tanggal pemeriksaan, lalu memilih hasil cek birahi.
+
+Diagram menampilkan dua skenario menggunakan blok \textit{alt}. Jika
+Operator memilih hasil ``Birahi (Siap Kawin)'', sistem memanggil
+\texttt{RecordEstrusCheck(ec)} pada kelas \texttt{ms:Mating} dan
+\texttt{CreateSubmission(sub)} pada kelas \texttt{sb:Submission}. Setelah
+disetujui Admin, status kesiapan kawin domba tersebut aktif dan namanya
+muncul di \textit{dropdown} calon induk pada modul perkawinan. Jika
+Operator memilih ``Tidak Birahi'', alur pencatatan dan pengajuan identik,
+namun setelah disetujui, domba tersebut dihapus dari daftar acuan siap
+kawin. Alur ini disajikan pada Gambar~\ref{fig:seq_uc03_birahi}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[1.2]{ui}{ui:RecordFormView}
+    \newinst[1.2]{ss}{ss:Sheep}
+    \newinst[1.2]{ms}{ms:Mating}
+    \newinst[1.2]{sb}{sb:Submission}
+    \newinst[1.2]{db}{db:Database}
+
+    % -- Muat daftar domba betina --
+    \begin{call}{op}{Buka menu Pencatatan Birahi}{ui}{Tampilkan form \& dropdown domba betina}
+        \begin{call}{ui}{GetSheepList(filter)}{ss}{Daftar domba betina}
+            \begin{call}{ss}{GetSheepList(filter)}{db}{Rows domba betina}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    % -- Percabangan berdasarkan hasil cek birahi --
+    \begin{sdblock}{alt}{Hasil: ``Birahi (Siap Kawin)''}
+        \begin{call}{op}{Pilih domba, isi tanggal, pilih ``Birahi'', klik Simpan}{ui}{Pesan ``Catatan Birahi Berhasil Diajukan''}
+            \begin{call}{ui}{RecordEstrusCheck(ec)}{ms}{Data cek birahi tersimpan}
+                \begin{call}{ms}{RecordEstrusCheck(ec)}{db}{Insert ke tabel estrus\_checks}
+                \end{call}
+            \end{call}
+            \begin{call}{ui}{CreateSubmission(sub)}{sb}{Pengajuan dibuat berstatus pending}
+                \begin{call}{sb}{CreateSubmission(sub)}{db}{Insert ke tabel submissions}
+                \end{call}
+            \end{call}
+        \end{call}
+        \mess{ui}{Domba aktif muncul di daftar calon induk modul perkawinan}{op}
+    \end{sdblock}
+
+    \begin{sdblock}{alt}{Hasil: ``Tidak Birahi''}
+        \begin{call}{op}{Pilih domba, isi tanggal, pilih ``Tidak Birahi'', klik Simpan}{ui}{Pesan ``Catatan Birahi Berhasil Diajukan''}
+            \begin{call}{ui}{RecordEstrusCheck(ec)}{ms}{Data cek birahi tersimpan}
+                \begin{call}{ms}{RecordEstrusCheck(ec)}{db}{Insert ke tabel estrus\_checks}
+                \end{call}
+            \end{call}
+            \begin{call}{ui}{CreateSubmission(sub)}{sb}{Pengajuan dibuat berstatus pending}
+                \begin{call}{sb}{CreateSubmission(sub)}{db}{Insert ke tabel submissions}
+                \end{call}
+            \end{call}
+        \end{call}
+        \mess{ui}{Domba dihapus dari daftar acuan siap kawin di modul perkawinan}{op}
+    \end{sdblock}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-03: Kelola Data Birahi}
+\label{fig:seq_uc03_birahi}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-03.3: Pencatatan Bobot Domba & ADG
+% UC-03 Tidak Normal-1: Data tidak lengkap saat menyimpan
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-03.3: Pencatatan Bobot Domba \& ADG}
+\item{Sequence Diagram UC-03 TN-1: Data Birahi Tidak Lengkap}
+
+Operator menekan tombol Simpan tanpa memilih ID domba betina atau tanpa
+menentukan hasil cek birahi. Antarmuka memanggil
+\texttt{RecordEstrusCheck(ec)} pada kelas \texttt{ms:Mating}, namun
+kelas tersebut mengembalikan kesalahan validasi karena data masukan
+tidak lengkap. Sistem menampilkan pesan kesalahan spesifik kepada
+Operator, yaitu ``ID Domba wajib dipilih'' atau ``Hasil Cek Birahi wajib
+dipilih'', dan membatalkan pengiriman formulir. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc03_tn1_validasi}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
     \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{bs}{bs:BobotService}
-    \newinst[3]{db}{db:Database}
+    \newinst[2.5]{ui}{ui:RecordFormView}
+    \newinst[2.5]{ms}{ms:Mating}
 
-    \begin{messcall}{op}{Input ID Domba \& Bobot Baru}{ui}
-        \begin{messcall}{ui}{catatTimbangan(id\_domba, bobot\_baru)}{bs}
-            \begin{messcall}{bs}{selectTimbanganTerakhir(id\_domba)}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \begin{messcall}{bs}{insertRiwayatTimbangan(adg)}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \begin{messcall}{bs}{updateBobotTerakhirDomba()}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \node (bs_ret) at (bs) {};
-        \end{messcall}
-        \node (ui_ret) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Pencatatan Bobot Domba}
-\label{fig:seq_uc03_bobot}
+    \begin{call}{op}{Klik ``Simpan'' tanpa memilih ID domba / hasil cek birahi}{ui}{Tampilkan pesan validasi -- pengiriman dibatalkan}
+        \begin{call}{ui}{RecordEstrusCheck(ec)}{ms}{Error: validasi masukan gagal}
+        \end{call}
+    \end{call}
+    \mess{ui}{Tampilkan pesan: ``ID Domba wajib dipilih'' / ``Hasil Cek Birahi wajib dipilih''}{op}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-03 TN-1: Data Birahi Tidak Lengkap}
+\label{fig:seq_uc03_tn1_validasi}
+\end{figure}
+
+\newpage
+
+% =========================================================================
+% UC-04: KELOLA DATA KONVERSI PAKAN
+% =========================================================================
+
+% -------------------------------------------------------------------------
+% UC-04 Normal-1: Inisiasi konversi silase baru (dengan sdblock loop)
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-04 N-1: Inisiasi Konversi Pakan Silase Baru}
+
+Operator membuka formulir Konversi Pakan. Sistem memanggil
+\texttt{GetMasterFeedList()} pada kelas \texttt{fs:Feed} untuk menampilkan
+daftar bahan baku pakan mentah beserta stok yang tersedia, dikelompokkan
+per kategori nutrisi (Serat/Hijauan, Energi, Protein, dan
+Aktivator/Mineral). Operator mengisi tanggal konversi, target kuantitas
+silase, dan memilih bahan baku dari masing-masing kategori.
+
+Setelah Operator menekan Simpan, antarmuka memanggil
+\texttt{RecordSilageConversion(sc)} pada kelas \texttt{fs:Feed}. Di dalam
+proses ini, sistem mengiterasi setiap bahan baku yang digunakan
+menggunakan blok \textit{loop}, kemudian memanggil
+\texttt{UpdateFeedStock(amount, "kurang")} ke basis data untuk memotong
+stok masing-masing bahan baku mentah. Setelah itu, kelas \texttt{fs:Feed}
+menyimpan catatan konversi baru dengan status awal ``fermentasi'' dan
+target siklus 21 hari. Terakhir, antarmuka memanggil \texttt{CreateTask(t)}
+pada kelas \texttt{tk:Task} untuk mendaftarkan tugas pengecekan fermentasi
+silase secara otomatis 7 hari dari tanggal pembuatan. Alur ini disajikan
+pada Gambar~\ref{fig:seq_uc04_n1_konversi}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[1.5]{ui}{ui:RecordFormView}
+    \newinst[1.5]{fs}{fs:Feed}
+    \newinst[1.5]{tk}{tk:Task}
+    \newinst[1.5]{db}{db:Database}
+
+    % -- Muat daftar bahan baku pakan --
+    \begin{call}{op}{Buka form Konversi Pakan}{ui}{Tampilkan form \& dropdown bahan baku per kategori}
+        \begin{call}{ui}{GetMasterFeedList()}{fs}{Daftar bahan baku pakan beserta stok}
+            \begin{call}{fs}{GetMasterFeedList()}{db}{Rows master pakan}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    % -- Simpan konversi silase baru --
+    \begin{call}{op}{Isi tanggal, target qty, pilih bahan baku 4 kategori, klik Simpan}{ui}{Pesan ``Proses Konversi Berhasil Dimulai''}
+        \begin{call}{ui}{RecordSilageConversion(sc)}{fs}{Record fermentasi terinisiasi}
+            \begin{call}{fs}{RecordSilageConversion(sc)}{db}{Insert record konversi berstatus ``fermentasi''}
+            \end{call}
+        \end{call}
+        \begin{sdblock}{loop}{untuk setiap bahan baku (Serat, Energi, Protein, Aktivator)}
+            \begin{call}{ui}{UpdateFeedStock(amount, "kurang")}{fs}{Stok terupdate}
+                \begin{call}{fs}{UpdateFeedStock(amount, "kurang")}{db}{Kurangi stok bahan baku mentah}
+                \end{call}
+            \end{call}
+        \end{sdblock}
+        \begin{call}{ui}{CreateTask(t)}{tk}{Tugas pengecekan fermentasi terjadwal}
+            \begin{call}{tk}{CreateTask(t)}{db}{Insert tugas (tgl\_sekarang + 7 hari)}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 N-1: Inisiasi Konversi Pakan Silase Baru}
+\label{fig:seq_uc04_n1_konversi}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-04: Kelola Stok Pakan
+% UC-04 Normal-2: Operator memantau daftar fermentasi silase
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-04: Kelola Stok Pakan (Batch Fermentasi)}
+\item{Sequence Diagram UC-04 N-2: Memantau Daftar Fermentasi Silase}
+
+Operator membuka menu Gudang dan berpindah ke tab Fermentasi untuk
+memantau seluruh riwayat konversi pakan silase. Sistem memanggil
+\texttt{GetFermentationLogs(id)} pada kelas \texttt{fer:SilageFermentationLog}
+yang meneruskan permintaan ke \texttt{db:Database} untuk mengambil
+seluruh data konversi beserta log perkembangan yang telah dicatat.
+Antarmuka menampilkan daftar konversi yang memuat persentase
+\textit{progress} fermentasi (dihitung berdasarkan hari ke-X dari target
+21 hari), komposisi bahan baku yang digunakan, dan status terkini setiap
+batch. Alur ini disajikan pada Gambar~\ref{fig:seq_uc04_n2_pantau}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
     \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{ps}{ps:PakanService}
-    \newinst[3]{db}{db:Database}
+    \newinst[2]{ui}{ui:WarehouseView}
+    \newinst[2]{fer}{fer:SilageFermentationLog}
+    \newinst[2]{db}{db:Database}
 
-    \begin{messcall}{op}{Input bahan baku \& target qty silase}{ui}
-        \begin{messcall}{ui}{buatBatchFermentasi(bahan, qty)}{ps}
-            \begin{messcall}{ps}{insertBatchFermentasi("proses")}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ps}{kurangiStokBahanBaku()}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \node (ps_ret1) at (ps) {};
-        \end{messcall}
-        \node (ui_ret1) at (ui) {};
-    \end{messcall}
-
-    \begin{messcall}{op}{Input perkembangan silase (suhu, catatan)}{ui}
-        \begin{messcall}{ui}{tambahLogFermentasi(id\_batch, suhu, notes)}{ps}
-            \begin{messcall}{ps}{insertLogFermentasi()}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \node (ps_ret2) at (ps) {};
-        \end{messcall}
-        \node (ui_ret2) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Pembuatan Silase}
-\label{fig:seq_uc04_stok_pakan}
+    \begin{call}{op}{Buka menu Gudang $\rightarrow$ tab Fermentasi}{ui}{Tampilkan daftar: progress \%, komposisi, status}
+        \begin{call}{ui}{GetFermentationLogs(id)}{fer}{Seluruh data konversi \& log perkembangan}
+            \begin{call}{fer}{GetFermentationLogs(id)}{db}{Rows konversi \& log fermentasi}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 N-2: Operator Memantau Daftar Fermentasi Silase}
+\label{fig:seq_uc04_n2_pantau}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-07: Kelola Data Birahi
+% UC-04 Tidak Normal-1: Komposisi bahan baku tidak lengkap
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-07: Kelola Data Birahi}
+\item{Sequence Diagram UC-04 TN-1: Komposisi Bahan Baku Tidak Lengkap}
+
+Operator mengosongkan salah satu dari empat kategori bahan baku yang
+wajib diisi, misalnya kategori Aktivator/Mineral dikosongkan, kemudian
+menekan tombol Simpan. Antarmuka memanggil \texttt{RecordSilageConversion(sc)}
+pada kelas \texttt{fs:Feed}, namun kelas tersebut mengembalikan kesalahan
+karena komposisi bahan baku tidak memenuhi syarat minimum empat kelompok
+nutrisi. Sistem memblokir penyimpanan dan menampilkan pesan kesalahan
+kepada Operator: ``Semua kelompok bahan baku (Serat, Energi, Protein,
+Aktivator) wajib diisi''. Alur ini disajikan pada
+Gambar~\ref{fig:seq_uc04_tn1_validasi}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
     \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{rs}{rs:ReproduksiService}
-    \newinst[3]{db}{db:Database}
+    \newinst[2.5]{ui}{ui:RecordFormView}
+    \newinst[2.5]{fs}{fs:Feed}
 
-    \begin{messcall}{op}{Input hasil pemeriksaan birahi betina}{ui}
-        \begin{messcall}{ui}{catatCekBirahi(betina, hasil)}{rs}
-            \begin{messcall}{rs}{insertCekBirahi(betina, hasil)}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \node (rs_ret) at (rs) {};
-        \end{messcall}
-        \node (ui_ret) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Kelola Data Pengecekan Birahi}
-\label{fig:seq_uc07_birahi}
+    \begin{call}{op}{Kosongkan salah satu kategori bahan baku (misal: Aktivator)}{ui}{}
+    \end{call}
+
+    \begin{call}{op}{Klik tombol Simpan}{ui}{Tampilkan pesan validasi -- penyimpanan diblokir}
+        \begin{call}{ui}{RecordSilageConversion(sc)}{fs}{Error: komposisi bahan baku tidak lengkap}
+        \end{call}
+    \end{call}
+    \mess{ui}{Tampilkan pesan: ``Semua kelompok bahan baku (Serat, Energi, Protein, Aktivator) wajib diisi''}{op}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-04 TN-1: Komposisi Bahan Baku Konversi Pakan Tidak Lengkap}
+\label{fig:seq_uc04_tn1_validasi}
+\end{figure}
+
+\newpage
+
+% =========================================================================
+% UC-05: KELOLA DATA STATUS KONVERSI PAKAN
+% =========================================================================
+
+% -------------------------------------------------------------------------
+% UC-05 Normal-1/2/3: Log fermentasi + sdblock alt status
+% -------------------------------------------------------------------------
+\item{Sequence Diagram UC-05: Kelola Data Status Konversi Pakan}
+
+Operator membuka menu Gudang pada tab Fermentasi dan mengeklik tombol
+``Update Progres'' pada batch konversi silase yang dituju. Sistem
+memanggil \texttt{GetFermentationLogs(id)} pada kelas
+\texttt{fer:SilageFermentationLog} untuk mengambil seluruh riwayat log
+perkembangan fermentasi yang telah tercatat dan menampilkannya di dalam
+modal. Operator kemudian mengisi nilai pH, suhu wadah, catatan kondisi
+fisik, dan memilih status kesiapan fermentasi.
+
+Setelah Operator menekan Simpan, sistem memanggil
+\texttt{CreateFermentationLog(l)} pada kelas
+\texttt{fer:SilageFermentationLog} untuk menyimpan log pengecekan baru ke
+basis data. Selanjutnya, diagram menampilkan percabangan menggunakan blok
+\textit{alt}: jika status yang dipilih adalah ``Selesai (Siap Disajikan)'',
+sistem memanggil \texttt{UpdateFeedStock(amount, "tambah")} pada kelas
+\texttt{fs:Feed} untuk secara otomatis menambah kuantitas target pakan
+silase ke stok gudang utama; jika status yang dipilih adalah ``Gagal
+(Buang)'' atau ``Masih Proses Fermentasi'', tidak ada perubahan stok dan
+status konversi diperbarui sesuai pilihan Operator. Alur ini disajikan
+pada Gambar~\ref{fig:seq_uc05_status_konversi}.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
+\begin{sequencediagram}
+    \newthread{op}{op:OperatorTernak}
+    \newinst[1.2]{ui}{ui:WarehouseView}
+    \newinst[1.2]{fer}{fer:SilageFermentationLog}
+    \newinst[1.2]{fs}{fs:Feed}
+    \newinst[1.2]{db}{db:Database}
+
+    % -- Ambil log sebelumnya & tampilkan modal --
+    \begin{call}{op}{Klik ``Update Progres'' pada konversi yang dituju}{ui}{Tampilkan modal Kelola Fermentasi}
+        \begin{call}{ui}{GetFermentationLogs(id)}{fer}{Daftar log perkembangan sebelumnya}
+            \begin{call}{fer}{GetFermentationLogs(id)}{db}{Rows log fermentasi}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    % -- Simpan log baru --
+    \begin{call}{op}{Input pH, suhu, catatan, pilih status \& klik ``Simpan''}{ui}{Pesan ``Status Fermentasi Berhasil Diperbarui''}
+        \begin{call}{ui}{CreateFermentationLog(l)}{fer}{Log baru tersimpan}
+            \begin{call}{fer}{CreateFermentationLog(l)}{db}{Insert log baru ke DB}
+            \end{call}
+        \end{call}
+    \end{call}
+
+    % -- Percabangan berdasarkan Status Kesiapan --
+    \begin{sdblock}{opt}{Status: ``Selesai (Siap Disajikan)''}
+        \begin{call}{ui}{UpdateFeedStock(amount, "tambah")}{fs}{Stok pakan silase bertambah di gudang}
+            \begin{call}{fs}{UpdateFeedStock(amount, "tambah")}{db}{Update stok pakan silase}
+            \end{call}
+        \end{call}
+    \end{sdblock}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-05: Kelola Data Status Konversi Pakan}
+\label{fig:seq_uc05_status_konversi}
 \end{figure}
 
 \newpage
 
 % -------------------------------------------------------------------------
-% UC-08: Melihat Riwayat Kesehatan
+% UC-05 Tidak Normal-1: Radio status tidak dipilih
 % -------------------------------------------------------------------------
-\subsection{Sequence Diagram UC-08: Melihat Riwayat Kesehatan}
+\item{Sequence Diagram UC-05 TN-1: Status Kesiapan Tidak Dipilih}
+
+Operator memasukkan nilai pH dan suhu wadah pada modal pengecekan
+fermentasi, tetapi tidak memilih pilihan radio status kesiapan fermentasi,
+lalu menekan tombol Simpan. Antarmuka memanggil
+\texttt{CreateFermentationLog(l)} pada kelas
+\texttt{fer:SilageFermentationLog}, namun kelas tersebut mengembalikan
+kesalahan validasi karena status kesiapan merupakan kolom wajib yang
+harus diisi. Sistem memblokir penyimpanan dan menampilkan pesan kesalahan
+kepada Operator: ``Status kesiapan fermentasi wajib dipilih''. Alur ini
+disajikan pada Gambar~\ref{fig:seq_uc05_tn1_validasi}.
+
 \begin{figure}[htbp]
 \centering
+\resizebox{\textwidth}{!}{%
+\footnotesize
 \begin{sequencediagram}
     \newthread{op}{op:OperatorTernak}
-    \newinst[3]{ui}{ui:Antarmuka}
-    \newinst[3]{ks}{ks:KesehatanService}
-    \newinst[3]{db}{db:Database}
+    \newinst[2.5]{ui}{ui:WarehouseView}
+    \newinst[2.5]{fer}{fer:SilageFermentationLog}
 
-    \begin{messcall}{op}{Input log kesehatan (diagnosis, obat, dosis)}{ui}
-        \begin{messcall}{ui}{catatKesehatan(id\_domba, diag, obat, dosis)}{ks}
-            \begin{messcall}{ks}{insertRiwayatKesehatan()}{db}
-                \node (db_ret1) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ks}{kurangiStokObat()}{db}
-                \node (db_ret2) at (db) {};
-            \end{messcall}
-            \begin{messcall}{ks}{updateStatusKesehatanDomba(id\_domba, "sakit")}{db}
-                \node (db_ret3) at (db) {};
-            \end{messcall}
-            \node (ks_ret1) at (ks) {};
-        \end{messcall}
-        \node (ui_ret1) at (ui) {};
-    \end{messcall}
+    \begin{call}{op}{Input pH \& suhu -- tidak memilih radio status kesiapan}{ui}{}
+    \end{call}
 
-    \begin{messcall}{op}{Buka tab "Riwayat Pengobatan Domba"}{ui}
-        \begin{messcall}{ui}{getRiwayatKesehatanDomba(id\_domba)}{ks}
-            \begin{messcall}{ks}{selectRiwayatKesehatanDomba(id\_domba)}{db}
-                \node (db_ret4) at (db) {};
-            \end{messcall}
-            \node (ks_ret2) at (ks) {};
-        \end{messcall}
-        \node (ui_ret2) at (ui) {};
-    \end{messcall}
-\end{sequencediagram}
-\caption{Sequence Diagram Melihat Riwayat Kesehatan Domba}
-\label{fig:seq_uc08_riwayat_kesehatan}
+    \begin{call}{op}{Klik tombol Simpan}{ui}{Tampilkan pesan error -- penyimpanan diblokir}
+        \begin{call}{ui}{CreateFermentationLog(l)}{fer}{Error: status kesiapan wajib dipilih}
+        \end{call}
+    \end{call}
+    \mess{ui}{Tampilkan pesan error: ``Status kesiapan fermentasi wajib dipilih''}{op}
+\end{sequencediagram}%
+}
+\caption{Sequence Diagram UC-05 TN-1: Status Kesiapan Fermentasi Tidak Dipilih}
+\label{fig:seq_uc05_tn1_validasi}
 \end{figure}
 
 \end{document}

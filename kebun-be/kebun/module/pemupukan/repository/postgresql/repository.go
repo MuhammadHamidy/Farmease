@@ -84,12 +84,21 @@ func (r *pemupukanRepository) Store(ctx context.Context, p *domain.Pemupukan) er
 		return err
 	}
 
+	var manureID *string
+	if p.ManureID != nil && *p.ManureID != "" {
+		manureID = p.ManureID
+	}
+	var idStokPupuk *string
+	if p.IDStokPupuk != nil && *p.IDStokPupuk != "" {
+		idStokPupuk = p.IDStokPupuk
+	}
+
 	err = tx.QueryRow(ctx,
 		`INSERT INTO gardening.pemupukan
 		 (nama_pupuk, dosis, satuan, deskripsi, manure_id, id_stok_pupuk, "Lahan_id_lahan", "Aktivitas_id_aktivitas")
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id_pemupukan`,
-		p.NamaPupuk, p.Dosis, p.Satuan, p.Deskripsi, p.ManureID, p.IDStokPupuk, p.LahanIDLahan, aktivitasID,
+		p.NamaPupuk, p.Dosis, p.Satuan, p.Deskripsi, manureID, idStokPupuk, p.LahanIDLahan, aktivitasID,
 	).Scan(&p.IDPemupukan)
 	if err != nil {
 		return err
@@ -124,11 +133,20 @@ func (r *pemupukanRepository) Update(ctx context.Context, p *domain.Pemupukan) e
 		return err
 	}
 
+	var manureID *string
+	if p.ManureID != nil && *p.ManureID != "" {
+		manureID = p.ManureID
+	}
+	var idStokPupuk *string
+	if p.IDStokPupuk != nil && *p.IDStokPupuk != "" {
+		idStokPupuk = p.IDStokPupuk
+	}
+
 	_, err = tx.Exec(ctx,
 		`UPDATE gardening.pemupukan
 		 SET nama_pupuk = $1, dosis = $2, satuan = $3, deskripsi = $4, manure_id = $5, id_stok_pupuk = $6, "Lahan_id_lahan" = $7, updated_at = CURRENT_TIMESTAMP
 		 WHERE id_pemupukan = $8`,
-		p.NamaPupuk, p.Dosis, p.Satuan, p.Deskripsi, p.ManureID, p.IDStokPupuk, p.LahanIDLahan, p.IDPemupukan,
+		p.NamaPupuk, p.Dosis, p.Satuan, p.Deskripsi, manureID, idStokPupuk, p.LahanIDLahan, p.IDPemupukan,
 	)
 	if err != nil {
 		return err

@@ -5,104 +5,113 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
 
-func (u *useCase) CalculateMatingReadiness(s *domain.Sheep, activeMatingFemales map[string]bool, pendingMatingSheeps map[string]bool, latestEstrusChecks map[string]string) {
-	// Must be healthy
-	if s.Status != "Sehat" && s.Status != "aktif" {
-		s.IsReadyToMate = false
-		if (s.Status == "Hamil" || s.Status == "hamil") && s.Gender == "betina" {
-			s.MatingStatus = "Tidak (Sedang Hamil)"
+func (u *useCase) CalculateMatingReadiness(sheep *domain.Sheep, activeMatingFemales map[string]bool, pendingMatingSheeps map[string]bool, latestEstrusChecks map[string]string) {
+	// 1. Health Status check: Only 'Sehat' or 'aktif' sheep are eligible for breeding.
+	// If ewe is already pregnant, set status to pregnant.
+	if sheep.Status != "Sehat" && sheep.Status != "aktif" && sheep.Status != "active" {
+		sheep.IsReadyToMate = false
+		if (sheep.Status == "Hamil" || sheep.Status == "hamil" || sheep.Status == "pregnant") && (sheep.Gender == "betina" || sheep.Gender == "female") {
+			sheep.MatingStatus = "PREGNANT"
+		} else if sheep.Status == "Sakit" || sheep.Status == "sakit" || sheep.Status == "sick" {
+			sheep.MatingStatus = "SICK"
 		} else {
-			s.MatingStatus = "Tidak (Belum Siap / Sedang Pemulihan)"
+			sheep.MatingStatus = "NOT_READY"
 		}
 		return
 	}
 
-	months := int(s.AgeMonths)
+	months := int(sheep.AgeMonths)
 
-	if s.Gender == "jantan" {
-		// Sire (Pejantan): Age >= 12 months, Weight >= 30 kg.
-		// Fallback: If s.LastWeight <= 0, bypass weight check
-		minAge := 12
+	if sheep.Gender == "jantan" || sheep.Gender == "male" {
+		// Sire (Pejantan) criteria:
+		// - Minimum age: 8 months
+		// - Minimum weight: 30 kg (bypassed if weight is not recorded yet)
+		minAge := 8
 		weightLimit := 30.0
 
 		if months < minAge {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Tidak (Belum Cukup Umur)"
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "UNDERAGE"
 			return
 		}
 
-		if s.LastWeight > 0 && s.LastWeight < weightLimit {
-			s.IsReadyToMate = false
-			s.MatingStatus = fmt.Sprintf("Tidak (Berat %.1f kg < %.1f kg)", s.LastWeight, weightLimit)
+		if sheep.LastWeight > 0 && sheep.LastWeight < weightLimit {
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = fmt.Sprintf("WEIGHT_LOW:%.1f", sheep.LastWeight)
 			return
 		}
 
 		// Also check latest estrus check for jantan if any check exists!
-		estrusResult, checkExists := latestEstrusChecks[s.IDSheep]
+		estrusResult, checkExists := latestEstrusChecks[sheep.IDSheep]
 		if !checkExists {
-			estrusResult, checkExists = latestEstrusChecks[s.SheepCode]
+			estrusResult, checkExists = latestEstrusChecks[sheep.SheepCode]
 		}
-		if checkExists && estrusResult != "birahi" {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Tidak Birahi"
+		if checkExists && estrusResult != "birahi" && estrusResult != "in_heat" {
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "NOT_IN_HEAT"
 			return
 		}
 
-		s.IsReadyToMate = true
-		s.MatingStatus = "Siap Kawin"
-	} else if s.Gender == "betina" {
-		// Dam (Betina): Age >= 8 months, Weight >= 25 kg, and must be birahi (latest check is birahi, no active mating, no pending mating)
+		sheep.IsReadyToMate = true
+		sheep.MatingStatus = "MATING_READY"
+	} else if sheep.Gender == "betina" || sheep.Gender == "female" {
+		// Dam (Betina) criteria:
+		// - Minimum age: 8 months
+		// - Minimum weight: 25 kg (bypassed if weight is not recorded yet)
+		// - Must have no active/in-progress mating session
+		// - Must have no pending mating submissions awaiting admin approval
+		// - Must be marked as 'birahi' (estrus) in the latest check
 		minAge := 8
 		weightLimit := 25.0
 
 		if months < minAge {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Tidak (Belum Cukup Umur)"
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "UNDERAGE"
 			return
 		}
 
-		if s.LastWeight > 0 && s.LastWeight < weightLimit {
-			s.IsReadyToMate = false
-			s.MatingStatus = fmt.Sprintf("Tidak (Berat %.1f kg < %.1f kg)", s.LastWeight, weightLimit)
+		if sheep.LastWeight > 0 && sheep.LastWeight < weightLimit {
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = fmt.Sprintf("WEIGHT_LOW:%.1f", sheep.LastWeight)
 			return
 		}
 
 		// Check active mating
-		if activeMatingFemales[s.IDSheep] {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Tidak (Sedang Kawin/Proses)"
+		if activeMatingFemales[sheep.IDSheep] {
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "IN_MATING_PROCESS"
 			return
 		}
 
 		// Check pending mating submission
-		if pendingMatingSheeps[s.IDSheep] || pendingMatingSheeps[s.SheepCode] {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Tidak (Menunggu Persetujuan Kawin)"
+		if pendingMatingSheeps[sheep.IDSheep] || pendingMatingSheeps[sheep.SheepCode] {
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "PENDING_APPROVAL"
 			return
 		}
 
 		// Check latest estrus check
-		estrusResult, checkExists := latestEstrusChecks[s.IDSheep]
+		estrusResult, checkExists := latestEstrusChecks[sheep.IDSheep]
 		if !checkExists {
-			estrusResult, checkExists = latestEstrusChecks[s.SheepCode]
+			estrusResult, checkExists = latestEstrusChecks[sheep.SheepCode]
 		}
 
 		if !checkExists {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Belum Pencatatan Birahi"
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "NOT_CHECKED"
 			return
 		}
 
-		if estrusResult != "birahi" {
-			s.IsReadyToMate = false
-			s.MatingStatus = "Tidak Birahi"
+		if estrusResult != "birahi" && estrusResult != "in_heat" {
+			sheep.IsReadyToMate = false
+			sheep.MatingStatus = "NOT_IN_HEAT"
 			return
 		}
 
-		s.IsReadyToMate = true
-		s.MatingStatus = "Birahi (Siap Kawin)"
+		sheep.IsReadyToMate = true
+		sheep.MatingStatus = "MATING_READY"
 	} else {
-		s.IsReadyToMate = false
-		s.MatingStatus = "Tidak Berlaku (Jenis Kelamin Lain)"
+		sheep.IsReadyToMate = false
+		sheep.MatingStatus = "NOT_APPLICABLE"
 	}
 }

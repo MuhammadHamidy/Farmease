@@ -277,3 +277,86 @@ SET title = EXCLUDED.title,
     end_time = EXCLUDED.end_time,
     start_time = EXCLUDED.start_time,
     rincian = EXCLUDED.rincian;
+
+
+-- ============================================================================
+-- SILASE CONVERSION & AUTOMATIC CHECKING TASK SEEDER (TC-08a & FR9-02)
+-- ============================================================================
+
+-- 1. Pastikan Pakan Silase Campuran terdaftar di logistics.feeds
+INSERT INTO logistics.feeds (id_feed, feed_name, unit, available_stock, price_per_unit, category, source_type, notes)
+VALUES ('ca000006-0000-0000-0000-000000000001', 'Pakan Silase Campuran', 'kg', 100.00, 0.00, 'hijauan', 'internal', 'Pakan silase hasil fermentasi mandiri')
+ON CONFLICT (id_feed) DO NOTHING;
+
+-- 2. Buat record Silage Conversion bertanggal 7 hari yang lalu
+INSERT INTO logistics.silage_conversions (id_conversion, id_target_feed, conversion_date, target_amount, unit, notes)
+VALUES ('aa000008-0000-0000-0000-000000000001', 'ca000006-0000-0000-0000-000000000001', (CURRENT_DATE - INTERVAL '7 days') AT TIME ZONE 'Asia/Jakarta', 100.00, 'kg', 'Konversi jerami padi dan bekatul untuk silase')
+ON CONFLICT (id_conversion) DO NOTHING;
+
+-- 3. Buat detail bahan penyusun konversi tersebut
+INSERT INTO logistics.silage_conversion_details (id_detail, id_conversion, id_feed, amount) VALUES
+('ab000008-0000-0000-0000-000000000001', 'aa000008-0000-0000-0000-000000000001', 'ca000001-0000-0000-0000-000000000001', 70.00),
+('ab000008-0000-0000-0000-000000000002', 'aa000008-0000-0000-0000-000000000001', 'ca000002-0000-0000-0000-000000000001', 30.00)
+ON CONFLICT (id_detail) DO NOTHING;
+
+-- 4. Buat Tugas Pengecekan Evaluasi Fermentasi Silase (Hari ke-7)
+INSERT INTO operations.tasks (
+    id_task, title, description, task_date, status,
+    priority, id_account, category, end_time,
+    schedule_id, id_cage, start_time, rincian
+) VALUES (
+    'db000008-0000-0000-0000-000000000001',
+    'Pengecekan Evaluasi Fermentasi Silase (Hari ke-7)',
+    'Lakukan pengecekan evaluasi awal fermentasi silase (Cek pH, suhu, dan aroma). Target: 100.00 kg (Konversi: ' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYY-MM-DD') || ')',
+    CURRENT_DATE AT TIME ZONE 'Asia/Jakarta',
+    'belum',
+    'sedang',
+    '11111111-1111-1111-1111-111111111106', -- Default Operator Ternak
+    'pakan',
+    '10:00:00',
+    NULL,
+    NULL,
+    '08:00:00',
+    'Konversi Pakan'
+)
+ON CONFLICT (id_task) DO UPDATE
+SET title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    task_date = EXCLUDED.task_date,
+    status = EXCLUDED.status,
+    priority = EXCLUDED.priority,
+    category = EXCLUDED.category,
+    end_time = EXCLUDED.end_time,
+    start_time = EXCLUDED.start_time,
+    rincian = EXCLUDED.rincian;
+
+-- 5. Buat Tugas Pematangan & Panen Silase Matang (Hari ke-21)
+INSERT INTO operations.tasks (
+    id_task, title, description, task_date, status,
+    priority, id_account, category, end_time,
+    schedule_id, id_cage, start_time, rincian
+) VALUES (
+    'db000008-0000-0000-0000-000000000021',
+    'Pematangan & Panen Silase Matang (Hari ke-21)',
+    'Proses ensilase 21 hari selesai. Silase matang sempurna dan siap digunakan sebagai pakan. Target: 100.00 kg (Konversi: ' || TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'YYYY-MM-DD') || ')',
+    (CURRENT_DATE + INTERVAL '14 days') AT TIME ZONE 'Asia/Jakarta',
+    'belum',
+    'tinggi',
+    '11111111-1111-1111-1111-111111111106', -- Default Operator Ternak
+    'pakan',
+    '10:00:00',
+    NULL,
+    NULL,
+    '08:00:00',
+    'Konversi Pakan'
+)
+ON CONFLICT (id_task) DO UPDATE
+SET title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    task_date = EXCLUDED.task_date,
+    status = EXCLUDED.status,
+    priority = EXCLUDED.priority,
+    category = EXCLUDED.category,
+    end_time = EXCLUDED.end_time,
+    start_time = EXCLUDED.start_time,
+    rincian = EXCLUDED.rincian;

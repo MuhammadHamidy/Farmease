@@ -1,0 +1,152 @@
+version: '3.9'
+
+services:
+  sso_postgres:
+    image: postgres:15-alpine
+    container_name: farmease_sso_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: farmease_sso
+    ports:
+      - "${SSO_DB_PORT:-5435}:5432"
+    volumes:
+      - sso_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d farmease_sso"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  sso_redis:
+    image: redis:7-alpine
+    container_name: farmease_sso_redis
+    ports:
+      - "${SSO_REDIS_PORT:-6381}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_network
+    restart: unless-stopped
+
+  sso_migrate:
+    image: migrate/migrate
+    container_name: farmease_sso_migrate
+    volumes:
+      - ./sso/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "migrate -path=/migrations -database postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@sso_postgres:5432/farmease_sso?sslmode=disable up || true"
+    depends_on:
+      sso_postgres:
+        condition: service_healthy
+    networks:
+      - farmease_network
+
+  sso_seeder:
+    image: postgres:15-alpine
+    container_name: farmease_sso_seeder
+    volumes:
+      - ./sso/seeders:/sso_seeders:ro
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-pass}
+    command: >
+      sh -c "echo 'Seeding SSO...'; psql -h sso_postgres -U $${DB_USER:-user} -d farmease_sso -f /sso_seeders/farms.sql || true; psql -h sso_postgres -U $${DB_USER:-user} -d farmease_sso -f /sso_seeders/auth.sql || true;"
+    depends_on:
+      sso_migrate:
+        condition: service_completed_successfully
+    networks:
+      - farmease_network
+
+  sso_backend:
+    build:
+      context: .
+      dockerfile: sso/Dockerfile
+      target: dev
+    container_name: farmease_sso_backend
+    depends_on:
+      sso_postgres:
+        condition: service_healthy
+      sso_redis:
+        condition: service_healthy
+      sso_migrate:
+        condition: service_completed_successfully
+      sso_seeder:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8080"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@sso_postgres:5432/farmease_sso?sslmode=disable
+      APP_REDIS_ADDRESS: sso_redis:6379
+      APP_REDIS_PASSWORD: ""
+      APP_REDIS_DB: "0"
+      APP_JWTSECRET: ${JWT_SECRET:-farmease-secret-key-123}
+      APP_REDIRECTURL: http://localhost:${FRONTEND_PORT:-3000}/callback
+      APP_CORS_ALLOWED_ORIGINS: "*"
+      APP_LOG_LEVEL: debug
+      APP_LOG_FORMAT: console
+      APP_EXPORTER: none
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./framework:/app/framework
+      - ./libraries:/app/libraries
+      - ./sso:/app/sso
+      - ./go.work:/app/go.work
+      - sso_backend_logs:/app/logs
+      - sso_go_mod_cache:/go/pkg/mod
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/health/livez || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+
+  frontend_sso:
+    build:
+      context: ../Farmease_sso
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: farmease_sso_frontend
+    depends_on:
+      sso_backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../Farmease_sso:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - farmease_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  sso_postgres_data:
+    driver: local
+  sso_backend_logs:
+    driver: local
+  sso_go_mod_cache:
+    driver: local
+
+networks:
+  farmease_network:
+    name: farmease_shared_network
+    external: true

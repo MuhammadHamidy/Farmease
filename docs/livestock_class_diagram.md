@@ -1,282 +1,229 @@
 # Desain Arsitektur: Class Diagram Backend Peternakan (Farmease)
 
-Dokumen ini memuat **Class Diagram** utama yang memodelkan keseluruhan 16 modul yang ada di dalam Go Backend Peternakan (`farmease-be`). Seluruh entitas dan layanan saling terhubung menggunakan relasi standar UML sehingga tidak ada kelas yang terisolasi tanpa hubungan.
+Dokumen ini memuat **Class Diagram** utama yang memodelkan keseluruhan modul yang ada di dalam Go Backend Peternakan (`farmease-be`). Seluruh entitas saling terhubung menggunakan relasi standar UML, menggabungkan data (atribut) dan perilaku (metode) langsung di dalam kelas entitas utama sesuai dengan prinsip pemrograman berorientasi objek (OOP).
 
 ---
 
 ## Class Diagram Backend (`farmease-be`)
 
-Diagram ini dimodelkan menggunakan format kelas Mermaid lengkap dengan atribut data, relasi UML standar, serta metode yang sesuai dengan implementasi *delivery/handler* backend:
+Diagram ini dimodelkan menggunakan format kelas Mermaid dengan seluruh atribut diatur sebagai private (`-`) dengan format `- nama_variabel : tipe_data`, serta metode publik (`+`) dengan format `+ nama_metode(parameter) : tipe_kembalian`.
 
 ```mermaid
 classDiagram
     %% ==========================================
-    %% 1. ENTITAS (DATA MODELS)
+    %% ENTITAS & METODE (OOP CLASSES)
     %% ==========================================
     class Farm {
-        +string IDFarm
-        +string FarmName
-        +string Location
+        - ID : uuid
+        - Code : string
+        - Name : string
+        - Location : string
+        - Description : string
+        - CreatedAt : date
+        - UpdatedAt : date
+        + CreateFarm(farm : Farm) : bool
+        + UpdateFarm(id : string, farm : Farm) : bool
     }
 
     class Cage {
-        +string IDCage
-        +string CageCode
-        +string CageName
-        +int Capacity
-        +int Occupancy
-        +string IDFarm
+        - IDCage : string
+        - FarmID : string
+        - CageCode : string
+        - Capacity : int
+        - CageType : string
+        - CageName : string
+        - Occupancy : int
+        - CreatedAt : date
+        - UpdatedAt : date
+        + GetCageList(filter : CageFilter) : Cage[]
+        + CreateCage(cage : Cage) : bool
+        + GetCageStats() : CageStats
+        + GetCageWeightStats() : CageWeightStats
     }
 
     class Sheep {
-        +string IDSheep
-        +string SheepCode
-        +string SheepName
-        +string Gender
-        +string Status
-        +float LastWeight
-        +string IDCage
+        - IDSheep : string
+        - SheepCode : string
+        - SheepName : string
+        - Gender : string
+        - Status : string
+        - Origin : string
+        - IDCage : string
+        - LastWeight : float
+        - CreatedAt : date
+        - UpdatedAt : date
+        + GetSheepList(filter : SheepFilter) : Sheep[]
+        + RegisterSheep(s : Sheep) : bool
+        + UpdateSheep(id : string, s : Sheep) : bool
+        + UpdateSheepStatus(id : string, status : string, notes : string) : bool
+        + GetSheepGenealogy() : Genealogy
     }
 
     class Mating {
-        +string IDMating
-        +string IDSheepMale
-        +string IDSheepFemale
-        +date MatingDate
-        +string Status
+        - IDMating : string
+        - IDSheepMale : string
+        - IDSheepFemale : string
+        - MatingDate : date
+        - Status : string
+        + RecordMating(m : Mating) : bool
+        + RecordEstrusCheck(ec : EstrusCheck) : bool
     }
 
     class Pregnancy {
-        +string IDPregnancy
-        +string IDSheepFemale
-        +date MatingDate
-        +date EstBirthDate
-        +string Status
+        - IDPregnancy : string
+        - IDSheepFemale : string
+        - MatingDate : date
+        - EstBirthDate : date
+        - Status : string
+        + RecordPregnancy(p : Pregnancy) : bool
+        + RecordBirth(id : string, count : int) : bool
     }
 
     class Feed {
-        +string IDFeed
-        +string FeedName
-        +float Stock
-        +string Unit
+        - IDFeed : string
+        - FeedName : string
+        - AvailableStock : float
+        - Unit : string
+        + GetMasterFeedList() : Feed[]
+        + AddMasterFeed(f : Feed) : bool
+        + UpdateFeedStock(amount : float, type : string) : bool
+        + RecordFeeding(f : Feeding) : bool
+        + RecordSilageConversion(sc : SilageConversion) : bool
     }
 
-    class FeedingLog {
-        +string IDFeedingLog
-        +string IDCage
-        +string IDFeed
-        +float Quantity
-        +date FedAt
+    class Feeding {
+        - IDFeeding : string
+        - IDSheep : string
+        - IDFeed : string
+        - FeedingDate : date
+        - Amount : float
     }
 
-    class FermentationLog {
-        +string IDFermentationLog
-        +string IDConversion
-        +float Temperature
-        +string Notes
+    class SilageFermentationLog {
+        - IDLog : string
+        - IDConversion : string
+        - CheckDate : date
+        - Status : string
+        - PHLevel : float
+        - Temperature : float
+        - PhysicalCondition : string
+        - Notes : string
+        - CreatedAt : date
+        + GetFermentationLogs(id : string) : SilageFermentationLog[]
+        + CreateFermentationLog(l : SilageFermentationLog) : bool
     }
 
     class HealthRecord {
-        +string IDHealthRecord
-        +string IDSheep
-        +string Diagnosis
-        +string MedicineName
-        +float Dosage
+        - IDRecord : string
+        - IDSheep : string
+        - Diagnosis : string
+        - MedicineName : string
+        - Dosage : float
+        - CreatedAt : date
+        + RecordHealth(h : HealthRecord) : bool
+        + GetHealthHistory(id : string) : HealthRecord[]
     }
 
     class WeightRecord {
-        +string IDWeightRecord
-        +string IDSheep
-        +float Weight
-        +float ADG
+        - IDLog : string
+        - IDSheep : string
+        - Weight : float
+        - ADG : int
+        - CreatedAt : date
+        + RecordWeight(w : WeightRecord) : bool
+        + GetWeightHistory(id : string) : WeightRecord[]
     }
 
     class ManureRecord {
-        +string IDManureRecord
-        +string IDCage
-        +float QuantityKg
+        - IDLog : string
+        - IDCage : string
+        - Amount : float
+        - CreatedAt : time.Time
+        + RecordManure(m : ManureRecord) : bool
     }
 
     class Submission {
-        +string IDSubmission
-        +string Type
-        +string OperatorName
-        +string ApprovalStatus
-        +object Payload
+        - IDSubmission : string
+        - Type : string
+        - OperatorName : string
+        - ApprovalStatus : string
+        - Payload : object
+        + CreateSubmission(sub : Submission) : bool
+        + GetSubmissions(status : string) : Submission[]
+        + ApproveSubmission() : bool
     }
 
     class Notification {
-        +string IDNotification
-        +string IDAccount
-        +string Title
-        +string Message
-        +bool IsRead
-        +string SubmissionID
+        - IDNotification : string
+        - IDAccount : string
+        - Title : string
+        - Message : string
+        - IsRead : bool
+        - SubmissionID : string
     }
 
     class Task {
-        +string IDTask
-        +string Title
-        +string Status
-        +date DueDate
-        +string IDCage
+        - IDTask : string
+        - Title : string
+        - Description : string
+        - Status : string
+        - TaskDate : date
+        - IDCage : string
+        - IDAccount : string
+        + GetMyTasks(id : string, role : string, date : date) : Task[]
+        + CreateTask(t : Task) : bool
     }
 
     class RoutineSchedule {
-        +string IDSchedule
-        +string Title
-        +string Frequency
+        - IDSchedule : string
+        - Title : string
+        - Frequency : string
     }
 
     %% ==========================================
-    %% 2. LAYANAN & PENGENDALI (SERVICES/HANDLERS)
-    %% ==========================================
-    class FarmService {
-        +CreateFarm() bool
-        +UpdateFarm() bool
-    }
-
-    class CageService {
-        +CreateCage() bool
-        +UpdateCage() bool
-        +GetCageStats() Stats
-        +GetCageWeightStats() WeightStats
-    }
-
-    class SheepService {
-        +RegisterSheep() bool
-        +UpdateSheep() bool
-        +UpdateSheepStatus() bool
-        +GetSheepGenealogy() Genealogy
-    }
-
-    class BreedingService {
-        +RecordMating() bool
-        +CheckInbreeding() bool
-        +UpdateMatingStatus() bool
-    }
-
-    class PregnancyService {
-        +RecordPregnancy() bool
-        +CheckPregnancy() bool
-        +UpdatePregnancyStatus() bool
-        +RecordBirth() bool
-    }
-
-    class FeedService {
-        +AddMasterFeed() bool
-        +UpdateFeedStock() bool
-        +RecordFeeding() bool
-        +RecordFeedingMixture() bool
-        +RecordSilageConversion() bool
-    }
-
-    class FermentationService {
-        +CreateFermentationLog() bool
-        +GetFermentationLogs() List
-    }
-
-    class HealthService {
-        +RecordHealth() bool
-        +UpdateHealth() bool
-        +GetHealthHistory() List
-    }
-
-    class WeightService {
-        +RecordWeight() bool
-        +GetWeightHistory() List
-    }
-
-    class ManureService {
-        +RecordManure() bool
-        +RecordManureForCage() bool
-    }
-
-    class SubmissionService {
-        +CreateSubmission() bool
-        +UpdateSubmission() bool
-        +GetSubmissions() List
-    }
-
-    class NotificationService {
-        +ReadNotification() bool
-        +GetNotificationList() List
-    }
-
-    class TaskService {
-        +CreateTask() bool
-        +UpdateTask() bool
-        +CompleteTask() bool
-    }
-
-    class RoutineScheduleService {
-        +Create() bool
-        +Update() bool
-        +Generate() bool
-    }
-
-    class UploadService {
-        +UploadPhoto() string
-    }
-
-    %% ==========================================
-    %% 3. NOTASI RELASI UML STANDAR
+    %% NOTASI RELASI UML STANDAR
     %% ==========================================
     
-    %% Komposisi: Farm tersusun dari Kandang (Farms contain Cages)
+    %% Komposisi: Farm tersusun dari Kandang (Kepemilikan Kuat)
     Farm "1" *-- "*" Cage : Composition
 
-    %% Agregasi: Kandang menampung Domba (Cages aggregate Sheep)
+    %% Agregasi: Kandang menampung Domba (Kandang wadah sementara)
     Cage "1" --o "*" Sheep : Aggregation
-
-    %% Asosiasi: Relasi struktural antar entitas data domba
-    Sheep "1" --> "*" WeightRecord : Association (logs weight)
-    Sheep "1" --> "*" HealthRecord : Association (logs health)
+    
+    %% Komposisi: Log penimbangan & kesehatan bergantung sepenuhnya pada Domba
+    Sheep "1" *-- "*" WeightRecord : Composition
+    Sheep "1" *-- "*" HealthRecord : Composition
+    
+    %% Asosiasi: Relasi domba dengan aktivitas perkawinan/kehamilan
     Sheep "1" --> "*" Mating : Association (mating partner)
     Sheep "1" --> "*" Pregnancy : Association (mother)
     
-    %% Asosiasi: Relasi kandang dengan aktivitas lapangan
-    Cage "1" --> "*" FeedingLog : Association (cage feeding)
-    Cage "1" --> "*" ManureRecord : Association (cage manure)
+    %% Komposisi: Log pemberian pakan & pupuk kandang bergantung pada Kandang
+    Cage "1" *-- "*" Feeding : Composition
+    Cage "1" *-- "*" ManureRecord : Composition
+    
+    %% Asosiasi: Kandang sebagai lokasi tugas
     Cage "1" --> "*" Task : Association (task location)
     
-    %% Asosiasi: Relasi pakan dan pengolahan silase
-    Feed "1" --> "*" FeedingLog : Association (consumed feed)
-    Feed "1" --> "*" FermentationLog : Association (fermentation material)
+    %% Asosiasi: Relasi pakan dan fermentasi
+    Feed "1" --> "*" Feeding : Association (consumed feed)
+    Feed "1" --> "*" SilageFermentationLog : Association (fermentation material)
     
-    %% Asosiasi: Relasi sistem tugas dan notifikasi
+    %% Asosiasi: Relasi tugas dan jadwal
     Task "*" --> "1" RoutineSchedule : Association (generated by)
     Notification "1" --> "0..1" Submission : Association (links to)
     Submission "1" --> "0..1" Sheep : Association (contains payload of)
-
-    %% Dependensi: Service bergantung pada Model Entitas dan database
-    FarmService ..> Farm : Dependency
-    CageService ..> Cage : Dependency
-    SheepService ..> Sheep : Dependency
-    BreedingService ..> Mating : Dependency
-    PregnancyService ..> Pregnancy : Dependency
-    FeedService ..> Feed : Dependency
-    FeedService ..> FeedingLog : Dependency
-    FermentationService ..> FermentationLog : Dependency
-    HealthService ..> HealthRecord : Dependency
-    WeightService ..> WeightRecord : Dependency
-    ManureService ..> ManureRecord : Dependency
-    SubmissionService ..> Submission : Dependency
-    NotificationService ..> Notification : Dependency
-    TaskService ..> Task : Dependency
-    RoutineScheduleService ..> RoutineSchedule : Dependency
-    UploadService ..> Sheep : Dependency (saves photo url)
 ```
 
 ---
 
 ## Penjelasan Relasi UML Kelas Backend
 
-1.  **Komposisi (Composition - Berlian Hitam `*--`)**
-    *   `Farm` ke `Cage`: Menandakan hubungan kepemilikan yang sangat kuat. Jika suatu Farm dihapus dari sistem, maka semua `Cage` (kandang) yang berada di dalam farm tersebut akan ikut terhapus secara otomatis (*cascade delete*).
-2.  **Agregasi (Aggregation - Berlian Kosong `--o`)**
-    *   `Cage` ke `Sheep`: Menandakan hubungan wadah/tempat. Jika `Cage` (kandang) dibongkar atau dihapus, objek `Sheep` (domba) tidak ikut terhapus dari database, melainkan dapat dipindahkan ke kandang lainnya.
-3.  **Asosiasi (Association - Garis Panah Solid `-->`)**
-    *   Menghubungkan entitas data utama (`Sheep`, `Cage`, `Feed`, `RoutineSchedule`) ke catatan transaksinya masing-masing (seperti `WeightRecord`, `HealthRecord`, `FeedingLog`, `FermentationLog`, `Task`, `Notification`, dan `Submission`).
-4.  **Dependensi (Dependency - Garis Panah Putus-Putus `..>`)**
-    *   Menunjukkan relasi penggunaan jangka pendek di mana kelas-kelas `Service` menggunakan objek entitas terkait sebagai tipe parameter masukan atau kembalian fungsi selama manipulasi data database berlangsung.
+1. **Komposisi (Composition - Berlian Hitam `*--`)**
+   * `Farm` ke `Cage`: Menunjukkan hubungan kepemilikan yang kuat di mana jika `Farm` dihapus, seluruh `Cage` di dalamnya ikut terhapus (*cascade delete*).
+   * `Sheep` ke `WeightRecord` & `HealthRecord`: Catatan timbangan atau rekam medis tidak dapat berdiri sendiri jika domba yang bersangkutan dihapus dari sistem.
+   * `Cage` ke `Feeding` & `ManureRecord`: Log pemberian pakan kandang atau pembuangan kotoran kandang akan ikut terhapus jika kandang tersebut dihapus.
+2. **Agregasi (Aggregation - Berlian Kosong `--o`)**
+   * `Cage` ke `Sheep`: Hubungan wadah di mana `Sheep` dapat berpindah kandang, sehingga jika `Cage` dihapus, data `Sheep` tidak terhapus.
+3. **Asosiasi (Association - Garis Panah Solid `-->`)**
+   * Hubungan referensi atau keterkaitan antara dua objek mandiri (misal: `Feed` yang dirujuk di log `Feeding`, atau `Task` yang merujuk pada lokasi `Cage`).

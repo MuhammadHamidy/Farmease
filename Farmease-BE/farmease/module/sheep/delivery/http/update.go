@@ -69,7 +69,7 @@ func (h *SheepHandler) UpdateSheep(c *fiber.Ctx) error {
 		statusVal = "dijual"
 	}
 
-	s := domain.Sheep{
+	sheep := domain.Sheep{
 		SheepCode:   req.SheepCode,
 		SheepName:   req.SheepName,
 		Gender:      req.Gender,
@@ -86,10 +86,10 @@ func (h *SheepHandler) UpdateSheep(c *fiber.Ctx) error {
 		PhotoURL:    req.PhotoURL,
 	}
 
-	err = h.useCase.UpdateSheep(c.Context(), id, &s)
+	err = h.useCase.UpdateSheep(c.Context(), id, &sheep)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
 
-	return c.Status(http.StatusOK).JSON(s)
+	return c.Status(http.StatusOK).JSON(sheep)
 }

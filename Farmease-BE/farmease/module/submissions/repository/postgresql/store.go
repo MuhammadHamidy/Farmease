@@ -7,14 +7,15 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/submissions/domain"
 )
 
-func (r *Repository) Store(ctx context.Context, s *domain.Submission) error {
-	payloadBytes, err := json.Marshal(s.Payload)
+// Store inserts a new submission log record.
+func (r *Repository) Store(ctx context.Context, submission *domain.Submission) error {
+	payloadBytes, err := json.Marshal(submission.Payload)
 	if err != nil {
 		return err
 	}
 
-	if s.SubmittedAt.IsZero() {
-		s.SubmittedAt = time.Now()
+	if submission.SubmittedAt.IsZero() {
+		submission.SubmittedAt = time.Now()
 	}
 
 	query := `INSERT INTO operations.pencatatan_submissions (
@@ -23,8 +24,8 @@ func (r *Repository) Store(ctx context.Context, s *domain.Submission) error {
 	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
 
 	_, err = r.db.Exec(ctx, query,
-		s.ID, s.SubmissionCode, s.Type, s.TypeLabel, s.OperatorCode, s.OperatorName, s.CageCode, s.Scope, s.Summary,
-		payloadBytes, s.SubmittedAt, s.ApprovalStatus, s.ReviewedAt, s.ReviewedBy, s.ReviewNote, s.TaskID,
+		submission.ID, submission.SubmissionCode, submission.Type, submission.TypeLabel, submission.OperatorCode, submission.OperatorName, submission.CageCode, submission.Scope, submission.Summary,
+		payloadBytes, submission.SubmittedAt, submission.ApprovalStatus, submission.ReviewedAt, submission.ReviewedBy, submission.ReviewNote, submission.TaskID,
 	)
 	return err
 }

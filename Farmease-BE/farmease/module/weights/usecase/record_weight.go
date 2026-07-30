@@ -5,6 +5,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/weights/domain"
 )
 
-func (u *useCase) RecordWeight(ctx context.Context, w *domain.Weight) error {
-	return u.repo.Store(ctx, w)
+// RecordWeight saves a new sheep weight measurement into the repository.
+func (u *useCase) RecordWeight(ctx context.Context, weightRecord *domain.Weight) error {
+	return u.repo.Store(ctx, weightRecord)
 }

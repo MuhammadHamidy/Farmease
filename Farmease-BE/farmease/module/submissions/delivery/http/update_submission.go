@@ -66,8 +66,8 @@ func (h *SubmissionHandler) UpdateSubmission(c *fiber.Ctx) error {
 	}
 
 	if req.ReviewedAtMs != nil {
-		t := time.UnixMilli(*req.ReviewedAtMs)
-		patch.ReviewedAt = &t
+		reviewedAtTime := time.UnixMilli(*req.ReviewedAtMs)
+		patch.ReviewedAt = &reviewedAtTime
 	}
 
 	// 1. Execute the update

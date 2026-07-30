@@ -5,47 +5,48 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
-func (u *useCase) UpdateTask(ctx context.Context, id string, t *domain.Task) error {
+// UpdateTask modifies existing task fields, falling back to original values if parameters are blank.
+func (u *useCase) UpdateTask(ctx context.Context, id string, task *domain.Task) error {
 	existing, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	t.IDTask = id
-	if t.Title == "" {
-		t.Title = existing.Title
+	task.IDTask = id
+	if task.Title == "" {
+		task.Title = existing.Title
 	}
-	if t.Description == "" {
-		t.Description = existing.Description
+	if task.Description == "" {
+		task.Description = existing.Description
 	}
-	if t.TaskDate.IsZero() {
-		t.TaskDate = existing.TaskDate
+	if task.TaskDate.IsZero() {
+		task.TaskDate = existing.TaskDate
 	}
-	if t.EndTime == "" {
-		t.EndTime = existing.EndTime
+	if task.EndTime == "" {
+		task.EndTime = existing.EndTime
 	}
-	if t.Priority == "" {
-		t.Priority = existing.Priority
+	if task.Priority == "" {
+		task.Priority = existing.Priority
 	}
-	if t.Status == "" {
-		t.Status = existing.Status
+	if task.Status == "" {
+		task.Status = existing.Status
 	}
-	if t.IDAccount == "" {
-		t.IDAccount = existing.IDAccount
+	if task.IDAccount == "" {
+		task.IDAccount = existing.IDAccount
 	}
-	if t.Category == "" {
-		t.Category = existing.Category
+	if task.Category == "" {
+		task.Category = existing.Category
 	}
-	if t.ScheduleID == nil {
-		t.ScheduleID = existing.ScheduleID
+	if task.ScheduleID == nil {
+		task.ScheduleID = existing.ScheduleID
 	}
-	if t.IDCage == nil {
-		t.IDCage = existing.IDCage
+	if task.IDCage == nil {
+		task.IDCage = existing.IDCage
 	}
-	if t.StartTime == "" {
-		t.StartTime = existing.StartTime
+	if task.StartTime == "" {
+		task.StartTime = existing.StartTime
 	}
-	if t.Rincian == "" {
-		t.Rincian = existing.Rincian
+	if task.Rincian == "" {
+		task.Rincian = existing.Rincian
 	}
-	return u.repo.UpdateTask(ctx, t)
+	return u.repo.UpdateTask(ctx, task)
 }

@@ -12,13 +12,8 @@ Write-Host "         MELUNCURKAN BACKEND FARMEASE SECARA LOKAL        " -Foregro
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Pastikan Database & Redis di Docker sudah berjalan
-Write-Host "[1/4] Memastikan Postgres, Redis & RabbitMQ aktif di Docker..." -ForegroundColor Yellow
-$running = docker ps --format '{{.Names}}'
-if ($running -notcontains "farmease_postgres" -or $running -notcontains "farmease_redis" -or $running -notcontains "farmease_rabbitmq") {
-    docker compose up -d --no-recreate postgres redis rabbitmq
-} else {
-    Write-Host "Postgres, Redis, dan RabbitMQ sudah berjalan di Docker." -ForegroundColor Green
-}
+Write-Host "[1/4] Memastikan Postgres & Redis aktif di Docker..." -ForegroundColor Yellow
+docker compose up -d sso_postgres peternakan_postgres kebun_postgres sso_redis peternakan_rabbitmq sso_migrate sso_seeder peternakan_migrate peternakan_seeder kebun_migrate kebun_seeder
 
 Write-Host "Memastikan database farmease_sso, farmease_peternakan, dan farmease_kebun siap..." -ForegroundColor Gray
 docker exec -i farmease_postgres psql -U user -d farmease_be -c "CREATE DATABASE farmease_sso;" 2>$null
@@ -57,7 +52,7 @@ Start-Sleep -Seconds 1
 Write-Host "[3/4] Meluncurkan Peternakan Backend..." -ForegroundColor Yellow
 $TERNAC_CMD = @"
 `$env:APP_PORT='8081'; `
-`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5435/farmease_peternakan?sslmode=disable'; `
+`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5436/farmease_peternakan?sslmode=disable'; `
 `$env:APP_REDIS_ADDRESS='localhost:6381'; `
 `$env:APP_REDIS_PASSWORD=''; `
 `$env:APP_REDIS_DB='0'; `
@@ -78,7 +73,7 @@ Start-Sleep -Seconds 1
 Write-Host "[4/4] Meluncurkan Perkebunan Backend..." -ForegroundColor Yellow
 $KEBUN_CMD = @"
 `$env:APP_PORT='8082'; `
-`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5435/farmease_kebun?sslmode=disable'; `
+`$env:APP_POSTGRES_URL='postgres://user:pass@localhost:5437/farmease_kebun?sslmode=disable'; `
 `$env:APP_REDIS_ADDRESS='localhost:6381'; `
 `$env:APP_REDIS_PASSWORD=''; `
 `$env:APP_REDIS_DB='0'; `

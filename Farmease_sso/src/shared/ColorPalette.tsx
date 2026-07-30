@@ -48,11 +48,11 @@ export const paletteKebun = {
   error: { hex: '#ba1a1a', name: 'Error Red' },
 } as const satisfies Record<string, ColorSwatch>;
 
-/** Palet SSO — utama coklat (ternak), tombol/aksen hijau (kebun) */
+/** Palet SSO — utama coklat (ternak), tombol/aksen peternakan brown */
 export const paletteSso = {
   ...paletteTernak,
-  'btn-primary': { hex: '#283618', name: 'Button Green' },
-  'btn-primary-hover': { hex: '#606C38', name: 'Button Green Hover' },
+  'btn-primary': { hex: '#8b5e3c', name: 'Button Livestock Brown' },
+  'btn-primary-hover': { hex: '#3d2f24', name: 'Button Dark Brown Hover' },
   'surface-tan': { hex: '#E1D4C2', name: 'Tan Section' },
   'card-tan': { hex: '#D4C4B0', name: 'Card Tan' },
 } as const satisfies Record<string, ColorSwatch>;

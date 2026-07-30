@@ -35,14 +35,14 @@ if err := c.QueryParser(&param); err != nil {
 return h.handleError(c, err)
 }
 
-p := domain.FarmParam{
-Limit:  param.Limit,
-Offset: param.Offset,
-Code:   param.Code,
-Name:   param.Name,
-}
+	farmParam := domain.FarmParam{
+		Limit:  param.Limit,
+		Offset: param.Offset,
+		Code:   param.Code,
+		Name:   param.Name,
+	}
 
-farms, total, err := h.useCase.FindAll(c.Context(), &p)
+	farms, total, err := h.useCase.FindAll(c.Context(), &farmParam)
 if err != nil {
 return h.handleError(c, err)
 }

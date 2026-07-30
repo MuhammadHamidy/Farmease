@@ -5,6 +5,7 @@ import (
 	"errors"
 )
 
+// DeleteCage removes a cage record only if it is empty (occupancy is 0).
 func (u *useCase) DeleteCage(ctx context.Context, id string) error {
 	count, err := u.repo.GetOccupancy(ctx, id)
 	if err != nil {

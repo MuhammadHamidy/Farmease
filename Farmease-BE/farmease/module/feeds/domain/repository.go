@@ -97,6 +97,7 @@ type SilageConversionDetail struct {
 	IDConversion string  `json:"id_conversion" db:"id_conversion"`
 	IDFeed       string  `json:"id_feed" db:"id_feed"`
 	Amount       float64 `json:"amount" db:"amount"`
+	Percentage   float64 `json:"percentage,omitempty"`
 	FeedName     string  `json:"feed_name,omitempty"`
 }
 

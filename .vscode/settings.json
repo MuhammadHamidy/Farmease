@@ -1,8 +1,9 @@
 {
   "gopls": {
     "build.directoryFilters": [
-      "-Farmease-BE",
-      "-sso-be"
+      "+Farmease-BE",
+      "+kebun-be",
+      "+sso-be"
     ]
   }
 }

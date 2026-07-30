@@ -55,7 +55,7 @@
   --font-manrope: 'Manrope', sans-serif;
 
   /* Tambahan untuk menghindari undefined */
-  --ui-primary: #283618;
+  --ui-primary: #3d2f24;
   --ui-border: #EBEBEB;
 
   /* Semantic Status Colors (Extracted from hardcoded hex) */
@@ -90,6 +90,6 @@
   --color-shadow-sm: #3d2f2414;
 
   /* Brand Specific Colors */
-  --color-button-primary: #787f56;
+  --color-button-primary: #8b5e3c;
   --color-brown-light: #8B5E3C;
 }

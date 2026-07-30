@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -255,5 +256,81 @@ func TestRecordMating_InbreedingDonor(t *testing.T) {
 
 	if mating.InbreedingFlag != false || mating.CoefficientOfInbreeding != 0.0 {
 		t.Errorf("expected inbreeding with external donor to be false and 0.0, got flag=%v, coi=%f", mating.InbreedingFlag, mating.CoefficientOfInbreeding)
+	}
+}
+
+func TestCheckInbreeding_WrightTestCases(t *testing.T) {
+	matingRepo := &mockBreedingRepo{matingStore: make(map[string]*domain.Mating)}
+	sheepRepo := &mockSheepRepo{sheepStore: make(map[string]*sheepDomain.Sheep)}
+	taskRepo := &mockTaskRepo{}
+	uc := NewUseCase(matingRepo, sheepRepo, taskRepo)
+	ctx := context.Background()
+
+	helperStrPtr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+
+	addSheep := func(id, name string, fatherID, motherID string) {
+		sheepRepo.sheepStore[id] = &sheepDomain.Sheep{
+			IDSheep:   id,
+			SheepName: name,
+			IDFather:  helperStrPtr(fatherID),
+			IDMother:  helperStrPtr(motherID),
+		}
+	}
+
+	// 1. Roan Gauntlet Pedigree
+	addSheep("Royal_Duke", "Royal Duke of Gloster", "Grand_Duke", "Mimulus")
+	addSheep("Princess_Royal", "Princess Royal", "Champion_of_England", "Carmine")
+	addSheep("Grand_Duke", "Grand Duke of Gloster", "Champion_of_England", "Duchess_of_Gloster")
+	addSheep("Mimulus", "Mimulus", "Champion_of_England", "Mistletoe")
+	addSheep("Carmine", "Carmine", "Lord_Raglan", "Cressida")
+	addSheep("Champion_of_England", "Champion of England", "Lord_Raglan", "Bud_of_Hope")
+	addSheep("Lord_Raglan", "Lord Raglan", "", "")
+	addSheep("Bud_of_Hope", "Bud of Hope", "", "")
+	addSheep("Duchess_of_Gloster", "Duchess of Gloster", "", "")
+	addSheep("Mistletoe", "Mistletoe", "", "")
+	addSheep("Cressida", "Cressida", "", "")
+
+	resRoan, err := uc.CheckInbreeding(ctx, domain.InbreedingCheckRequest{IDSheepMale: "Royal_Duke", IDSheepFemale: "Princess_Royal"})
+	if err != nil {
+		t.Fatalf("unexpected error for Roan Gauntlet: %v", err)
+	}
+	diffRoan := math.Abs(resRoan.CoefficientOfInbreeding - 0.140625)
+	if diffRoan > 0.0005 {
+		t.Errorf("Roan Gauntlet test failed: expected 0.140625, got %f (diff %f)", resRoan.CoefficientOfInbreeding, diffRoan)
+	}
+
+	// 2. Favorite 252 Pedigree
+	addSheep("Bolingbroke", "Bolingbroke", "Foljambe", "Young_Strawberry")
+	addSheep("Phoenix", "Phoenix", "Foljambe", "Favorite_cow")
+	addSheep("Young_Strawberry", "Young Strawberry", "Dalton_Duke", "Favorite_cow")
+	addSheep("Foljambe", "Foljambe", "", "")
+	addSheep("Favorite_cow", "Favorite Cow", "", "")
+	addSheep("Dalton_Duke", "Dalton Duke", "", "")
+
+	resFav, err := uc.CheckInbreeding(ctx, domain.InbreedingCheckRequest{IDSheepMale: "Bolingbroke", IDSheepFemale: "Phoenix"})
+	if err != nil {
+		t.Fatalf("unexpected error for Favorite 252: %v", err)
+	}
+	diffFav := math.Abs(resFav.CoefficientOfInbreeding - 0.1875)
+	if diffFav > 0.0005 {
+		t.Errorf("Favorite (252) test failed: expected 0.1875, got %f (diff %f)", resFav.CoefficientOfInbreeding, diffFav)
+	}
+
+	// 3. Comet 115 Pedigree
+	addSheep("Favorite_252", "Favorite 252", "Bolingbroke", "Phoenix")
+	addSheep("Young_Phoenix", "Young Phoenix", "Favorite_252", "Phoenix")
+
+	resComet, err := uc.CheckInbreeding(ctx, domain.InbreedingCheckRequest{IDSheepMale: "Favorite_252", IDSheepFemale: "Young_Phoenix"})
+	if err != nil {
+		t.Fatalf("unexpected error for Comet 115: %v", err)
+	}
+	diffComet := math.Abs(resComet.CoefficientOfInbreeding - 0.46875)
+	if diffComet > 0.0005 {
+		t.Errorf("Comet (115) test failed: expected 0.46875, got %f (diff %f)", resComet.CoefficientOfInbreeding, diffComet)
 	}
 }

@@ -37,7 +37,7 @@ export default defineComponent({
     const showLogModal = ref(false);
     const selectedConv = ref<any>(null);
     const formLog = ref({
-      status: 'fermentasi',
+      status: '',
       ph_level: '4.0',
       temperature: '30.0',
       physical_condition: '',
@@ -49,7 +49,7 @@ export default defineComponent({
     const openLogModal = async (conv: any) => {
       selectedConv.value = conv;
       formLog.value = {
-        status: conv.status || 'fermentasi',
+        status: '',
         ph_level: '4.0',
         temperature: '30.0',
         physical_condition: '',
@@ -89,6 +89,10 @@ export default defineComponent({
 
     const submitLog = async () => {
       if (!selectedConv.value) return;
+      if (!formLog.value.status) {
+        triggerAlert('Form Tidak Lengkap', 'Status kesiapan silase wajib dipilih', 'error');
+        return;
+      }
       try {
         const ph = parseFloat(formLog.value.ph_level);
         const temp = parseFloat(formLog.value.temperature);
@@ -478,8 +482,8 @@ export default defineComponent({
                           {!isGagal && !isSiap && (
                             <div class="mb-3 bg-light p-3 rounded-4 border" style={{ borderColor: '#ede8e0' }}>
                               <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold text-dark">Hari ke-{info.elapsedDays}</span>
-                                <span class="text-secondary small">dari target 21 Hari</span>
+                                <span class="fw-bold text-dark">Hari ke-{info.elapsedDays} ({info.progress}% Progres)</span>
+                                <span class="text-secondary small">Target: 21 Hari</span>
                               </div>
                               <div class="progress" style={{ height: '8px', borderRadius: '4px', backgroundColor: '#ede8e0' }}>
                                 <div 
@@ -496,26 +500,33 @@ export default defineComponent({
 
                           <div class="p-3 rounded-4 bg-light border mb-3" style={{ borderColor: '#ede8e0' }}>
                             <div class="fw-bold text-dark mb-2 small d-flex justify-content-between align-items-center">
-                              <span>Komposisi Bahan</span>
+                              <span>Komposisi Bahan & Persentase</span>
                               <span class="text-secondary">Target: <strong style={{ color: '#8B5E3C' }}>{c.target_amount.toFixed(2)} {c.unit}</strong></span>
                             </div>
                             <ul class="list-unstyled m-0 p-0 d-flex flex-column gap-2">
-                              {(c.details || []).map((det: any, index: number, arr: any[]) => (
-                                <li 
-                                  key={det.id_detail} 
-                                  class="d-flex align-items-center justify-content-between py-1"
-                                  style={{ 
-                                    fontSize: '0.85rem', 
-                                    borderBottom: index < arr.length - 1 ? '1px dashed #e5dfd5' : 'none' 
-                                  }}
-                                >
-                                  <span class="text-secondary d-flex align-items-center gap-2">
-                                    <span style={{ color: '#8B5E3C', fontSize: '1.1rem', lineHeight: '1' }}>•</span>
-                                    {det.feed_name}
-                                  </span>
-                                  <span class="fw-bold text-dark">{det.amount.toFixed(2)} {c.unit}</span>
-                                </li>
-                              ))}
+                              {(c.details || []).map((det: any, index: number, arr: any[]) => {
+                                const detPct = det.percentage 
+                                  ? Number(det.percentage) 
+                                  : (c.target_amount > 0 ? (det.amount / c.target_amount) * 100 : 0);
+                                return (
+                                  <li 
+                                    key={det.id_detail} 
+                                    class="d-flex align-items-center justify-content-between py-1"
+                                    style={{ 
+                                      fontSize: '0.85rem', 
+                                      borderBottom: index < arr.length - 1 ? '1px dashed #e5dfd5' : 'none' 
+                                    }}
+                                  >
+                                    <span class="text-secondary d-flex align-items-center gap-2">
+                                      <span style={{ color: '#8B5E3C', fontSize: '1.1rem', lineHeight: '1' }}>•</span>
+                                      {det.feed_name}
+                                    </span>
+                                    <span class="fw-bold text-dark">
+                                      {det.amount.toFixed(2)} {c.unit} <span class="text-muted small fw-semibold">({detPct.toFixed(1)}%)</span>
+                                    </span>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
 
@@ -591,8 +602,13 @@ export default defineComponent({
                                 return (
                                   <div class="col-12 col-md-4" key={val}>
                                     <label
-                                      class={`d-flex flex-column align-items-center justify-content-center gap-2 p-3 rounded-3 cursor-pointer h-100 border m-0 ${isSelected ? '' : 'border-light-subtle bg-light'}`}
-                                      style={{ transition: 'all 0.2s ease', borderColor: isSelected ? '#8B5E3C' : '', backgroundColor: isSelected ? 'rgba(139, 94, 60, 0.1)' : '' }}
+                                      class="d-flex flex-column align-items-center justify-content-start gap-2 p-3 rounded-4 cursor-pointer h-100 border m-0 text-center transition-all"
+                                      style={{
+                                        borderColor: isSelected ? 'var(--color-primary, #3d2f24)' : '#e5dfd5',
+                                        backgroundColor: isSelected ? 'rgba(61, 47, 36, 0.08)' : '#faf8f5',
+                                        boxShadow: isSelected ? '0 2px 8px rgba(61, 47, 36, 0.12)' : 'none',
+                                        minHeight: '105px'
+                                      }}
                                       onClick={(e) => { e.preventDefault(); formLog.value = { ...formLog.value, status: val }; }}
                                     >
                                       <input 
@@ -604,12 +620,29 @@ export default defineComponent({
                                         onChange={() => { formLog.value = { ...formLog.value, status: val }; }}
                                       />
                                       <div
-                                        class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style={{ width: '20px', height: '20px', border: `2px solid ${isSelected ? '#8B5E3C' : '#adb5bd'}` }}
+                                        class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1"
+                                        style={{
+                                          width: '22px',
+                                          height: '22px',
+                                          border: `2px solid ${isSelected ? 'var(--color-primary, #3d2f24)' : '#b0a497'}`,
+                                          backgroundColor: '#ffffff'
+                                        }}
                                       >
-                                        {isSelected && <div class="rounded-circle" style={{ width: '10px', height: '10px', backgroundColor: '#8B5E3C' }} />}
+                                        {isSelected && (
+                                          <div 
+                                            class="rounded-circle" 
+                                            style={{ width: '10px', height: '10px', backgroundColor: 'var(--color-primary, #3d2f24)' }} 
+                                          />
+                                        )}
                                       </div>
-                                      <span class={`fw-medium text-center ${isSelected ? 'fw-bold' : 'text-dark'}`} style={{ fontSize: '0.9rem', color: isSelected ? '#8B5E3C' : '' }}>
+                                      <span 
+                                        class="fw-semibold text-center d-flex align-items-center justify-content-center my-auto" 
+                                        style={{ 
+                                          fontSize: '0.85rem', 
+                                          lineHeight: '1.3',
+                                          color: isSelected ? 'var(--color-primary, #3d2f24)' : '#333333'
+                                        }}
+                                      >
                                         {label}
                                       </span>
                                     </label>

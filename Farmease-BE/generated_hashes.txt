@@ -1,4 +1,0 @@
-admin123: $2a$10$WntoZFBmgIGz7mMaACaM6.onpF5ryjRFRGRLy/oUoLSDuQBYmFjU6
-pemilik123: $2a$10$blmjL1u63IiVsiBqw4qMa.9TH.APhMLAK11bX7bNs33a4DLEy0E8O
-kebun123: $2a$10$koOrzNCT9RXCUCcQgREk2u.Vs6MZgXzfydSFZTh7dS.nl75XIn5rm
-kandang123: $2a$10$16IQpcGRnS9oSNb1tR.COeaIu1LfrzbpiWXkOyrrVpHlWERxw4Jl.

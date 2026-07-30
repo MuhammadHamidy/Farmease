@@ -5,13 +5,14 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/routine_schedules/domain"
 )
 
-func (r *routineScheduleRepository) FindDuplicate(ctx context.Context, rs *domain.RoutineSchedule) (*domain.RoutineSchedule, error) {
+// FindDuplicate checks if another active schedule with the same title, category, cage, and operator already exists.
+func (r *routineScheduleRepository) FindDuplicate(ctx context.Context, routineSchedule *domain.RoutineSchedule) (*domain.RoutineSchedule, error) {
 	var idCage, idAccount interface{}
-	if rs.IDCage != nil && *rs.IDCage != "" {
-		idCage = *rs.IDCage
+	if routineSchedule.IDCage != nil && *routineSchedule.IDCage != "" {
+		idCage = *routineSchedule.IDCage
 	}
-	if rs.IDAccount != nil && *rs.IDAccount != "" {
-		idAccount = *rs.IDAccount
+	if routineSchedule.IDAccount != nil && *routineSchedule.IDAccount != "" {
+		idAccount = *routineSchedule.IDAccount
 	}
 
 	rows, err := r.db.Query(ctx, `
@@ -23,7 +24,7 @@ func (r *routineScheduleRepository) FindDuplicate(ctx context.Context, rs *domai
 		  AND COALESCE(id_account::TEXT, '') = COALESCE($4::TEXT, '')
 		  AND is_active = TRUE
 		LIMIT 1
-	`, rs.Title, rs.Category, idCage, idAccount)
+	`, routineSchedule.Title, routineSchedule.Category, idCage, idAccount)
 	if err != nil {
 		return nil, err
 	}

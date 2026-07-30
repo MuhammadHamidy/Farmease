@@ -1,13 +1,14 @@
-﻿package postgresql
+package postgresql
 
 import (
-"context"
+	"context"
 
-"github.com/google/uuid"
+	"github.com/google/uuid"
 )
 
+// Delete performs soft-delete updates on a farm record.
 func (r *Repository) Delete(ctx context.Context, id uuid.UUID, deletedBy string) error {
-query := `UPDATE farms SET deleted_at = NOW(), deleted_by = $1 WHERE id = $2`
-_, err := r.db.Exec(ctx, query, deletedBy, id)
-return err
+	query := `UPDATE farms SET deleted_at = NOW(), deleted_by = $1 WHERE id = $2`
+	_, err := r.db.Exec(ctx, query, deletedBy, id)
+	return err
 }

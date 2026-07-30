@@ -10,44 +10,44 @@ import (
 
 func (h *ManureHandler) RecordManure(c *fiber.Ctx) error {
 	id := c.Params("id")
-	var m domain.Manure
-	if err := c.BodyParser(&m); err != nil {
+	var manure domain.Manure
+	if err := c.BodyParser(&manure); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
-	m.IDSheep = id
-	if m.DestinationType == "" {
-		m.DestinationType = "internal"
+	manure.IDSheep = id
+	if manure.DestinationType == "" {
+		manure.DestinationType = "internal"
 	}
 
-	if appErr := validation.ValidateStruct(&m); appErr != nil {
+	if appErr := validation.ValidateStruct(&manure); appErr != nil {
 		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
-	err := h.useCase.RecordManure(c.Context(), &m)
+	err := h.useCase.RecordManure(c.Context(), &manure)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
-	return c.Status(http.StatusCreated).JSON(m)
+	return c.Status(http.StatusCreated).JSON(manure)
 }
 
 func (h *ManureHandler) RecordManureForCage(c *fiber.Ctx) error {
 	id := c.Params("id")
-	var m domain.Manure
-	if err := c.BodyParser(&m); err != nil {
+	var manure domain.Manure
+	if err := c.BodyParser(&manure); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.Fail("BAD_REQUEST", err.Error()))
 	}
-	m.IDCage = id
-	if m.DestinationType == "" {
-		m.DestinationType = "internal"
+	manure.IDCage = id
+	if manure.DestinationType == "" {
+		manure.DestinationType = "internal"
 	}
 
-	if appErr := validation.ValidateStruct(&m); appErr != nil {
+	if appErr := validation.ValidateStruct(&manure); appErr != nil {
 		return c.Status(appErr.Code).JSON(responses.Fail(string(appErr.Type), appErr.Message))
 	}
 
-	err := h.useCase.RecordManure(c.Context(), &m)
+	err := h.useCase.RecordManure(c.Context(), &manure)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.Fail("SYSTEM_ERROR", err.Error()))
 	}
-	return c.Status(http.StatusCreated).JSON(m)
+	return c.Status(http.StatusCreated).JSON(manure)
 }

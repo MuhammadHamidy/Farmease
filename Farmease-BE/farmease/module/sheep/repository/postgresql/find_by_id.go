@@ -7,6 +7,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
 
+// FindByID queries the complete record details of a sheep by UUID, including parent names, cage ID, and growth weights.
 func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, error) {
 	query := `
 		SELECT d.id_sheep, d.sheep_code, d.sheep_name, d.gender, d.date_of_birth, d.status, d.origin, d.id_cage, d.id_type,
@@ -22,47 +23,60 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Sheep, er
 		LEFT JOIN livestock.sheep m ON d.id_mother = m.id_sheep
 		WHERE d.id_sheep = $1`
 
-	var s domain.Sheep
+	var sheep domain.Sheep
 	var weight, firstWeight *float64
 	var lastWeightDate, firstWeightDate *time.Time
 	var fatherName, motherName *string
 	var sheepName, origin, typeName *string
 	var idCage, idType *string
-
 	var photoURL, owner *string
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&s.IDSheep, &s.SheepCode, &sheepName, &s.Gender, &s.DateOfBirth, &s.Status, &origin, &idCage, &idType,
-		&s.IDFather, &s.IDMother, &typeName, &photoURL, &owner, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &fatherName, &motherName,
+		&sheep.IDSheep, &sheep.SheepCode, &sheepName, &sheep.Gender, &sheep.DateOfBirth, &sheep.Status, &origin, &idCage, &idType,
+		&sheep.IDFather, &sheep.IDMother, &typeName, &photoURL, &owner, &weight, &lastWeightDate, &firstWeight, &firstWeightDate, &fatherName, &motherName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if sheepName != nil { s.SheepName = *sheepName }
-	if origin != nil { s.Origin = *origin }
-	if typeName != nil { s.TypeName = *typeName }
-	if idCage != nil { s.IDCage = *idCage }
-	if idType != nil { s.IDType = *idType }
-	if photoURL != nil { s.PhotoURL = *photoURL }
-	if owner != nil { s.Owner = *owner }
+	if sheepName != nil { 
+		sheep.SheepName = *sheepName 
+	}
+	if origin != nil { 
+		sheep.Origin = *origin 
+	}
+	if typeName != nil { 
+		sheep.TypeName = *typeName 
+	}
+	if idCage != nil { 
+		sheep.IDCage = *idCage 
+	}
+	if idType != nil { 
+		sheep.IDType = *idType 
+	}
+	if photoURL != nil { 
+		sheep.PhotoURL = *photoURL 
+	}
+	if owner != nil { 
+		sheep.Owner = *owner 
+	}
 	if weight != nil {
-		s.LastWeight = *weight
+		sheep.LastWeight = *weight
 	}
 	if lastWeightDate != nil {
-		s.LastWeightDate = lastWeightDate
+		sheep.LastWeightDate = lastWeightDate
 	}
 	if firstWeight != nil {
-		s.FirstWeight = *firstWeight
+		sheep.FirstWeight = *firstWeight
 	}
 	if firstWeightDate != nil {
-		s.FirstWeightDate = firstWeightDate
+		sheep.FirstWeightDate = firstWeightDate
 	}
-	if s.IDFather != nil && fatherName != nil {
-		s.Father = &domain.Parent{IDSheep: *s.IDFather, SheepName: *fatherName}
+	if sheep.IDFather != nil && fatherName != nil {
+		sheep.Father = &domain.Parent{IDSheep: *sheep.IDFather, SheepName: *fatherName}
 	}
-	if s.IDMother != nil && motherName != nil {
-		s.Mother = &domain.Parent{IDSheep: *s.IDMother, SheepName: *motherName}
+	if sheep.IDMother != nil && motherName != nil {
+		sheep.Mother = &domain.Parent{IDSheep: *sheep.IDMother, SheepName: *motherName}
 	}
-	return &s, nil
+	return &sheep, nil
 }

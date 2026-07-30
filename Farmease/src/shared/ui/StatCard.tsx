@@ -19,7 +19,7 @@ export default defineComponent({
         case 'accent':
           return '#ba1a1a'; // Red error/attention (Attention needed)
         case 'light':
-          return '#606c38'; // Green success/healthy (Healthy / completed tasks)
+          return '#10b981'; // Green success/healthy (Healthy / completed tasks)
         default:
           return '#8B5E3C';
       }

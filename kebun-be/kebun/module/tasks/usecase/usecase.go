@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/farmease/kebun-be/kebun/module/tasks/domain"
@@ -30,6 +31,9 @@ func (u *useCase) UpdateTask(ctx context.Context, id string, t *domain.Task) err
 	existing, err := u.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
+	}
+	if existing == nil {
+		return errors.New("task not found")
 	}
 	t.IDTask = id
 	if t.Title == "" {

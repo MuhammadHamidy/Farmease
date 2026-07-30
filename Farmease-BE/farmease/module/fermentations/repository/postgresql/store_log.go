@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/fermentations/domain"
 )
 
+// StoreLog creates a new fermentation checking event log.
 func (r *Repository) StoreLog(ctx context.Context, log *domain.SilageFermentationLog) error {
 	query := `
 		INSERT INTO logistics.silage_fermentation_logs 

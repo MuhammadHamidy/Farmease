@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/fermentations/domain"
 )
 
+// FindLogsByConversionID retrieves fermentation logs by conversion ID.
 func (r *Repository) FindLogsByConversionID(ctx context.Context, conversionID string) ([]*domain.SilageFermentationLog, error) {
 	query := `
 		SELECT id_log, id_conversion, check_date, status, ph_level, temperature, physical_condition, notes, created_at
@@ -19,7 +20,7 @@ func (r *Repository) FindLogsByConversionID(ctx context.Context, conversionID st
 	}
 	defer rows.Close()
 
-	var list []*domain.SilageFermentationLog
+	var logList []*domain.SilageFermentationLog
 	for rows.Next() {
 		var log domain.SilageFermentationLog
 		err := rows.Scan(
@@ -36,11 +37,12 @@ func (r *Repository) FindLogsByConversionID(ctx context.Context, conversionID st
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &log)
+		logList = append(logList, &log)
 	}
-	return list, nil
+	return logList, nil
 }
 
+// FindLatestLogByConversionID fetches the most recent fermentation status log for a conversion ID.
 func (r *Repository) FindLatestLogByConversionID(ctx context.Context, conversionID string) (*domain.SilageFermentationLog, error) {
 	query := `
 		SELECT id_log, id_conversion, check_date, status, ph_level, temperature, physical_condition, notes, created_at

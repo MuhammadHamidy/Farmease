@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/breedings/domain"
 )
 
+// FindAll queries all mating records from the database using optional filters (status, inbreeding flag).
 func (r *Repository) FindAll(ctx context.Context, status string, inbreedingFlag *bool) ([]*domain.Mating, error) {
 	query := `
 		SELECT p.id_mating, p.id_sheep_male, p.id_sheep_female, p.mating_date, p.mating_method, p.status, 
@@ -33,29 +34,29 @@ func (r *Repository) FindAll(ctx context.Context, status string, inbreedingFlag 
 	}
 	defer rows.Close()
 
-	var list []*domain.Mating
+	var matingList []*domain.Mating
 	for rows.Next() {
-		var p domain.Mating
-		var dj, db domain.SheepShort
+		var mating domain.Mating
+		var maleSheep, femaleSheep domain.SheepShort
 		var strawCode, inseminator *string
 		err := rows.Scan(
-			&p.IDMating, &p.IDSheepMale, &p.IDSheepFemale, &p.MatingDate, &p.MatingMethod, &p.Status, &p.InbreedingFlag, &p.CoefficientOfInbreeding, &p.Notes, &strawCode, &inseminator,
-			&dj.SheepName, &db.SheepName,
+			&mating.IDMating, &mating.IDSheepMale, &mating.IDSheepFemale, &mating.MatingDate, &mating.MatingMethod, &mating.Status, &mating.InbreedingFlag, &mating.CoefficientOfInbreeding, &mating.Notes, &strawCode, &inseminator,
+			&maleSheep.SheepName, &femaleSheep.SheepName,
 		)
 		if err != nil {
 			return nil, err
 		}
 		if strawCode != nil {
-			p.StrawCode = *strawCode
+			mating.StrawCode = *strawCode
 		}
 		if inseminator != nil {
-			p.Inseminator = *inseminator
+			mating.Inseminator = *inseminator
 		}
-		dj.IDSheep = p.IDSheepMale
-		db.IDSheep = p.IDSheepFemale
-		p.MaleSheep = &dj
-		p.FemaleSheep = &db
-		list = append(list, &p)
+		maleSheep.IDSheep = mating.IDSheepMale
+		femaleSheep.IDSheep = mating.IDSheepFemale
+		mating.MaleSheep = &maleSheep
+		mating.FemaleSheep = &femaleSheep
+		matingList = append(matingList, &mating)
 	}
-	return list, nil
+	return matingList, nil
 }

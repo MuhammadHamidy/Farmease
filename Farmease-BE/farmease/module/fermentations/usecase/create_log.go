@@ -7,6 +7,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/fermentations/domain"
 )
 
+// CreateLog records a fermentation inspection entry and increases feed warehouse stocks if the status becomes ready (siap).
 func (u *useCase) CreateLog(ctx context.Context, log *domain.SilageFermentationLog) error {
 	// 1. Store the new log
 	if err := u.repo.StoreLog(ctx, log); err != nil {

@@ -232,45 +232,50 @@ export default defineComponent({
       }
     };
 
-    const handleKeguguran = (id: string) => {
-      pregnancyIdToReport.value = id;
-      isMiscarriageConfirmOpen.value = true;
-    };
-
-    const confirmKeguguran = () => {
-      if (!pregnancyIdToReport.value) return;
-
-      const preg = birthAlerts.value.find(a => String(a.id) === String(pregnancyIdToReport.value));
-      if (preg) {
-        const foundSheep = sheep.value.find(s => s.code === preg.code);
+    const handleLaporKehamilan = (id: string) => {
+      const pregAlert = birthAlerts.value.find(a => String(a.id) === String(id));
+      if (pregAlert) {
+        const foundSheep = sheep.value.find(s => s.code === pregAlert.code);
         if (foundSheep) {
           prefilledPencatatanSheepId.value = foundSheep.code;
           prefilledPencatatanCageCode.value = foundSheep.cage_code;
         }
       }
 
-      // Prefill form directly to bypass selection screen
+      // Prefill form directly for Kontrol Kebuntingan
       activePencatatanForm.value = {
         taskId: null,
         idMating: undefined,
         scope: 'domba',
         jenis: {
-          id: 'kelahiran',
-          name: 'Kelahiran',
+          id: 'perkawinan',
+          name: 'Perkawinan',
         },
         rincian: [
           {
-            id: 'kelahiran-domba',
-            name: 'Keguguran',
+            id: 'kontrol-kebuntingan',
+            name: 'Kontrol Kebuntingan',
             mode: 'individu',
           },
         ],
       };
 
-      isMiscarriageConfirmOpen.value = false;
-      pregnancyIdToReport.value = null;
-
       router.push({ name: 'ternak-pencatatan-form' });
+    };
+
+    const confirmKeguguran = async () => {
+      if (!pregnancyIdToReport.value) return;
+      isLoading.value = true;
+      try {
+        await pregnancyApi.updateStatus(pregnancyIdToReport.value, 'keguguran');
+        isMiscarriageConfirmOpen.value = false;
+        pregnancyIdToReport.value = null;
+        await fetchDashboardData();
+      } catch (err) {
+        console.error('Gagal melaporkan keguguran:', err);
+      } finally {
+        isLoading.value = false;
+      }
     };
 
     onMounted(() => {
@@ -401,7 +406,7 @@ export default defineComponent({
     return () => {
       return (
         <div class="peternakan-dashboard animate-fade-in">
-          <BirthAlerts alerts={birthAlerts.value} onKeguguran={handleKeguguran} />
+          <BirthAlerts alerts={birthAlerts.value} onLaporKehamilan={handleLaporKehamilan} />
 
           <div class="peternakan-title-card mb-4 overflow-hidden text-start">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 position-relative" style={{ zIndex: 1 }}>
@@ -562,7 +567,7 @@ export default defineComponent({
                 <div class="peternakan-modal-card text-center p-5 animate-fade-in-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px', borderRadius: '24px', backgroundColor: '#FAFAF8', border: '1px solid #e2dfd8', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)' }}>
                   
                   {/* Decorative Welcome Icon */}
-                  <div class="d-inline-flex align-items-center justify-content-center mb-4 rounded-circle bg-white shadow-sm" style={{ width: '80px', height: '80px', border: '4px solid #bc6c25' }}>
+                  <div class="d-inline-flex align-items-center justify-content-center mb-4 rounded-circle bg-white shadow-sm" style={{ width: '80px', height: '80px', border: '4px solid #8b5e3c' }}>
                     <img src="/icon/ternak_op.png" alt="Welcome" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
                   </div>
 
@@ -570,7 +575,7 @@ export default defineComponent({
                   <Typography variant="h3" weight="extrabold" class="mb-2" style={{ color: '#3d2f24', fontSize: '1.4rem' }}>
                     Selamat Datang!
                   </Typography>
-                  <Typography variant="h5" weight="bold" class="mb-3" style={{ color: '#bc6c25', fontSize: '1.1rem' }}>
+                  <Typography variant="h5" weight="bold" class="mb-3" style={{ color: '#8b5e3c', fontSize: '1.1rem' }}>
                     {userSession.value.name}
                   </Typography>
 
@@ -579,7 +584,7 @@ export default defineComponent({
                     <span class="badge rounded-pill px-3 py-2 fw-bold" style={{ backgroundColor: '#f0ede6', color: '#6b5847', fontSize: '0.75rem' }}>
                       ID: {userSession.value.code}
                     </span>
-                    <span class="badge rounded-pill px-3 py-2 fw-bold" style={{ backgroundColor: '#bc6c25', color: '#ffffff', fontSize: '0.75rem' }}>
+                    <span class="badge rounded-pill px-3 py-2 fw-bold" style={{ backgroundColor: '#8b5e3c', color: '#ffffff', fontSize: '0.75rem' }}>
                       {userSession.value.role}
                     </span>
                   </div>
@@ -595,10 +600,10 @@ export default defineComponent({
                     type="button"
                     class="btn w-100 rounded-pill fw-bold py-3 text-white border-0"
                     style={{
-                      backgroundColor: '#bc6c25',
+                      backgroundColor: '#8b5e3c',
                       fontSize: '0.9rem',
                       transition: 'all 0.2s',
-                      boxShadow: '0 4px 6px -1px rgba(188, 108, 37, 0.2)'
+                      boxShadow: '0 4px 6px -1px rgba(139, 94, 60, 0.2)'
                     }}
                     onClick={() => isWelcomeOpen.value = false}
                     onMouseover={(e: any) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}

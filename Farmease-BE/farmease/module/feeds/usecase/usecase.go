@@ -8,21 +8,16 @@ import (
 	tasksDomain "github.com/farmease/farmease-be/farmease/module/tasks/domain"
 )
 
-
-
-
 type useCase struct {
 	repo      domain.FeedRepository
 	sheepRepo sheepDomain.SheepRepository
 	taskRepo  tasksDomain.TaskRepository
 }
 
+// NewUseCase creates a new instance of domain.UseCase for feed module operations
 func NewUseCase(repo domain.FeedRepository, sheepRepo sheepDomain.SheepRepository, taskRepo tasksDomain.TaskRepository) domain.UseCase {
 	return &useCase{repo: repo, sheepRepo: sheepRepo, taskRepo: taskRepo}
 }
-
-
-
 
 // nutrient represents Dry Matter (BK) and Crude Protein (PK) percentages
 type nutrient struct {
@@ -58,7 +53,8 @@ var feedNutrients = map[string]nutrient{
 	"Consantrate Pellet A":         {BK: 0.88,  PK: 0.16},
 }
 
-// getNutrient looks up nutrient values for a given feed name and category
+// getNutrient looks up nutrient values for a given feed name and category.
+// Returns a fallback profile based on category if the exact feed is not found.
 func getNutrient(feedName string, category string) nutrient {
 	name := strings.TrimSpace(feedName)
 	if nut, ok := feedNutrients[name]; ok {
@@ -67,8 +63,8 @@ func getNutrient(feedName string, category string) nutrient {
 	
 	// Try partial matching
 	nameLower := strings.ToLower(name)
-	for k, nut := range feedNutrients {
-		if strings.Contains(nameLower, strings.ToLower(k)) || strings.Contains(strings.ToLower(k), nameLower) {
+	for key, nut := range feedNutrients {
+		if strings.Contains(nameLower, strings.ToLower(key)) || strings.Contains(strings.ToLower(key), nameLower) {
 			return nut
 		}
 	}
@@ -85,18 +81,24 @@ func getNutrient(feedName string, category string) nutrient {
 	return nutrient{BK: 0.85, PK: 0.12} // Default average concentrate
 }
 
-// calculateSingleRecommendation computes feed recommendations based on body weight and available feeds
+// calculateSingleRecommendation calculates the optimized feed composition (fresh weight in kg) 
+// for sheep based on body weight, available feed stock, and nutritional constraints.
+//
+// Nutritional Parameters:
+//   - Dry Matter (Bahan Kering / BK) required is set to 2.5% of body weight.
+//   - Crude Protein (Protein Kasar / PK) required is set to 13.0% of the total Dry Matter (BK).
+//   - Target Mix Ratio: 95% Forage (Hijauan) and 5% Concentrate (Konsentrat) by Dry Matter.
 func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed) ([]domain.RecommendationItem, float64) {
 	if weight <= 0 {
-		weight = 30.0 // Default fallback weight
+		weight = 30.0 
 	}
 
-	// 1. Total Bahan Kering (BK) = 2.5% of body weight
+	// 1. Calculate total Dry Matter (BK) needed (2.5% of body weight)
 	totalBK := weight * 0.025
-	// 2. Kebutuhan Protein Kasar (PK) total = 13% of total BK
+	// 2. Calculate target Crude Protein (PK) needed (13% of total Dry Matter)
 	targetPK := totalBK * 0.13
 
-	// 3. Proporsi BK: 95% Hijauan, 5% Konsentrat
+	// 3. Compute target Dry Matter allocations (95% Forage / 5% Concentrate)
 	bkForageTarget := totalBK * 0.95
 	bkConcentrateTarget := totalBK * 0.05
 
@@ -105,13 +107,13 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 	var proteinCons []*domain.Feed
 
 	// Classify all feeds currently in stock (available_stock > 0)
-	for _, f := range availableFeeds {
-		if f.AvailableStock <= 0 {
+	for _, feed := range availableFeeds {
+		if feed.AvailableStock <= 0 {
 			continue
 		}
 		
-		nameLower := strings.ToLower(f.FeedName)
-		catLower := strings.ToLower(f.Category)
+		nameLower := strings.ToLower(feed.FeedName)
+		catLower := strings.ToLower(feed.Category)
 		
 		// Forage detection (includes garden prunings)
 		isForage := catLower == "hijauan" || catLower == "greenery" || 
@@ -121,14 +123,14 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 			strings.Contains(nameLower, "odot") || strings.Contains(nameLower, "ilalang")
 
 		if isForage {
-			forages = append(forages, f)
+			forages = append(forages, feed)
 		} else {
 			// Concentrate
-			nut := getNutrient(f.FeedName, f.Category)
+			nut := getNutrient(feed.FeedName, feed.Category)
 			if nut.PK < 0.20 {
-				energyCons = append(energyCons, f)
+				energyCons = append(energyCons, feed)
 			} else {
-				proteinCons = append(proteinCons, f)
+				proteinCons = append(proteinCons, feed)
 			}
 		}
 	}
@@ -147,9 +149,9 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 	// Average forage nutrients (assuming equal share in mix)
 	var totalForagePK float64
 	forageNutrients := make([]nutrient, len(forages))
-	for i, f := range forages {
-		nut := getNutrient(f.FeedName, f.Category)
-		forageNutrients[i] = nut
+	for index, feed := range forages {
+		nut := getNutrient(feed.FeedName, feed.Category)
+		forageNutrients[index] = nut
 		totalForagePK += nut.PK
 	}
 	avgForagePK := totalForagePK / float64(len(forages))
@@ -167,9 +169,9 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 	// Average energy concentrate nutrients
 	var totalEnergyPK float64
 	energyNutrients := make([]nutrient, len(energyCons))
-	for i, f := range energyCons {
-		nut := getNutrient(f.FeedName, f.Category)
-		energyNutrients[i] = nut
+	for index, feed := range energyCons {
+		nut := getNutrient(feed.FeedName, feed.Category)
+		energyNutrients[index] = nut
 		totalEnergyPK += nut.PK
 	}
 	avgEnergyPK := totalEnergyPK / float64(len(energyCons))
@@ -177,26 +179,26 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 	// Average protein concentrate nutrients
 	var totalProteinPK float64
 	proteinNutrients := make([]nutrient, len(proteinCons))
-	for i, f := range proteinCons {
-		nut := getNutrient(f.FeedName, f.Category)
-		proteinNutrients[i] = nut
+	for index, feed := range proteinCons {
+		nut := getNutrient(feed.FeedName, feed.Category)
+		proteinNutrients[index] = nut
 		totalProteinPK += nut.PK
 	}
 	avgProteinPK := totalProteinPK / float64(len(proteinCons))
 
-	// Pearson's Square solver for protein source share (x)
-	var x float64
+	// Pearson's Square solver for protein source share (ratioOfProteinSource)
+	var ratioOfProteinSource float64
 	if avgProteinPK > avgEnergyPK {
-		x = (targetPKConcentratePercent - avgEnergyPK) / (avgProteinPK - avgEnergyPK)
+		ratioOfProteinSource = (targetPKConcentratePercent - avgEnergyPK) / (avgProteinPK - avgEnergyPK)
 	} else {
-		x = 0.5
+		ratioOfProteinSource = 0.5
 	}
 
-	// Clamp x between 0 and 1
-	if x > 1.0 {
-		x = 1.0
-	} else if x < 0.0 {
-		x = 0.0
+	// Clamp ratioOfProteinSource between 0 and 1
+	if ratioOfProteinSource > 1.0 {
+		ratioOfProteinSource = 1.0
+	} else if ratioOfProteinSource < 0.0 {
+		ratioOfProteinSource = 0.0
 	}
 
 	// Construct final fresh weight recommendations
@@ -205,45 +207,45 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 
 	// Forage fresh weights
 	bkPerForage := bkForageTarget / float64(len(forages))
-	for i, f := range forages {
-		nut := forageNutrients[i]
+	for index, feed := range forages {
+		nut := forageNutrients[index]
 		freshForage := bkPerForage / nut.BK
 		totalFreshWeight += freshForage
 		recommendations = append(recommendations, domain.RecommendationItem{
 			Kategori:   "hijauan",
 			JumlahKg:   freshForage,
-			Keterangan: fmt.Sprintf("%s (BK: %.1f%%, PK: %.1f%%)", f.FeedName, nut.BK*100, nut.PK*100),
+			Keterangan: fmt.Sprintf("%s (BK: %.1f%%, PK: %.1f%%)", feed.FeedName, nut.BK*100, nut.PK*100),
 		})
 	}
 
 	// Concentrate fresh weights
-	bkEnergyTarget := bkConcentrateTarget * (1.0 - x)
-	bkProteinTarget := bkConcentrateTarget * x
+	bkEnergyTarget := bkConcentrateTarget * (1.0 - ratioOfProteinSource)
+	bkProteinTarget := bkConcentrateTarget * ratioOfProteinSource
 
 	if bkEnergyTarget > 0 && len(energyCons) > 0 {
 		bkPerEnergy := bkEnergyTarget / float64(len(energyCons))
-		for i, f := range energyCons {
-			nut := energyNutrients[i]
+		for index, feed := range energyCons {
+			nut := energyNutrients[index]
 			freshEnergy := bkPerEnergy / nut.BK
 			totalFreshWeight += freshEnergy
 			recommendations = append(recommendations, domain.RecommendationItem{
 				Kategori:   "konsentrat",
 				JumlahKg:   freshEnergy,
-				Keterangan: fmt.Sprintf("%s (Sumber Energi, BK: %.1f%%, PK: %.1f%%)", f.FeedName, nut.BK*100, nut.PK*100),
+				Keterangan: fmt.Sprintf("%s (Sumber Energi, BK: %.1f%%, PK: %.1f%%)", feed.FeedName, nut.BK*100, nut.PK*100),
 			})
 		}
 	}
 
 	if bkProteinTarget > 0 && len(proteinCons) > 0 {
 		bkPerProtein := bkProteinTarget / float64(len(proteinCons))
-		for i, f := range proteinCons {
-			nut := proteinNutrients[i]
+		for index, feed := range proteinCons {
+			nut := proteinNutrients[index]
 			freshProtein := bkPerProtein / nut.BK
 			totalFreshWeight += freshProtein
 			recommendations = append(recommendations, domain.RecommendationItem{
 				Kategori:   "konsentrat",
 				JumlahKg:   freshProtein,
-				Keterangan: fmt.Sprintf("%s (Sumber Protein, BK: %.1f%%, PK: %.1f%%)", f.FeedName, nut.BK*100, nut.PK*100),
+				Keterangan: fmt.Sprintf("%s (Sumber Protein, BK: %.1f%%, PK: %.1f%%)", feed.FeedName, nut.BK*100, nut.PK*100),
 			})
 		}
 	}
@@ -251,18 +253,19 @@ func calculateSingleRecommendation(weight float64, availableFeeds []*domain.Feed
 	return recommendations, totalFreshWeight
 }
 
-func isValidUUID(u string) bool {
-	if len(u) != 36 {
+// isValidUUID performs a fast string validation for standard UUID v4 format
+func isValidUUID(uuidString string) bool {
+	if len(uuidString) != 36 {
 		return false
 	}
-	for i := 0; i < 36; i++ {
-		c := u[i]
-		if i == 8 || i == 13 || i == 18 || i == 23 {
-			if c != '-' {
+	for index := 0; index < 36; index++ {
+		char := uuidString[index]
+		if index == 8 || index == 13 || index == 18 || index == 23 {
+			if char != '-' {
 				return false
 			}
 		} else {
-			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F')) {
 				return false
 			}
 		}

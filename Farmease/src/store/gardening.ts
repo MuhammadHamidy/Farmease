@@ -147,8 +147,8 @@ export const lastFetch = ref<number>(0)
 export const gardeningStats = computed(() => ({
   totalLahan: lahan.value.length,
   totalPohon: pohon.value.length,
-  activeAktivitas: aktivitas.value.filter((a) => a.status === 'sedang_berjalan').length,
-  unreadNotifikasi: notifikasi.value.filter((n) => !n.read).length,
+  activeAktivitas: aktivitas.value.filter((activity) => activity.status === 'sedang_berjalan').length,
+  unreadNotifikasi: notifikasi.value.filter((notificationItem) => !notificationItem.read).length,
 }))
 
 export async function fetchLahan() {
@@ -174,7 +174,7 @@ export async function fetchPohon(lahanCode?: string) {
     loading.value = true
     error.value = null
     const list = (await pohonApi.getList()).map(mapPohon)
-    pohon.value = lahanCode ? list.filter((p) => p.lahan_code === lahanCode) : list
+    pohon.value = lahanCode ? list.filter((tree) => tree.lahan_code === lahanCode) : list
     lastFetch.value = Date.now()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Failed to fetch pohon'
@@ -258,7 +258,7 @@ export async function updateAktivitas(id: string, data: Partial<ApiAktivitas>) {
     error.value = null
     const updated = await aktivitasApi.update(Number(id), data)
     const mapped = mapAktivitas(updated)
-    const index = aktivitas.value.findIndex((a) => a.id === id)
+    const index = aktivitas.value.findIndex((activity) => activity.id === id)
     if (index !== -1) {
       aktivitas.value[index] = mapped
     }

@@ -135,9 +135,9 @@ export default defineComponent({
               }}
             >
               <option value="all">Semua Kandang</option>
-              {cagesList.value.map((c) => (
-                <option value={c.code} key={c.id}>
-                  {c.name} ({c.code})
+              {cagesList.value.map((cage) => (
+                <option value={cage.code} key={cage.id}>
+                  {cage.name} ({cage.code})
                 </option>
               ))}
             </select>

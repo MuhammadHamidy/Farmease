@@ -230,14 +230,14 @@ export const tasksLoading = ref(false);
 export const tasksError = ref<string | null>(null);
 
 export const openOperatorTasks = computed(() =>
-  operatorTasks.value.filter((t) => t.status === 'belum' || t.status === 'proses' || t.status === 'terlambat'),
+  operatorTasks.value.filter((task) => task.status === 'belum' || task.status === 'proses' || task.status === 'terlambat'),
 );
 
 // Auto-recompute task statuses every 60 seconds so the UI reflects real-time deadlines
 // without requiring a page reload or manual fetch.
 setInterval(() => {
   if (operatorTasks.value.length > 0) {
-    operatorTasks.value = operatorTasks.value.map(t => {
+    operatorTasks.value = operatorTasks.value.map(task => {
       // Re-derive status from the raw API shape we still have access to via rawStatus
       // We reconstruct a minimal API-like object to pass through mapApiTaskToLocal
       const recomputed = recomputeTaskStatus(t);
@@ -380,11 +380,11 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
   // Resolve cage code from id_cage UUID using cagesList and landsList
   let cageCode = '';
   if (t.id_cage) {
-    const foundCage = cagesList.value.find((c) => String(c.id) === String(t.id_cage));
+    const foundCage = cagesList.value.find((cage) => String(cage.id) === String(t.id_cage));
     if (foundCage) {
       cageCode = foundCage.code;
     } else {
-      const foundLand = landsList.value.find((l) => String(l.id) === String(t.id_cage));
+      const foundLand = landsList.value.find((land) => String(land.id) === String(t.id_cage));
       if (foundLand) {
         cageCode = foundLand.code;
       }
@@ -452,8 +452,8 @@ export function mapApiTaskToLocal(t: any): OperatorTask {
   // Note: we always re-check time below even if rawStatus was 'terlambat',
   // because the stored status may be stale (e.g. task was late but now it's a new window).
 
-  // end_time is stored as user-entered local time string (e.g. '23:00') — no conversion needed
-  const endTime = (t.end_time && t.end_time.trim()) ? t.end_time.trim() : '';
+  // Format task end time to HH:MM (slice off any seconds or timezone details, e.g. converting '10:00:00' to '10:00')
+  const endTime = (t.end_time && t.end_time.trim()) ? t.end_time.trim().substring(0, 5) : '';
 
   // Re-evaluate status based on current time (only for non-selesai tasks)
   if (computedStatus !== 'selesai') {
@@ -548,7 +548,7 @@ export async function fetchTasks(date?: string) {
 export async function completeTask(id: string) {
   try {
     await tasksApi.markComplete(id);
-    const task = operatorTasks.value.find((t) => t.id === id);
+    const task = operatorTasks.value.find((taskItem) => taskItem.id === id);
     if (task) {
       task.status = 'proses';
       task.rawStatus = 'menunggu';
@@ -633,9 +633,9 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         if (!isNaN(Number(item.targetId))) {
           sheepId = String(item.targetId);
         } else {
-          let found = sheep.value.find((s) => s.code.toUpperCase() === String(item.targetId).toUpperCase());
+          let found = sheep.value.find((sheepItem) => sheepItem.code.toUpperCase() === String(item.targetId).toUpperCase());
           if (!found) {
-            found = sheep.value.find((s) => String(s.id) === String(item.targetId));
+            found = sheep.value.find((sheepItem) => String(sheepItem.id) === String(item.targetId));
           }
           if (found) sheepId = String(found.id);
         }
@@ -648,15 +648,15 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
       if (isCageScope) {
         const cageCodeToFind = String(item.targetId || input.cageCode || '').toUpperCase();
         const sheepsInCage = sheep.value.filter(
-          (s) => String(s.cage_code).toUpperCase() === cageCodeToFind &&
-                 s.status !== 'Mati' && s.status !== 'Terjual' && s.status !== 'Disembelih'
+          (sheepItem) => String(sheepItem.cage_code).toUpperCase() === cageCodeToFind &&
+                 sheepItem.status !== 'Mati' && sheepItem.status !== 'Terjual' && sheepItem.status !== 'Disembelih'
         );
         if (sheepsInCage.length > 0) {
-          targetSheepIds = sheepsInCage.map(s => String(s.id));
+          targetSheepIds = sheepsInCage.map(sheepItem => String(sheepItem.id));
         } else {
           // fallback to proxy sheep
           let fallbackId = '';
-          const activeSheep = sheep.value.find(s => s.status !== 'Mati' && s.status !== 'Terjual' && s.status !== 'Disembelih');
+          const activeSheep = sheep.value.find(sheepItem => sheepItem.status !== 'Mati' && sheepItem.status !== 'Terjual' && sheepItem.status !== 'Disembelih');
           if (activeSheep) {
             fallbackId = String(activeSheep.id);
           } else if (sheep.value.length > 0) {
@@ -696,8 +696,8 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
           let pruningList: any[] = [];
           const hasPruningItems = rawNames.some(n => /^Pemangkasan\s+/i.test(n.trim()));
           if (hasPruningItems) {
-            try { pruningList = await pemangkasanApi.getList(); } catch (e) {
-              console.warn('Gagal ambil data pemangkasan kebun:', e);
+            try { pruningList = await pemangkasanApi.getList(); } catch (error) {
+              console.warn('Gagal ambil data pemangkasan kebun:', error);
             }
           }
 
@@ -883,7 +883,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
               // Pakan Silase / Stok atau Pakan Hijauan Kebun
               const itemName = (item.obat || item.name || '').toLowerCase();
               const matchedFeed = feedsList.find(
-                (f) => f.feed_name.toLowerCase() === itemName || f.feed_name.toLowerCase().includes(itemName) || itemName.includes(f.feed_name.toLowerCase())
+                (feed) => feed.feed_name.toLowerCase() === itemName || feed.feed_name.toLowerCase().includes(itemName) || itemName.includes(feed.feed_name.toLowerCase())
               );
               
               let feedId = matchedFeed ? (matchedFeed.id || (matchedFeed as any).id_feed) : null;
@@ -954,14 +954,14 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
             // We look for any sheep currently in this cage.
             const cageCodeToFind = String(item.targetId || input.cageCode || '').toUpperCase();
             const sheepInCage = sheep.value.find(
-              (s) => String(s.cage_code).toUpperCase() === cageCodeToFind ||
-                     String(s.id).toUpperCase() === cageCodeToFind
+              (sheepItem) => String(sheepItem.cage_code).toUpperCase() === cageCodeToFind ||
+                     String(sheepItem.id).toUpperCase() === cageCodeToFind
             );
             if (sheepInCage) {
               targetId = String(sheepInCage.id);
             } else {
               // Fallback to the first active/healthy sheep in the list
-              const activeSheep = sheep.value.find(s => s.status !== 'Mati' && s.status !== 'Terjual');
+              const activeSheep = sheep.value.find(sheepItem => sheepItem.status !== 'Mati' && sheepItem.status !== 'Terjual');
               if (activeSheep) {
                 targetId = String(activeSheep.id);
               } else if (sheep.value.length > 0) {
@@ -1011,7 +1011,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
 
           let maleId = item.idPejantan || '';
           if (maleId) {
-            const foundMale = sheep.value.find((s) => s.code.toUpperCase() === String(maleId).toUpperCase() || String(s.id) === String(maleId));
+            const foundMale = sheep.value.find((sheepItem) => sheepItem.code.toUpperCase() === String(maleId).toUpperCase() || String(sheepItem.id) === String(maleId));
             if (foundMale) {
               maleId = String(foundMale.id);
             }
@@ -1037,7 +1037,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
       } else if (input.type === 'kelahiran') {
         // Catat kelahiran (requires pregnancy ID lookup)
         const matchedPregnancy = pregnancyList.find(
-          (p) => (p as any).dam_sheep?.id_sheep === sheepId && (p as any).pregnancy_status === 'dikandung'
+          (pregnancy) => (pregnancy as any).dam_sheep?.id_sheep === sheepId && (pregnancy as any).pregnancy_status === 'dikandung'
         );
         const pregnancyId = matchedPregnancy ? (matchedPregnancy as any).id_pregnancy : '1';
 
@@ -1086,7 +1086,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
         const name = item.obat;
         const qty = parseFloat(item.qty) || 0;
         if (qty > 0) {
-          const existing = feedsList.find(f => f.feed_name.toLowerCase() === name.toLowerCase());
+          const existing = feedsList.find(feed => feed.feed_name.toLowerCase() === name.toLowerCase());
           if (existing) {
             const fId = existing.id || (existing as any).id_feed;
             promises.push(
@@ -1112,7 +1112,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
     if (input.taskId) {
       try {
         await tasksApi.markComplete(input.taskId);
-        const task = operatorTasks.value.find((t) => t.id === input.taskId);
+        const task = operatorTasks.value.find((taskItem) => taskItem.id === input.taskId);
         if (task) {
           task.status = 'proses';
           task.rawStatus = 'menunggu';
@@ -1151,7 +1151,7 @@ export async function executeKebunApiSubmission(input: SubmitPencatatanInput): P
 
     for (const item of items) {
       const foundLand = landsList.value.find(
-        (l) => String(l.code).toUpperCase() === String(input.cageCode || '').toUpperCase()
+        (land) => String(land.code).toUpperCase() === String(input.cageCode || '').toUpperCase()
       );
       const landId = foundLand && foundLand.id ? String(foundLand.id) : '11111111-1111-1111-1111-111111111111';
       const typeLower = (input.type || '').toLowerCase();
@@ -1582,7 +1582,7 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
   // Update task status to "menunggu"
   if (input.taskId) {
     try {
-      const task = operatorTasks.value.find((t) => t.id === input.taskId);
+      const task = operatorTasks.value.find((taskItem) => taskItem.id === input.taskId);
       if (task) {
         let isoDate: string;
         const timeStr = task.dueTime || '08:00';
@@ -1615,8 +1615,8 @@ export async function submitPencatatanSubmission(input: SubmitPencatatanInput): 
         task.status = 'proses';
         task.rawStatus = 'menunggu';
       }
-    } catch (e) {
-      console.error('Failed to update task status to menunggu', e);
+    } catch (error) {
+      console.error('Error updating task in submitPencatatan:', error);
     }
   }
 
@@ -1880,11 +1880,11 @@ export function mapApiScheduleToLocal(api: ApiRoutineSchedule): RoutineSchedule 
   // Resolve cage code from id_cage UUID using cagesList and landsList
   let cageCode = '';
   if (api.id_cage) {
-    const foundCage = cagesList.value.find((c) => String(c.id) === String(api.id_cage));
+    const foundCage = cagesList.value.find((cage) => String(cage.id) === String(api.id_cage));
     if (foundCage) {
       cageCode = foundCage.code;
     } else {
-      const foundLand = landsList.value.find((l) => String(l.id) === String(api.id_cage));
+      const foundLand = landsList.value.find((land) => String(land.id) === String(api.id_cage));
       if (foundLand) {
         cageCode = foundLand.code;
       }
@@ -1961,11 +1961,11 @@ function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRout
   // Resolve id_cage UUID from cageCode using cagesList and landsList
   let idCage: string | undefined = undefined;
   if (local.cageCode) {
-    const foundCage = cagesList.value.find((c) => String(c.code).toUpperCase() === String(local.cageCode).toUpperCase());
+    const foundCage = cagesList.value.find((cage) => String(cage.code).toUpperCase() === String(local.cageCode).toUpperCase());
     if (foundCage && foundCage.id !== undefined) {
       idCage = String(foundCage.id);
     } else {
-      const foundLand = landsList.value.find((l) => String(l.code).toUpperCase() === String(local.cageCode).toUpperCase());
+      const foundLand = landsList.value.find((land) => String(land.code).toUpperCase() === String(local.cageCode).toUpperCase());
       if (foundLand && foundLand.id !== undefined) {
         idCage = String(foundLand.id);
       }
@@ -2038,9 +2038,9 @@ function mapLocalScheduleToApi(local: Partial<RoutineSchedule>): Partial<ApiRout
 }
 
 export const pendingApprovalCount = computed(
-  () => pencatatanSubmissions.value.filter((s) => {
-    if (s.approvalStatus !== 'pending') return false;
-    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((s.type || '').toLowerCase());
+  () => pencatatanSubmissions.value.filter((submission) => {
+    if (submission.approvalStatus !== 'pending') return false;
+    const isPerkebunan = ['perawatan', 'pemangkasan', 'panen', 'aktivitas', 'lahan', 'pohon', 'tanaman'].includes((submission.type || '').toLowerCase());
     return !isPerkebunan;
   }).length,
 );
@@ -2069,9 +2069,9 @@ export async function updateRoutineSchedule(id: string, patch: Partial<Omit<Rout
     const apiPayload = mapLocalScheduleToApi(patch);
     const updatedApi = await routineSchedulesApi.update(id, apiPayload);
     const mapped = mapApiScheduleToLocal(updatedApi);
-    const i = apiRoutineSchedules.value.findIndex((s) => s.id === id);
-    if (i !== -1) {
-      apiRoutineSchedules.value[i] = mapped;
+    const index = apiRoutineSchedules.value.findIndex((schedule) => schedule.id === id);
+    if (index !== -1) {
+      apiRoutineSchedules.value[index] = mapped;
     }
     await fetchTasks();
   } catch (err) {
@@ -2083,7 +2083,7 @@ export async function updateRoutineSchedule(id: string, patch: Partial<Omit<Rout
 export async function deleteRoutineSchedule(id: string) {
   try {
     await routineSchedulesApi.delete(id);
-    apiRoutineSchedules.value = apiRoutineSchedules.value.filter((s) => s.id !== id);
+    apiRoutineSchedules.value = apiRoutineSchedules.value.filter((schedule) => schedule.id !== id);
     await fetchTasks();
   } catch (err) {
     console.error('Error deleting routine schedule:', err);
@@ -2092,7 +2092,7 @@ export async function deleteRoutineSchedule(id: string) {
 }
 
 export async function approveSubmission(id: string, reviewerName: string, note = '') {
-  const sub = pencatatanSubmissions.value.find((s) => s.id === id || s.id_submission === id);
+  const sub = pencatatanSubmissions.value.find((submission) => submission.id === id || submission.id_submission === id);
   if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
   
   // Call API depending on type - exclude peternakan types to handle all gardening types correctly
@@ -2131,7 +2131,7 @@ export async function approveSubmission(id: string, reviewerName: string, note =
       sub.reviewNote = note;
 
       if (sub.taskId) {
-        const task = operatorTasks.value.find((t) => t.id === sub.taskId);
+        const task = operatorTasks.value.find((taskItem) => taskItem.id === sub.taskId);
         if (task) {
           task.status = 'selesai';
           task.rawStatus = 'selesai';
@@ -2149,7 +2149,7 @@ export async function approveSubmission(id: string, reviewerName: string, note =
 }
 
 export async function rejectSubmission(id: string, reviewerName: string, note: string) {
-  const sub = pencatatanSubmissions.value.find((s) => s.id === id || s.id_submission === id);
+  const sub = pencatatanSubmissions.value.find((submission) => submission.id === id || submission.id_submission === id);
   if (!sub) return { success: false, message: 'Data pencatatan tidak ditemukan' };
   
   try {
@@ -2166,7 +2166,7 @@ export async function rejectSubmission(id: string, reviewerName: string, note: s
     sub.reviewNote = note;
 
     if (sub.taskId) {
-      const task = operatorTasks.value.find((t) => t.id === sub.taskId);
+      const task = operatorTasks.value.find((taskItem) => taskItem.id === sub.taskId);
       if (task) {
         task.status = 'belum';
         task.rawStatus = 'belum';
@@ -2310,7 +2310,7 @@ export async function updateOperatorTask(id: string, patch: any) {
       isoDate = new Date().toISOString();
     }
 
-    const existingStatus = operatorTasks.value.find(t => t.id === id)?.status || 'belum';
+    const existingStatus = operatorTasks.value.find(task => task.id === id)?.status || 'belum';
     const payload = {
       user_id: userId,
       title: apiTitle,
@@ -2326,7 +2326,7 @@ export async function updateOperatorTask(id: string, patch: any) {
     console.log('Updating task payload:', payload);
     const updatedApiTask = await tasksApi.update(id, payload);
     const localTask = mapApiTaskToLocal(updatedApiTask);
-    const index = operatorTasks.value.findIndex(t => t.id === id);
+    const index = operatorTasks.value.findIndex(task => task.id === id);
     if (index !== -1) {
       operatorTasks.value[index] = localTask;
     }
@@ -2347,7 +2347,7 @@ export async function updateOperatorTask(id: string, patch: any) {
 export async function deleteOperatorTask(id: string) {
   try {
     await tasksApi.delete(id);
-    operatorTasks.value = operatorTasks.value.filter(t => t.id !== id);
+    operatorTasks.value = operatorTasks.value.filter(task => task.id !== id);
   } catch (err) {
     console.error('Error deleting operator task:', err);
     alert(err instanceof Error ? err.message : 'Gagal menghapus tugas');

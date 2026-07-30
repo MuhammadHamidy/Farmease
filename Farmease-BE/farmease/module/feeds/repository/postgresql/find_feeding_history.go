@@ -20,12 +20,12 @@ func (r *Repository) FindFeedingHistory(ctx context.Context, idSheep string) ([]
 
 	var list []*domain.Feeding
 	for rows.Next() {
-		var p domain.Feeding
-		err := rows.Scan(&p.IDFeeding, &p.IDSheep, &p.IDFeed, &p.FeedingDate, &p.Amount, &p.Unit, &p.Notes, &p.FeedName)
+		var feeding domain.Feeding
+		err := rows.Scan(&feeding.IDFeeding, &feeding.IDSheep, &feeding.IDFeed, &feeding.FeedingDate, &feeding.Amount, &feeding.Unit, &feeding.Notes, &feeding.FeedName)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &p)
+		list = append(list, &feeding)
 	}
 	return list, nil
 }

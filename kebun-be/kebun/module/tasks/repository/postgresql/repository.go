@@ -116,6 +116,9 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Task, err
 	var idAcc, scheduleId, idCage, startTime, rincian *string
 	err := r.db.QueryRow(ctx, query, id).Scan(&t.IDTask, &t.Title, &desc, &taskDate, &end, &status, &priority, &idAcc, &cat, &scheduleId, &idCage, &startTime, &rincian, &created, &updated)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if desc != nil {

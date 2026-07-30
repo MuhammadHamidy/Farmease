@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
 
+// FindAllTypes retrieves all registered sheep breed types ordered alphabetically by name.
 func (r *Repository) FindAllTypes(ctx context.Context) ([]*domain.SheepType, error) {
 	query := `SELECT id_type, type_name, type_description, created_at, updated_at FROM livestock.sheep_types ORDER BY type_name ASC`
 	rows, err := r.db.Query(ctx, query)
@@ -14,14 +15,14 @@ func (r *Repository) FindAllTypes(ctx context.Context) ([]*domain.SheepType, err
 	}
 	defer rows.Close()
 
-	var types []*domain.SheepType
+	var sheepTypeList []*domain.SheepType
 	for rows.Next() {
-		var t domain.SheepType
-		err := rows.Scan(&t.IDType, &t.TypeName, &t.TypeDescription, &t.CreatedAt, &t.UpdatedAt)
+		var sheepType domain.SheepType
+		err := rows.Scan(&sheepType.IDType, &sheepType.TypeName, &sheepType.TypeDescription, &sheepType.CreatedAt, &sheepType.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
-		types = append(types, &t)
+		sheepTypeList = append(sheepTypeList, &sheepType)
 	}
-	return types, nil
+	return sheepTypeList, nil
 }

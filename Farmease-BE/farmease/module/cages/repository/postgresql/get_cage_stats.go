@@ -5,6 +5,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/cages/domain"
 )
 
+// GetCageStats counts total animals, active healthy sheep, and pregnant/attention needed sheep in a cage.
 func (r *Repository) GetCageStats(ctx context.Context, id string) (*domain.CageStats, error) {
 	var stats domain.CageStats
 	query := `

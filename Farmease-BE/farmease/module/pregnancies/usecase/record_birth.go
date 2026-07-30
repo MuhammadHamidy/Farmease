@@ -6,9 +6,10 @@ import (
 	sheepDomain "github.com/farmease/farmease-be/farmease/module/sheep/domain"
 )
 
-func (u *useCase) RecordBirth(ctx context.Context, k *domain.Birth) error {
+// RecordBirth logs a birth event, registers offspring into the sheep records, and sets mother/mating statuses back to active.
+func (u *useCase) RecordBirth(ctx context.Context, birth *domain.Birth) error {
 	// 1. Get Pregnancy Detail to get parents
-	pregnancy, err := u.repo.GetPregnancyDetail(ctx, k.IDPregnancy)
+	pregnancy, err := u.repo.GetPregnancyDetail(ctx, birth.IDPregnancy)
 	if err != nil {
 		return err
 	}
@@ -23,18 +24,18 @@ func (u *useCase) RecordBirth(ctx context.Context, k *domain.Birth) error {
 	}
 
 	// 2. Store Birth
-	err = u.repo.StoreBirth(ctx, k)
+	err = u.repo.StoreBirth(ctx, birth)
 	if err != nil {
 		return err
 	}
 
 	// 3. Auto-register offspring
-	for _, child := range k.OffspringList {
+	for _, child := range birth.OffspringList {
 		newSheep := &sheepDomain.Sheep{
 			SheepCode:   child.SheepCode,
 			SheepName:   child.SheepName,
 			Gender:      child.Gender,
-			DateOfBirth: &k.BirthDate,
+			DateOfBirth: &birth.BirthDate,
 			Status:      "aktif",
 			Origin:      "internal",
 			IDCage:      child.IDCage,
@@ -45,12 +46,12 @@ func (u *useCase) RecordBirth(ctx context.Context, k *domain.Birth) error {
 		}
 		err = u.sheepRepo.Store(ctx, newSheep)
 		if err == nil && child.BirthWeight > 0 {
-			_ = u.repo.StoreBirthWeight(ctx, newSheep.IDSheep, k.BirthDate, child.BirthWeight)
+			_ = u.repo.StoreBirthWeight(ctx, newSheep.IDSheep, birth.BirthDate, child.BirthWeight)
 		}
 	}
 
 	// 4. Update Pregnancy status to 'melahirkan'
-	_ = u.repo.UpdatePregnancyStatus(ctx, k.IDPregnancy, "melahirkan", "Kelahiran dicatat")
+	_ = u.repo.UpdatePregnancyStatus(ctx, birth.IDPregnancy, "melahirkan", "Kelahiran dicatat")
 
 	// 5. Update Mother's status back to 'aktif'
 	_ = u.sheepRepo.UpdateStatus(ctx, pregnancy.IDMother, "aktif", "Selesai melahirkan")
@@ -59,8 +60,8 @@ func (u *useCase) RecordBirth(ctx context.Context, k *domain.Birth) error {
 	_ = u.matingRepo.UpdateStatus(ctx, pregnancy.IDMating, "sukses", "Selesai melahirkan")
 
 	// 7. Complete task if IDTask is provided
-	if k.IDTask != "" {
-		_ = u.taskRepo.UpdateTaskStatus(ctx, k.IDTask, "selesai")
+	if birth.IDTask != "" {
+		_ = u.taskRepo.UpdateTaskStatus(ctx, birth.IDTask, "selesai")
 	}
 
 	return nil

@@ -1,0 +1,218 @@
+version: '3.9'
+
+# Staging Full Ecosystem Configuration (SSO + Ternak + Kebun)
+# Runs isolated staging containers for all 3 modules in one unified stack
+
+services:
+  # ============================================================================
+  # 1. MIDDLEWARE & DATABASES (STAGING)
+  # ============================================================================
+  sso_postgres_staging:
+    image: postgres:15-alpine
+    container_name: farmease_sso_postgres_staging
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: farmease_sso_staging
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - sso_postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d farmease_sso_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_staging_network
+
+  sso_redis_staging:
+    image: redis:7-alpine
+    container_name: farmease_sso_redis_staging
+    ports:
+      - "127.0.0.1:6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_staging_network
+    restart: always
+
+  peternakan_postgres_staging:
+    image: postgres:15-alpine
+    container_name: farmease_peternakan_postgres_staging
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: farmease_peternakan_staging
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - peternakan_postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d farmease_peternakan_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_staging_network
+
+  peternakan_rabbitmq_staging:
+    image: rabbitmq:3-management-alpine
+    container_name: farmease_peternakan_rabbitmq_staging
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_staging_network
+    restart: always
+
+  kebun_postgres_staging:
+    image: postgres:15-alpine
+    container_name: farmease_kebun_postgres_staging
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: farmease_kebun_staging
+    ports:
+      - "127.0.0.1:5437:5432"
+    volumes:
+      - kebun_postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d farmease_kebun_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - farmease_staging_network
+
+  # ============================================================================
+  # 2. BACKEND MICROSERVICES (STAGING)
+  # ============================================================================
+  sso_be_staging:
+    build:
+      context: ./sso-be
+      dockerfile: sso/Dockerfile
+    container_name: farmease_sso_be_staging
+    restart: always
+    depends_on:
+      sso_postgres_staging:
+        condition: service_healthy
+      sso_redis_staging:
+        condition: service_healthy
+    environment:
+      APP_ENV: staging
+      APP_PORT: "8080"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@sso_postgres_staging:5432/farmease_sso_staging?sslmode=disable
+      APP_REDIS_ADDRESS: sso_redis_staging:6379
+      APP_JWTSECRET: ${JWT_SECRET:-farmease-secret-key-123}
+      APP_REDIRECTURL: https://sso-staging.farmease.id/callback
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - farmease_staging_network
+
+  peternakan_be_staging:
+    build:
+      context: ./Farmease-BE
+      dockerfile: farmease/Dockerfile
+    container_name: farmease_peternakan_be_staging
+    restart: always
+    depends_on:
+      peternakan_postgres_staging:
+        condition: service_healthy
+      peternakan_rabbitmq_staging:
+        condition: service_healthy
+    environment:
+      APP_ENV: staging
+      APP_PORT: "8081"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@peternakan_postgres_staging:5432/farmease_peternakan_staging?sslmode=disable
+      APP_SSOAPIURL: http://sso_be_staging:8080
+      APP_RABBITMQ_URL: amqp://guest:guest@peternakan_rabbitmq_staging:5672/
+    ports:
+      - "127.0.0.1:8081:8081"
+    networks:
+      - farmease_staging_network
+
+  kebun_be_staging:
+    build:
+      context: ./kebun-be
+      dockerfile: kebun/Dockerfile
+    container_name: farmease_kebun_be_staging
+    restart: always
+    depends_on:
+      kebun_postgres_staging:
+        condition: service_healthy
+    environment:
+      APP_ENV: staging
+      APP_PORT: "8082"
+      APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@kebun_postgres_staging:5432/farmease_kebun_staging?sslmode=disable
+      APP_SSOAPIURL: http://sso_be_staging:8080
+    ports:
+      - "127.0.0.1:8082:8082"
+    networks:
+      - farmease_staging_network
+
+  # ============================================================================
+  # 3. FRONTEND APPS (STAGING)
+  # ============================================================================
+  sso_fe_staging:
+    build:
+      context: ./Farmease_sso
+      dockerfile: Dockerfile
+    container_name: farmease_sso_fe_staging
+    restart: always
+    environment:
+      VITE_API_BASE_URL: https://api-sso-staging.farmease.id
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - farmease_staging_network
+
+  ternak_fe_staging:
+    build:
+      context: ./Farmease
+      dockerfile: Dockerfile
+    container_name: farmease_ternak_fe_staging
+    restart: always
+    environment:
+      VITE_API_BASE_URL: https://api-ternak-staging.farmease.id
+    ports:
+      - "127.0.0.1:3001:3000"
+    networks:
+      - farmease_staging_network
+
+  kebun_fe_staging:
+    build:
+      context: ./Farmease_kebun
+      dockerfile: Dockerfile
+    container_name: farmease_kebun_fe_staging
+    restart: always
+    environment:
+      VITE_API_BASE_URL: https://api-kebun-staging.farmease.id
+    ports:
+      - "127.0.0.1:3002:3000"
+    networks:
+      - farmease_staging_network
+
+volumes:
+  sso_postgres_staging_data:
+    driver: local
+  peternakan_postgres_staging_data:
+    driver: local
+  kebun_postgres_staging_data:
+    driver: local
+
+networks:
+  farmease_staging_network:
+    driver: bridge

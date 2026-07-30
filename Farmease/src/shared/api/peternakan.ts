@@ -67,10 +67,10 @@ export const sheepApi = {
     return await apiClient.patch(`/api/sheep/${id}/status`, { status })
   },
   getGenealogy: async (id: string | number): Promise<any> => {
-    return await apiClient.get(`/api/sheep/${id}/genealogy`)
+    return await apiClient.get(`/api/sheep/${id}/genealogy?generation=5`)
   },
   getSilsilah: async (id: string | number): Promise<any> => {
-    return await apiClient.get(`/api/sheep/${id}/silsilah`)
+    return await apiClient.get(`/api/sheep/${id}/silsilah?generation=5`)
   },
   registerExternalDonor: async (name: string, origin: string): Promise<Sheep> => {
     return await apiClient.post('/api/sheep/external-donor', { name, origin })

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// UploadPhoto saves uploaded photo multipart file to local public/uploads storage directory.
 func (h *UploadHandler) UploadPhoto(c *fiber.Ctx) error {
 	file, err := c.FormFile("photo")
 	if err != nil {

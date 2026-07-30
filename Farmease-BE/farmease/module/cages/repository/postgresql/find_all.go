@@ -6,6 +6,7 @@ import (
 	"github.com/farmease/farmease-be/farmease/module/cages/domain"
 )
 
+// FindAll queries all registered cages with optional type filter and pagination.
 func (r *Repository) FindAll(ctx context.Context, filter domain.CageFilter) ([]*domain.Cage, int, error) {
 	query := `
 		SELECT id_cage, cage_code, capacity, cage_type,
@@ -38,14 +39,14 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.CageFilter) ([]*
 	}
 	defer rows.Close()
 
-	var cages []*domain.Cage
+	var cageList []*domain.Cage
 	for rows.Next() {
-		var c domain.Cage
-		err := rows.Scan(&c.IDCage, &c.CageCode, &c.Capacity, &c.CageType, &c.Occupancy, &c.CreatedAt, &c.UpdatedAt, &c.FarmID, &c.CageName)
+		var cage domain.Cage
+		err := rows.Scan(&cage.IDCage, &cage.CageCode, &cage.Capacity, &cage.CageType, &cage.Occupancy, &cage.CreatedAt, &cage.UpdatedAt, &cage.FarmID, &cage.CageName)
 		if err != nil {
 			return nil, 0, err
 		}
-		cages = append(cages, &c)
+		cageList = append(cageList, &cage)
 	}
 
 	var total int
@@ -57,5 +58,5 @@ func (r *Repository) FindAll(ctx context.Context, filter domain.CageFilter) ([]*
 		err = r.db.QueryRow(ctx, countQuery).Scan(&total)
 	}
 
-	return cages, total, err
+	return cageList, total, err
 }

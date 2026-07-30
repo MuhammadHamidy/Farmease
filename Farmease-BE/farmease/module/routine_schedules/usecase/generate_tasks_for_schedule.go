@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// GenerateTasksForSchedule generates tasks for a specific routine schedule up to windowDays.
 func (u *useCase) GenerateTasksForSchedule(ctx context.Context, scheduleID string, windowDays int) error {
 	localLoc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
@@ -14,11 +15,11 @@ func (u *useCase) GenerateTasksForSchedule(ctx context.Context, scheduleID strin
 	today := time.Now().In(localLoc)
 	todayMidnight := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, localLoc)
 
-	rs, err := u.repo.FindByID(ctx, scheduleID)
-	if err != nil || rs == nil {
+	routineSchedule, err := u.repo.FindByID(ctx, scheduleID)
+	if err != nil || routineSchedule == nil {
 		return err
 	}
 
-	u.generateForSchedule(ctx, rs, todayMidnight, windowDays, localLoc)
+	u.generateForSchedule(ctx, routineSchedule, todayMidnight, windowDays, localLoc)
 	return nil
 }

@@ -47,17 +47,21 @@ func (r *Repository) FindAllSilageConversions(ctx context.Context) ([]*domain.Si
 		if err != nil {
 			return nil, err
 		}
-		defer dRows.Close()
-
+		
 		var details []domain.SilageConversionDetail
 		for dRows.Next() {
 			var d domain.SilageConversionDetail
 			err = dRows.Scan(&d.IDDetail, &d.IDConversion, &d.IDFeed, &d.Amount, &d.FeedName)
 			if err != nil {
+				dRows.Close()
 				return nil, err
+			}
+			if sc.TargetAmount > 0 {
+				d.Percentage = (d.Amount / sc.TargetAmount) * 100
 			}
 			details = append(details, d)
 		}
+		dRows.Close()
 		sc.Details = details
 	}
 

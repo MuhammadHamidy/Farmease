@@ -15,6 +15,7 @@ import PencatatanTypeFields, { type PencatatanFormItem } from '@/modules/ternak/
 import type { PencatatanMode } from '@/modules/ternak/components/pencatatan/PencatatanModeToggle';
 import { useRouter } from 'vue-router';
 import CustomAlertModal, { type AlertModalState } from '@/shared/ui/CustomAlertModal';
+import { formatMatingReadiness, formatSheepStatus } from '@/shared/utils/i18nFormatters';
 
 const JENIS_ICONS: Record<string, string> = {
   pakan: '/icon/catat_pakan.png',
@@ -96,19 +97,19 @@ export default defineComponent({
       prefilledPencatatanSheepId.value = null;
       prefilledPencatatanCageCode.value = null;
 
-      forms.value.forEach((f) => {
-        if (f.mode === 'kelompok' || activePencatatanForm.value?.jenis?.id === 'kotoran') {
+      forms.value.forEach((form) => {
+        if (form.mode === 'kelompok' || activePencatatanForm.value?.jenis?.id === 'kotoran') {
           const linkedTask = activePencatatanForm.value?.taskId 
-            ? operatorTasks.value.find(t => String(t.id) === String(activePencatatanForm.value.taskId)) 
+            ? operatorTasks.value.find(task => String(task.id) === String(activePencatatanForm.value.taskId)) 
             : null;
           if (linkedTask && linkedTask.cageCode) {
-            f.targetId = linkedTask.cageCode;
+            form.targetId = linkedTask.cageCode;
           } else if (cageSession.value?.code) {
-            f.targetId = cageSession.value.code;
+            form.targetId = cageSession.value.code;
           }
         } else {
           if (cageSession.value?.code) {
-            f.selectedCageCode = cageSession.value.code;
+            form.selectedCageCode = cageSession.value.code;
           }
         }
       });
@@ -182,52 +183,73 @@ export default defineComponent({
 
     const pregnantCageSheepList = computed(() => {
       const activeCode = forms.value[0]?.selectedCageCode || cageSession.value?.code || '';
-      if (!activeCode) return [];
       
-      return sheep.value
-        .filter(s => s.cage_code === activeCode && s.gender === 'betina' && s.status === 'Hamil')
-        .map(s => {
-          const targetIdStr = String(s.id);
-          const foundPreg = pregnancies.value.find((p: any) => {
-            const idMother = String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || '');
-            const statusStr = (p.status || p.pregnancy_status || '').toLowerCase();
-            const isActive = statusStr === 'dikandung' || statusStr === 'hamil' || statusStr === 'aktif';
-            return idMother === targetIdStr && isActive;
-          });
-          
-          // Gunakan expected_birth_date langsung dari DB jika tersedia
-          let hpl: Date;
-          if (foundPreg?.expected_birth_date) {
-            hpl = new Date(foundPreg.expected_birth_date);
-          } else if (foundPreg?.pregnancy_date) {
-            hpl = new Date(new Date(foundPreg.pregnancy_date).getTime() + 150 * 24 * 60 * 60 * 1000);
-          } else {
-            // Fallback: estimasi 60 hari dari sekarang
-            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
-          }
-          if (isNaN(hpl.getTime())) {
-            hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
-          }
-          const today = new Date();
-          today.setHours(0,0,0,0);
-          hpl.setHours(0,0,0,0);
-          const diffTime = hpl.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          let countdownText = '';
-          if (diffDays > 0) countdownText = `H-${diffDays} Hari`;
-          else if (diffDays === 0) countdownText = 'HPL Hari Ini';
-          else countdownText = `Lewat HPL ${Math.abs(diffDays)} Hari`;
+      const pregnantSheepIds = new Set(
+        pregnancies.value
+          .filter((p: any) => {
+            const st = (p.status || p.pregnancy_status || '').toLowerCase();
+            return st === 'dikandung' || st === 'hamil' || st === 'aktif';
+          })
+          .map((p: any) => String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || ''))
+      );
 
-          return {
-            id: s.id,
-            code: s.code,
-            name: s.name,
-            countdownText,
-            hpl: hpl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
-            cage_code: s.cage_code
-          };
+      let candidates = sheep.value.filter(s => {
+        if (s.gender !== 'betina') return false;
+        if (['Mati', 'Terjual', 'Disembelih'].includes(s.status)) return false;
+        const isStatusHamil = s.status?.toLowerCase() === 'hamil';
+        const hasPregnancyRecord = pregnantSheepIds.has(String(s.id));
+        return isStatusHamil || hasPregnancyRecord;
+      });
+
+      if (activeCode) {
+        const filteredByCage = candidates.filter(s => s.cage_code === activeCode);
+        if (filteredByCage.length > 0) {
+          candidates = filteredByCage;
+        }
+      }
+
+      return candidates.map(s => {
+        const targetIdStr = String(s.id);
+        const foundPreg = pregnancies.value.find((p: any) => {
+          const idMother = String(p.id_sheep || p.mother_sheep?.id_sheep || p.dam_sheep?.id_sheep || p.id_sheep_female || '');
+          const statusStr = (p.status || p.pregnancy_status || '').toLowerCase();
+          const isActive = statusStr === 'dikandung' || statusStr === 'hamil' || statusStr === 'aktif';
+          return idMother === targetIdStr && isActive;
         });
+        
+        // Gunakan expected_birth_date langsung dari DB jika tersedia
+        let hpl: Date;
+        if (foundPreg?.expected_birth_date) {
+          hpl = new Date(foundPreg.expected_birth_date);
+        } else if (foundPreg?.pregnancy_date) {
+          hpl = new Date(new Date(foundPreg.pregnancy_date).getTime() + 150 * 24 * 60 * 60 * 1000);
+        } else {
+          // Fallback: estimasi 60 hari dari sekarang
+          hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+        }
+        if (isNaN(hpl.getTime())) {
+          hpl = new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000);
+        }
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        hpl.setHours(0,0,0,0);
+        const diffTime = hpl.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        let countdownText = '';
+        if (diffDays > 0) countdownText = `H-${diffDays} Hari`;
+        else if (diffDays === 0) countdownText = 'HPL Hari Ini';
+        else countdownText = `Lewat HPL ${Math.abs(diffDays)} Hari`;
+
+        return {
+          id: s.id,
+          code: s.code,
+          name: s.name,
+          countdownText,
+          hpl: hpl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
+          cage_code: s.cage_code
+        };
+      });
     });
 
     // Fetch stocks when form opens
@@ -326,11 +348,11 @@ export default defineComponent({
     };
 
     const handleSaved = async () => {
-      const isValid = forms.value.every((f) => {
+      const isValid = forms.value.every((form) => {
         if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
           return true;
         }
-        return !!f.targetId;
+        return !!form.targetId;
       });
       if (!isValid) {
         alertModal.value = {
@@ -502,19 +524,25 @@ export default defineComponent({
             }
           }
         }
+        // Validation for Feed Stock activity (standard stock additions vs. raw ingredient conversion)
         if (categoryId === 'stok_pakan') {
           const isConversion = formItem.name === 'Konversi Pakan';
           if (!isConversion && (!formItem.obat || !formItem.qty)) return showError('Nama pakan sumber dan jumlah masuk wajib diisi.');
-          if (isConversion && (
-            !(formItem.hijauan || '').trim() ||
-            !(formItem.energi || '').trim() ||
-            !(formItem.protein || '').trim() ||
-            !(formItem.mineral || '').trim() ||
-            !formItem.qty
-          )) {
-            return showError('Semua kelompok bahan baku konversi pakan (Serat, Energi, Protein, Aktivator) dan target kuantitas wajib diisi.');
+          if (isConversion) {
+            const hasFiber = !!(formItem.hijauan || '').trim();
+            const hasEnergy = !!(formItem.energi || '').trim();
+            const hasActivator = !!(formItem.mineral || '').trim();
+            const hasHasilJadi = !!(formItem.obat || '').trim();
+            const hasValidQty = !!formItem.qty && parseFloat(formItem.qty) > 0;
+
+            if (!hasFiber) return showError('Sumber Serat Kasar / Hijauan wajib dipilih.');
+            if (!hasEnergy) return showError('Sumber Karbohidrat dan Energi wajib dipilih.');
+            if (!hasActivator) return showError('Aktivator Fermentasi & Mineral wajib dipilih.');
+            if (!hasValidQty) return showError('Target Stok Pakan Hasil Konversi (KG) wajib diisi dengan angka lebih besar dari 0.');
+            if (!hasHasilJadi) return showError('Hasil Konversi Jadi (nama hasil pakan silase) wajib diisi.');
           }
         }
+        // Validation for Health / Treatment activity (routine checks vs. medication injections)
         if (categoryId === 'kesehatan') {
           const isCheckup = formItem.name === 'Pemeriksaan Rutin' || formItem.name === 'Pemeriksaan Kesehatan';
           if (isCheckup) {
@@ -638,7 +666,7 @@ export default defineComponent({
             }
 
             // check if female has been estrus-checked
-            if (female.mating_status === 'Belum Cek Birahi' || female.mating_status === 'Belum Pencatatan Birahi') {
+            if (female.mating_status === 'NOT_CHECKED' || female.mating_status === 'Belum Cek Birahi' || female.mating_status === 'Belum Pencatatan Birahi') {
               alertModal.value = {
                 isOpen: true,
                 title: 'Belum Pencatatan Birahi',
@@ -662,7 +690,7 @@ export default defineComponent({
 
             // check if female is underage
             const femaleAgeMonths = getAgeInMonths(female.birth_date);
-            if (female.mating_status === 'Tidak (Belum Cukup Umur)' || (femaleAgeMonths > 0 && femaleAgeMonths < 8)) {
+            if (female.mating_status === 'UNDERAGE' || female.mating_status === 'Tidak (Belum Cukup Umur)' || (femaleAgeMonths > 0 && femaleAgeMonths < 8)) {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
@@ -674,11 +702,11 @@ export default defineComponent({
 
             // check if male is underage
             const maleAgeMonths = getAgeInMonths(male.birth_date);
-            if (male.mating_status === 'Tidak (Belum Cukup Umur)' || (maleAgeMonths > 0 && maleAgeMonths < 12)) {
+            if (male.mating_status === 'UNDERAGE' || male.mating_status === 'Tidak (Belum Cukup Umur)' || (maleAgeMonths > 0 && maleAgeMonths < 8)) {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
-                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} masih di bawah umur.\nStatus: Belum Cukup Umur (umur: ${male.age || 'di bawah 12 bulan'}).`,
+                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} masih di bawah umur.\nStatus: Belum Cukup Umur (umur: ${male.age || 'di bawah 8 bulan'}).`,
                 type: 'error'
               };
               return;
@@ -687,22 +715,22 @@ export default defineComponent({
             // check other readiness restrictions for female
             // Also accept if local submission shows birahi (even if not yet admin-approved)
             const femaleHasLocalBirahi = checkIsSheepBirahi(female);
-            if (!femaleHasLocalBirahi && !female.is_ready_to_mate && female.mating_status && female.mating_status !== 'Siap Kawin' && !female.mating_status.includes('Birahi') && female.mating_status !== 'Belum Pencatatan Birahi') {
+            if (!femaleHasLocalBirahi && !female.is_ready_to_mate && female.mating_status && female.mating_status !== 'MATING_READY' && female.mating_status !== 'Siap Kawin' && !female.mating_status.includes('Birahi') && female.mating_status !== 'NOT_CHECKED' && female.mating_status !== 'Belum Pencatatan Birahi') {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
-                message: `Gagal menyimpan data perkawinan.\nInduk Betina ${female.code} (${female.name}) tidak dapat dikawinkan.\nStatus: ${female.mating_status}.`,
+                message: `Gagal menyimpan data perkawinan.\nInduk Betina ${female.code} (${female.name}) tidak dapat dikawinkan.\nStatus: ${formatMatingReadiness(female.mating_status)}.`,
                 type: 'error'
               };
               return;
             }
 
             // check other readiness restrictions for male
-            if (!male.is_ready_to_mate && male.mating_status && male.mating_status !== 'Siap Kawin') {
+            if (!male.is_ready_to_mate && male.mating_status && male.mating_status !== 'MATING_READY' && male.mating_status !== 'Siap Kawin') {
               alertModal.value = {
                 isOpen: true,
                 title: 'Gagal Menyimpan',
-                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} tidak siap kawin.\nStatus: ${male.mating_status}.`,
+                message: `Gagal menyimpan data perkawinan.\nPejantan ${male.code} tidak siap kawin.\nStatus: ${formatMatingReadiness(male.mating_status)}.`,
                 type: 'error'
               };
               return;
@@ -810,9 +838,9 @@ export default defineComponent({
 
       return stocks.value
         .filter(
-          (s) =>
-            (type === 'kesehatan' && s.category === 'vitamin') ||
-            (type === 'kotoran' && s.category === 'kotoran'),
+          (stock) =>
+            (type === 'kesehatan' && stock.category === 'vitamin') ||
+            (type === 'kotoran' && stock.category === 'kotoran'),
         )
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -820,25 +848,25 @@ export default defineComponent({
 
     const selectedFeedNames = computed(() => {
       const names = new Set<string>();
-      forms.value.forEach(f => {
+      forms.value.forEach(form => {
         if (activePencatatanForm.value?.jenis?.id === 'pakan') {
-          if (f.metoda === 'silase' || f.metoda === 'hijauan_kebun') {
-            if (f.obat) names.add(f.obat.toLowerCase());
+          if (form.metoda === 'silase' || form.metoda === 'hijauan_kebun') {
+            if (form.obat) names.add(form.obat.toLowerCase());
           } else {
-            if (f.hijauan) names.add(f.hijauan.toLowerCase());
-            if (f.energi) names.add(f.energi.toLowerCase());
-            if (f.protein) names.add(f.protein.toLowerCase());
-            if (f.mineral) names.add(f.mineral.toLowerCase());
+            if (form.hijauan) names.add(form.hijauan.toLowerCase());
+            if (form.energi) names.add(form.energi.toLowerCase());
+            if (form.protein) names.add(form.protein.toLowerCase());
+            if (form.mineral) names.add(form.mineral.toLowerCase());
           }
         } else if (activePencatatanForm.value?.jenis?.id === 'stok_pakan') {
-          if (f.name === 'Konversi Pakan') {
-            if (f.hijauan) names.add(f.hijauan.toLowerCase());
-            if (f.energi) names.add(f.energi.toLowerCase());
-            if (f.protein) names.add(f.protein.toLowerCase());
-            if (f.mineral) names.add(f.mineral.toLowerCase());
-            if (f.obat) names.add(f.obat.toLowerCase());
+          if (form.name === 'Konversi Pakan') {
+            if (form.hijauan) names.add(form.hijauan.toLowerCase());
+            if (form.energi) names.add(form.energi.toLowerCase());
+            if (form.protein) names.add(form.protein.toLowerCase());
+            if (form.mineral) names.add(form.mineral.toLowerCase());
+            if (form.obat) names.add(form.obat.toLowerCase());
           } else {
-            if (f.obat) names.add(f.obat.toLowerCase());
+            if (form.obat) names.add(form.obat.toLowerCase());
           }
         }
       });
@@ -910,18 +938,18 @@ export default defineComponent({
     const siapKawinBetina = computed(() => {
       const cageCode = currentSelectedCageCode.value;
       
-      const hasSelectedMale = forms.value.some((f) => {
-        if (!f.idPejantan) return false;
-        const sh = sheep.value.find(s => String(s.id) === String(f.idPejantan) || String(s.code).toUpperCase() === String(f.idPejantan).trim().toUpperCase());
+      const hasSelectedMale = forms.value.some((form) => {
+        if (!form.idPejantan) return false;
+        const sh = sheep.value.find(sheepItem => String(sheepItem.id) === String(form.idPejantan) || String(sheepItem.code).toUpperCase() === String(form.idPejantan).trim().toUpperCase());
         return sh && sh.gender === 'jantan';
       });
 
-      return sheep.value.filter((s) => {
-        if (s.gender !== 'betina') return false;
-        if (!hasSelectedMale && cageCode && s.cage_code !== cageCode) return false;
+      return sheep.value.filter((sheepItem) => {
+        if (sheepItem.gender !== 'betina') return false;
+        if (!hasSelectedMale && cageCode && sheepItem.cage_code !== cageCode) return false;
         
         // Exclude already mated or pending mating sheeps
-        const isActiveMated = activeMatings.value.some(m => String(m.id_sheep_female) === String(s.id));
+        const isActiveMated = activeMatings.value.some(mating => String(mating.id_sheep_female) === String(sheepItem.id));
         const isPendingMated = pencatatanSubmissions.value.some(sub => {
           if (sub.approvalStatus === 'rejected') return false;
           const dataObj: any = (sub.payload as any)?.data || sub.payload;
@@ -929,31 +957,32 @@ export default defineComponent({
           return items.some((item: any) => {
             if (item.name === 'Kawin Alam' || item.name === 'Kawin Alami' || item.name === 'IB' || item.name === 'Inseminasi Buatan') {
               const targetVal = item.targetId || item.idSheepFemale || item.id_sheep_female;
-              return String(targetVal) === String(s.id) || String(targetVal) === String(s.code);
+              return String(targetVal) === String(sheepItem.id) || String(targetVal) === String(sheepItem.code);
             }
             return false;
           });
         });
         if (isActiveMated || isPendingMated) return false;
 
-        return checkIsSheepBirahi(s);
+        return checkIsSheepBirahi(sheepItem);
       });
     });
 
     const siapKawinJantan = computed(() => {
-      return sheep.value.filter((s) => {
-        if (s.gender !== 'jantan') return false;
-        return checkIsSheepBirahi(s);
+      return sheep.value.filter((sheepItem) => {
+        if (sheepItem.gender !== 'jantan') return false;
+        return checkIsSheepBirahi(sheepItem);
       });
     });
 
     const cageActiveMatings = computed(() => {
       const activeCage = currentSelectedCageCode.value;
       if (!activeCage) return activeMatings.value;
-      return activeMatings.value.filter((m) => {
-        const female = sheep.value.find((s) => String(s.id) === String(m.id_sheep_female));
+      const filtered = activeMatings.value.filter((mating) => {
+        const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
         return female && female.cage_code === activeCage;
       });
+      return filtered.length > 0 ? filtered : activeMatings.value;
     });
 
     return () => {
@@ -1442,13 +1471,13 @@ export default defineComponent({
                               })()}
                             </div>
                           ) : (
-                            matchedStocks.value.map((s) => {
-                              const isSelected = selectedFeedNames.value.has(s.name.toLowerCase());
+                            matchedStocks.value.map((stock) => {
+                              const isSelected = selectedFeedNames.value.has(stock.name.toLowerCase());
                               return (
                                 <div
                                   class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low"
-                                  style={isSelected ? { borderLeft: '4px solid var(--color-primary, #bc6c25)', borderTop: '1px solid rgba(188, 108, 37, 0.2)', borderBottom: '1px solid rgba(188, 108, 37, 0.2)', borderRight: '1px solid rgba(188, 108, 37, 0.2)' } : {}}
-                                  key={s.id}
+                                  style={isSelected ? { borderLeft: '4px solid var(--color-primary, #3d2f24)', borderTop: '1px solid rgba(139, 94, 60, 0.2)', borderBottom: '1px solid rgba(139, 94, 60, 0.2)', borderRight: '1px solid rgba(139, 94, 60, 0.2)' } : {}}
+                                  key={stock.id}
                                 >
                                 <div class="min-w-0">
                                   <Typography
@@ -1457,7 +1486,7 @@ export default defineComponent({
                                     weight="extrabold"
                                     className="mb-0 text-truncate d-block"
                                   >
-                                    {s.name}
+                                    {stock.name}
                                   </Typography>
                                   <Typography
                                     variant="span"
@@ -1465,12 +1494,12 @@ export default defineComponent({
                                     weight="bold"
                                     className="text-muted d-block mt-1 text-truncate"
                                   >
-                                    {s.category}
+                                    {stock.category}
                                   </Typography>
                                 </div>
                                 <div class="text-end ps-3">
                                   <Badge variant="solid-primary" className="px-2 py-1">
-                                    {s.qty} {s.unit}
+                                    {stock.qty} {stock.unit}
                                   </Badge>
                                 </div>
                               </div>
@@ -1497,9 +1526,10 @@ export default defineComponent({
                           {/* Pejantan Dewasa vs Data Perkawinan Tercatat */}
                           {(() => {
                             const firstFormName = forms.value[0]?.name || '';
-                            const isIBOrPregnancy = firstFormName === 'IB' || firstFormName === 'Inseminasi Buatan' || firstFormName === 'Kontrol Kebuntingan';
+                            const isPregnancyControl = firstFormName === 'Kontrol Kebuntingan';
+                            const isIB = firstFormName === 'IB' || firstFormName === 'Inseminasi Buatan';
 
-                            if (isIBOrPregnancy) {
+                            if (isPregnancyControl) {
                               return (
                                 <>
                                   <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
@@ -1513,21 +1543,21 @@ export default defineComponent({
                                       Tidak ada perkawinan tercatat
                                     </div>
                                   ) : (
-                                    cageActiveMatings.value.slice(0, 5).map((m) => {
-                                      const female = sheep.value.find((s) => String(s.id) === String(m.id_sheep_female));
-                                      const male = sheep.value.find((s) => String(s.id) === String(m.id_sheep_male));
-                                      const matingDate = new Date(m.mating_date);
-                                      const diffDays = m.days_since_mating || 0;
+                                    cageActiveMatings.value.slice(0, 5).map((mating) => {
+                                      const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
+                                      const male = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_male));
+                                      const matingDate = new Date(mating.mating_date);
+                                      const diffDays = mating.days_since_mating || 0;
                                       const dateStr = matingDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
                                       
                                       return (
-                                        <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={m.id_mating}>
+                                        <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={mating.id_mating}>
                                           <div class="min-w-0">
                                             <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                              {female ? female.name : `Domba #${m.id_sheep_female}`}
+                                              {female ? female.name : `Domba #${mating.id_sheep_female}`}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                              {female ? female.code : '—'} • {(m.mating_method === 'ib' || m.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
+                                              {female ? female.code : '—'} • {(mating.mating_method === 'ib' || mating.mating_method === 'inseminasi buatan') ? 'Inseminasi Buatan' : (male ? `w/ ${male.name}` : 'Kawin Alam')}
                                             </Typography>
                                             <Typography variant="span" style={{ fontSize: '0.6rem' }} className="text-primary d-block mt-1">
                                               Kawin: {dateStr} ({diffDays} hari lalu)
@@ -1535,7 +1565,7 @@ export default defineComponent({
                                           </div>
                                           <div class="text-end ps-3">
                                             <Badge variant="solid-primary" className="px-2 py-1" style={{ fontSize: '0.65rem' }}>
-                                              {m.status_mating === 'proses' ? 'Proses' : m.status_mating}
+                                              {mating.status_mating === 'proses' ? 'Proses' : mating.status_mating}
                                             </Badge>
                                           </div>
                                         </div>
@@ -1555,14 +1585,14 @@ export default defineComponent({
                                       Tidak ada betina siap kawin
                                     </div>
                                   ) : (
-                                    siapKawinBetina.value.slice(0, 5).map((s) => (
-                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
+                                    siapKawinBetina.value.slice(0, 5).map((sheepItem) => (
+                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
                                         <div class="min-w-0">
                                           <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                            {s.name}
+                                            {sheepItem.name}
                                           </Typography>
                                           <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                            {s.code} • {getCageName(s.cage_code)}
+                                            {sheepItem.code} • {getCageName(sheepItem.cage_code)}
                                           </Typography>
                                         </div>
                                         <div class="text-end ps-3">
@@ -1574,31 +1604,35 @@ export default defineComponent({
                                     ))
                                   )}
 
-                                  <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
-                                    Pejantan Dewasa (Siap Kawin)
-                                  </Typography>
-                                  {siapKawinJantan.value.length === 0 ? (
-                                    <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
-                                      Tidak ada pejantan
-                                    </div>
-                                  ) : (
-                                    siapKawinJantan.value.slice(0, 5).map((s) => (
-                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
-                                        <div class="min-w-0">
-                                          <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
-                                            {s.name}
-                                          </Typography>
-                                          <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                            {s.code} • {getCageName(s.cage_code)}
-                                          </Typography>
+                                  {!isIB && (
+                                    <>
+                                      <Typography variant="p" size="text-xs" weight="bold" className="text-muted mb-2 mt-4 px-2">
+                                        Pejantan Dewasa (Siap Kawin)
+                                      </Typography>
+                                      {siapKawinJantan.value.length === 0 ? (
+                                        <div class="text-center py-3 rounded-2xl bg-surface-container-low text-on-surface-variant small">
+                                          Tidak ada pejantan
                                         </div>
-                                        <div class="text-end ps-3">
-                                          <Badge variant="secondary" className="px-2 py-1">
-                                            Pejantan
-                                          </Badge>
-                                        </div>
-                                      </div>
-                                    ))
+                                      ) : (
+                                        siapKawinJantan.value.slice(0, 5).map((sheepItem) => (
+                                          <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
+                                            <div class="min-w-0">
+                                              <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block">
+                                                {sheepItem.name}
+                                              </Typography>
+                                              <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                                {sheepItem.code} • {getCageName(sheepItem.cage_code)}
+                                              </Typography>
+                                            </div>
+                                            <div class="text-end ps-3">
+                                              <Badge variant="secondary" className="px-2 py-1">
+                                                Pejantan
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        ))
+                                      )}
+                                    </>
                                   )}
                                 </>
                               );
@@ -1627,19 +1661,19 @@ export default defineComponent({
                               Tidak ada indukan hamil di kandang terpilih
                             </div>
                           ) : (
-                            pregnantCageSheepList.value.map((s) => (
-                              <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={s.id}>
-                                <div class="min-w-0">
-                                  <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block text-dark">
-                                    {s.name}
-                                  </Typography>
-                                  <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
-                                    {s.code} • HPL: {s.hpl}
+                            pregnantCageSheepList.value.map((sheepItem) => (
+                                      <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded-2xl bg-surface-container-low border border-light" key={sheepItem.id}>
+                                        <div class="min-w-0">
+                                          <Typography variant="p" size="text-xs" weight="extrabold" className="mb-0 text-truncate d-block text-dark">
+                                            {sheepItem.name}
+                                          </Typography>
+                                          <Typography variant="span" style={{ fontSize: '0.65rem' }} weight="bold" className="text-muted d-block mt-1 text-truncate">
+                                            {sheepItem.code} • HPL: {sheepItem.hpl}
                                   </Typography>
                                 </div>
                                 <div class="text-end ps-3">
                                   <Badge variant="solid-primary" className="px-2 py-1">
-                                    {s.countdownText}
+                                    {sheepItem.countdownText}
                                   </Badge>
                                 </div>
                               </div>

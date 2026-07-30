@@ -17,16 +17,18 @@ SET status = EXCLUDED.status,
 
 -- 3. Seed Mating records
 INSERT INTO breeding.matings (id_mating, id_sheep_male, id_sheep_female, mating_date, mating_method, status, inbreeding_flag, coefficient_of_inbreeding, notes) VALUES 
-('55555555-5555-5555-5555-555555555502', '55555555-5555-5555-5555-555555555501', '55555555-5555-5555-5555-555555555502', '2026-05-01', 'inseminasi buatan', 'proses', true, 0.25, 'High coefficient of inbreeding test backcross'),
-('55555555-5555-5555-5555-555555555503', '55555555-5555-5555-5555-555555555591', '55555555-5555-5555-5555-555555555592', '2026-05-01', 'alami', 'sukses', false, 0.00, 'Test mating for B-01')
-ON CONFLICT (id_mating) DO NOTHING;
+('aa000001-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555591', '55555555-5555-5555-5555-555555555502', '2026-05-01', 'inseminasi buatan', 'proses', true, 0.25, 'High coefficient of inbreeding test backcross'),
+('aa000002-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555591', '55555555-5555-5555-5555-555555555592', '2026-05-01', 'alami', 'sukses', false, 0.00, 'Test mating for B-01')
+ON CONFLICT (id_mating) DO UPDATE
+SET status = EXCLUDED.status,
+    mating_date = EXCLUDED.mating_date;
 
 -- 4. Seed Pregnancy records (status: 'dikandung')
 -- Mak Bocil (XG893) expected to give birth in 4 days (H-4)
 -- Indukan B-01 (B-01) expected to give birth in 5 days (H-5)
 INSERT INTO breeding.pregnancies (id_pregnancy, id_mating, pregnancy_date, pregnancy_status, expected_birth_date, notes) VALUES 
-('66666666-6666-6666-6666-666666666602', '55555555-5555-5555-5555-555555555502', CURRENT_DATE - INTERVAL '146 days', 'dikandung', CURRENT_DATE + INTERVAL '4 days', 'Pregnancy test seeder for birth alert H-7'),
-('66666666-6666-6666-6666-666666666603', '55555555-5555-5555-5555-555555555503', CURRENT_DATE - INTERVAL '145 days', 'dikandung', CURRENT_DATE + INTERVAL '5 days', 'Pregnancy alert for B-01 H-5')
+('ab000001-0000-0000-0000-000000000001', 'aa000001-0000-0000-0000-000000000001', CURRENT_DATE - INTERVAL '146 days', 'dikandung', CURRENT_DATE + INTERVAL '4 days', 'Pregnancy test seeder for birth alert H-7'),
+('ab000002-0000-0000-0000-000000000001', 'aa000002-0000-0000-0000-000000000001', CURRENT_DATE - INTERVAL '145 days', 'dikandung', CURRENT_DATE + INTERVAL '5 days', 'Pregnancy alert for B-01 H-5')
 ON CONFLICT (id_pregnancy) DO UPDATE 
 SET expected_birth_date = EXCLUDED.expected_birth_date,
     pregnancy_status = 'dikandung';

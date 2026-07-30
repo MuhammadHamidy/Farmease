@@ -119,7 +119,7 @@ export default defineComponent({
       panenList.value.forEach(p => {
         if (landId && String(p.id_pohon) === String(landId)) {
           const date = new Date(p.tanggal_panen)
-          const month = date.expandMonth ? date.expandMonth() : date.getMonth()
+          const month = date.getMonth()
           if (month >= 0 && month <= 5) {
             data[month] = (data[month] ?? 0) + (Number(p.jumlah_panen) || 0)
           }
@@ -565,7 +565,7 @@ export default defineComponent({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center', whiteSpace: 'nowrap' }}>
                   <span style={{ width: '10px', height: '10px', backgroundColor: '#372d24', borderRadius: '2px', display: 'inline-block', flexShrink: 0 }}></span>
-                  <span>Produktif (>4 tahun): {phaseData.value.produktif}</span>
+                  <span>Produktif (&gt;4 tahun): {phaseData.value.produktif}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'center', whiteSpace: 'nowrap' }}>
                   <span style={{ width: '10px', height: '10px', backgroundColor: '#2d3b1d', borderRadius: '2px', display: 'inline-block', flexShrink: 0 }}></span>

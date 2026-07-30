@@ -9,6 +9,11 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
+    "test:e2e": "playwright test",
+    "test:e2e:garden": "playwright test tests/e2e/04-garden.spec.ts",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
     "test:unit": "npx tsx --test tests/unit/helpers.test.ts"
   },
   "dependencies": {

@@ -17,37 +17,37 @@ type manureDistributedEvent struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-func (e *manureDistributedEvent) Exchange() string    { return "farmease.exchange" }
-func (e *manureDistributedEvent) Topic() string       { return "livestock.manure.distributed" }
-func (e *manureDistributedEvent) MessageId() string   { return e.ID }
-func (e *manureDistributedEvent) ContentType() string { return "application/json" }
-func (e *manureDistributedEvent) Body() []byte {
-	bytes, _ := json.Marshal(e)
+func (event *manureDistributedEvent) Exchange() string    { return "farmease.exchange" }
+func (event *manureDistributedEvent) Topic() string       { return "livestock.manure.distributed" }
+func (event *manureDistributedEvent) MessageId() string   { return event.ID }
+func (event *manureDistributedEvent) ContentType() string { return "application/json" }
+func (event *manureDistributedEvent) Body() []byte {
+	bytes, _ := json.Marshal(event)
 	return bytes
 }
 
-func (u *useCase) RecordManure(ctx context.Context, m *domain.Manure) error {
-	err := u.repo.Store(ctx, m)
+// RecordManure logs a manure collection or distribution event.
+func (u *useCase) RecordManure(ctx context.Context, manure *domain.Manure) error {
+	err := u.repo.Store(ctx, manure)
 	if err != nil {
 		return err
 	}
 
 	// Publish event only if this is distributed to internal kebun, and publisher is available
-	if m.ActivityType == "distribution" && m.DestinationType == "internal_kebun" && u.publisher != nil {
-		evt := &manureDistributedEvent{
-			ID:        m.IDManure,
-			Amount:    m.Amount,
-			Unit:      m.Unit,
-			Notes:     m.Notes,
+	if manure.ActivityType == "distribution" && manure.DestinationType == "internal_kebun" && u.publisher != nil {
+		event := &manureDistributedEvent{
+			ID:        manure.IDManure,
+			Amount:    manure.Amount,
+			Unit:      manure.Unit,
+			Notes:     manure.Notes,
 			Timestamp: time.Now(),
 		}
 		
-		log.Info().Str("manure_id", m.IDManure).Msg("Publishing manure distribution event to RabbitMQ...")
-		if pubErr := u.publisher.Publish(ctx, evt); pubErr != nil {
-			// Log publisher error but don't fail the REST transaction (user's record is already stored locally)
-			log.Error().Err(pubErr).Str("manure_id", m.IDManure).Msg("Failed to publish manure distribution event to RabbitMQ")
+		log.Info().Str("manure_id", manure.IDManure).Msg("Publishing manure distribution event to RabbitMQ...")
+		if pubErr := u.publisher.Publish(ctx, event); pubErr != nil {
+			log.Error().Err(pubErr).Str("manure_id", manure.IDManure).Msg("Failed to publish manure distribution event to RabbitMQ")
 		} else {
-			log.Info().Str("manure_id", m.IDManure).Msg("Successfully published manure distribution event")
+			log.Info().Str("manure_id", manure.IDManure).Msg("Successfully published manure distribution event")
 		}
 	}
 

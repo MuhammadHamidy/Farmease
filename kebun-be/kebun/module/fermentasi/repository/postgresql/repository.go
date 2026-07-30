@@ -97,36 +97,17 @@ func (r *fermentasiRepository) Store(ctx context.Context, f *domain.Fermentasi) 
 		targetName = f.PupukDetails.TargetPupukName
 		targetJumlah = f.PupukDetails.TargetJumlah
 		satuan = f.PupukDetails.Satuan
-		idStokBahan = f.PupukDetails.IDStokBahan
-		if idStokBahan != nil {
-			val := *idStokBahan
-			if val == "" || val == "undefined" || val == "null" {
-				idStokBahan = nil
-				f.PupukDetails.IDStokBahan = nil
-			} else {
-				// Check if val is a valid UUID
-				_, err := uuid.Parse(val)
-				if err != nil {
-					// It is NOT a valid UUID! It must be a literal material name like "Kotoran domba"
-					// Let's resolve the UUID by looking up/inserting into gardening.stok_bahan
-					resolvedUUID, err := r.resolveStokBahanByName(ctx, val)
-					if err != nil {
-						return err
-					}
-					idStokBahan = &resolvedUUID
-					f.PupukDetails.IDStokBahan = &resolvedUUID
-				}
-			}
+		if f.PupukDetails.IDStokBahan != nil && *f.PupukDetails.IDStokBahan != "" {
+			idStokBahan = f.PupukDetails.IDStokBahan
 		}
 	} else {
 		targetName = "Kompos"
 		satuan = "kg"
 	}
 
-	idAccount := f.IDAccount
-	if idAccount != nil && (*idAccount == "" || *idAccount == "undefined" || *idAccount == "null") {
-		idAccount = nil
-		f.IDAccount = nil
+	var idAccount *string
+	if f.IDAccount != nil && *f.IDAccount != "" {
+		idAccount = f.IDAccount
 	}
 
 	query := `
@@ -192,10 +173,9 @@ func (r *fermentasiRepository) FindLogsByFermentasiID(ctx context.Context, ferme
 
 func (r *fermentasiRepository) StoreLog(ctx context.Context, l *domain.LogFermentasi) error {
 	l.TanggalCek = time.Now()
-	idAccount := l.IDAccount
-	if idAccount != nil && (*idAccount == "" || *idAccount == "undefined" || *idAccount == "null") {
-		idAccount = nil
-		l.IDAccount = nil
+	var idAccount *string
+	if l.IDAccount != nil && *l.IDAccount != "" {
+		idAccount = l.IDAccount
 	}
 	query := `
 		INSERT INTO gardening.log_fermentasi_pupuk (id_fermentasi, tanggal_cek, suhu, kelembaban, kondisi_fisik, notes, status, id_account)
