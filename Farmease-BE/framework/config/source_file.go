@@ -25,6 +25,9 @@ func FileSource(path string) Source {
 
 			data, err := os.ReadFile(path)
 			if err != nil {
+				if os.IsNotExist(err) {
+					return make(map[string]any), nil
+				}
 				return nil, err
 			}
 

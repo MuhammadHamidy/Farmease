@@ -14,6 +14,8 @@ WORKDIR /build/kebun
 
 RUN go mod download
 
+RUN if [ ! -f /build/kebun/config/config.json ] && [ -f /build/kebun/config/config.example.json ]; then cp /build/kebun/config/config.example.json /build/kebun/config/config.json; fi
+
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-X github.com/farmease/farmease-be/kebun/version.Version=docker" \
     -o kebun .

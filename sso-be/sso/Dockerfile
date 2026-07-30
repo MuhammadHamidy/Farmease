@@ -14,6 +14,8 @@ WORKDIR /build/sso
 
 RUN go mod download
 
+RUN if [ ! -f /build/sso/config/config.json ] && [ -f /build/sso/config/config.example.json ]; then cp /build/sso/config/config.example.json /build/sso/config/config.json; fi
+
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-X github.com/farmease/farmease-be/sso/version.Version=docker" \
     -o sso .
