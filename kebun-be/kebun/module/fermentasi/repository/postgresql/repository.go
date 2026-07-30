@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/farmease/kebun-be/kebun/module/fermentasi/domain"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
