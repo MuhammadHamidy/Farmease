@@ -124,9 +124,10 @@ export default defineComponent({
         role: targetRole,
       };
 
+      const host = window.location.hostname;
       triggerToast('Login berhasil! Mengalihkan ke sistem...', 'success');
       setTimeout(() => {
-        window.location.href = `http://localhost:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
+        window.location.href = `http://${host}:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
       }, 1000);
     };
 

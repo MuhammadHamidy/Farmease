@@ -441,7 +441,7 @@ export default defineComponent({
               currentDateText={currentDateText}
               unreadCount={unreadCount.value}
               onBack={() => { landSession.value = null }}
-              onBellClick={() => { showNotifications.value = true }}
+              onBell-click={() => { showNotifications.value = true }}
             />
 
             <div style="margin-top: 0.5rem;">
