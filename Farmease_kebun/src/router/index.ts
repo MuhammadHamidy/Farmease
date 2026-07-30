@@ -89,7 +89,13 @@ router.beforeEach((to, from) => {
   const publicPaths = ['/login', '/sso'];
   if (!hasToken && !publicPaths.includes(to.path)) {
     console.warn('[Auth Guard] No valid token found, redirecting to SSO...');
-    window.location.href = 'http://localhost:3000/?service=kebun';
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    if (host.includes('netrash.id')) {
+      window.location.href = `${protocol}//farmease-sso.netrash.id/?service=kebun`;
+    } else {
+      window.location.href = `http://${host}:3000/?service=kebun`;
+    }
     return false;
   }
 

@@ -110,9 +110,19 @@ export default defineComponent({
         code = targetService === 'ternak' ? 'OPT-01' : 'PK-01';
       }
 
-      // Construct redirect URL
-      const port = targetService === 'ternak' ? 3001 : 3002;
+      // Construct redirect URL dynamically (supports domain & IP)
+      const host = window.location.hostname;
       const path = (targetRole === 'Admin' || targetRole === 'Owner' || targetRole === 'Pemilik') ? 'admin' : (targetService === 'ternak' ? 'ternak' : 'kebun');
+      
+      let redirectUrl = '';
+      if (host.includes('netrash.id')) {
+        const subHost = targetService === 'ternak' ? 'farmease-ternak.netrash.id' : 'farmease-kebun.netrash.id';
+        const protocol = window.location.protocol;
+        redirectUrl = `${protocol}//${subHost}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
+      } else {
+        const port = targetService === 'ternak' ? 3001 : 3002;
+        redirectUrl = `http://${host}:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
+      }
       
       // Save locally in SSO first
       localStorage.setItem('authToken', token);
@@ -124,10 +134,9 @@ export default defineComponent({
         role: targetRole,
       };
 
-      const host = window.location.hostname;
       triggerToast('Login berhasil! Mengalihkan ke sistem...', 'success');
       setTimeout(() => {
-        window.location.href = `http://${host}:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
+        window.location.href = redirectUrl;
       }, 1000);
     };
 
