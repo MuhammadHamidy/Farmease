@@ -173,7 +173,7 @@ services:
     container_name: farmease_sso_fe_prod
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-sso.farmease.id
+      VITE_API_BASE_URL: https://api-sso.netrash.id
     ports:
       - "3000:3000"  # Dedicated Production SSO FE Host Port (3000)
     networks:
@@ -186,7 +186,7 @@ services:
     container_name: farmease_ternak_fe_prod
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-ternak.farmease.id
+      VITE_API_BASE_URL: https://api-ternak.netrash.id
     ports:
       - "3001:3000"  # Dedicated Production Ternak FE Host Port (3001)
     networks:
@@ -199,7 +199,7 @@ services:
     container_name: farmease_kebun_fe_prod
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-kebun.farmease.id
+      VITE_API_BASE_URL: https://api-kebun.netrash.id
     ports:
       - "3002:3000"  # Dedicated Production Kebun FE Host Port (3002)
     networks:

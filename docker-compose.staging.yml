@@ -173,7 +173,7 @@ services:
     container_name: farmease_sso_fe_staging
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-sso-staging.farmease.id
+      VITE_API_BASE_URL: https://api-sso-staging.netrash.id
     ports:
       - "3005:3000"  # Dedicated Staging SSO FE Port (3005)
     networks:
@@ -186,7 +186,7 @@ services:
     container_name: farmease_ternak_fe_staging
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-ternak-staging.farmease.id
+      VITE_API_BASE_URL: https://api-ternak-staging.netrash.id
     ports:
       - "3006:3000"  # Dedicated Staging Ternak FE Port (3006)
     networks:
@@ -199,7 +199,7 @@ services:
     container_name: farmease_kebun_fe_staging
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-kebun-staging.farmease.id
+      VITE_API_BASE_URL: https://api-kebun-staging.netrash.id
     ports:
       - "3007:3000"  # Dedicated Staging Kebun FE Port (3007)
     networks:
