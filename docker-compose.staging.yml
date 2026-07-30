@@ -1,7 +1,7 @@
 version: '3.9'
 
 # Staging Full Ecosystem Configuration (SSO + Ternak + Kebun)
-# Runs isolated staging containers with dedicated staging host ports (8085, 8086, 8087, 3005, 3006, 3007)
+# Includes network aliases for postgres, redis, rabbitmq, and sso
 
 services:
   # ============================================================================
@@ -25,7 +25,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - postgres
+          - sso_postgres
 
   sso_redis_staging:
     image: redis:7-alpine
@@ -38,7 +41,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - redis
+          - sso_redis
     restart: always
 
   peternakan_postgres_staging:
@@ -59,7 +65,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - postgres
+          - peternakan_postgres
 
   peternakan_rabbitmq_staging:
     image: rabbitmq:3-management-alpine
@@ -73,7 +82,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - rabbitmq
+          - peternakan_rabbitmq
     restart: always
 
   kebun_postgres_staging:
@@ -94,7 +106,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - postgres
+          - kebun_postgres
 
   # ============================================================================
   # 2. BACKEND MICROSERVICES (STAGING)
@@ -120,7 +135,10 @@ services:
     ports:
       - "8085:8080"  # Dedicated Staging SSO BE Port (8085)
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - sso
+          - sso_be
 
   peternakan_be_staging:
     build:
@@ -142,7 +160,10 @@ services:
     ports:
       - "8086:8081"  # Dedicated Staging Ternak BE Port (8086)
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - peternakan_be
+          - farmease_be
 
   kebun_be_staging:
     build:
@@ -161,7 +182,9 @@ services:
     ports:
       - "8087:8082"  # Dedicated Staging Kebun BE Port (8087)
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - kebun_be
 
   # ============================================================================
   # 3. FRONTEND APPS (STAGING)

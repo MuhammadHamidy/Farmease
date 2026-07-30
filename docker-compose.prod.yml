@@ -1,7 +1,7 @@
 version: '3.9'
 
 # Production Full Ecosystem Configuration (SSO + Ternak + Kebun)
-# Isolated Production containers with dedicated Production ports
+# Includes network aliases for postgres, redis, rabbitmq, and sso
 
 services:
   # ============================================================================
@@ -25,7 +25,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - postgres
+          - sso_postgres
 
   sso_redis_prod:
     image: redis:7-alpine
@@ -38,7 +41,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - redis
+          - sso_redis
     restart: always
 
   peternakan_postgres_prod:
@@ -59,7 +65,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - postgres
+          - peternakan_postgres
 
   peternakan_rabbitmq_prod:
     image: rabbitmq:3-management-alpine
@@ -73,7 +82,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - rabbitmq
+          - peternakan_rabbitmq
     restart: always
 
   kebun_postgres_prod:
@@ -94,7 +106,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - postgres
+          - kebun_postgres
 
   # ============================================================================
   # 2. BACKEND MICROSERVICES (PRODUCTION)
@@ -120,7 +135,10 @@ services:
     ports:
       - "8084:8080"  # Dedicated Production SSO BE Host Port (8084)
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - sso
+          - sso_be
 
   peternakan_be_prod:
     build:
@@ -142,7 +160,10 @@ services:
     ports:
       - "8081:8081"  # Dedicated Production Ternak BE Host Port (8081)
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - peternakan_be
+          - farmease_be
 
   kebun_be_prod:
     build:
@@ -161,7 +182,9 @@ services:
     ports:
       - "8082:8082"  # Dedicated Production Kebun BE Host Port (8082)
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - kebun_be
 
   # ============================================================================
   # 3. FRONTEND APPS (PRODUCTION)
