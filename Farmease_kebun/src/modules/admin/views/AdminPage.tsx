@@ -1,5 +1,6 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { authApi } from '@/shared/api';
 import '@/modules/admin/assets/css/modules/AdminPage.css';
 import { userSession, cageSession, globalAlertState } from '@/store/navigation';
 import { pendingApprovalCount } from '@/store/operatorAdmin';
@@ -29,9 +30,7 @@ export default defineComponent({
       isLogoutConfirmOpen.value = false;
       userSession.value = null;
       cageSession.value = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/?logout=true';
+      authApi.logout();
     };
 
     return () => {

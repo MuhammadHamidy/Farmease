@@ -5,7 +5,7 @@ import { sheep, fetchSheep, weightRecords, fetchWeightRecords } from '@/store/li
 import Typography from '@/shared/ui/Typography';
 import StatCard from '@/shared/ui/StatCard';
 import Badge from '@/shared/ui/Badge';
-import { feedsApi, manureApi, birthApi } from '@/shared/api';
+import { feedsApi, manureApi, birthApi, authApi } from '@/shared/api';
 import { FeedStockChart, ManureProductionChart, BirthCountChart } from '@/shared/ui/DashboardCharts';
 
 export default defineComponent({
@@ -19,10 +19,7 @@ export default defineComponent({
     const handleLogout = () => {
       userSession.value = null;
       cageSession.value = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      const host = window.location.hostname;
-      window.location.href = `http://${host}:3000/`;
+      authApi.logout();
     };
 
     onMounted(async () => {

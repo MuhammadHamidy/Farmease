@@ -1,3 +1,4 @@
+import { authApi } from '@/shared/api';
 import { defineComponent, ref, onMounted, computed } from 'vue';
 import { 
   userSession, 
@@ -17,9 +18,7 @@ export default defineComponent({
       if (!confirm('Apakah Anda yakin ingin keluar dari halaman pemilik?')) return;
       userSession.value = null;
       cageSession.value = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/?logout=true';
+      authApi.logout();
     };
 
     const currentDateText = ref('');

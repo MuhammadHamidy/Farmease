@@ -98,6 +98,22 @@ export const authApi = {
   logout: () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
+    sessionStorage.clear()
+
+    const host = window.location.hostname
+    const protocol = window.location.protocol
+
+    if (host.includes('netrash.id')) {
+      if (host.includes('staging')) {
+        window.location.href = `${protocol}//sso-staging.netrash.id/?logout=true`
+      } else if (host.includes('farmease-')) {
+        window.location.href = `${protocol}//farmease-sso.netrash.id/?logout=true`
+      } else {
+        window.location.href = `${protocol}//sso.netrash.id/?logout=true`
+      }
+    } else {
+      window.location.href = `http://${host}:3000/?logout=true`
+    }
   },
 
   getCurrentUser: (): User | null => {

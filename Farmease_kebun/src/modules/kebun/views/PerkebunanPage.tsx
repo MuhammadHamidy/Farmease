@@ -1,3 +1,4 @@
+import { authApi } from '@/shared/api'
 import { defineComponent, ref, computed, onMounted, Teleport } from 'vue'
 import { useRouter } from 'vue-router'
 import '@/modules/kebun/assets/css/PerkebunanPage.css'
@@ -31,11 +32,9 @@ export default defineComponent({
 
     const confirmLogout = () => {
       isLogoutConfirmOpen.value = false
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
       userSession.value = null
       landSession.value = null
-      window.location.href = 'http://localhost:3000/?logout=true'
+      authApi.logout()
     }
 
     const activeField = ref<null | 'jenis' | 'rincian'>(null)
