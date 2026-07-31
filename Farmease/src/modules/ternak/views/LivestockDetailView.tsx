@@ -1,3 +1,5 @@
+import { formatSheepStatus, formatGender } from '@/shared/utils/i18nFormatters';
+import { PETERNAKAN_API_BASE_URL } from '@/shared/api/client';
 import { defineComponent, computed, ref, watch, type PropType, Teleport } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import router from '@/router';
@@ -586,7 +588,7 @@ export default defineComponent({
           <div class="detail-header-card d-flex flex-column flex-md-row gap-4 align-items-start" style={{ background: 'var(--color-primary)', border: 'none', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(61, 47, 36, 0.15)' }}>
             <div class="detail-avatar-box d-flex align-items-center justify-content-center" style={{ background: 'var(--color-surface)', border: '2px solid var(--color-surface-container-high)', borderRadius: '16px', padding: ternak.photo_url ? '0' : '1.25rem', flexShrink: 0, overflow: 'hidden', width: '120px', height: '120px' }}>
               {ternak.photo_url ? (
-                <img src={`http://localhost:8081${ternak.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                <img src={ternak.photo_url.startsWith('http') ? ternak.photo_url : `${PETERNAKAN_API_BASE_URL}${ternak.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
               ) : (
                 <img src="/icon/domba.png" style={{ width: '80px', height: '80px', objectFit: 'contain' }} alt="Domba" />
               )}
@@ -598,8 +600,8 @@ export default defineComponent({
                     {ternak.nama}
                   </Typography>
                   <div class="d-inline-flex align-items-center">
-                    <Badge variant={ternak.status === 'Sehat' ? 'solid-success' : (ternak.status === 'Hamil' ? 'solid-warning' : 'solid-danger')} className="ms-2">
-                      {ternak.status}
+                    <Badge variant={ternak.status === 'Sehat' || ternak.status === 'sehat' ? 'solid-success' : (ternak.status === 'Hamil' || ternak.status === 'hamil' ? 'solid-warning' : 'solid-danger')} className="ms-2">
+                      {formatSheepStatus(ternak.status)}
                     </Badge>
                   </div>
                 </div>

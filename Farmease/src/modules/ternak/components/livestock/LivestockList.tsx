@@ -1,3 +1,5 @@
+import { formatSheepStatus, formatGender } from '@/shared/utils/i18nFormatters';
+import { PETERNAKAN_API_BASE_URL } from '@/shared/api/client';
 import { defineComponent, ref, computed, watch, type PropType } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge, { type BadgeVariant } from '@/shared/ui/Badge';
@@ -183,7 +185,7 @@ export default defineComponent({
                     <div class="d-flex align-items-center gap-3">
                       <div class="peternakan-item-avatar d-flex align-items-center justify-content-center bg-light rounded-circle" style={{ width: '48px', height: '48px', flexShrink: 0, overflow: 'hidden' }}>
                         {sheepItem.photo_url ? (
-                          <img src={`http://localhost:8081${sheepItem.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                          <img src={sheepItem.photo_url.startsWith('http') ? sheepItem.photo_url : `${PETERNAKAN_API_BASE_URL}${sheepItem.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
                         ) : (
                           <img src="/icon/domba.png" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                         )}
@@ -197,7 +199,7 @@ export default defineComponent({
                       </div>
                     </div>
                     <div class="d-flex flex-wrap gap-2 mt-3">
-                      <Badge variant="secondary">{sheepItem.status}</Badge>
+                      <Badge variant="secondary">{formatSheepStatus(sheepItem.status)}</Badge>
                       <Badge variant="secondary">{sheepItem.type}</Badge>
                       <Badge variant="secondary">{sheepItem.age}</Badge>
                     </div>
@@ -219,7 +221,7 @@ export default defineComponent({
                   <div class="d-flex align-items-center gap-3">
                     <div class="peternakan-item-avatar d-flex align-items-center justify-content-center bg-light rounded-circle" style={{ width: '48px', height: '48px', flexShrink: 0, overflow: 'hidden' }}>
                       {sheepItem.photo_url ? (
-                        <img src={`http://localhost:8081${sheepItem.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                        <img src={sheepItem.photo_url.startsWith('http') ? sheepItem.photo_url : `${PETERNAKAN_API_BASE_URL}${sheepItem.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
                       ) : (
                         <img src="/icon/domba.png" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                       )}
@@ -234,7 +236,7 @@ export default defineComponent({
                   </div>
                   
                   <div class="d-flex flex-wrap gap-2 mt-3">
-                    <Badge variant={statusColor[sheepItem.status] || 'secondary'}>{sheepItem.status}</Badge>
+                    <Badge variant={statusColor[sheepItem.status] || 'secondary'}>{formatSheepStatus(sheepItem.status)}</Badge>
                     <Badge variant="secondary">{sheepItem.type}</Badge>
                     <Badge variant="secondary">{sheepItem.age}</Badge>
                     {sheepItem.weight && <Badge variant="secondary">{sheepItem.weight}</Badge>}

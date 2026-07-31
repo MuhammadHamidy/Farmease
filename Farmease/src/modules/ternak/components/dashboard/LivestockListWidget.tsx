@@ -1,3 +1,5 @@
+import { formatSheepStatus, formatGender } from '@/shared/utils/i18nFormatters';
+import { PETERNAKAN_API_BASE_URL } from '@/shared/api/client';
 import { defineComponent, ref, computed, type PropType } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';
@@ -158,7 +160,7 @@ export default defineComponent({
                   <div class="d-flex align-items-center gap-3">
                     <div class="peternakan-item-icon-box position-relative" style={{ width: '48px', height: '48px', flexShrink: 0, overflow: 'hidden', borderRadius: '50%', background: 'var(--bs-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {t.photo_url ? (
-                        <img src={`http://localhost:8081${t.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
+                        <img src={t.photo_url.startsWith('http') ? t.photo_url : `${PETERNAKAN_API_BASE_URL}${t.photo_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Domba" />
                       ) : (
                         <img src="/icon/domba.png" style={{ width: '30px', height: '30px', objectFit: 'contain' }} alt="Domba" />
                       )}
@@ -173,9 +175,9 @@ export default defineComponent({
                   </div>
 
                   <div class="d-flex flex-wrap gap-2 mt-3 mb-3">
-                    <Badge variant={(statusColor[t.status] || 'success') as any} className="px-2">{t.status}</Badge>
+                    <Badge variant={(statusColor[t.status] || 'success') as any} className="px-2">{formatSheepStatus(t.status)}</Badge>
                     <Badge variant="secondary" className="px-2">{getSheepTypeName(t.type)}</Badge>
-                    <Badge variant="secondary" className="px-2">{t.gender}</Badge>
+                    <Badge variant="secondary" className="px-2">{formatGender(t.gender)}</Badge>
                   </div>
 
                   <div class="mt-auto pt-2 border-top border-light">

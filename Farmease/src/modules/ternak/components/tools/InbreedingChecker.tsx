@@ -1,3 +1,4 @@
+import { formatSheepStatus } from '@/shared/utils/i18nFormatters';
 import { defineComponent, ref, computed } from 'vue';
 import Typography from '@/shared/ui/Typography';
 import { sheep } from '@/store/livestock';
@@ -104,7 +105,7 @@ export default defineComponent({
             <CustomSelect
               options={[
                 { value: '', label: '— Pilih Domba Jantan —' },
-                ...maleList.value.map(s => ({ value: String(s.id), label: `${s.code} — ${s.name} (${s.status})` }))
+                ...maleList.value.map(s => ({ value: String(s.id), label: `${s.code} — ${s.name} (${formatSheepStatus(s.status)})` }))
               ]}
               modelValue={selectedMaleId.value}
               onUpdate:modelValue={(val: string) => { selectedMaleId.value = val; result.value = null; }}
@@ -117,7 +118,7 @@ export default defineComponent({
             <CustomSelect
               options={[
                 { value: '', label: '— Pilih Domba Betina —' },
-                ...femaleList.value.map(s => ({ value: String(s.id), label: `${s.code} — ${s.name} (${s.status})` }))
+                ...femaleList.value.map(s => ({ value: String(s.id), label: `${s.code} — ${s.name} (${formatSheepStatus(s.status)})` }))
               ]}
               modelValue={selectedFemaleId.value}
               onUpdate:modelValue={(val: string) => { selectedFemaleId.value = val; result.value = null; }}
