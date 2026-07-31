@@ -976,13 +976,7 @@ export default defineComponent({
     });
 
     const cageActiveMatings = computed(() => {
-      const activeCage = currentSelectedCageCode.value;
-      if (!activeCage) return activeMatings.value;
-      const filtered = activeMatings.value.filter((mating) => {
-        const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
-        return female && female.cage_code === activeCage;
-      });
-      return filtered.length > 0 ? filtered : activeMatings.value;
+      return activeMatings.value || [];
     });
 
     return () => {
