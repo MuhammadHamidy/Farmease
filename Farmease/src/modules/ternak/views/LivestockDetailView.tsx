@@ -1,5 +1,6 @@
 import { defineComponent, computed, ref, watch, type PropType, Teleport } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import router from '@/router';
 import { cagesList } from '@/store/navigation';
 import Typography from '@/shared/ui/Typography';
 import Badge from '@/shared/ui/Badge';

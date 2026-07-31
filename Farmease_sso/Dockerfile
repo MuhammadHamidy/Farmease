@@ -13,7 +13,7 @@ RUN npm install --frozen-lockfile
 COPY . .
 
 # API URL dibakar saat build (browser memanggil host ini, bukan nama service Docker)
-ARG VITE_API_BASE_URL=http://31.97.110.160:8084
+ARG VITE_API_BASE_URL=https://api-sso.netrash.id
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build application
