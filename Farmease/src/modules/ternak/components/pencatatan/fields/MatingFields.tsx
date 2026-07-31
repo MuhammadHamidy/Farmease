@@ -714,12 +714,13 @@ export default defineComponent({
                       </span>
                     </div>
                   </>
-                )}
               </div>
             </div>
           </div>
         )}
 
+        {props.form.name === 'Kontrol Kebuntingan' ? (
+          <>
             <PencatatanField label="Tanggal Pemeriksaan" colClass="col-12" required>
               <PencatatanInput
                 type="date"
