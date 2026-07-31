@@ -1,0 +1,31 @@
+# Environment files (ignore actual env files containing sensitive credentials)
+.env
+.env.local
+.env.development
+.env.staging
+.env.prod
+.env.production
+.env.docker
+.env.*
+*.env
+
+# Always track example files for local, staging, and prod environments
+!.env.example
+!.env.local.example
+!.env.staging.example
+!.env.prod.example
+!.env.production.example
+!.env.*.example
+
+# Operating System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Build artifacts & dependencies
+node_modules/
+dist/
+tmp/
+*.exe

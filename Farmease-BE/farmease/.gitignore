@@ -20,7 +20,20 @@ go.work
 # Environment variables & Configuration
 .env
 .env.local
+.env.development
+.env.staging
+.env.prod
+.env.production
+.env.*
+!.env.example
+!.env.local.example
+!.env.staging.example
+!.env.prod.example
+!.env.production.example
+!.env.*.example
 config.json
+!config.example.json
+
 
 # IDEs
 .idea/

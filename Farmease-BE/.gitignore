@@ -32,6 +32,22 @@ Thumbs.db
 *.log
 farmease/tmp/server
 
+# Environment variables & Configuration
+.env
+.env.local
+.env.development
+.env.staging
+.env.prod
+.env.production
+.env.*
+!.env.example
+!.env.local.example
+!.env.staging.example
+!.env.prod.example
+!.env.production.example
+!.env.*.example
+
 # Configuration files containing credentials
 farmease/config/config.json
 *.json.bak
+
