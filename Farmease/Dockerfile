@@ -15,6 +15,12 @@ COPY . .
 # API URL dibakar saat build (browser memanggil host ini, bukan nama service Docker)
 ARG VITE_API_BASE_URL=https://api-ternak.netrash.id
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_SSO_API_URL=https://api-sso.netrash.id
+ENV VITE_SSO_API_URL=$VITE_SSO_API_URL
+ARG VITE_PETERNAKAN_API_URL=https://api-ternak.netrash.id
+ENV VITE_PETERNAKAN_API_URL=$VITE_PETERNAKAN_API_URL
+ARG VITE_KEBUN_API_URL=https://api-kebun.netrash.id
+ENV VITE_KEBUN_API_URL=$VITE_KEBUN_API_URL
 
 # Build application
 RUN npm run build

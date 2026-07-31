@@ -6,9 +6,10 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-export const SSO_API_BASE_URL = import.meta.env.VITE_SSO_API_URL || 'http://localhost:8080'
-export const PETERNAKAN_API_BASE_URL = import.meta.env.VITE_PETERNAKAN_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
-export const KEBUN_API_BASE_URL = import.meta.env.VITE_KEBUN_API_URL || 'http://localhost:8082'
+const isDev = import.meta.env.DEV;
+export const SSO_API_BASE_URL = import.meta.env.VITE_SSO_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8080' : 'https://api-sso.netrash.id')
+export const PETERNAKAN_API_BASE_URL = import.meta.env.VITE_PETERNAKAN_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8081' : 'https://api-ternak.netrash.id')
+export const KEBUN_API_BASE_URL = import.meta.env.VITE_KEBUN_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
 
 export interface ApiResponse<T = any> {
   status: string

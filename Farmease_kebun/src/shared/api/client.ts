@@ -6,7 +6,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const isDev = import.meta.env.DEV;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
 
 export interface ApiResponse<T = any> {
   status: string
@@ -30,10 +31,9 @@ class ApiClient {
     this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       const url = config.url || ''
       if (url.startsWith('/api/auth') || url.startsWith('/api/accounts') || url.startsWith('/api/metadata')) {
-        config.baseURL = import.meta.env.VITE_SSO_API_BASE_URL || 'http://localhost:8080'
+        config.baseURL = import.meta.env.VITE_SSO_API_BASE_URL || import.meta.env.VITE_SSO_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8080' : 'https://api-sso.netrash.id')
       } else {
-        config.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8082'
-
+        config.baseURL = import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
       }
 
       const token = localStorage.getItem('authToken')

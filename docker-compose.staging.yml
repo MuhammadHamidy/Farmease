@@ -193,6 +193,9 @@ services:
     build:
       context: ./Farmease_sso
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api-sso-staging.netrash.id
+        VITE_SSO_API_URL: https://api-sso-staging.netrash.id
     container_name: farmease_sso_fe_staging
     restart: always
     environment:
@@ -206,6 +209,11 @@ services:
     build:
       context: ./Farmease
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api-ternak-staging.netrash.id
+        VITE_SSO_API_URL: https://api-sso-staging.netrash.id
+        VITE_PETERNAKAN_API_URL: https://api-ternak-staging.netrash.id
+        VITE_KEBUN_API_URL: https://api-kebun-staging.netrash.id
     container_name: farmease_ternak_fe_staging
     restart: always
     environment:
@@ -219,6 +227,11 @@ services:
     build:
       context: ./Farmease_kebun
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api-kebun-staging.netrash.id
+        VITE_SSO_API_BASE_URL: https://api-sso-staging.netrash.id
+        VITE_SSO_API_URL: https://api-sso-staging.netrash.id
+        VITE_KEBUN_API_URL: https://api-kebun-staging.netrash.id
     container_name: farmease_kebun_fe_staging
     restart: always
     environment:

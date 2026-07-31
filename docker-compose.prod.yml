@@ -195,6 +195,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_SSO_API_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
     container_name: farmease_sso_fe_prod
     restart: always
     environment:
@@ -210,6 +211,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL_TERNAK:-https://api-ternak.netrash.id}
+        VITE_SSO_API_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_PETERNAKAN_API_URL: ${VITE_API_BASE_URL_TERNAK:-https://api-ternak.netrash.id}
+        VITE_KEBUN_API_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
     container_name: farmease_ternak_fe_prod
     restart: always
     environment:
@@ -225,6 +229,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
+        VITE_SSO_API_BASE_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_SSO_API_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_KEBUN_API_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
     container_name: farmease_kebun_fe_prod
     restart: always
     environment:
