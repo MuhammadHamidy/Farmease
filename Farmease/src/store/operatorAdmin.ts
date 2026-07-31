@@ -240,7 +240,7 @@ setInterval(() => {
     operatorTasks.value = operatorTasks.value.map(task => {
       // Re-derive status from the raw API shape we still have access to via rawStatus
       // We reconstruct a minimal API-like object to pass through mapApiTaskToLocal
-      const recomputed = recomputeTaskStatus(t);
+      const recomputed = recomputeTaskStatus(task);
       return recomputed;
     });
   }
@@ -694,7 +694,7 @@ export async function executeTernakApiSubmission(input: SubmitPencatatanInput): 
 
           // Ambil semua data pemangkasan sekali saja untuk efisiensi
           let pruningList: any[] = [];
-          const hasPruningItems = rawNames.some(n => /^Pemangkasan\s+/i.test(n.trim()));
+          const hasPruningItems = rawNames.some((n: string) => /^Pemangkasan\s+/i.test(n.trim()));
           if (hasPruningItems) {
             try { pruningList = await pemangkasanApi.getList(); } catch (error) {
               console.warn('Gagal ambil data pemangkasan kebun:', error);
