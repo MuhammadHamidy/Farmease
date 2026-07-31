@@ -125,7 +125,7 @@ export default defineComponent({
         }
       }
 
-      return s.gender?.toLowerCase() === 'jantan' ? (backendMatingStatus || 'Siap Kawin') : 'Belum Pencatatan Birahi';
+      return s.gender?.toLowerCase() === 'jantan' ? formatMatingReadiness(backendMatingStatus || 'Siap Kawin') : 'Belum Pencatatan Birahi';
     };
 
     const checkIsSheepBirahi = (s: any) => {
@@ -976,8 +976,8 @@ export default defineComponent({
                         </div>
                         <div class="col-12 mt-1">
                           <span class="text-muted small d-block">Masa Birahi / Siap Kawin</span>
-                          <span class={['fw-bold', (getBirahiStatus(selectedPartnerSheep.value).startsWith('Ya') || getBirahiStatus(selectedPartnerSheep.value).includes('Siap') || getBirahiStatus(selectedPartnerSheep.value).includes('Birahi')) ? 'text-success' : 'text-danger']}>
-                            {getBirahiStatus(selectedPartnerSheep.value)}
+                          <span class={['fw-bold', (formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value)).startsWith('Ya') || formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value)).includes('Siap') || formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value)).includes('Birahi')) ? 'text-success' : 'text-danger']}>
+                            {formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value))}
                           </span>
                         </div>
                         {selectedPartnerSheep.value.gender === 'betina' && (
