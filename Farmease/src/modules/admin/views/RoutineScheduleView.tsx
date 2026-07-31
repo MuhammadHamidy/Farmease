@@ -443,6 +443,18 @@ export default defineComponent({
       return pct < 0 ? 0 : pct;
     });
 
+    const currentPageTasks = ref(1);
+    const itemsPerPageTasks = 6;
+    const totalPagesTasks = computed(() => Math.ceil(filteredTasks.value.length / itemsPerPageTasks) || 1);
+    const paginatedTasks = computed(() => {
+      const start = (currentPageTasks.value - 1) * itemsPerPageTasks;
+      return filteredTasks.value.slice(start, start + itemsPerPageTasks);
+    });
+
+    watch([dateFilter, sessionFilter, statusFilter], () => {
+      currentPageTasks.value = 1;
+    });
+
     // Grouping computed
     const groupedTasks = computed(() => {
       const groups = {
@@ -450,7 +462,7 @@ export default defineComponent({
         Siang: [] as OperatorTask[],
         Sore: [] as OperatorTask[],
       };
-      for (const t of filteredTasks.value) {
+      for (const t of paginatedTasks.value) {
         const session = getSessionFromTime(t.dueTime);
         groups[session].push(t);
       }
@@ -649,6 +661,67 @@ export default defineComponent({
                 Tidak ada tugas rutin ditemukan untuk sesi/status terpilih.
               </div>
             )
+          )}
+
+          {totalPagesTasks.value > 1 && (
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-4 pt-3 border-top bg-white p-3 rounded-4 shadow-sm" style={{ border: '1px solid #E6D9CE' }}>
+              <div class="text-secondary small">
+                Menampilkan <span class="fw-bold text-dark">{filteredTasks.value.length > 0 ? (currentPageTasks.value - 1) * itemsPerPageTasks + 1 : 0}</span> - <span class="fw-bold text-dark">{Math.min(currentPageTasks.value * itemsPerPageTasks, filteredTasks.value.length)}</span> dari <span class="fw-bold text-dark">{filteredTasks.value.length}</span> tugas rutin
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button
+                  type="button"
+                  class="btn btn-sm px-3 rounded-pill fw-bold"
+                  disabled={currentPageTasks.value === 1}
+                  onClick={() => currentPageTasks.value--}
+                  style={{
+                    cursor: currentPageTasks.value === 1 ? 'not-allowed' : 'pointer',
+                    backgroundColor: '#ffffff',
+                    color: currentPageTasks.value === 1 ? '#b0a898' : '#3d2f24',
+                    borderColor: '#ccc0b4',
+                    opacity: currentPageTasks.value === 1 ? 0.6 : 1,
+                    fontSize: '0.8rem',
+                    padding: '0.4rem 0.85rem'
+                  }}
+                >
+                  Sebelumnya
+                </button>
+                {Array.from({ length: totalPagesTasks.value }, (_, i) => i + 1).map((page) => (
+                  <button
+                    type="button"
+                    class="btn btn-sm rounded-pill fw-bold"
+                    onClick={() => currentPageTasks.value = page}
+                    style={{
+                      backgroundColor: currentPageTasks.value === page ? '#3d2f24' : '#ffffff',
+                      color: currentPageTasks.value === page ? '#ffffff' : '#3d2f24',
+                      borderColor: currentPageTasks.value === page ? '#3d2f24' : '#ccc0b4',
+                      minWidth: '32px',
+                      fontSize: '0.8rem',
+                      padding: '0.4rem'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  class="btn btn-sm px-3 rounded-pill fw-bold"
+                  disabled={currentPageTasks.value === totalPagesTasks.value}
+                  onClick={() => currentPageTasks.value++}
+                  style={{
+                    cursor: currentPageTasks.value === totalPagesTasks.value ? 'not-allowed' : 'pointer',
+                    backgroundColor: '#ffffff',
+                    color: currentPageTasks.value === totalPagesTasks.value ? '#b0a898' : '#3d2f24',
+                    borderColor: '#ccc0b4',
+                    opacity: currentPageTasks.value === totalPagesTasks.value ? 0.6 : 1,
+                    fontSize: '0.8rem',
+                    padding: '0.4rem 0.85rem'
+                  }}
+                >
+                  Berikutnya
+                </button>
+              </div>
+            </div>
           )}
         </div>
 

@@ -6,7 +6,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const isDev = import.meta.env.DEV;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8080' : 'https://api-sso.netrash.id')
 
 export interface ApiResponse<T = any> {
   status: string
@@ -43,10 +44,11 @@ class ApiClient {
         const isAuthRoute = url.includes('/api/auth/login')
         
         if (error.response?.status === 401 && !isAuthRoute) {
-          // Token expired - clear storage and redirect to login
+          // Token expired - clear storage and reload page to SSO home
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          sessionStorage.clear()
+          window.location.href = '/'
         }
         return Promise.reject(error)
       }

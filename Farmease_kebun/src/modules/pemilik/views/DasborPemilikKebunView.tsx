@@ -1,3 +1,4 @@
+import { authApi } from '@/shared/api';
 import { defineComponent, ref, onMounted, computed } from 'vue';
 import { 
   userSession, 
@@ -17,9 +18,7 @@ export default defineComponent({
       if (!confirm('Apakah Anda yakin ingin keluar dari halaman pemilik?')) return;
       userSession.value = null;
       cageSession.value = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/?logout=true';
+      authApi.logout();
     };
 
     const currentDateText = ref('');
@@ -197,8 +196,14 @@ export default defineComponent({
         { x: 352, y: yCoords[4] ?? 170 },
         { x: 430, y: yCoords[5] ?? 170 }
       ];
+      const p0 = points[0] ?? { x: 40, y: 170 };
+      const p1 = points[1] ?? { x: 118, y: 170 };
+      const p2 = points[2] ?? { x: 196, y: 170 };
+      const p3 = points[3] ?? { x: 274, y: 170 };
+      const p4 = points[4] ?? { x: 352, y: 170 };
+      const p5 = points[5] ?? { x: 430, y: 170 };
       
-      const pathD = `M${points[0].x},${points[0].y} L${points[1].x},${points[1].y} L${points[2].x},${points[2].y} L${points[3].x},${points[3].y} L${points[4].x},${points[4].y} L${points[5].x},${points[5].y}`;
+      const pathD = `M${p0.x},${p0.y} L${p1.x},${p1.y} L${p2.x},${p2.y} L${p3.x},${p3.y} L${p4.x},${p4.y} L${p5.x},${p5.y}`;
       
       const landList = landsList.value.filter(l => (l.location || '').toLowerCase().includes(labelType.toLowerCase()));
       const landCodes = landList.map(l => l.code);
@@ -206,7 +211,14 @@ export default defineComponent({
       
       const avgData = monthlyData.map(val => val / treeCount);
       const yAvgCoords = avgData.map(val => 170 - val * scale);
-      const avgPathD = `M40,${yAvgCoords[0] ?? 170} L118,${yAvgCoords[1] ?? 170} L196,${yAvgCoords[2] ?? 170} L274,${yAvgCoords[3] ?? 170} L352,${yAvgCoords[4] ?? 170} L430,${yAvgCoords[5] ?? 170}`;
+
+      const a0 = yAvgCoords[0] ?? 170;
+      const a1 = yAvgCoords[1] ?? 170;
+      const a2 = yAvgCoords[2] ?? 170;
+      const a3 = yAvgCoords[3] ?? 170;
+      const a4 = yAvgCoords[4] ?? 170;
+      const a5 = yAvgCoords[5] ?? 170;
+      const avgPathD = `M40,${a0} L118,${a1} L196,${a2} L274,${a3} L352,${a4} L430,${a5}`;
   
       return (
         <svg viewBox="0 0 450 220" style={{ width: '100%', height: '180px', display: 'block', margin: 'auto' }}>

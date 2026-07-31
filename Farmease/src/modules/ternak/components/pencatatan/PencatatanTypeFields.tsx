@@ -9,6 +9,7 @@ import { cageSession, cagesList } from '@/store/navigation';
 import { sheep, weightRecords } from '@/store/livestock';
 import { pregnancyApi } from '@/shared/api';
 import { pencatatanSubmissions } from '@/store/operatorAdmin';
+import { formatMatingReadiness } from '@/shared/utils/i18nFormatters';
 
 // Subcomponents for specific recording fields
 import HealthFields from './fields/HealthFields';
@@ -321,7 +322,7 @@ export default defineComponent({
         if (matingStatus.includes('Hamil') || matingStatus.includes('hamil')) {
           return 'Belum Pencatatan Birahi';
         }
-        return matingStatus || 'Belum Pencatatan Birahi';
+        return formatMatingReadiness(matingStatus) || 'Belum Pencatatan Birahi';
       }
 
       if (s.status === 'Hamil' || s.status === 'hamil') {
@@ -478,8 +479,8 @@ export default defineComponent({
                   )}
                   <div class="col-6 mt-1">
                     <span class="text-muted small d-block">Masa Birahi / Siap Kawin</span>
-                    <span class={['fw-bold', (getBirahiStatus(selectedNonMatingSheep.value).startsWith('Ya') || getBirahiStatus(selectedNonMatingSheep.value).includes('Siap') || getBirahiStatus(selectedNonMatingSheep.value).includes('Birahi')) ? 'text-success' : 'text-danger']}>
-                      {getBirahiStatus(selectedNonMatingSheep.value)}
+                    <span class={['fw-bold', (formatMatingReadiness(getBirahiStatus(selectedNonMatingSheep.value)).startsWith('Ya') || formatMatingReadiness(getBirahiStatus(selectedNonMatingSheep.value)).includes('Siap') || formatMatingReadiness(getBirahiStatus(selectedNonMatingSheep.value)).includes('Birahi')) ? 'text-success' : 'text-danger']}>
+                      {formatMatingReadiness(getBirahiStatus(selectedNonMatingSheep.value))}
                     </span>
                   </div>
                 </div>

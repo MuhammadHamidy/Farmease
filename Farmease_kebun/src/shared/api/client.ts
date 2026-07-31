@@ -6,7 +6,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const isDev = import.meta.env.DEV;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
 
 export interface ApiResponse<T = any> {
   status: string
@@ -30,13 +31,12 @@ class ApiClient {
     this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       const url = config.url || ''
       if (url.startsWith('/api/auth') || url.startsWith('/api/accounts') || url.startsWith('/api/metadata')) {
-        config.baseURL = import.meta.env.VITE_SSO_API_BASE_URL || 'http://localhost:8080'
+        config.baseURL = import.meta.env.VITE_SSO_API_BASE_URL || import.meta.env.VITE_SSO_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8080' : 'https://api-sso.netrash.id')
       } else {
-        config.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8082'
-
+        config.baseURL = import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
       }
 
-      const token = localStorage.getItem('authToken')
+      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -51,10 +51,28 @@ class ApiClient {
         const isAuthRoute = url.includes('/api/auth/login')
         
         if (error.response?.status === 401 && !isAuthRoute) {
-          // Token expired - clear storage and redirect to login
+          const currentToken = localStorage.getItem('authToken')
+          if (currentToken && currentToken.startsWith('mock-token-development')) {
+            console.warn('[Client] 401 received with mock token, suppressing auto-logout redirect.')
+            return Promise.reject(error)
+          }
+          // Token expired - clear storage and redirect cleanly to SSO landing page
+          const host = window.location.hostname
+          const protocol = window.location.protocol
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          sessionStorage.clear()
+          if (host.includes('netrash.id')) {
+            if (host.includes('staging')) {
+              window.location.href = `${protocol}//sso-staging.netrash.id/?logout=true`
+            } else if (host.includes('farmease-')) {
+              window.location.href = `${protocol}//farmease-sso.netrash.id/?logout=true`
+            } else {
+              window.location.href = `${protocol}//sso.netrash.id/?logout=true`
+            }
+          } else {
+            window.location.href = `http://${host}:3000/?logout=true`
+          }
         }
         return Promise.reject(error)
       }

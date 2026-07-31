@@ -125,7 +125,7 @@ export default defineComponent({
         }
       }
 
-      return s.gender?.toLowerCase() === 'jantan' ? (backendMatingStatus || 'Siap Kawin') : 'Belum Pencatatan Birahi';
+      return s.gender?.toLowerCase() === 'jantan' ? formatMatingReadiness(backendMatingStatus || 'Siap Kawin') : 'Belum Pencatatan Birahi';
     };
 
     const checkIsSheepBirahi = (s: any) => {
@@ -562,46 +562,82 @@ export default defineComponent({
 
     return () => (
       <>
-        {f().mode === 'individu' ? (
+        {props.form.name === 'Kontrol Kebuntingan' ? (
           <>
-            <PencatatanField label="Pilih Kandang" colClass="col-12" required>
-              <PencatatanSelect
-                modelValue={selectedCageCode.value}
-                options={cagesList.value.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))}
-                placeholder="Pilih Kandang"
-                onUpdateModelValue={handleCageChange}
-              />
-            </PencatatanField>
-            <PencatatanField
-              label={f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami' ? 'ID Domba Betina' : 'ID Domba'}
-              colClass="col-12"
-              required
-            >
-              <PencatatanSelect
-                modelValue={selectedBaseSheepId.value}
-                options={baseSheepOptions.value}
-                placeholder={selectedCageCode.value ? (f().metoda === 'ib' || props.form.name === 'Kontrol Kebuntingan' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami' ? 'Pilih Domba Betina' : 'Pilih ID Domba') : 'Pilih Kandang Terlebih Dahulu'}
-                disabled={!selectedCageCode.value}
-                onUpdateModelValue={handleBaseSheepChange}
-              />
+            <PencatatanField label="Pilih Data Perkawinan" colClass="col-12" required>
+              {props.form.idMating && activePencatatanForm.value?.idMating ? (
+                <div class="p-3 rounded-4 bg-light border border-light-cream fw-semibold mt-2">
+                  {(() => {
+                    const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
+                    return mating ? getMatingLabel(mating) : `ID Perkawinan: ${props.form.idMating}`;
+                  })()}
+                </div>
+              ) : (
+                <PencatatanSelect
+                  modelValue={props.form.idMating || ''}
+                  options={activeMatings.value.map(m => ({
+                    value: m.id_mating,
+                    label: getMatingLabel(m)
+                  }))}
+                  placeholder="Pilih perkawinan yang akan diperiksa"
+                  onUpdateModelValue={(v: string) => {
+                    props.form.idMating = v;
+                    const mating = activeMatings.value.find(m => String(m.id_mating) === String(v));
+                    if (mating) {
+                      const female = sheep.value.find(s => String(s.id) === String(mating.id_sheep_female));
+                      props.form.targetId = female ? female.code : String(mating.id_sheep_female);
+                      if (female) {
+                        selectedBaseSheepId.value = String(female.id);
+                        selectedCageCode.value = female.cage_code;
+                      }
+                    }
+                  }}
+                />
+              )}
             </PencatatanField>
           </>
         ) : (
-          <PencatatanField label="ID Kandang" colClass="col-12" required>
-            <PencatatanSelect
-              modelValue={f().targetId}
-              options={cagesList.value.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))}
-              placeholder="Pilih Kandang"
-              onUpdateModelValue={(v: string) => { f().targetId = v; }}
-            />
-          </PencatatanField>
+          f().mode === 'individu' ? (
+            <>
+              <PencatatanField label="Pilih Kandang" colClass="col-12" required>
+                <PencatatanSelect
+                  modelValue={selectedCageCode.value}
+                  options={cagesList.value.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))}
+                  placeholder="Pilih Kandang"
+                  onUpdateModelValue={handleCageChange}
+                />
+              </PencatatanField>
+              <PencatatanField
+                label={f().metoda === 'ib' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami' ? 'ID Domba Betina' : 'ID Domba'}
+                colClass="col-12"
+                required
+              >
+                <PencatatanSelect
+                  modelValue={selectedBaseSheepId.value}
+                  options={baseSheepOptions.value}
+                  placeholder={selectedCageCode.value ? (f().metoda === 'ib' || props.form.name === 'IB' || props.form.name === 'Inseminasi Buatan' || props.form.name === 'Kawin Alam' || props.form.name === 'Kawin Alami' ? 'Pilih Domba Betina' : 'Pilih ID Domba') : 'Pilih Kandang Terlebih Dahulu'}
+                  disabled={!selectedCageCode.value}
+                  onUpdateModelValue={handleBaseSheepChange}
+                />
+              </PencatatanField>
+            </>
+          ) : (
+            <PencatatanField label="ID Kandang" colClass="col-12" required>
+              <PencatatanSelect
+                modelValue={f().targetId}
+                options={cagesList.value.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))}
+                placeholder="Pilih Kandang"
+                onUpdateModelValue={(v: string) => { f().targetId = v; }}
+              />
+            </PencatatanField>
+          )
         )}
 
         {selectedBaseSheep.value && (
-          <div class="col-12 animate-fade-in mt-3">
+          <div class="col-12 animate-fade-in mt-3 mb-3">
             <div class="p-3 rounded-4 bg-light border border-light-cream" style={{ fontSize: '0.85rem', color: '#2C3E50' }}>
               <div class="fw-bold mb-2 text-dark" style={{ fontSize: '0.9rem' }}>
-                ℹ️ Informasi Domba Kandang Aktif
+                ℹ️ Informasi Domba & Perkawinan Aktif
               </div>
               <div class="row g-2">
                 <div class="col-6">
@@ -641,7 +677,7 @@ export default defineComponent({
                       <span class="fw-bold text-primary">
                         {(() => {
                           const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
-                          if (!mating) return 'Silakan pilih perkawinan di bawah';
+                          if (!mating) return 'Silakan pilih perkawinan';
                           if ((mating.mating_method === 'ib' || mating.mating_method === 'inseminasi buatan') && mating.external_donor) {
                             return `Donor: ${mating.external_donor.name} (${mating.external_donor.origin || ''})`;
                           }
@@ -686,43 +722,6 @@ export default defineComponent({
 
         {props.form.name === 'Kontrol Kebuntingan' ? (
           <>
-            <PencatatanField label="Pilih Data Perkawinan" colClass="col-12" required>
-              {props.form.idMating && activePencatatanForm.value?.idMating ? (
-                <div class="p-3 rounded-4 bg-light border border-light-cream fw-semibold mt-2">
-                  {(() => {
-                    const mating = activeMatings.value.find(m => String(m.id_mating) === String(props.form.idMating));
-                    return mating ? getMatingLabel(mating) : `ID Perkawinan: ${props.form.idMating}`;
-                  })()}
-                </div>
-              ) : (
-                <PencatatanSelect
-                  modelValue={props.form.idMating || ''}
-                  options={(() => {
-                    let list = activeMatings.value;
-                    if (selectedBaseSheepId.value) {
-                      list = list.filter(m => String(m.id_sheep_female) === String(selectedBaseSheepId.value));
-                    }
-                    return list.map(m => ({
-                      value: m.id_mating,
-                      label: getMatingLabel(m)
-                    }));
-                  })()}
-                  placeholder="Pilih perkawinan yang akan diperiksa"
-                  onUpdateModelValue={(v: string) => {
-                    props.form.idMating = v;
-                    const mating = activeMatings.value.find(m => String(m.id_mating) === String(v));
-                    if (mating) {
-                      const female = sheep.value.find(s => String(s.id) === String(mating.id_sheep_female));
-                      props.form.targetId = female ? female.code : String(mating.id_sheep_female);
-                      if (female) {
-                        selectedBaseSheepId.value = String(female.id);
-                      }
-                    }
-                  }}
-                />
-              )}
-            </PencatatanField>
-
             <PencatatanField label="Tanggal Pemeriksaan" colClass="col-12" required>
               <PencatatanInput
                 type="date"
@@ -976,8 +975,8 @@ export default defineComponent({
                         </div>
                         <div class="col-12 mt-1">
                           <span class="text-muted small d-block">Masa Birahi / Siap Kawin</span>
-                          <span class={['fw-bold', (getBirahiStatus(selectedPartnerSheep.value).startsWith('Ya') || getBirahiStatus(selectedPartnerSheep.value).includes('Siap') || getBirahiStatus(selectedPartnerSheep.value).includes('Birahi')) ? 'text-success' : 'text-danger']}>
-                            {getBirahiStatus(selectedPartnerSheep.value)}
+                          <span class={['fw-bold', (formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value)).startsWith('Ya') || formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value)).includes('Siap') || formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value)).includes('Birahi')) ? 'text-success' : 'text-danger']}>
+                            {formatMatingReadiness(getBirahiStatus(selectedPartnerSheep.value))}
                           </span>
                         </div>
                         {selectedPartnerSheep.value.gender === 'betina' && (

@@ -6,9 +6,10 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-export const SSO_API_BASE_URL = import.meta.env.VITE_SSO_API_URL || 'http://localhost:8080'
-export const PETERNAKAN_API_BASE_URL = import.meta.env.VITE_PETERNAKAN_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
-export const KEBUN_API_BASE_URL = import.meta.env.VITE_KEBUN_API_URL || 'http://localhost:8082'
+const isDev = import.meta.env.DEV;
+export const SSO_API_BASE_URL = import.meta.env.VITE_SSO_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8080' : 'https://api-sso.netrash.id')
+export const PETERNAKAN_API_BASE_URL = import.meta.env.VITE_PETERNAKAN_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8081' : 'https://api-ternak.netrash.id')
+export const KEBUN_API_BASE_URL = import.meta.env.VITE_KEBUN_API_URL || import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
 
 export interface ApiResponse<T = any> {
   status: string
@@ -30,7 +31,7 @@ export class ApiClient {
 
     // Request interceptor - add auth token
     this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem('authToken')
+      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -45,10 +46,28 @@ export class ApiClient {
         const isAuthRoute = url.includes('/api/auth/login')
         
         if (error.response?.status === 401 && !isAuthRoute) {
-          // Token expired - clear storage and redirect to login
+          const currentToken = localStorage.getItem('authToken')
+          if (currentToken && currentToken.startsWith('mock-token-development')) {
+            console.warn('[Client] 401 received with mock token, suppressing auto-logout redirect.')
+            return Promise.reject(error)
+          }
+          // Token expired - clear storage and redirect cleanly to SSO landing page
+          const host = window.location.hostname
+          const protocol = window.location.protocol
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          sessionStorage.clear()
+          if (host.includes('netrash.id')) {
+            if (host.includes('staging')) {
+              window.location.href = `${protocol}//sso-staging.netrash.id/?logout=true`
+            } else if (host.includes('farmease-')) {
+              window.location.href = `${protocol}//farmease-sso.netrash.id/?logout=true`
+            } else {
+              window.location.href = `${protocol}//sso.netrash.id/?logout=true`
+            }
+          } else {
+            window.location.href = `http://${host}:3000/?logout=true`
+          }
         }
         return Promise.reject(error)
       }

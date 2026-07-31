@@ -1,7 +1,7 @@
 version: '3.9'
 
 # Staging Full Ecosystem Configuration (SSO + Ternak + Kebun)
-# Runs isolated staging containers for all 3 modules in one unified stack
+# Includes network aliases for postgres, redis, rabbitmq, and sso
 
 services:
   # ============================================================================
@@ -25,7 +25,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - postgres
+          - sso_postgres
 
   sso_redis_staging:
     image: redis:7-alpine
@@ -38,7 +41,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - redis
+          - sso_redis
     restart: always
 
   peternakan_postgres_staging:
@@ -59,7 +65,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - postgres
+          - peternakan_postgres
 
   peternakan_rabbitmq_staging:
     image: rabbitmq:3-management-alpine
@@ -73,7 +82,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - rabbitmq
+          - peternakan_rabbitmq
     restart: always
 
   kebun_postgres_staging:
@@ -94,7 +106,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - postgres
+          - kebun_postgres
 
   # ============================================================================
   # 2. BACKEND MICROSERVICES (STAGING)
@@ -118,9 +133,12 @@ services:
       APP_JWTSECRET: ${JWT_SECRET:-farmease-secret-key-123}
       APP_REDIRECTURL: https://sso-staging.farmease.id/callback
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8085:8080"  # Dedicated Staging SSO BE Port (8085)
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - sso
+          - sso_be
 
   peternakan_be_staging:
     build:
@@ -140,9 +158,12 @@ services:
       APP_SSOAPIURL: http://sso_be_staging:8080
       APP_RABBITMQ_URL: amqp://guest:guest@peternakan_rabbitmq_staging:5672/
     ports:
-      - "127.0.0.1:8081:8081"
+      - "8086:8081"  # Dedicated Staging Ternak BE Port (8086)
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - peternakan_be
+          - farmease_be
 
   kebun_be_staging:
     build:
@@ -159,9 +180,11 @@ services:
       APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@kebun_postgres_staging:5432/farmease_kebun_staging?sslmode=disable
       APP_SSOAPIURL: http://sso_be_staging:8080
     ports:
-      - "127.0.0.1:8082:8082"
+      - "8087:8082"  # Dedicated Staging Kebun BE Port (8087)
     networks:
-      - farmease_staging_network
+      farmease_staging_network:
+        aliases:
+          - kebun_be
 
   # ============================================================================
   # 3. FRONTEND APPS (STAGING)
@@ -170,12 +193,15 @@ services:
     build:
       context: ./Farmease_sso
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api-sso-staging.netrash.id
+        VITE_SSO_API_URL: https://api-sso-staging.netrash.id
     container_name: farmease_sso_fe_staging
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-sso-staging.farmease.id
+      VITE_API_BASE_URL: https://api-sso-staging.netrash.id
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3005:3000"  # Container listens on 3000
     networks:
       - farmease_staging_network
 
@@ -183,12 +209,17 @@ services:
     build:
       context: ./Farmease
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api-ternak-staging.netrash.id
+        VITE_SSO_API_URL: https://api-sso-staging.netrash.id
+        VITE_PETERNAKAN_API_URL: https://api-ternak-staging.netrash.id
+        VITE_KEBUN_API_URL: https://api-kebun-staging.netrash.id
     container_name: farmease_ternak_fe_staging
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-ternak-staging.farmease.id
+      VITE_API_BASE_URL: https://api-ternak-staging.netrash.id
     ports:
-      - "127.0.0.1:3001:3000"
+      - "3006:3001"  # Container listens on 3001
     networks:
       - farmease_staging_network
 
@@ -196,12 +227,17 @@ services:
     build:
       context: ./Farmease_kebun
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api-kebun-staging.netrash.id
+        VITE_SSO_API_BASE_URL: https://api-sso-staging.netrash.id
+        VITE_SSO_API_URL: https://api-sso-staging.netrash.id
+        VITE_KEBUN_API_URL: https://api-kebun-staging.netrash.id
     container_name: farmease_kebun_fe_staging
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-kebun-staging.farmease.id
+      VITE_API_BASE_URL: https://api-kebun-staging.netrash.id
     ports:
-      - "127.0.0.1:3002:3000"
+      - "3007:3002"  # Container listens on 3002
     networks:
       - farmease_staging_network
 

@@ -67,9 +67,9 @@ test.describe('API Integration Tests', () => {
   test('should include authorization header in API calls', async ({ page }) => {
     let authHeaderFound = false;
     
-    page.on('request', (request) => {
+    page.on('request', async (request) => {
       if (request.url().includes('/api/')) {
-        const authHeader = request.headerValue('Authorization');
+        const authHeader = await request.headerValue('Authorization');
         if (authHeader && authHeader.startsWith('Bearer ')) {
           authHeaderFound = true;
         }

@@ -1,3 +1,4 @@
+import { PETERNAKAN_API_BASE_URL } from '@/shared/api/client';
 import { defineComponent, ref, watch, computed, type PropType } from 'vue';
 import CustomInput from '@/shared/ui/Input';
 import CustomSelect from '@/shared/ui/admin/Select';
@@ -119,7 +120,7 @@ export default defineComponent({
           owner: sheepData.owner || '',
         };
         selectedFile.value = null;
-        previewUrl.value = sheepData.photo_url ? `http://localhost:8081${sheepData.photo_url}` : null;
+        previewUrl.value = sheepData.photo_url ? (sheepData.photo_url.startsWith('http') ? sheepData.photo_url : `${PETERNAKAN_API_BASE_URL}${sheepData.photo_url}`) : null;
         // Reset umurMethod to tanggal since we load the actual date
         umurMethod.value = 'tanggal';
         selectedPoel.value = '';

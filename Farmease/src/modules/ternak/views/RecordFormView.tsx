@@ -976,13 +976,7 @@ export default defineComponent({
     });
 
     const cageActiveMatings = computed(() => {
-      const activeCage = currentSelectedCageCode.value;
-      if (!activeCage) return activeMatings.value;
-      const filtered = activeMatings.value.filter((mating) => {
-        const female = sheep.value.find((sheepItem) => String(sheepItem.id) === String(mating.id_sheep_female));
-        return female && female.cage_code === activeCage;
-      });
-      return filtered.length > 0 ? filtered : activeMatings.value;
+      return activeMatings.value || [];
     });
 
     return () => {
@@ -1111,24 +1105,50 @@ export default defineComponent({
                           <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.qty} {item.unit || ''}</span>
                         </div>
                       )}
-                      {jenis.id === 'pakan' && item.metoda !== 'silase' ? (
+                      {jenis.id === 'pakan' ? (
                         <>
-                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hijauan</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.hijauan}</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Energi</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.energi}</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Protein</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.protein}</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.82rem' }}>
-                            <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pemberian Mineral</span>
-                            <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.mineral}</span>
-                          </div>
+                          {item.metoda && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Kategori Pakan</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>
+                                : {item.metoda === 'silase' ? 'Pakan Silase / Stok' :
+                                   item.metoda === 'hijauan_kebun' ? 'Pakan Hijauan (Mentah Kebun)' :
+                                   item.metoda === 'dadakan' ? 'Pakan Dadakan (Racikan Sendiri)' : item.metoda}
+                              </span>
+                            </div>
+                          )}
+                          {item.obat && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>
+                                {item.metoda === 'silase' ? 'Jenis Silase / Stok' : item.metoda === 'hijauan_kebun' ? 'Jenis Hijauan Kebun' : 'Jenis Pakan'}
+                              </span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.obat}</span>
+                            </div>
+                          )}
+                          {item.hijauan && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Hijauan</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.hijauan}</span>
+                            </div>
+                          )}
+                          {item.energi && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Energi</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.energi}</span>
+                            </div>
+                          )}
+                          {item.protein && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Sumber Protein</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.protein}</span>
+                            </div>
+                          )}
+                          {item.mineral && (
+                            <div style={{ display: 'flex', fontSize: '0.82rem' }}>
+                              <span style={{ color: '#6C757D', width: '140px', flexShrink: 0 }}>Pemberian Mineral</span>
+                              <span style={{ fontWeight: '700', color: '#1a1a1a' }}>: {item.mineral}</span>
+                            </div>
+                          )}
                         </>
                       ) : item.name === 'Konversi Pakan' ? (
                         <>

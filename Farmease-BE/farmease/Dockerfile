@@ -14,6 +14,8 @@ WORKDIR /build/farmease
 
 RUN go mod download
 
+RUN if [ ! -f /build/farmease/config/config.json ] && [ -f /build/farmease/config/config.example.json ]; then cp /build/farmease/config/config.example.json /build/farmease/config/config.json; fi
+
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-X github.com/farmease/farmease-be/farmease/version.Version=docker" \
     -o farmease .

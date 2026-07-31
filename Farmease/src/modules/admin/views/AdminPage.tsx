@@ -1,3 +1,4 @@
+import { authApi } from '@/shared/api';
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import '@/assets/css/modules/admin/AdminPage.css';
@@ -28,9 +29,7 @@ export default defineComponent({
       isLogoutConfirmOpen.value = false;
       userSession.value = null;
       cageSession.value = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = 'http://localhost:3000/?logout=true';
+      authApi.logout();
     };
 
     return () => {

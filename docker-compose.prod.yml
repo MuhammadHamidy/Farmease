@@ -1,7 +1,7 @@
 version: '3.9'
 
 # Production Full Ecosystem Configuration (SSO + Ternak + Kebun)
-# Includes reverse proxy, health checks, resource limits, and auto-restart for all 3 modules
+# Includes network aliases for postgres, redis, rabbitmq, and sso
 
 services:
   # ============================================================================
@@ -16,7 +16,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
       POSTGRES_DB: farmease_sso_prod
     ports:
-      - "127.0.0.1:5435:5432"
+      - "5445:5432"
     volumes:
       - sso_postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,20 +25,26 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - postgres
+          - sso_postgres
 
   sso_redis_prod:
     image: redis:7-alpine
     container_name: farmease_sso_redis_prod
     ports:
-      - "127.0.0.1:6381:6379"
+      - "6382:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - redis
+          - sso_redis
     restart: always
 
   peternakan_postgres_prod:
@@ -50,7 +56,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
       POSTGRES_DB: farmease_peternakan_prod
     ports:
-      - "127.0.0.1:5436:5432"
+      - "5446:5432"
     volumes:
       - peternakan_postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
@@ -59,21 +65,27 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - postgres
+          - peternakan_postgres
 
   peternakan_rabbitmq_prod:
     image: rabbitmq:3-management-alpine
     container_name: farmease_peternakan_rabbitmq_prod
     ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - rabbitmq
+          - peternakan_rabbitmq
     restart: always
 
   kebun_postgres_prod:
@@ -85,7 +97,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
       POSTGRES_DB: farmease_kebun_prod
     ports:
-      - "127.0.0.1:5437:5432"
+      - "5447:5432"
     volumes:
       - kebun_postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
@@ -94,7 +106,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - postgres
+          - kebun_postgres
 
   # ============================================================================
   # 2. BACKEND MICROSERVICES (PRODUCTION)
@@ -118,9 +133,12 @@ services:
       APP_JWTSECRET: ${JWT_SECRET:-farmease-secret-key-123}
       APP_REDIRECTURL: https://sso.farmease.id/callback
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8084:8080"  # Dedicated Production SSO BE Host Port (8084)
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - sso
+          - sso_be
 
   peternakan_be_prod:
     build:
@@ -140,9 +158,12 @@ services:
       APP_SSOAPIURL: http://sso_be_prod:8080
       APP_RABBITMQ_URL: amqp://guest:guest@peternakan_rabbitmq_prod:5672/
     ports:
-      - "127.0.0.1:8081:8081"
+      - "8081:8081"  # Dedicated Production Ternak BE Host Port (8081)
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - peternakan_be
+          - farmease_be
 
   kebun_be_prod:
     build:
@@ -159,9 +180,11 @@ services:
       APP_POSTGRES_URL: postgres://${DB_USER:-user}:${DB_PASSWORD:-pass}@kebun_postgres_prod:5432/farmease_kebun_prod?sslmode=disable
       APP_SSOAPIURL: http://sso_be_prod:8080
     ports:
-      - "127.0.0.1:8082:8082"
+      - "8082:8082"  # Dedicated Production Kebun BE Host Port (8082)
     networks:
-      - farmease_prod_network
+      farmease_prod_network:
+        aliases:
+          - kebun_be
 
   # ============================================================================
   # 3. FRONTEND APPS (PRODUCTION)
@@ -170,12 +193,15 @@ services:
     build:
       context: ./Farmease_sso
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_SSO_API_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
     container_name: farmease_sso_fe_prod
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-sso.farmease.id
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"  # Container listens on 3000
     networks:
       - farmease_prod_network
 
@@ -183,12 +209,17 @@ services:
     build:
       context: ./Farmease
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL_TERNAK:-https://api-ternak.netrash.id}
+        VITE_SSO_API_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_PETERNAKAN_API_URL: ${VITE_API_BASE_URL_TERNAK:-https://api-ternak.netrash.id}
+        VITE_KEBUN_API_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
     container_name: farmease_ternak_fe_prod
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-ternak.farmease.id
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL_TERNAK:-https://api-ternak.netrash.id}
     ports:
-      - "127.0.0.1:3001:3000"
+      - "3001:3001"  # Container listens on 3001
     networks:
       - farmease_prod_network
 
@@ -196,12 +227,17 @@ services:
     build:
       context: ./Farmease_kebun
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
+        VITE_SSO_API_BASE_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_SSO_API_URL: ${VITE_API_BASE_URL_SSO:-https://api-sso.netrash.id}
+        VITE_KEBUN_API_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
     container_name: farmease_kebun_fe_prod
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-kebun.farmease.id
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL_KEBUN:-https://api-kebun.netrash.id}
     ports:
-      - "127.0.0.1:3002:3000"
+      - "3002:3002"  # Container listens on 3002
     networks:
       - farmease_prod_network
 
