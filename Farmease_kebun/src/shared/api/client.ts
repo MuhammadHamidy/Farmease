@@ -36,7 +36,7 @@ class ApiClient {
         config.baseURL = import.meta.env.VITE_API_BASE_URL || (isDev ? 'http://localhost:8082' : 'https://api-kebun.netrash.id')
       }
 
-      const token = localStorage.getItem('authToken')
+      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -56,10 +56,23 @@ class ApiClient {
             console.warn('[Client] 401 received with mock token, suppressing auto-logout redirect.')
             return Promise.reject(error)
           }
-          // Token expired - clear storage and redirect to login
+          // Token expired - clear storage and redirect cleanly to SSO landing page
+          const host = window.location.hostname
+          const protocol = window.location.protocol
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          sessionStorage.clear()
+          if (host.includes('netrash.id')) {
+            if (host.includes('staging')) {
+              window.location.href = `${protocol}//sso-staging.netrash.id/?logout=true`
+            } else if (host.includes('farmease-')) {
+              window.location.href = `${protocol}//farmease-sso.netrash.id/?logout=true`
+            } else {
+              window.location.href = `${protocol}//sso.netrash.id/?logout=true`
+            }
+          } else {
+            window.location.href = `http://${host}:3000/?logout=true`
+          }
         }
         return Promise.reject(error)
       }

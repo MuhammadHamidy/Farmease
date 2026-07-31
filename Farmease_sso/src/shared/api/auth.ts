@@ -91,24 +91,30 @@ export const authApi = {
   logout: () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
+    sessionStorage.removeItem('authToken')
+    sessionStorage.removeItem('user')
+    sessionStorage.clear()
   },
 
   getCurrentUser: (): User | null => {
-    const userStr = localStorage.getItem('user')
+    const userStr = sessionStorage.getItem('user') || localStorage.getItem('user')
     return userStr ? JSON.parse(userStr) : null
   },
 
   setAuth: (token: string, user: User) => {
-    localStorage.setItem('authToken', token)
-    localStorage.setItem('user', JSON.stringify(user))
+    sessionStorage.setItem('authToken', token)
+    sessionStorage.setItem('user', JSON.stringify(user))
+    // Clear localStorage so closing tab requires re-login
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('user')
   },
 
   getToken: (): string | null => {
-    return localStorage.getItem('authToken')
+    return sessionStorage.getItem('authToken') || localStorage.getItem('authToken')
   },
 
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('authToken')
+    return !!(sessionStorage.getItem('authToken') || localStorage.getItem('authToken'))
   },
 
   getAccounts: async (): Promise<User[]> => {

@@ -234,6 +234,24 @@ export default defineComponent({
       return list;
     });
 
+    // Pagination for Stok Pakan
+    const currentPageStok = ref(1);
+    const itemsPerPageStok = 6;
+    const totalPagesStok = computed(() => Math.ceil(filteredStocks.value.length / itemsPerPageStok) || 1);
+    const paginatedStocks = computed(() => {
+      const start = (currentPageStok.value - 1) * itemsPerPageStok;
+      return filteredStocks.value.slice(start, start + itemsPerPageStok);
+    });
+
+    // Pagination for Fermentasi
+    const currentPageFermentasi = ref(1);
+    const itemsPerPageFermentasi = 6;
+    const totalPagesFermentasi = computed(() => Math.ceil(filteredConversions.value.length / itemsPerPageFermentasi) || 1);
+    const paginatedConversions = computed(() => {
+      const start = (currentPageFermentasi.value - 1) * itemsPerPageFermentasi;
+      return filteredConversions.value.slice(start, start + itemsPerPageFermentasi);
+    });
+
     const getCategoryColor = (cat?: string) => {
       const c = (cat || '').toLowerCase();
       if (c === 'hijauan' || c === 'greenery' || c === 'silase') return '#606c38';
@@ -357,7 +375,7 @@ export default defineComponent({
               </div>
             ) : (
               <div class="row g-3">
-                {filteredStocks.value.map(s => {
+                {paginatedStocks.value.map(s => {
                   const safeQty = Number(s.qty || 0);
                   const isLow = safeQty <= 50;
                   const maxCap = 500;
@@ -428,6 +446,66 @@ export default defineComponent({
                 )})}
               </div>
             )}
+            {totalPagesStok.value > 1 && (
+              <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-4 pt-3 border-top">
+                <div class="text-secondary small">
+                  Menampilkan <span class="fw-bold text-dark">{filteredStocks.value.length > 0 ? (currentPageStok.value - 1) * itemsPerPageStok + 1 : 0}</span> - <span class="fw-bold text-dark">{Math.min(currentPageStok.value * itemsPerPageStok, filteredStocks.value.length)}</span> dari <span class="fw-bold text-dark">{filteredStocks.value.length}</span> pakan & bahan
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm px-3 rounded-pill fw-bold"
+                    disabled={currentPageStok.value === 1}
+                    onClick={() => currentPageStok.value--}
+                    style={{
+                      cursor: currentPageStok.value === 1 ? 'not-allowed' : 'pointer',
+                      backgroundColor: '#ffffff',
+                      color: currentPageStok.value === 1 ? '#b0a898' : '#3d2f24',
+                      borderColor: '#ccc0b4',
+                      opacity: currentPageStok.value === 1 ? 0.6 : 1,
+                      fontSize: '0.8rem',
+                      padding: '0.4rem 0.85rem'
+                    }}
+                  >
+                    Sebelumnya
+                  </button>
+                  {Array.from({ length: totalPagesStok.value }, (_, i) => i + 1).map((page) => (
+                    <button
+                      type="button"
+                      class="btn btn-sm rounded-pill fw-bold"
+                      onClick={() => currentPageStok.value = page}
+                      style={{
+                        backgroundColor: currentPageStok.value === page ? '#3d2f24' : '#ffffff',
+                        color: currentPageStok.value === page ? '#ffffff' : '#3d2f24',
+                        borderColor: currentPageStok.value === page ? '#3d2f24' : '#ccc0b4',
+                        minWidth: '32px',
+                        fontSize: '0.8rem',
+                        padding: '0.4rem'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    class="btn btn-sm px-3 rounded-pill fw-bold"
+                    disabled={currentPageStok.value === totalPagesStok.value}
+                    onClick={() => currentPageStok.value++}
+                    style={{
+                      cursor: currentPageStok.value === totalPagesStok.value ? 'not-allowed' : 'pointer',
+                      backgroundColor: '#ffffff',
+                      color: currentPageStok.value === totalPagesStok.value ? '#b0a898' : '#3d2f24',
+                      borderColor: '#ccc0b4',
+                      opacity: currentPageStok.value === totalPagesStok.value ? 0.6 : 1,
+                      fontSize: '0.8rem',
+                      padding: '0.4rem 0.85rem'
+                    }}
+                  >
+                    Berikutnya
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div>
@@ -443,7 +521,7 @@ export default defineComponent({
               </div>
             ) : (
               <div class="row g-3">
-                {filteredConversions.value.map(c => {
+                {paginatedConversions.value.map(c => {
                   const info = getFermentationInfo(c.conversion_date);
                   const isSiap = c.status === 'siap';
                   const isGagal = c.status === 'gagal';
@@ -544,6 +622,66 @@ export default defineComponent({
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {totalPagesFermentasi.value > 1 && (
+              <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-4 pt-3 border-top">
+                <div class="text-secondary small">
+                  Menampilkan <span class="fw-bold text-dark">{filteredConversions.value.length > 0 ? (currentPageFermentasi.value - 1) * itemsPerPageFermentasi + 1 : 0}</span> - <span class="fw-bold text-dark">{Math.min(currentPageFermentasi.value * itemsPerPageFermentasi, filteredConversions.value.length)}</span> dari <span class="fw-bold text-dark">{filteredConversions.value.length}</span> batch fermentasi
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm px-3 rounded-pill fw-bold"
+                    disabled={currentPageFermentasi.value === 1}
+                    onClick={() => currentPageFermentasi.value--}
+                    style={{
+                      cursor: currentPageFermentasi.value === 1 ? 'not-allowed' : 'pointer',
+                      backgroundColor: '#ffffff',
+                      color: currentPageFermentasi.value === 1 ? '#b0a898' : '#3d2f24',
+                      borderColor: '#ccc0b4',
+                      opacity: currentPageFermentasi.value === 1 ? 0.6 : 1,
+                      fontSize: '0.8rem',
+                      padding: '0.4rem 0.85rem'
+                    }}
+                  >
+                    Sebelumnya
+                  </button>
+                  {Array.from({ length: totalPagesFermentasi.value }, (_, i) => i + 1).map((page) => (
+                    <button
+                      type="button"
+                      class="btn btn-sm rounded-pill fw-bold"
+                      onClick={() => currentPageFermentasi.value = page}
+                      style={{
+                        backgroundColor: currentPageFermentasi.value === page ? '#8B5E3C' : '#ffffff',
+                        color: currentPageFermentasi.value === page ? '#ffffff' : '#8B5E3C',
+                        borderColor: currentPageFermentasi.value === page ? '#8B5E3C' : '#ccc0b4',
+                        minWidth: '32px',
+                        fontSize: '0.8rem',
+                        padding: '0.4rem'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    class="btn btn-sm px-3 rounded-pill fw-bold"
+                    disabled={currentPageFermentasi.value === totalPagesFermentasi.value}
+                    onClick={() => currentPageFermentasi.value++}
+                    style={{
+                      cursor: currentPageFermentasi.value === totalPagesFermentasi.value ? 'not-allowed' : 'pointer',
+                      backgroundColor: '#ffffff',
+                      color: currentPageFermentasi.value === totalPagesFermentasi.value ? '#b0a898' : '#3d2f24',
+                      borderColor: '#ccc0b4',
+                      opacity: currentPageFermentasi.value === totalPagesFermentasi.value ? 0.6 : 1,
+                      fontSize: '0.8rem',
+                      padding: '0.4rem 0.85rem'
+                    }}
+                  >
+                    Berikutnya
+                  </button>
+                </div>
               </div>
             )}
           </div>

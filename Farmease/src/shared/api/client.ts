@@ -31,7 +31,7 @@ export class ApiClient {
 
     // Request interceptor - add auth token
     this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem('authToken')
+      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -51,10 +51,23 @@ export class ApiClient {
             console.warn('[Client] 401 received with mock token, suppressing auto-logout redirect.')
             return Promise.reject(error)
           }
-          // Token expired - clear storage and redirect to login
+          // Token expired - clear storage and redirect cleanly to SSO landing page
+          const host = window.location.hostname
+          const protocol = window.location.protocol
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          sessionStorage.clear()
+          if (host.includes('netrash.id')) {
+            if (host.includes('staging')) {
+              window.location.href = `${protocol}//sso-staging.netrash.id/?logout=true`
+            } else if (host.includes('farmease-')) {
+              window.location.href = `${protocol}//farmease-sso.netrash.id/?logout=true`
+            } else {
+              window.location.href = `${protocol}//sso.netrash.id/?logout=true`
+            }
+          } else {
+            window.location.href = `http://${host}:3000/?logout=true`
+          }
         }
         return Promise.reject(error)
       }

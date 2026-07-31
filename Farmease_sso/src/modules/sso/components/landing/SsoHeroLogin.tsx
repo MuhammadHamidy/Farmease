@@ -124,9 +124,11 @@ export default defineComponent({
         redirectUrl = `http://${host}:${port}/${path}?token=${token}&role=${targetRole}&username=${userObj.username}&code=${code}`;
       }
       
-      // Save locally in SSO first
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('user', JSON.stringify(userObj));
+      // Save locally in SSO first (sessionStorage so closing tab requires re-login)
+      sessionStorage.setItem('authToken', token);
+      sessionStorage.setItem('user', JSON.stringify(userObj));
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       
       userSession.value = {
         code,

@@ -44,10 +44,11 @@ class ApiClient {
         const isAuthRoute = url.includes('/api/auth/login')
         
         if (error.response?.status === 401 && !isAuthRoute) {
-          // Token expired - clear storage and redirect to login
+          // Token expired - clear storage and reload page to SSO home
           localStorage.removeItem('authToken')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          sessionStorage.clear()
+          window.location.href = '/'
         }
         return Promise.reject(error)
       }
